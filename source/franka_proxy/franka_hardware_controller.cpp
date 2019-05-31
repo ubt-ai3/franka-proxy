@@ -1,14 +1,14 @@
 /**
  *************************************************************************
  *
- * @file franka_controller.cpp
+ * @file franka_hardware_controller.cpp
  *
  * Classes to control a franka emika panda robot, implementation.
  *
  ************************************************************************/
 
 
-#include "franka_controller.hpp"
+#include "franka_hardware_controller.hpp"
 
 #include <Eigen/Core>
 #include <iostream>
@@ -21,12 +21,12 @@ namespace franka_proxy
 
 //////////////////////////////////////////////////////////////////////////
 //
-// franka_controller
+// franka_hardware_controller
 //
 //////////////////////////////////////////////////////////////////////////
 
 
-franka_controller::franka_controller
+franka_hardware_controller::franka_hardware_controller
 	(const std::string& controller_ip)
 	:
 	robot_(controller_ip, franka::RealtimeConfig::kIgnore),
@@ -34,7 +34,7 @@ franka_controller::franka_controller
 	current_state_(robot_.readOnce()),
 
 	terminate_state_thread_(false),
-	state_thread_(this, &franka_controller::state_update_loop),
+	state_thread_(this, &franka_hardware_controller::state_update_loop),
 
 	speed_factor_(0.05),
 
@@ -66,14 +66,14 @@ franka_controller::franka_controller
 }
 
 
-franka_controller::~franka_controller() noexcept
+franka_hardware_controller::~franka_hardware_controller() noexcept
 {
 	terminate_state_thread_ = true;
 	state_thread_.join();
 }
 
 
-void franka_controller::move_to(const robot_config_7dof& target)
+void franka_hardware_controller::move_to(const robot_config_7dof& target)
 {
 	MotionGenerator motion_generator
 		(speed_factor_, target, current_state_lock_, current_state_);
@@ -115,35 +115,35 @@ void franka_controller::move_to(const robot_config_7dof& target)
 }
 
 
-void franka_controller::stop_movement()
+void franka_hardware_controller::stop_movement()
 {
 	std::cerr << "Not implemented yet." << std::endl;
 	throw not_implemented();
 }
 
 
-franka::RobotState franka_controller::current_state() const
+franka::RobotState franka_hardware_controller::current_state() const
 {
 	std::lock_guard<std::mutex> state_guard(current_state_lock_);
 	return current_state_;
 }
 
 
-double franka_controller::speed_factor() const
+double franka_hardware_controller::speed_factor() const
 {
 	std::lock_guard<std::mutex> state_guard(speed_factor_lock_);
 	return speed_factor_;
 }
 
 
-void franka_controller::set_speed_factor(double speed_factor)
+void franka_hardware_controller::set_speed_factor(double speed_factor)
 {
 	std::lock_guard<std::mutex> state_guard(speed_factor_lock_);
 	speed_factor_ = speed_factor;
 }
 
 
-void franka_controller::open_gripper()
+void franka_hardware_controller::open_gripper()
 {
 	if (!gripper_.move(max_width_, gripper_speed))
 	{
@@ -157,7 +157,7 @@ void franka_controller::open_gripper()
 }
 
 
-void franka_controller::close_gripper()
+void franka_hardware_controller::close_gripper()
 {
 	gripper_.grasp(min_grasp_width, gripper_speed, grasping_force, 0, 1);
 
@@ -168,14 +168,14 @@ void franka_controller::close_gripper()
 }
 
 
-franka::GripperState franka_controller::current_gripper_state()
+franka::GripperState franka_hardware_controller::current_gripper_state()
 {
 	std::lock_guard<std::mutex> state_guard(gripper_state_lock_);
 	return current_gripper_state_;
 }
 
 
-void franka_controller::stop_gripper_movement()
+void franka_hardware_controller::stop_gripper_movement()
 {
 	gripper_.stop();
 	
@@ -186,7 +186,7 @@ void franka_controller::stop_gripper_movement()
 }
 
 
-void franka_controller::state_update_loop()
+void franka_hardware_controller::state_update_loop()
 {
 	while (!terminate_state_thread_)
 	{
@@ -214,12 +214,12 @@ void franka_controller::state_update_loop()
 
 //////////////////////////////////////////////////////////////////////////
 //
-// franka_controller::MotionGenerator
+// franka_hardware_controller::MotionGenerator
 //
 //////////////////////////////////////////////////////////////////////////
 
 
-franka_controller::MotionGenerator::MotionGenerator
+franka_hardware_controller::MotionGenerator::MotionGenerator
 	(double speed_factor, const std::array<double, 7> q_goal,
 	 std::mutex& current_state_lock, franka::RobotState& current_state)
 	:
@@ -239,7 +239,7 @@ franka_controller::MotionGenerator::MotionGenerator
 	q_1_.setZero();
 }
 
-bool franka_controller::MotionGenerator::calculateDesiredValues
+bool franka_hardware_controller::MotionGenerator::calculateDesiredValues
 	(double t, Vector7d* delta_q_d) const 
 {
 	Vector7i sign_delta_q;
@@ -288,7 +288,7 @@ bool franka_controller::MotionGenerator::calculateDesiredValues
 }
 
 
-void franka_controller::MotionGenerator::calculateSynchronizedValues() 
+void franka_hardware_controller::MotionGenerator::calculateSynchronizedValues() 
 {
 	Vector7d dq_max_reach(dq_max_);
 	Vector7d t_f = Vector7d::Zero();
@@ -339,7 +339,7 @@ void franka_controller::MotionGenerator::calculateSynchronizedValues()
 }
 
 
-franka::JointPositions franka_controller::MotionGenerator::operator()
+franka::JointPositions franka_hardware_controller::MotionGenerator::operator()
 	(const franka::RobotState& robot_state, franka::Duration period)
 {
 	{

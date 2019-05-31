@@ -11,11 +11,11 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\..\source\franka_proxy\franka_controller.hpp" />
+    <ClInclude Include="..\..\..\source\franka_proxy\franka_hardware_controller.hpp" />
     <ClInclude Include="..\..\..\source\franka_proxy\signal.hpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\source\franka_proxy\franka_controller.cpp" />
+    <ClCompile Include="..\..\..\source\franka_proxy\franka_hardware_controller.cpp" />
     <ClCompile Include="..\..\..\source\franka_proxy\signal.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">

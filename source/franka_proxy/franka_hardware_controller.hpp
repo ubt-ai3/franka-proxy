@@ -1,15 +1,15 @@
 /**
  *************************************************************************
  *
- * @file franka_controller.hpp
+ * @file franka_hardware_controller.hpp
  *
  * Classes to control a franka emika panda robot.
  *
  ************************************************************************/
 
 
-#if !defined(INCLUDED__FRANKA_PROXY__FRANKA_KONTROLLER_HPP)
-#define INCLUDED__FRANKA_PROXY__FRANKA_KONTROLLER_HPP
+#if !defined(INCLUDED__FRANKA_PROXY__FRANKA_HARDWARE_KONTROLLER_HPP)
+#define INCLUDED__FRANKA_PROXY__FRANKA_HARDWARE_KONTROLLER_HPP
 
 
 #include <atomic>
@@ -31,15 +31,15 @@ namespace franka_proxy
 typedef std::array<double, 7> robot_config_7dof;
 
 
-class franka_controller
+class franka_hardware_controller
 {
 
 public:
 
-	franka_controller
+	franka_hardware_controller
 		(const std::string& controller_ip = "192.168.1.1");
 
-	virtual ~franka_controller() noexcept;
+	virtual ~franka_hardware_controller() noexcept;
 
 
 	/**
@@ -161,7 +161,9 @@ private:
 				std::mutex& current_state_lock_;
 				franka::RobotState& current_state_;
 			};
-		};
+
+
+};
 
 
 
@@ -169,4 +171,4 @@ private:
 } /* namespace franka_proxy */
 
 
-#endif /* !defined(INCLUDED__FRANKA_PROXY__FRANKA_KONTROLLER_HPP) */
+#endif /* !defined(INCLUDED__FRANKA_PROXY__FRANKA_HARDWARE_KONTROLLER_HPP) */

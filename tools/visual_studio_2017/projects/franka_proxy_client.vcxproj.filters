@@ -13,4 +13,14 @@
       <UniqueIdentifier>{c7589ba1-5b60-4ee9-9758-aa41e3e6c148}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\..\source\franka_proxy_client\franka_remote_controller.cpp">
+      <Filter>Sources</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\..\source\franka_proxy_client\franka_remote_controller.hpp">
+      <Filter>Headers</Filter>
+    </ClInclude>
+  </ItemGroup>
 </Project>
