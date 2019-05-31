@@ -35,12 +35,14 @@
     <Import Project="..\props\build_type_standalone.props" />
     <Import Project="..\props\build_mode_debug.props" />
     <Import Project="..\props\build_use_libfranka_debug.props" />
+    <Import Project="..\props\build_use_eigen.props" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
     <Import Project="..\props\build_common.props" />
     <Import Project="..\props\build_type_standalone.props" />
     <Import Project="..\props\build_mode_release.props" />
     <Import Project="..\props\build_use_libfranka_release.props" />
+    <Import Project="..\props\build_use_eigen.props" />
   </ImportGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <!-- Required for VS properties dialog to work. -->

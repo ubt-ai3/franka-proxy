@@ -3,8 +3,8 @@
   <ImportGroup Label="PropertySheets" />
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
-    <IncludePath>$(SolutionDir)external\libfranka\include;$(IncludePath)</IncludePath>
-    <LibraryPath>$(SolutionDir)external\libfranka\lib\$(Configuration);$(LibraryPath)</LibraryPath>
+    <IncludePath>$(ProjectDir)..\..\..\external\libfranka\include;$(IncludePath)</IncludePath>
+    <LibraryPath>$(ProjectDir)..\..\..\external\libfranka\lib\$(Configuration);$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup>
     <ClCompile>
