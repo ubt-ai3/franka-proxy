@@ -10,6 +10,14 @@
       <Platform>x64</Platform>
     </ProjectConfiguration>
   </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\..\source\franka_proxy\franka_controller.hpp" />
+    <ClInclude Include="..\..\..\source\franka_proxy\signal.hpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\..\source\franka_proxy\franka_controller.cpp" />
+    <ClCompile Include="..\..\..\source\franka_proxy\signal.cpp" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{68BC76EE-6A3E-4109-B187-BD78D5EEF8F9}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
