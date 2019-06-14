@@ -19,9 +19,8 @@
 #include <franka/gripper.h>
 
 #include <Eigen/Core>
-#include "signal.hpp"
 
-
+#include <viral_core/thread_synch.hpp>
 
 
 namespace franka_proxy
@@ -75,14 +74,23 @@ private:
 	 */
 	void state_update_loop();
 
+	
+	/**
+	 * Initialize parameters such as joint impedance and collision behavior.
+	 */
+	void initialize_parameters();
+
 
 	// Robot
 	mutable franka::Robot robot_;
+	bool parameters_initialized_;
 
 	mutable std::mutex current_state_lock_;
 	franka::RobotState current_state_;
 
-	viral_core_lite::signal control_loop_running_;
+	std::atomic_bool stop_motion_;
+
+	viral_core::signal control_loop_running_;
 	std::atomic_bool terminate_state_thread_;
 	std::thread state_thread_;
 	
@@ -105,6 +113,10 @@ private:
 	static constexpr double grasping_force = 0.05;
 
 
+			/**
+			 * Thrown from MotionGenerator to terminate it.
+			 */
+			class stop_motion_trigger {};
 
 			/**
 			 * An example showing how to generate a joint pose motion to a goal position. Adapted from:
@@ -121,7 +133,8 @@ private:
 				 */
 				MotionGenerator
 					(double speed_factor, const std::array<double, 7> q_goal,
-					 std::mutex& current_state_lock, franka::RobotState& current_state);
+					 std::mutex& current_state_lock, franka::RobotState& current_state,
+					 const std::atomic_bool& stop_motion_flag);
 
 				/**
 				 * Sends joint position calculations
@@ -160,6 +173,8 @@ private:
 
 				std::mutex& current_state_lock_;
 				franka::RobotState& current_state_;
+
+				const std::atomic_bool& stop_motion_;
 			};
 
 

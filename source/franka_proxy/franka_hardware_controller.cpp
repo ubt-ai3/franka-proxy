@@ -30,31 +30,17 @@ franka_hardware_controller::franka_hardware_controller
 	(const std::string& controller_ip)
 	:
 	robot_(controller_ip, franka::RealtimeConfig::kIgnore),
+	parameters_initialized_(false),
 
 	current_state_(robot_.readOnce()),
 
 	terminate_state_thread_(false),
-	state_thread_(this, &franka_hardware_controller::state_update_loop),
+	state_thread_([this](){ state_update_loop(); }),
 
 	speed_factor_(0.05),
 
 	gripper_(controller_ip)
 {
-	// A previous usage of franka_controller_hardware may have
-	// left the robot in error state -> try automatic error 
-	// recovery preventively
-	robot_.automaticErrorRecovery();
-
-	robot_.setCollisionBehavior(
-		{ {20.0, 20.0, 18.0, 18.0, 16.0, 14.0, 12.0} }, { {20.0, 20.0, 18.0, 18.0, 16.0, 14.0, 12.0} },
-		{ {20.0, 20.0, 18.0, 18.0, 16.0, 14.0, 12.0} }, { {20.0, 20.0, 18.0, 18.0, 16.0, 14.0, 12.0} },
-		{ {20.0, 20.0, 20.0, 25.0, 25.0, 25.0} }, { {20.0, 20.0, 20.0, 25.0, 25.0, 25.0} },
-		{ {20.0, 20.0, 20.0, 25.0, 25.0, 25.0} }, { {20.0, 20.0, 20.0, 25.0, 25.0, 25.0} });
-
-	robot_.setJointImpedance({ {3000, 3000, 3000, 2500, 2500, 2000, 2000} });
-	robot_.setCartesianImpedance({ {3000, 3000, 3000, 300, 300, 300} });
-
-
 	// Perform homing to get maximum grasping width.
 	if (!gripper_.homing())
 	{
@@ -75,8 +61,10 @@ franka_hardware_controller::~franka_hardware_controller() noexcept
 
 void franka_hardware_controller::move_to(const robot_config_7dof& target)
 {
+	initialize_parameters();
+
 	MotionGenerator motion_generator
-		(speed_factor_, target, current_state_lock_, current_state_);
+		(speed_factor_, target, current_state_lock_, current_state_, stop_motion_);
 
 	try
 	{
@@ -87,7 +75,7 @@ void franka_hardware_controller::move_to(const robot_config_7dof& target)
 		}
 
 		bool finished = false;
-		while (!finished)
+		while (!(finished || stop_motion_))
 		{
 			try
 			{
@@ -102,12 +90,19 @@ void franka_hardware_controller::move_to(const robot_config_7dof& target)
 				std::this_thread::sleep_for(std::chrono::milliseconds(500));
 				robot_.automaticErrorRecovery();
 			}
+			catch (const stop_motion_trigger&)
+			{
+				// The motion was stopped.
+				control_loop_running_.set(false);
+				finished = true;
+			}
 		}
 
 		control_loop_running_.set(false);
 	}
 	catch (const std::exception& e)
 	{
+		control_loop_running_.set(false);
 		std::cout << "Franka move_to failed with:" << std::endl;
 		std::cout << e.what() << std::endl;
 		throw;
@@ -117,8 +112,7 @@ void franka_hardware_controller::move_to(const robot_config_7dof& target)
 
 void franka_hardware_controller::stop_movement()
 {
-	std::cerr << "Not implemented yet." << std::endl;
-	throw not_implemented();
+	stop_motion_ = true;
 }
 
 
@@ -210,6 +204,29 @@ void franka_hardware_controller::state_update_loop()
 }
 
 
+void franka_hardware_controller::initialize_parameters()
+{
+	if (parameters_initialized_)
+		return;
+
+	// A previous usage of franka_controller_hardware may have
+	// left the robot in error state -> try automatic error 
+	// recovery preventively
+	robot_.automaticErrorRecovery();
+
+	robot_.setCollisionBehavior(
+		{ {20.0, 20.0, 18.0, 18.0, 16.0, 14.0, 12.0} }, { {20.0, 20.0, 18.0, 18.0, 16.0, 14.0, 12.0} },
+		{ {20.0, 20.0, 18.0, 18.0, 16.0, 14.0, 12.0} }, { {20.0, 20.0, 18.0, 18.0, 16.0, 14.0, 12.0} },
+		{ {20.0, 20.0, 20.0, 25.0, 25.0, 25.0} }, { {20.0, 20.0, 20.0, 25.0, 25.0, 25.0} },
+		{ {20.0, 20.0, 20.0, 25.0, 25.0, 25.0} }, { {20.0, 20.0, 20.0, 25.0, 25.0, 25.0} });
+
+	robot_.setJointImpedance({ {3000, 3000, 3000, 2500, 2500, 2000, 2000} });
+	robot_.setCartesianImpedance({ {3000, 3000, 3000, 300, 300, 300} });
+
+	parameters_initialized_ = true;
+}
+
+
 
 
 //////////////////////////////////////////////////////////////////////////
@@ -221,11 +238,15 @@ void franka_hardware_controller::state_update_loop()
 
 franka_hardware_controller::MotionGenerator::MotionGenerator
 	(double speed_factor, const std::array<double, 7> q_goal,
-	 std::mutex& current_state_lock, franka::RobotState& current_state)
+	 std::mutex& current_state_lock, franka::RobotState& current_state,
+	 const std::atomic_bool& stop_motion_flag)
 	:
 	q_goal_(q_goal.data()),
+
 	current_state_lock_(current_state_lock),
-	current_state_(current_state)
+	current_state_(current_state),
+
+	stop_motion_(stop_motion_flag)
 {
 	dq_max_ *= speed_factor;
 	ddq_max_start_ *= speed_factor;
@@ -346,6 +367,9 @@ franka::JointPositions franka_hardware_controller::MotionGenerator::operator()
 		std::lock_guard<std::mutex> state_guard(current_state_lock_);
 		current_state_ = robot_state;
 	}
+
+	if (stop_motion_)
+		throw stop_motion_trigger();
 
 
 	time_ += period.toSec();

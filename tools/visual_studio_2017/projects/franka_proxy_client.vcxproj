@@ -11,12 +11,13 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\..\source\franka_proxy_client\franka_network_client.cpp" />
     <ClCompile Include="..\..\..\source\franka_proxy_client\franka_remote_controller.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\..\source\franka_proxy_client\exception.hpp" />
+    <ClInclude Include="..\..\..\source\franka_proxy_client\franka_network_client.hpp" />
     <ClInclude Include="..\..\..\source\franka_proxy_client\franka_remote_controller.hpp" />
-    <ClInclude Include="..\..\..\source\franka_proxy_client\libfranka_types\gripper_state.h" />
-    <ClInclude Include="..\..\..\source\franka_proxy_client\libfranka_types\robot_state.h" />
     <ClInclude Include="..\..\..\source\franka_proxy_share\franka_proxy_messages.hpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">

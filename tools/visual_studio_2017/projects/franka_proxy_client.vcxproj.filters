@@ -12,12 +12,12 @@
     <Filter Include="Resources">
       <UniqueIdentifier>{c7589ba1-5b60-4ee9-9758-aa41e3e6c148}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Headers\libfranka_types">
-      <UniqueIdentifier>{7fc8a7a8-9db6-4837-a2ff-305068df022b}</UniqueIdentifier>
-    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\source\franka_proxy_client\franka_remote_controller.cpp">
+      <Filter>Sources</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\source\franka_proxy_client\franka_network_client.cpp">
       <Filter>Sources</Filter>
     </ClCompile>
   </ItemGroup>
@@ -25,13 +25,13 @@
     <ClInclude Include="..\..\..\source\franka_proxy_client\franka_remote_controller.hpp">
       <Filter>Headers</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\source\franka_proxy_client\libfranka_types\robot_state.h">
-      <Filter>Headers\libfranka_types</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\source\franka_proxy_client\libfranka_types\gripper_state.h">
-      <Filter>Headers\libfranka_types</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\source\franka_proxy_share\franka_proxy_messages.hpp">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\source\franka_proxy_client\franka_network_client.hpp">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\source\franka_proxy_client\exception.hpp">
       <Filter>Headers</Filter>
     </ClInclude>
   </ItemGroup>

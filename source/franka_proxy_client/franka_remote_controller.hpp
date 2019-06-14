@@ -12,12 +12,13 @@
 #define INCLUDED__FRANKA_PROXY_CLIENT__FRANKA_REMOTE_KONTROLLER_HPP
 
 
-#include <atomic>
+#include <array>
 #include <string>
-
-#include "libfranka_types/robot_state.h"
-#include "libfranka_types/gripper_state.h"
 #include <mutex>
+
+#include "viral_core/network_forward.hpp"
+
+#include "franka_network_client.hpp"
 
 
 namespace franka_proxy
@@ -33,7 +34,8 @@ class franka_remote_controller
 public:
 
 	franka_remote_controller
-		(const std::string& proxy_ip = "192.168.1.1");
+		(const std::string& proxy_ip,
+		 viral_core::network_context& network);
 
 	virtual ~franka_remote_controller() noexcept;
 
@@ -47,7 +49,7 @@ public:
 
 	void stop_movement();
 
-	franka::RobotState current_state() const;
+	robot_config_7dof current_config() const;
 
 	double speed_factor() const;
 	void set_speed_factor(double speed_factor);
@@ -58,7 +60,7 @@ public:
 	/** Grasp.... */
 	void close_gripper();
 
-	franka::GripperState current_gripper_state();
+	bool gripper_open();
 
 	void stop_gripper_movement();
 
@@ -67,15 +69,29 @@ public:
 
 
 private:
+	
+	void initialize_sockets();
+	void shutdown_sockets() noexcept;
 
-	void send_message(const std::string& msg);
-	void send_message(const char* msg);
+
+	viral_core::network_context& network_;
+
+	std::unique_ptr<franka_control_client> socket_control_;
+	std::unique_ptr<franka_state_client> socket_state_;
 
 
 	mutable std::mutex state_lock_;
-	franka::RobotState current_state_;
+	robot_config_7dof current_config_;
 	double current_speed_factor_;
-	franka::GripperState current_gripper_state_;
+	bool gripper_open_;
+	int current_gripper_pos_;
+	int max_gripper_pos_;
+	int current_error_;
+
+
+	static constexpr const char* franka_ip = "";
+	static constexpr unsigned short franka_controll_port = -1;
+	static constexpr unsigned short franka_state_port = -1;
 };
 
 
