@@ -15,8 +15,8 @@
 #include <atomic>
 #include <string>
 
-#include "lib_franka_types/robot_state.h"
-#include "lib_franka_types/gripper_state.h"
+#include "libfranka_types/robot_state.h"
+#include "libfranka_types/gripper_state.h"
 
 
 namespace franka_proxy

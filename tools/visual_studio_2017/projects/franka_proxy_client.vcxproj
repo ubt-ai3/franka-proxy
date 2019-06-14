@@ -15,6 +15,8 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\source\franka_proxy_client\franka_remote_controller.hpp" />
+    <ClInclude Include="..\..\..\source\franka_proxy_client\libfranka_types\gripper_state.h" />
+    <ClInclude Include="..\..\..\source\franka_proxy_client\libfranka_types\robot_state.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{FB19427B-A02E-4386-98A9-64ED8E1DEB71}</ProjectGuid>
