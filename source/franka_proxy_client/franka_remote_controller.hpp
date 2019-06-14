@@ -17,6 +17,7 @@
 
 #include "libfranka_types/robot_state.h"
 #include "libfranka_types/gripper_state.h"
+#include <mutex>
 
 
 namespace franka_proxy
@@ -60,6 +61,21 @@ public:
 	franka::GripperState current_gripper_state();
 
 	void stop_gripper_movement();
+
+
+	void update();
+
+
+private:
+
+	void send_message(const std::string& msg);
+	void send_message(const char* msg);
+
+
+	mutable std::mutex state_lock_;
+	franka::RobotState current_state_;
+	double current_speed_factor_;
+	franka::GripperState current_gripper_state_;
 };
 
 
