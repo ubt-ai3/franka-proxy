@@ -9,6 +9,24 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "franka_proxy_client", "proj
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "franka_proxy_client_test", "projects\franka_proxy_client_test.vcxproj", "{CA9F7D3E-0D62-4877-88C6-3DCD4CE482AC}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "viral", "viral", "{AF7FBD9E-5917-45BA-8B37-2BA352B95743}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "external", "external", "{5688014F-3938-48B9-ABD6-E650F121B187}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "viral_core", "..\..\external\viral\tools\visual_studio_2017\projects\viral_core.vcxproj", "{AAE2F80F-754F-4255-AA66-677E4E181D8D}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "expat", "..\..\external\viral\tools\visual_studio_2017\external\expat.vcxproj", "{48B9F5EE-DFF8-4478-B9DA-F73B287E5773}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libjpeg", "..\..\external\viral\tools\visual_studio_2017\external\libjpeg.vcxproj", "{C5F977F4-1FC7-4C98-B1DD-53C1E7D2FE70}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libogg", "..\..\external\viral\tools\visual_studio_2017\external\libogg.vcxproj", "{A352F81B-0853-4BF8-A118-2458FEDCA3E4}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libpng", "..\..\external\viral\tools\visual_studio_2017\external\libpng.vcxproj", "{66B067F1-4EB8-44CE-BFA2-32D2B582A75F}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libvorbis", "..\..\external\viral\tools\visual_studio_2017\external\libvorbis.vcxproj", "{5028BB57-80B6-4ADB-BC16-D27F98ADD82E}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "zlib", "..\..\external\viral\tools\visual_studio_2017\external\zlib.vcxproj", "{57EFCBAC-C6DB-4A0A-911B-029DFD676B7B}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -27,9 +45,47 @@ Global
 		{CA9F7D3E-0D62-4877-88C6-3DCD4CE482AC}.Debug|x64.Build.0 = Debug|x64
 		{CA9F7D3E-0D62-4877-88C6-3DCD4CE482AC}.Release|x64.ActiveCfg = Release|x64
 		{CA9F7D3E-0D62-4877-88C6-3DCD4CE482AC}.Release|x64.Build.0 = Release|x64
+		{AAE2F80F-754F-4255-AA66-677E4E181D8D}.Debug|x64.ActiveCfg = Debug|x64
+		{AAE2F80F-754F-4255-AA66-677E4E181D8D}.Debug|x64.Build.0 = Debug|x64
+		{AAE2F80F-754F-4255-AA66-677E4E181D8D}.Release|x64.ActiveCfg = Release|x64
+		{AAE2F80F-754F-4255-AA66-677E4E181D8D}.Release|x64.Build.0 = Release|x64
+		{48B9F5EE-DFF8-4478-B9DA-F73B287E5773}.Debug|x64.ActiveCfg = Debug|x64
+		{48B9F5EE-DFF8-4478-B9DA-F73B287E5773}.Debug|x64.Build.0 = Debug|x64
+		{48B9F5EE-DFF8-4478-B9DA-F73B287E5773}.Release|x64.ActiveCfg = Release|x64
+		{48B9F5EE-DFF8-4478-B9DA-F73B287E5773}.Release|x64.Build.0 = Release|x64
+		{C5F977F4-1FC7-4C98-B1DD-53C1E7D2FE70}.Debug|x64.ActiveCfg = Debug|x64
+		{C5F977F4-1FC7-4C98-B1DD-53C1E7D2FE70}.Debug|x64.Build.0 = Debug|x64
+		{C5F977F4-1FC7-4C98-B1DD-53C1E7D2FE70}.Release|x64.ActiveCfg = Release|x64
+		{C5F977F4-1FC7-4C98-B1DD-53C1E7D2FE70}.Release|x64.Build.0 = Release|x64
+		{A352F81B-0853-4BF8-A118-2458FEDCA3E4}.Debug|x64.ActiveCfg = Debug|x64
+		{A352F81B-0853-4BF8-A118-2458FEDCA3E4}.Debug|x64.Build.0 = Debug|x64
+		{A352F81B-0853-4BF8-A118-2458FEDCA3E4}.Release|x64.ActiveCfg = Release|x64
+		{A352F81B-0853-4BF8-A118-2458FEDCA3E4}.Release|x64.Build.0 = Release|x64
+		{66B067F1-4EB8-44CE-BFA2-32D2B582A75F}.Debug|x64.ActiveCfg = Debug|x64
+		{66B067F1-4EB8-44CE-BFA2-32D2B582A75F}.Debug|x64.Build.0 = Debug|x64
+		{66B067F1-4EB8-44CE-BFA2-32D2B582A75F}.Release|x64.ActiveCfg = Release|x64
+		{66B067F1-4EB8-44CE-BFA2-32D2B582A75F}.Release|x64.Build.0 = Release|x64
+		{5028BB57-80B6-4ADB-BC16-D27F98ADD82E}.Debug|x64.ActiveCfg = Debug|x64
+		{5028BB57-80B6-4ADB-BC16-D27F98ADD82E}.Debug|x64.Build.0 = Debug|x64
+		{5028BB57-80B6-4ADB-BC16-D27F98ADD82E}.Release|x64.ActiveCfg = Release|x64
+		{5028BB57-80B6-4ADB-BC16-D27F98ADD82E}.Release|x64.Build.0 = Release|x64
+		{57EFCBAC-C6DB-4A0A-911B-029DFD676B7B}.Debug|x64.ActiveCfg = Debug|x64
+		{57EFCBAC-C6DB-4A0A-911B-029DFD676B7B}.Debug|x64.Build.0 = Debug|x64
+		{57EFCBAC-C6DB-4A0A-911B-029DFD676B7B}.Release|x64.ActiveCfg = Release|x64
+		{57EFCBAC-C6DB-4A0A-911B-029DFD676B7B}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{5688014F-3938-48B9-ABD6-E650F121B187} = {AF7FBD9E-5917-45BA-8B37-2BA352B95743}
+		{AAE2F80F-754F-4255-AA66-677E4E181D8D} = {AF7FBD9E-5917-45BA-8B37-2BA352B95743}
+		{48B9F5EE-DFF8-4478-B9DA-F73B287E5773} = {5688014F-3938-48B9-ABD6-E650F121B187}
+		{C5F977F4-1FC7-4C98-B1DD-53C1E7D2FE70} = {5688014F-3938-48B9-ABD6-E650F121B187}
+		{A352F81B-0853-4BF8-A118-2458FEDCA3E4} = {5688014F-3938-48B9-ABD6-E650F121B187}
+		{66B067F1-4EB8-44CE-BFA2-32D2B582A75F} = {5688014F-3938-48B9-ABD6-E650F121B187}
+		{5028BB57-80B6-4ADB-BC16-D27F98ADD82E} = {5688014F-3938-48B9-ABD6-E650F121B187}
+		{57EFCBAC-C6DB-4A0A-911B-029DFD676B7B} = {5688014F-3938-48B9-ABD6-E650F121B187}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {B373AD49-5CFC-4C5B-93E6-9CFA9D9A3410}
