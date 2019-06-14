@@ -13,6 +13,7 @@
   <ItemGroup>
     <ClInclude Include="..\..\..\source\franka_proxy\franka_hardware_controller.hpp" />
     <ClInclude Include="..\..\..\source\franka_proxy\signal.hpp" />
+    <ClInclude Include="..\..\..\source\franka_proxy_share\franka_proxy_messages.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\source\franka_proxy\franka_hardware_controller.cpp" />

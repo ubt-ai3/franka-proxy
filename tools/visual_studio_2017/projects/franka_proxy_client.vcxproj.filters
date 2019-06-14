@@ -31,5 +31,8 @@
     <ClInclude Include="..\..\..\source\franka_proxy_client\libfranka_types\gripper_state.h">
       <Filter>Headers\libfranka_types</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\source\franka_proxy_share\franka_proxy_messages.hpp">
+      <Filter>Headers</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
