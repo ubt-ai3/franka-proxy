@@ -129,7 +129,7 @@ void franka_remote_controller::update()
 	for (list<string>::iterator it(messages.first()); it; ++it)
 	{
 		// Incoming format from TX90:
-		// HH-MM-SS conf:j1,j2,j3,j4,j5,j6,j7$<gripper-open>$<gripper-position>$<gripper-max-position>$<error-code>
+		// conf:j1,j2,j3,j4,j5,j6,j7$<gripper-open>$<gripper-position>$<gripper-max-position>$<error-code>
 
 
 		// Separate state values from message string.
@@ -164,22 +164,22 @@ void franka_remote_controller::update()
 		}
 
 		current_config_ =
-			{joint_values_list[0].to_float(),
-			 joint_values_list[1].to_float(),
-			 joint_values_list[2].to_float(),
-			 joint_values_list[3].to_float(),
-			 joint_values_list[4].to_float(),
-			 joint_values_list[5].to_float(),
-			 joint_values_list[6].to_float()};
+			{strtod(joint_values_list[0].data(), NULL),
+			 strtod(joint_values_list[1].data(), NULL),
+			 strtod(joint_values_list[2].data(), NULL),
+			 strtod(joint_values_list[3].data(), NULL),
+			 strtod(joint_values_list[4].data(), NULL),
+			 strtod(joint_values_list[5].data(), NULL),
+			 strtod(joint_values_list[6].data(), NULL)};
 
 
 		// Fetch gripper state.
 		gripper_open_ =
 			state_list[1].to_int32() != 0;
 		current_gripper_pos_ =
-			state_list[2].to_int32() != 0;
+			state_list[2].to_int32();
 		max_gripper_pos_ =
-			state_list[3].to_int32() != 0;
+			state_list[3].to_int32();
 	
 
 		// Fetch error

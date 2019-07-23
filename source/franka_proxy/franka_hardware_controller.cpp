@@ -27,12 +27,17 @@ namespace franka_proxy
 
 
 franka_hardware_controller::franka_hardware_controller
-	(const std::string& controller_ip)
+	(const std::string& controller_ip,
+	 std::mutex& state_lock,
+	 franka::RobotState& robot_state,
+	 franka::GripperState& gripper_state)
 	:
 	robot_(controller_ip, franka::RealtimeConfig::kIgnore),
 	parameters_initialized_(false),
 
-	current_state_(robot_.readOnce()),
+	state_lock_(state_lock),
+	robot_state_(robot_state),
+	gripper_state_(gripper_state),
 
 	terminate_state_thread_(false),
 	state_thread_([this](){ state_update_loop(); }),
@@ -41,14 +46,22 @@ franka_hardware_controller::franka_hardware_controller
 
 	gripper_(controller_ip)
 {
+
+
 	// Perform homing to get maximum grasping width.
 	if (!gripper_.homing())
 	{
 		std::cerr << "Gripper homing failed." << std::endl;
 	}
+	
+	franka::RobotState robot_state_l = robot_.readOnce();
+	franka::GripperState gripper_state_l = gripper_.readOnce();
+	max_width_ = gripper_state_l.max_width;
+	
 
-	max_width_ = gripper_.readOnce().max_width;
-	current_gripper_state_ = gripper_.readOnce();
+	std::lock_guard<std::mutex> state_guard(state_lock_);
+	robot_state_ = robot_state_l;
+	gripper_state_ = gripper_state_l;
 }
 
 
@@ -64,14 +77,14 @@ void franka_hardware_controller::move_to(const robot_config_7dof& target)
 	initialize_parameters();
 
 	MotionGenerator motion_generator
-		(speed_factor_, target, current_state_lock_, current_state_, stop_motion_);
+		(speed_factor_, target, state_lock_, robot_state_, stop_motion_);
 
 	try
 	{
 		control_loop_running_.set(true);
 		{
 			// Lock the current_state_lock_ to wait for state_thread_ to finish.
-			std::lock_guard<std::mutex> state_guard(current_state_lock_);
+			std::lock_guard<std::mutex> state_guard(state_lock_);
 		}
 
 		bool finished = false;
@@ -116,13 +129,6 @@ void franka_hardware_controller::stop_movement()
 }
 
 
-franka::RobotState franka_hardware_controller::current_state() const
-{
-	std::lock_guard<std::mutex> state_guard(current_state_lock_);
-	return current_state_;
-}
-
-
 double franka_hardware_controller::speed_factor() const
 {
 	std::lock_guard<std::mutex> state_guard(speed_factor_lock_);
@@ -145,8 +151,8 @@ void franka_hardware_controller::open_gripper()
 	}
 
 	{
-		std::lock_guard<std::mutex> state_guard(gripper_state_lock_);
-		current_gripper_state_ = gripper_.readOnce();
+		std::lock_guard<std::mutex> state_guard(state_lock_);
+		gripper_state_ = gripper_.readOnce();
 	}
 }
 
@@ -156,16 +162,9 @@ void franka_hardware_controller::close_gripper()
 	gripper_.grasp(min_grasp_width, gripper_speed, grasping_force, 0, 1);
 
 	{
-		std::lock_guard<std::mutex> state_guard(gripper_state_lock_);
-		current_gripper_state_ = gripper_.readOnce();
+		std::lock_guard<std::mutex> state_guard(state_lock_);
+		gripper_state_ = gripper_.readOnce();
 	}
-}
-
-
-franka::GripperState franka_hardware_controller::current_gripper_state()
-{
-	std::lock_guard<std::mutex> state_guard(gripper_state_lock_);
-	return current_gripper_state_;
 }
 
 
@@ -174,8 +173,8 @@ void franka_hardware_controller::stop_gripper_movement()
 	gripper_.stop();
 	
 	{
-		std::lock_guard<std::mutex> state_guard(gripper_state_lock_);
-		current_gripper_state_ = gripper_.readOnce();
+		std::lock_guard<std::mutex> state_guard(state_lock_);
+		gripper_state_ = gripper_.readOnce();
 	}
 }
 
@@ -189,13 +188,9 @@ void franka_hardware_controller::state_update_loop()
 			continue;
 
 		{
-			std::lock_guard<std::mutex> state_guard(current_state_lock_);
-			current_state_ = robot_.readOnce();
-		}
-
-		{
-			std::lock_guard<std::mutex> state_guard(gripper_state_lock_);
-			current_gripper_state_ = gripper_.readOnce();
+			std::lock_guard<std::mutex> state_guard(state_lock_);
+			robot_state_ = robot_.readOnce();
+			gripper_state_ = gripper_.readOnce();
 		}
 
 		using namespace std::chrono_literals;

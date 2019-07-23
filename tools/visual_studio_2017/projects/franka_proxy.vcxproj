@@ -12,10 +12,14 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\source\franka_proxy\franka_hardware_controller.hpp" />
+    <ClInclude Include="..\..\..\source\franka_proxy\franka_network_server.hpp" />
+    <ClInclude Include="..\..\..\source\franka_proxy\franka_proxy.hpp" />
     <ClInclude Include="..\..\..\source\franka_proxy_share\franka_proxy_messages.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\source\franka_proxy\franka_hardware_controller.cpp" />
+    <ClCompile Include="..\..\..\source\franka_proxy\franka_network_server.cpp" />
+    <ClCompile Include="..\..\..\source\franka_proxy\franka_proxy.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{68BC76EE-6A3E-4109-B187-BD78D5EEF8F9}</ProjectGuid>

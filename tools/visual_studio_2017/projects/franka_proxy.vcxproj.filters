@@ -23,9 +23,21 @@
     <ClInclude Include="..\..\..\source\franka_proxy_share\franka_proxy_messages.hpp">
       <Filter>Headers</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\source\franka_proxy\franka_network_server.hpp">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\source\franka_proxy\franka_proxy.hpp">
+      <Filter>Headers</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\source\franka_proxy\franka_hardware_controller.cpp">
+      <Filter>Sources</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\source\franka_proxy\franka_network_server.cpp">
+      <Filter>Sources</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\source\franka_proxy\franka_proxy.cpp">
       <Filter>Sources</Filter>
     </ClCompile>
   </ItemGroup>

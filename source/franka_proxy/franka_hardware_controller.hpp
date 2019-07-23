@@ -36,7 +36,10 @@ class franka_hardware_controller
 public:
 
 	franka_hardware_controller
-		(const std::string& controller_ip = "192.168.1.1");
+		(const std::string& controller_ip,
+		 std::mutex& state_lock,
+		 franka::RobotState& robot_state,
+		 franka::GripperState& gripper_state);
 
 	virtual ~franka_hardware_controller() noexcept;
 
@@ -47,10 +50,7 @@ public:
 	 * after automatic error recovery
 	 */
 	void move_to(const robot_config_7dof& target);
-
 	void stop_movement();
-
-	franka::RobotState current_state() const;
 
 	double speed_factor() const;
 	void set_speed_factor(double speed_factor);
@@ -60,8 +60,6 @@ public:
 	void open_gripper();
 	/** Grasp.... */
 	void close_gripper();
-
-	franka::GripperState current_gripper_state();
 
 	void stop_gripper_movement();
 
@@ -85,8 +83,9 @@ private:
 	mutable franka::Robot robot_;
 	bool parameters_initialized_;
 
-	mutable std::mutex current_state_lock_;
-	franka::RobotState current_state_;
+	std::mutex& state_lock_;
+	franka::RobotState& robot_state_;
+	franka::GripperState& gripper_state_;
 
 	std::atomic_bool stop_motion_;
 
@@ -100,10 +99,7 @@ private:
 
 	// Gripper
 	mutable franka::Gripper gripper_;
-
 	double max_width_;
-	mutable std::mutex gripper_state_lock_;
-	franka::GripperState current_gripper_state_;
 
 	static constexpr double gripper_speed = 0.025;
 
