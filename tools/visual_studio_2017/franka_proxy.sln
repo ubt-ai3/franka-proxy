@@ -4,6 +4,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 VisualStudioVersion = 15.0.27130.2010
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "franka_proxy", "projects\franka_proxy.vcxproj", "{68BC76EE-6A3E-4109-B187-BD78D5EEF8F9}"
+	ProjectSection(ProjectDependencies) = postProject
+		{AAE2F80F-754F-4255-AA66-677E4E181D8D} = {AAE2F80F-754F-4255-AA66-677E4E181D8D}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "franka_proxy_client", "projects\franka_proxy_client.vcxproj", "{FB19427B-A02E-4386-98A9-64ED8E1DEB71}"
 EndProject
