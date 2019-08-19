@@ -10,6 +10,9 @@
       <Platform>x64</Platform>
     </ProjectConfiguration>
   </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\..\source\franka_proxy_client_test\main.cpp" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{CA9F7D3E-0D62-4877-88C6-3DCD4CE482AC}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
@@ -35,17 +38,24 @@
     <Import Project="..\props\build_type_app.props" />
     <Import Project="..\props\build_mode_debug.props" />
     <Import Project="..\props\build_use_eigen.props" />
+    <Import Project="..\props\use_viral_core.props" />
+    <Import Project="..\props\build_use_libfranka_debug.props" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
     <Import Project="..\props\build_common.props" />
     <Import Project="..\props\build_type_app.props" />
     <Import Project="..\props\build_mode_release.props" />
     <Import Project="..\props\build_use_eigen.props" />
+    <Import Project="..\props\use_viral_core.props" />
+    <Import Project="..\props\build_use_libfranka_release.props" />
   </ImportGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <!-- Required for VS properties dialog to work. -->
-  <ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile />
     <Link />
+    <Link>
+      <AdditionalDependencies>franka_proxy_client.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
   </ItemDefinitionGroup>
 </Project>

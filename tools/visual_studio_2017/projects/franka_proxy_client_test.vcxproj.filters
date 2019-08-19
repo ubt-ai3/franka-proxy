@@ -16,4 +16,9 @@
       <UniqueIdentifier>{70b3be59-1d0f-419a-a5c2-b03f8b26def9}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\..\source\franka_proxy_client_test\main.cpp">
+      <Filter>Sources</Filter>
+    </ClCompile>
+  </ItemGroup>
 </Project>
