@@ -21,12 +21,9 @@ class franka_proxy_messages
 
 public:
 
-	static constexpr const char* move = "MOVE";
-	static constexpr const char* stop_move = "STOP MOVE";
-	static constexpr const char* speed = "SPEED";
-	static constexpr const char* open_gripper = "OPEN GRIPPER";
-	static constexpr const char* close_gripper = "CLOSE GRIPPER";
-	static constexpr const char* stop_gripper = "STOP GRIPPER";
+	enum message_type { move, stop, speed, open_gripper, close_gripper, message_type_count };
+
+	static constexpr const char* message_strings[5] = {"MOVE", "STOP", "SPEED", "OPEN GRIPPER", "CLOSE GRIPPER"};
 };
 
 

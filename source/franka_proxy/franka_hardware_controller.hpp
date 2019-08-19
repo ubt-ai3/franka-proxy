@@ -36,10 +36,7 @@ class franka_hardware_controller
 public:
 
 	franka_hardware_controller
-		(const std::string& controller_ip,
-		 std::mutex& state_lock,
-		 franka::RobotState& robot_state,
-		 franka::GripperState& gripper_state);
+		(const std::string& controller_ip);
 
 	virtual ~franka_hardware_controller() noexcept;
 
@@ -55,6 +52,8 @@ public:
 	double speed_factor() const;
 	void set_speed_factor(double speed_factor);
 
+	franka::RobotState robot_state() const;
+
 
 	/** Move the gripper to gripper::max_width. */
 	void open_gripper();
@@ -62,6 +61,8 @@ public:
 	void close_gripper();
 
 	void stop_gripper_movement();
+
+	franka::GripperState gripper_state() const;
 
 
 private:
@@ -83,15 +84,7 @@ private:
 	mutable franka::Robot robot_;
 	bool parameters_initialized_;
 
-	std::mutex& state_lock_;
-	franka::RobotState& robot_state_;
-	franka::GripperState& gripper_state_;
-
 	std::atomic_bool stop_motion_;
-
-	viral_core::signal control_loop_running_;
-	std::atomic_bool terminate_state_thread_;
-	std::thread state_thread_;
 	
 	mutable std::mutex speed_factor_lock_;
 	double speed_factor_;
@@ -99,7 +92,7 @@ private:
 
 	// Gripper
 	mutable franka::Gripper gripper_;
-	double max_width_;
+	const double max_width_;
 
 	static constexpr double gripper_speed = 0.025;
 
@@ -107,6 +100,15 @@ private:
 
 	static constexpr double min_grasp_width = 0.003;
 	static constexpr double grasping_force = 0.05;
+
+
+	mutable std::mutex state_lock_;
+	franka::RobotState robot_state_;
+	franka::GripperState gripper_state_;
+
+	viral_core::signal control_loop_running_;
+	std::atomic_bool terminate_state_thread_;
+	std::thread state_thread_;
 
 
 			/**

@@ -13,10 +13,8 @@
 
 
 #include <memory>
-#include <mutex>
 
-#include <franka/robot_state.h>
-#include <franka/gripper_state.h>
+#include <viral_core/network.hpp>
 
 #include "franka_network_server.hpp"
 #include "franka_hardware_controller.hpp"
@@ -36,14 +34,13 @@ public:
 
 private:
 
-	std::mutex state_lock_;
-	franka::RobotState robot_state_;
-	franka::GripperState gripper_state_;
+	franka_hardware_controller controller_;
 
-	std::unique_ptr<franka_control_server> control_server_;
-	std::unique_ptr<franka_state_server> state_server_;
+	franka_mover mover_;
 
-
+	std::unique_ptr<viral_core::network_context> network_;
+	franka_control_server control_server_;
+	franka_state_server state_server_;
 };
 
 

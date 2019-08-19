@@ -62,8 +62,6 @@ public:
 
 	bool gripper_open();
 
-	void stop_gripper_movement();
-
 
 	void update();
 
@@ -73,6 +71,8 @@ private:
 	void initialize_sockets();
 	void shutdown_sockets() noexcept;
 
+
+	const std::string franka_ip_;
 
 	viral_core::network_context& network_;
 
@@ -89,9 +89,8 @@ private:
 	int current_error_;
 
 
-	static constexpr const char* franka_ip = "";
-	static constexpr unsigned short franka_controll_port = -1;
-	static constexpr unsigned short franka_state_port = -1;
+	static constexpr unsigned short franka_controll_port = 4711;
+	static constexpr unsigned short franka_state_port = 4712;
 };
 
 

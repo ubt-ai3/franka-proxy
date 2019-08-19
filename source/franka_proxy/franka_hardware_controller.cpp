@@ -27,42 +27,22 @@ namespace franka_proxy
 
 
 franka_hardware_controller::franka_hardware_controller
-	(const std::string& controller_ip,
-	 std::mutex& state_lock,
-	 franka::RobotState& robot_state,
-	 franka::GripperState& gripper_state)
+	(const std::string& controller_ip)
 	:
 	robot_(controller_ip, franka::RealtimeConfig::kIgnore),
 	parameters_initialized_(false),
 
-	state_lock_(state_lock),
-	robot_state_(robot_state),
-	gripper_state_(gripper_state),
-
-	terminate_state_thread_(false),
-	state_thread_([this](){ state_update_loop(); }),
-
 	speed_factor_(0.05),
 
-	gripper_(controller_ip)
-{
+	gripper_(controller_ip),
+	max_width_(gripper_.readOnce().max_width),
 
+	robot_state_(robot_.readOnce()),
+	gripper_state_(gripper_.readOnce()),
 
-	// Perform homing to get maximum grasping width.
-	if (!gripper_.homing())
-	{
-		std::cerr << "Gripper homing failed." << std::endl;
-	}
-	
-	franka::RobotState robot_state_l = robot_.readOnce();
-	franka::GripperState gripper_state_l = gripper_.readOnce();
-	max_width_ = gripper_state_l.max_width;
-	
-
-	std::lock_guard<std::mutex> state_guard(state_lock_);
-	robot_state_ = robot_state_l;
-	gripper_state_ = gripper_state_l;
-}
+	terminate_state_thread_(false),
+	state_thread_([this](){ state_update_loop(); })
+{}
 
 
 franka_hardware_controller::~franka_hardware_controller() noexcept
@@ -143,6 +123,13 @@ void franka_hardware_controller::set_speed_factor(double speed_factor)
 }
 
 
+franka::RobotState franka_hardware_controller::robot_state() const
+{
+	std::lock_guard<std::mutex> state_guard(state_lock_);
+	return robot_state_;
+}
+
+
 void franka_hardware_controller::open_gripper()
 {
 	if (!gripper_.move(max_width_, gripper_speed))
@@ -176,6 +163,13 @@ void franka_hardware_controller::stop_gripper_movement()
 		std::lock_guard<std::mutex> state_guard(state_lock_);
 		gripper_state_ = gripper_.readOnce();
 	}
+}
+
+
+franka::GripperState franka_hardware_controller::gripper_state() const
+{
+	std::lock_guard<std::mutex> state_guard(state_lock_);
+	return gripper_state_;
 }
 
 

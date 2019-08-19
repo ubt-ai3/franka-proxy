@@ -35,6 +35,7 @@ franka_remote_controller::franka_remote_controller
 	(const std::string& proxy_ip,
 	 network_context& network)
 	:
+	franka_ip_(proxy_ip),
 	network_(network)
 {
 	initialize_sockets();
@@ -50,7 +51,7 @@ franka_remote_controller::~franka_remote_controller() noexcept
 void franka_remote_controller::move_to(const robot_config_7dof& target)
 {
 	string msg = 
-		(std::string(franka_proxy_messages::move) + ' ' +
+		(std::string(franka_proxy_messages::message_strings[franka_proxy_messages::move]) + ' ' +
 		 std::to_string(target[0]) + ' ' +
 		 std::to_string(target[0]) + ' ' +
 		 std::to_string(target[1]) + ' ' +
@@ -66,7 +67,7 @@ void franka_remote_controller::move_to(const robot_config_7dof& target)
 void franka_remote_controller::stop_movement()
 {
 	socket_control_->send_command
-		(string(franka_proxy_messages::stop_move) + '\n');
+		(string(franka_proxy_messages::message_strings[franka_proxy_messages::stop]) + '\n');
 }
 
 
@@ -87,7 +88,7 @@ double franka_remote_controller::speed_factor() const
 void franka_remote_controller::set_speed_factor(double speed_factor)
 {
 	socket_control_->send_command
-		((std::string(franka_proxy_messages::speed) + ' ' +
+		((std::string(franka_proxy_messages::message_strings[franka_proxy_messages::speed]) + ' ' +
 		  std::to_string(speed_factor) + '\n').data());
 }
 
@@ -95,12 +96,12 @@ void franka_remote_controller::set_speed_factor(double speed_factor)
 void franka_remote_controller::open_gripper()
 {
 	socket_control_->send_command
-		(string(franka_proxy_messages::open_gripper) + '\n');
+		(string(franka_proxy_messages::message_strings[franka_proxy_messages::open_gripper]) + '\n');
 }
 void franka_remote_controller::close_gripper()
 {
 	socket_control_->send_command
-		(string(franka_proxy_messages::close_gripper) + '\n');
+		(string(franka_proxy_messages::message_strings[franka_proxy_messages::close_gripper]) + '\n');
 }
 
 
@@ -108,13 +109,6 @@ bool franka_remote_controller::gripper_open()
 {
 	std::lock_guard<std::mutex> state_guard(state_lock_);
 	return gripper_open_;
-}
-
-
-void franka_remote_controller::stop_gripper_movement()
-{
-	socket_control_->send_command
-		(string(franka_proxy_messages::stop_gripper) + '\n');
 }
 
 
@@ -209,11 +203,11 @@ void franka_remote_controller::initialize_sockets()
 
 	socket_control_.reset
 		(new franka_control_client
-			(network_, franka_ip, franka_controll_port));
+			(network_, franka_ip_.data(), franka_controll_port));
 
 	socket_state_.reset
 		(new franka_state_client
-			(network_, franka_ip, franka_state_port));
+			(network_, franka_ip_.data(), franka_state_port));
 }
 
 
