@@ -11,12 +11,14 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\..\source\franka_proxy\franka_mover.hpp" />
     <ClInclude Include="..\..\..\source\franka_proxy\franka_hardware_controller.hpp" />
     <ClInclude Include="..\..\..\source\franka_proxy\franka_network_server.hpp" />
     <ClInclude Include="..\..\..\source\franka_proxy\franka_proxy.hpp" />
     <ClInclude Include="..\..\..\source\franka_proxy_share\franka_proxy_messages.hpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\..\source\franka_proxy\franka_mover.cpp" />
     <ClCompile Include="..\..\..\source\franka_proxy\franka_hardware_controller.cpp" />
     <ClCompile Include="..\..\..\source\franka_proxy\franka_network_server.cpp" />
     <ClCompile Include="..\..\..\source\franka_proxy\franka_proxy.cpp" />
@@ -48,6 +50,7 @@
     <Import Project="..\props\build_use_libfranka_debug.props" />
     <Import Project="..\props\build_use_eigen.props" />
     <Import Project="..\props\use_viral_core.props" />
+    <Import Project="..\props\build_copy_assets.props" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
     <Import Project="..\props\build_common.props" />
@@ -56,6 +59,7 @@
     <Import Project="..\props\build_use_libfranka_release.props" />
     <Import Project="..\props\build_use_eigen.props" />
     <Import Project="..\props\use_viral_core.props" />
+    <Import Project="..\props\build_copy_assets.props" />
   </ImportGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <!-- Required for VS properties dialog to work. -->
