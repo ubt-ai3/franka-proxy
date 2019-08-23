@@ -99,6 +99,7 @@ public:
 	void task_main() override;
 
 	void enqueue(viral_core::auto_pointer<franka_command> command);
+	void clear_queue();
 
 
 private:

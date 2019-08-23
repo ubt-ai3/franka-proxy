@@ -13,6 +13,7 @@
 #include <Eigen/Core>
 #include <iostream>
 #include <franka/exception.h>
+#include "viral_core/thread_util.hpp"
 
 
 namespace franka_proxy
@@ -61,52 +62,63 @@ void franka_hardware_controller::move_to(const robot_config_7dof& target)
 
 	try
 	{
-		control_loop_running_.set(true);
-		{
-			// Lock the current_state_lock_ to wait for state_thread_ to finish.
-			std::lock_guard<std::mutex> state_guard(state_lock_);
-		}
-
 		bool finished = false;
 		while (!(finished || stop_motion_))
 		{
 			try
 			{
-				robot_.control(motion_generator, franka::ControllerMode::kJointImpedance, true, 20.);
-				// If the control loop returns the motion is finished.
-				finished = true;
-			}
-			catch (const franka::ControlException&)
-			{
-				// for some reason, automatic error recovery
-				// is only possible after waiting some time...
-				std::this_thread::sleep_for(std::chrono::milliseconds(500));
-				robot_.automaticErrorRecovery();
-			}
-			catch (const stop_motion_trigger&)
-			{
-				// The motion was stopped.
+				control_loop_running_.set(true);
+				{
+					// Lock the current_state_lock_ to wait for state_thread_ to finish.
+					std::lock_guard<std::mutex> state_guard(state_lock_);
+				}
+
+				while (!(finished || stop_motion_))
+				{
+					try
+					{
+						robot_.control(motion_generator, franka::ControllerMode::kJointImpedance, true, 20.);
+						// If the control loop returns the motion is finished.
+						finished = true;
+					}
+					catch (const franka::ControlException&)
+					{
+						// for some reason, automatic error recovery
+						// is only possible after waiting some time...
+						std::this_thread::sleep_for(std::chrono::milliseconds(500));
+						robot_.automaticErrorRecovery();
+					}
+					catch (const stop_motion_trigger&)
+					{
+						// The motion was stopped.
+						control_loop_running_.set(false);
+						finished = true;
+					}
+				}
+
 				control_loop_running_.set(false);
-				finished = true;
+			}
+			catch (const franka::CommandException&)
+			{
+				std::cerr << "Encountered command exception. Probably because of wrong working mode. Waiting before retry." << std::endl;
+				viral_core::thread_util::sleep_seconds(1);
 			}
 		}
-
-		control_loop_running_.set(false);
 	}
 	catch (const std::exception& e)
 	{
 		control_loop_running_.set(false);
-		std::cout << "Franka move_to failed with:" << std::endl;
-		std::cout << e.what() << std::endl;
+		std::cerr << "Franka move_to failed with:" << std::endl;
+		std::cerr << e.what() << std::endl;
 		throw;
 	}
 }
 
 
 void franka_hardware_controller::stop_movement()
-{
-	stop_motion_ = true;
-}
+	{ stop_motion_ = true; }
+void franka_hardware_controller::enable_movement()
+	{ stop_motion_ = false; }
 
 
 double franka_hardware_controller::speed_factor() const
@@ -195,24 +207,33 @@ void franka_hardware_controller::state_update_loop()
 
 void franka_hardware_controller::initialize_parameters()
 {
-	if (parameters_initialized_)
-		return;
+	while (!parameters_initialized_)
+	{
+		try
+		{
+			// A previous usae of franka_controller_hardware may have
+			// left the robot in error state -> try automatic error 
+			// recovery preventively
+			robot_.automaticErrorRecovery();
 
-	// A previous usage of franka_controller_hardware may have
-	// left the robot in error state -> try automatic error 
-	// recovery preventively
-	robot_.automaticErrorRecovery();
+			robot_.setCollisionBehavior(
+				{ {20.0, 20.0, 18.0, 18.0, 16.0, 14.0, 12.0} }, { {20.0, 20.0, 18.0, 18.0, 16.0, 14.0, 12.0} },
+				{ {20.0, 20.0, 18.0, 18.0, 16.0, 14.0, 12.0} }, { {20.0, 20.0, 18.0, 18.0, 16.0, 14.0, 12.0} },
+				{ {20.0, 20.0, 20.0, 25.0, 25.0, 25.0} }, { {20.0, 20.0, 20.0, 25.0, 25.0, 25.0} },
+				{ {20.0, 20.0, 20.0, 25.0, 25.0, 25.0} }, { {20.0, 20.0, 20.0, 25.0, 25.0, 25.0} });
 
-	robot_.setCollisionBehavior(
-		{ {20.0, 20.0, 18.0, 18.0, 16.0, 14.0, 12.0} }, { {20.0, 20.0, 18.0, 18.0, 16.0, 14.0, 12.0} },
-		{ {20.0, 20.0, 18.0, 18.0, 16.0, 14.0, 12.0} }, { {20.0, 20.0, 18.0, 18.0, 16.0, 14.0, 12.0} },
-		{ {20.0, 20.0, 20.0, 25.0, 25.0, 25.0} }, { {20.0, 20.0, 20.0, 25.0, 25.0, 25.0} },
-		{ {20.0, 20.0, 20.0, 25.0, 25.0, 25.0} }, { {20.0, 20.0, 20.0, 25.0, 25.0, 25.0} });
+			robot_.setJointImpedance({ {3000, 3000, 3000, 2500, 2500, 2000, 2000} });
+			robot_.setCartesianImpedance({ {3000, 3000, 3000, 300, 300, 300} });
 
-	robot_.setJointImpedance({ {3000, 3000, 3000, 2500, 2500, 2000, 2000} });
-	robot_.setCartesianImpedance({ {3000, 3000, 3000, 300, 300, 300} });
-
-	parameters_initialized_ = true;
+			parameters_initialized_ = true;
+		}
+		catch (const franka::CommandException&)
+		{
+			std::cerr << "Wrong working mode. Release working mode switch." << std::endl;
+			using namespace std::chrono_literals;
+			std::this_thread::sleep_for(0.5s);
+		}
+	}
 }
 
 

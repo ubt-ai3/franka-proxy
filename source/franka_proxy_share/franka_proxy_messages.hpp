@@ -24,6 +24,8 @@ public:
 	enum message_type { move, stop, speed, open_gripper, close_gripper, message_type_count };
 
 	static constexpr const char* message_strings[5] = {"MOVE", "STOP", "SPEED", "OPEN GRIPPER", "CLOSE GRIPPER"};
+
+	static constexpr const char* message_end_marker = ";";
 };
 
 

@@ -44,183 +44,195 @@ franka_control_server::franka_control_server
 	controller_(controller),
 	mover_(mover),
 
-	controll_port_(controll_port),
-	server_(network.create_server(controll_port_))
-{ }
-
-
-franka_control_server::~franka_control_server() NOTHROW
-{	
-	// Enforce explicit destructor instantiation.
+	server_(network.create_server(controll_port))
+{
+	start();
 }
 
 
-void franka_control_server::update()
+franka_control_server::~franka_control_server() noexcept
+{	
+	try { join(); }
+	catch(...)
+		{ LOG_CRITICAL("Internal thread threw an exception on joining."); }
+}
+
+
+void franka_control_server::task_main()
 {
-	update_messages();
-	list<string> new_messages
-		(messages());
-
-	for (const string& message : new_messages)
+	while (!join_now())
 	{
-		int64 pos = string::invalid_index;
-		franka_proxy_messages::message_type type = franka_proxy_messages::message_type_count;
-		for (int i = 0; i < franka_proxy_messages::message_type_count; ++i)
-		{
-			pos = message.seek(franka_proxy_messages::message_strings[i]);
-			if (pos != string::invalid_index)
-			{
-				type = franka_proxy_messages::message_type(i);
-				break;
-			}
-		}
+		// Possibly accept new connection
+		// and drop preceding connection.
+		auto_pointer<network_connection> connection
+			(server_->try_accept_connection());
 
-		if (type == franka_proxy_messages::message_type_count)
+		if (connection)
+			stream_.reset
+				(new network_stream
+					(std::move(connection)));
+		
+		if (!stream_)
 		{
-			LOG_WARN("Invalid message: " + message);
+			thread_util::sleep_seconds
+				(sleep_seconds_connected_);
+
 			continue;
 		}
 
-		switch(type)
+
+		try
 		{
-			case franka_proxy_messages::move:
-			{
-				string rest = message.substring
-					(pos + string(franka_proxy_messages::message_strings[type]).size());
-				list<string> joint_values;
-				rest.split(' ', joint_values);
-				robot_config_7dof joint_config
-					{{static_cast<double>(joint_values[0].to_float()),
-					  static_cast<double>(joint_values[1].to_float()),
-					  static_cast<double>(joint_values[2].to_float()),
-					  static_cast<double>(joint_values[3].to_float()),
-					  static_cast<double>(joint_values[4].to_float()),
-					  static_cast<double>(joint_values[5].to_float()),
-					static_cast<double>(joint_values[6].to_float())}};
-				mover_.enqueue(auto_pointer<joint_command>(new joint_command(joint_config)));
-				break;
-			}
+			// We have an active connection,
+			// so handle incoming and outgoing network.
+			stream_->update();
 
-			case franka_proxy_messages::stop:
-			{
-				controller_.stop_movement();
-				controller_.stop_gripper_movement();
-				break;
-			}
-
-			case franka_proxy_messages::speed:
-			{
-				string rest = message.substring
-					(pos + string(franka_proxy_messages::message_strings[type]).size());
-				controller_.set_speed_factor(rest.to_float());
-				break;
-			}
-
-			case franka_proxy_messages::open_gripper:
-			{
-				mover_.enqueue(auto_pointer<gripper_command>(new gripper_command(true)));
-				break;
-			}
-
-			case franka_proxy_messages::close_gripper:
-			{
-				mover_.enqueue(auto_pointer<gripper_command>(new gripper_command(false)));
-				break;
-			}
-
-			default: ;
+			receive_requests();
 		}
+		catch (...)
+		{
+			LOG_ERROR("Error while receiving requests, dropping stream and stopping robot.");
+			controller_.stop_movement();
+			stream_.reset();
+		}
+
+		thread_util::sleep_seconds
+			(sleep_seconds_disconnected_);
 	}
 }
 
 
-void franka_control_server::update_messages()
+void franka_control_server::receive_requests()
 {
-	// Possibly accept new connection
-	// and drop preceding connection.
-	auto_pointer<network_connection> connection
-		(server_->try_accept_connection());
-
-	if (connection)
-		connection_ = std::move(connection);
-	else
+	// Early out if no input is pending.
+	if (stream_->pending_receive_bytes() == 0)
 		return;
+	
 
+	// Peek all pending input into string buffer.
+	string buffer;
+	buffer.resize(stream_->pending_receive_bytes());
 
-	// Append partial messages to buffer
-	// by reading from network connection.
-	// Drop connection (and still evaluate)
-	// on any network exception.
-	try
+	if (!stream_->try_peek_nonblocking
+			(reinterpret_cast<unsigned char*>(buffer.data()),
+			 buffer.size(), 0))
 	{
-		update_messages_buffer();
+		LOG_ERROR("Failed to fetch pending bytes from network stream.");
+		throw assert_failed();
 	}
-	catch (const network_exception&)
-		{ connection_.reset(); }
 
 
-	// Extract any finished messages from message buffer
-	// and store all those messages in message list.
-	messages_.clear();
-
+	// Recover any completely transmitted requests,
+	// and remove these from the network stream.
 	while (true)
 	{
-		string message(fetch_message());
-		if (message.empty()) break;
 
-		messages_.push_back(message);
+		// Extract full request up to next end marker.
+		// Transferring the request has not yet finished
+		// if there is no (further) end marker.
+		int64 end_index =
+			buffer.seek(franka_proxy_messages::message_end_marker);
+
+		if (end_index == string::invalid_index)
+			break;
+
+		string request_string
+			(buffer.left(end_index).trim());
+
+
+		process_request(request_string);
+
+
+		// Remove request from local buffer
+		// and from network stream.
+		buffer =
+			buffer.substring
+				(end_index + string::size(franka_proxy_messages::message_end_marker));
+	
+		stream_->discard_receive
+			(end_index + string::size(franka_proxy_messages::message_end_marker));
 	}
 }
 
 
-list<string> franka_control_server::messages() const 
-	{ return messages_; }
-
-
-void franka_control_server::update_messages_buffer()
+void franka_control_server::process_request(const string& request)
 {
-	/**
-	 * Fetch pending bytes from network
-	 * and accumulate in message buffer.
-	 */
+	int64 pos = string::invalid_index;
+	franka_proxy_messages::message_type type = franka_proxy_messages::message_type_count;
+	for (int i = 0; i < franka_proxy_messages::message_type_count; ++i)
+	{
+		pos = request.seek(franka_proxy_messages::message_strings[i]);
+		if (pos != string::invalid_index)
+		{
+			type = franka_proxy_messages::message_type(i);
+			break;
+		}
+	}
 
-	unsigned char receive_buffer[receive_buffer_size_];
+	if (type == franka_proxy_messages::message_type_count)
+	{
+		LOG_WARN("Invalid message: " + request);
+		return;
+	}
+	
+	LOG_INFO(request)
 
-	int64 bytes_received =
-		connection_.object().receive_nonblocking
-			(receive_buffer, receive_buffer_size_);
+	switch(type)
+	{
+		case franka_proxy_messages::move:
+		{
+			LOG_INFO("Moving")
+			controller_.enable_movement();
+			string rest = request.substring
+				(pos + string(franka_proxy_messages::message_strings[type]).size());
+			list<string> joint_values;
+			rest.split(' ', joint_values);
+			robot_config_7dof joint_config
+				{{static_cast<double>(joint_values[0].to_float()),
+				  static_cast<double>(joint_values[1].to_float()),
+				  static_cast<double>(joint_values[2].to_float()),
+				  static_cast<double>(joint_values[3].to_float()),
+				  static_cast<double>(joint_values[4].to_float()),
+				  static_cast<double>(joint_values[5].to_float()),
+				static_cast<double>(joint_values[6].to_float())}};
+			mover_.enqueue(auto_pointer<joint_command>(new joint_command(joint_config)));
+			break;
+		}
 
-	messages_buffer_ +=
-		string(reinterpret_cast<char*>(receive_buffer),
-			   bytes_received);
-}
+		case franka_proxy_messages::stop:
+		{
+			LOG_INFO("Stopping")
+			controller_.stop_movement();
+			controller_.stop_gripper_movement();
+			mover_.clear_queue();
+			break;
+		}
 
+		case franka_proxy_messages::speed:
+		{
+			LOG_INFO("Setting speed")
+			string rest = request.substring
+				(pos + string(franka_proxy_messages::message_strings[type]).size());
+			controller_.set_speed_factor(rest.to_float());
+			break;
+		}
 
-string franka_control_server::fetch_message()
-{
-	/**
-	 * Return a single \n-delimited state message
-	 * as read by a preceding update_messages_buffer()
-	 * and remove the message from the buffer string.
-	 * Multiple subsequent calls may return multiple
-	 * state messages (up to an empty() string).
-	 */
+		case franka_proxy_messages::open_gripper:
+		{
+			LOG_INFO("Opening Gripper")
+			mover_.enqueue(auto_pointer<gripper_command>(new gripper_command(true)));
+			break;
+		}
 
-	messages_buffer_.remove_all('\r');
+		case franka_proxy_messages::close_gripper:
+		{
+			LOG_INFO("Closing Gripper")
+			mover_.enqueue(auto_pointer<gripper_command>(new gripper_command(false)));
+			break;
+		}
 
-	int64 first_newline =
-		messages_buffer_.seek('\n');
-
-	if (first_newline == string::invalid_index)
-		return string();
-
-	string result
-		(messages_buffer_.substring(0, first_newline));
-
-	messages_buffer_ =
-		messages_buffer_.substring(first_newline + 1);
-
-	return result;
+		default: ;
+	}
 }
 
 
@@ -263,6 +275,13 @@ void franka_state_server::task_main()
 		if (connection)
 			connection_ = std::move(connection);
 
+		if (!connection_)
+		{
+			thread_util::sleep_seconds
+				(sleep_seconds_disconnected_);
+
+			continue;
+		}
 
 		try
 		{
@@ -299,6 +318,8 @@ void franka_state_server::task_main()
 			//msg += std::to_string(current_error_).data();
 
 			msg += '\n';
+
+			send_status_message(msg);
 		}
 		catch (...)
 		{
@@ -307,16 +328,15 @@ void franka_state_server::task_main()
 		}
 
 		thread_util::sleep_seconds
-			(sleep_seconds_disconnected_);
+			(sleep_seconds_connected_);
 	}
 }
 
 
-void franka_state_server::send_status_message(const viral_core::string& command)
+void franka_state_server::send_status_message(const string& command)
 {
 	network_buffer network_data
-		(reinterpret_cast<const unsigned char*>(command.data()),
-		 command.size());
+		(reinterpret_cast<const unsigned char*>(command.data()), command.size());
 
 	network_buffer_progress progress(network_data);
 	while (!progress.finished())

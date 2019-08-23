@@ -41,7 +41,7 @@ franka_proxy::franka_proxy()
 
 	while(true)
 	{
-		control_server_.update();
+		viral_core::thread_util::sleep_seconds(1);
 	}
 }
 

@@ -124,6 +124,7 @@ void franka_mover::task_main()
 			case franka_command::joint_movement:
 			{
 				joint_command& j_command = static_cast<joint_command&>(*command);
+				LOG_INFO("Moving robot.")
 				controller_.move_to(j_command.target);
 				break;
 			}
@@ -131,6 +132,7 @@ void franka_mover::task_main()
 			case franka_command::gripper_movement:
 			{
 				gripper_command& g_command = static_cast<gripper_command&>(*command);
+				LOG_INFO("Moving gripper.")
 				if (g_command.open)
 					controller_.open_gripper();
 				else
@@ -150,6 +152,14 @@ void franka_mover::enqueue(auto_pointer<franka_command> command)
 	std::lock_guard<std::mutex> command_list_guard(command_list_lock_);
 	command_list_.push_back(std::move(command));
 	has_command_.set(true);
+	LOG_INFO("Enqueued command. Having " + command_list_.size() + " commands.")
+}
+
+
+void franka_mover::clear_queue()
+{
+	std::lock_guard<std::mutex> command_list_guard(command_list_lock_);
+	command_list_.clear();
 }
 
 

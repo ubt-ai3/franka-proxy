@@ -46,7 +46,8 @@ namespace franka_proxy
  * Sends commands to a Franka Emika Panda robot.
  *
  ************************************************************************/
-class franka_control_server
+class franka_control_server :
+	public viral_core::threaded_task
 {
 
 public:
@@ -60,32 +61,20 @@ public:
 	~franka_control_server() NOTHROW;
 
 
-	void update();
-
-	void update_messages();
-	viral_core::list<viral_core::string> messages() const;
-
-
 private:
 
-	void update_messages_buffer();
-	viral_core::string fetch_message();
+	void task_main() override;
 
-
-	static const int64 receive_buffer_size_ = 1024;
-
-	viral_core::string messages_buffer_;
-	viral_core::list<viral_core::string> messages_;
+	void receive_requests();
+	void process_request
+		(const viral_core::string& request);
 
 
 	franka_hardware_controller& controller_;
 	franka_mover& mover_;
 
-
-	const uint16 controll_port_;
-
 	const viral_core::auto_pointer<viral_core::network_server> server_;
-	viral_core::auto_pointer<viral_core::network_connection> connection_;
+	viral_core::auto_pointer<viral_core::network_stream> stream_;
 
 	static constexpr float sleep_seconds_disconnected_ = 0.01f;
 	static constexpr float sleep_seconds_connected_ = 0.002f;

@@ -59,15 +59,17 @@ void franka_remote_controller::move_to(const robot_config_7dof& target)
 		 std::to_string(target[3]) + ' ' +
 		 std::to_string(target[4]) + ' ' +
 		 std::to_string(target[5]) + ' ' +
-		 std::to_string(target[6]) + '\n').data();
+		 std::to_string(target[6]) +
+		 franka_proxy_messages::message_end_marker).data();
 	socket_control_->send_command(msg);
 }
 
 
 void franka_remote_controller::stop_movement()
 {
-	socket_control_->send_command
-		(string(franka_proxy_messages::message_strings[franka_proxy_messages::stop]) + '\n');
+	socket_control_->send_command(string
+		(franka_proxy_messages::message_strings[franka_proxy_messages::stop]) +
+		 franka_proxy_messages::message_end_marker);
 }
 
 
@@ -87,21 +89,24 @@ double franka_remote_controller::speed_factor() const
 
 void franka_remote_controller::set_speed_factor(double speed_factor)
 {
-	socket_control_->send_command
-		((std::string(franka_proxy_messages::message_strings[franka_proxy_messages::speed]) + ' ' +
-		  std::to_string(speed_factor) + '\n').data());
+	socket_control_->send_command(string
+		(franka_proxy_messages::message_strings[franka_proxy_messages::speed]) +
+		 " " + static_cast<float>(speed_factor) +
+		 franka_proxy_messages::message_end_marker);
 }
 
 
 void franka_remote_controller::open_gripper()
 {
-	socket_control_->send_command
-		(string(franka_proxy_messages::message_strings[franka_proxy_messages::open_gripper]) + '\n');
+	socket_control_->send_command(string
+		(franka_proxy_messages::message_strings[franka_proxy_messages::open_gripper]) +
+		 franka_proxy_messages::message_end_marker);
 }
 void franka_remote_controller::close_gripper()
 {
-	socket_control_->send_command
-		(string(franka_proxy_messages::message_strings[franka_proxy_messages::close_gripper]) + '\n');
+	socket_control_->send_command(string
+		(franka_proxy_messages::message_strings[franka_proxy_messages::close_gripper]) +
+		 franka_proxy_messages::message_end_marker);
 }
 
 
@@ -178,22 +183,21 @@ void franka_remote_controller::update()
 
 		// Fetch error
 		current_error_ = state_list[4].to_int32();
-	}
 
-	switch (current_error_)
-	{
-		case 0: break;
-		case 1: throw model_exception();
-		case 2: throw network_exception();
-		case 3: throw protocol_exception();
-		case 4: throw incompatible_version_exception();
-		case 5: throw control_exception();
-		case 6: throw command_exception();
-		case 7: throw realtime_exception();
-		case 8: throw invalid_operation_exception();
-		default: throw remote_exception();
+		switch (current_error_)
+		{
+			case 0: break;
+			case 1: throw model_exception();
+			case 2: throw network_exception();
+			case 3: throw protocol_exception();
+			case 4: throw incompatible_version_exception();
+			case 5: throw control_exception();
+			case 6: throw command_exception();
+			case 7: throw realtime_exception();
+			case 8: throw invalid_operation_exception();
+			default: throw remote_exception();
+		}
 	}
-
 }
 
 

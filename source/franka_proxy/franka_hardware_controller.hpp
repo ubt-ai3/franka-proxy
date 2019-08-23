@@ -48,6 +48,7 @@ public:
 	 */
 	void move_to(const robot_config_7dof& target);
 	void stop_movement();
+	void enable_movement();
 
 	double speed_factor() const;
 	void set_speed_factor(double speed_factor);
