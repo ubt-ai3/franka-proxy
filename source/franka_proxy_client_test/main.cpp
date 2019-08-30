@@ -4,6 +4,9 @@
 #include "franka_proxy_client/franka_remote_controller.hpp"
 #include "viral_core/ms_network.hpp"
 #include <iostream>
+#include "franka_proxy_client/exception.hpp"
+#include "viral_core/thread_util.hpp"
+#include "viral_core/log.hpp"
 
 
 void print(const franka_proxy::robot_config_7dof& config)
@@ -32,13 +35,39 @@ double dist_squared(const franka_proxy::robot_config_7dof& c1, const franka_prox
 	return sum;
 }
 
+template <class Function>
+	void execute_retry(Function&& f, franka_proxy::franka_remote_controller& controller)
+{
+	bool finished = false;
+	while (!finished)
+	{
+		try
+		{
+			f();
+			finished = true;
+		}
+		catch (const franka_proxy::control_exception&)
+		{
+			// for some reason, automatic error recovery
+			// is only possible after waiting some time...
+			std::this_thread::sleep_for(std::chrono::milliseconds(500));
+			controller.automatic_error_recovery();
+		}
+		catch (const franka_proxy::control_exception&)
+		{
+			LOG_INFO("Encountered command exception. Probably because of wrong working mode. Waiting before retry.")
+			viral_core::thread_util::sleep_seconds(1);
+		}
+	}
+}
+
 int main()
 {
 	viral_core::ms_network_context network("network");
 	franka_proxy::franka_remote_controller controller("127.0.0.1", network);
 
-	controller.open_gripper();
-	controller.close_gripper();
+	execute_retry([&]{controller.open_gripper();}, controller);
+	execute_retry([&]{controller.close_gripper();}, controller);
 	
 	controller.update();
 	print_status(controller);
@@ -59,16 +88,16 @@ int main()
 			-0.001813626296555,
 			1.9141426016730037,
 			-1.063268839608126}};
-
-	controller.move_to(pos1);
+	
+	execute_retry([&]{controller.move_to(pos1);}, controller);
 
 	while (dist_squared(controller.current_config(), pos1) > 0.001)
 	{
 		controller.update();
 		print_status(controller);
 	}
-
-	controller.move_to(pos2);
+	
+	execute_retry([&]{controller.move_to(pos2);}, controller);
 
 	while (dist_squared(controller.current_config(), pos2) > 0.001)
 	{
