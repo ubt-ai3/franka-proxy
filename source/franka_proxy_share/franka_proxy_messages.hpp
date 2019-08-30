@@ -35,7 +35,8 @@ public:
 		control_exception,
 		command_exception,
 		realtime_exception,
-		invalid_operation
+		invalid_operation,
+		franka_exception
 	};
 };
 

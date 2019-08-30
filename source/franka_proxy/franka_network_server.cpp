@@ -19,6 +19,7 @@
 #include "viral_core/network_transfer.hpp"
 #include <string>
 #include "franka_proxy_share/franka_proxy_messages.hpp"
+#include <franka/exception.h>
 
 
 namespace franka_proxy
@@ -38,11 +39,9 @@ using namespace viral_core;
 franka_control_server::franka_control_server
 	(network_context& network,
 	 uint16 controll_port,
-	 franka_hardware_controller& controller,
-	 franka_mover& mover)
+	 franka_hardware_controller& controller)
 	:
 	controller_(controller),
-	mover_(mover),
 
 	server_(network.create_server(controll_port))
 {
@@ -182,7 +181,7 @@ void franka_control_server::process_request(const string& request)
 		case franka_proxy_messages::move:
 		{
 			LOG_INFO("Moving")
-			controller_.enable_movement();
+
 			string rest = request.substring
 				(pos + string(franka_proxy_messages::command_strings[type]).size());
 			list<string> joint_values;
@@ -195,16 +194,37 @@ void franka_control_server::process_request(const string& request)
 				  static_cast<double>(joint_values[4].to_float()),
 				  static_cast<double>(joint_values[5].to_float()),
 				static_cast<double>(joint_values[6].to_float())}};
-			mover_.enqueue(auto_pointer<joint_command>(new joint_command(joint_config)));
+
+			unsigned char response =
+				execute_exception_to_return_value([&](){controller_.move_to(joint_config);});
+
+			stream_->send_nonblocking(&response, sizeof(unsigned char));
 			break;
 		}
 
-		case franka_proxy_messages::stop:
+		case franka_proxy_messages::open_gripper:
 		{
-			LOG_INFO("Stopping")
-			controller_.stop_movement();
-			controller_.stop_gripper_movement();
-			mover_.clear_queue();
+			LOG_INFO("Opening Gripper")
+
+			unsigned char response =
+				execute_exception_to_return_value([&](){controller_.open_gripper();});
+
+			stream_->send_nonblocking(&response, sizeof(unsigned char));
+			break;
+		}
+
+		case franka_proxy_messages::close_gripper:
+		{
+			LOG_INFO("Closing Gripper")
+			string rest = request.substring
+				(pos + string(franka_proxy_messages::command_strings[type]).size());
+			list<string> parameters;
+			rest.split(' ', parameters);
+
+			unsigned char response =
+				execute_exception_to_return_value([&](){controller_.close_gripper(parameters[0].to_float(), parameters[1].to_float());});
+
+			stream_->send_nonblocking(&response, sizeof(unsigned char));
 			break;
 		}
 
@@ -217,17 +237,12 @@ void franka_control_server::process_request(const string& request)
 			break;
 		}
 
-		case franka_proxy_messages::open_gripper:
+		case franka_proxy_messages::error_recovery:
 		{
-			LOG_INFO("Opening Gripper")
-			mover_.enqueue(auto_pointer<gripper_command>(new gripper_command(true)));
-			break;
-		}
-
-		case franka_proxy_messages::close_gripper:
-		{
-			LOG_INFO("Closing Gripper")
-			mover_.enqueue(auto_pointer<gripper_command>(new gripper_command(false)));
+			LOG_INFO("Error recovery")
+			string rest = request.substring
+				(pos + string(franka_proxy_messages::command_strings[type]).size());
+			controller_.automatic_error_recovery();
 			break;
 		}
 
@@ -248,7 +263,7 @@ void franka_control_server::process_request(const string& request)
 franka_state_server::franka_state_server
 	(network_context& network,
 	 uint16 state_port,
-	 const franka_hardware_controller& controller)
+	 franka_hardware_controller& controller)
 	:
 	controller_(controller),
 
@@ -315,7 +330,8 @@ void franka_state_server::task_main()
 		}
 		catch (...)
 		{
-			LOG_ERROR("Error while sending status, dropping stream.");
+			LOG_ERROR("Error while sending status, dropping stream and stopping robot.");
+			controller_.stop_movement();
 			connection_.reset();
 		}
 
