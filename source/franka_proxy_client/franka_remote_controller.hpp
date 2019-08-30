@@ -16,7 +16,9 @@
 #include <string>
 #include <mutex>
 
-#include "viral_core/network_forward.hpp"
+#include <viral_core/network_forward.hpp>
+
+#include "franka_proxy_share/franka_proxy_messages.hpp"
 
 #include "franka_network_client.hpp"
 
@@ -46,10 +48,6 @@ public:
 	 * Returns if the movement was completed successfully.
 	 * Throws some remote_exception on failure.
 	 *
-	 * @TODO: Implement feedback handling.
-	 *		The function should return only when the server responds with a
-	 *		success message.
-	 *		If the server sends an error message, an exception should be thrown.
 	 * @TODO: Check exceptions.
 	 *
 	 * @throw remote_exception if the movement was unsuccessful.
@@ -64,10 +62,6 @@ public:
 	 * Returns if the movement was completed successfully.
 	 * Throws some remote_exception on failure.
 	 *
-	 * @TODO: Implement feedback handling.
-	 *		The function should return only when the server responds with a
-	 *		success message.
-	 *		If the server sends an error message, an exception should be thrown.
 	 * @TODO: Check exceptions.
 	 *
 	 * @throw remote_exception if the movement was unsuccessful.
@@ -82,10 +76,6 @@ public:
 	 * Returns if the movement was completed successfully.
 	 * Throws some remote_exception on failure.
 	 *
-	 * @TODO: Implement feedback handling.
-	 *		The function should return only when the server responds with a
-	 *		success message.
-	 *		If the server sends an error message, an exception should be thrown.
 	 * @TODO: Check exceptions.
 	 *
 	 * @param[in] speed Closing speed. [m/s]
@@ -142,6 +132,8 @@ private:
 	
 	void initialize_sockets();
 	void shutdown_sockets() noexcept;
+
+	void check_response(franka_proxy_messages::feedback_type response);
 
 
 	const std::string franka_ip_;

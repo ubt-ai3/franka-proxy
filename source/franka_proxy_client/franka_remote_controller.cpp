@@ -12,8 +12,6 @@
 
 #include <viral_core/log.hpp>
 
-#include "franka_proxy_share/franka_proxy_messages.hpp"
-
 #include "exception.hpp"
 
 
@@ -63,7 +61,9 @@ void franka_remote_controller::move_to(const robot_config_7dof& target)
 		 franka_proxy_messages::command_end_marker).data();
 	socket_control_->send_command(msg);
 
-	// TODO: Feedback handling goes here!
+	check_response
+		(franka_proxy_messages::feedback_type
+			(socket_control_->receive_response()));
 }
 
 
@@ -72,6 +72,10 @@ void franka_remote_controller::open_gripper()
 	socket_control_->send_command(string
 		(franka_proxy_messages::command_strings[franka_proxy_messages::open_gripper]) +
 		 franka_proxy_messages::command_end_marker);
+
+	check_response
+		(franka_proxy_messages::feedback_type
+			(socket_control_->receive_response()));
 }
 
 
@@ -82,6 +86,10 @@ void franka_remote_controller::close_gripper(double speed, double force)
 		 std::to_string(speed) + ' ' + std::to_string(force) +
 		 franka_proxy_messages::command_end_marker).data();
 	socket_control_->send_command(msg);
+
+	check_response
+		(franka_proxy_messages::feedback_type
+			(socket_control_->receive_response()));
 }
 
 
@@ -203,6 +211,34 @@ void franka_remote_controller::shutdown_sockets() noexcept
 {
 	socket_control_.reset();
 	socket_state_.reset();
+}
+
+
+void franka_remote_controller::check_response(franka_proxy_messages::feedback_type response)
+{
+	switch (response)
+	{
+		case franka_proxy_messages::success:
+			return;
+		case franka_proxy_messages::model_exception:
+			throw model_exception();
+		case franka_proxy_messages::network_exception:
+			throw network_exception();
+		case franka_proxy_messages::protocol_exception:
+			throw protocol_exception();
+		case franka_proxy_messages::incompatible_version:
+			throw incompatible_version_exception();
+		case franka_proxy_messages::control_exception:
+			throw control_exception();
+		case franka_proxy_messages::command_exception:
+			throw command_exception();
+		case franka_proxy_messages::realtime_exception:
+			throw realtime_exception();
+		case franka_proxy_messages::invalid_operation:
+			throw invalid_operation_exception();
+		default:
+			throw remote_exception();
+	}
 }
 
 
