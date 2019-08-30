@@ -12,15 +12,18 @@
 #define INCLUDED__FRANKA_PROXY__FRANKA_NETWORK_SERVER_HPP
 
 
-#include <viral_core/network_forward.hpp>
+#include <franka/exception.h>
 
+#include <viral_core/network_forward.hpp>
 
 #include <viral_core/auto_pointer.hpp>
 #include <viral_core/list.hpp>
 #include <viral_core/string.hpp>
-#include "viral_core/thread.hpp"
+#include <viral_core/thread.hpp>
+
+#include "franka_proxy_share/franka_proxy_messages.hpp"
+
 #include "franka_hardware_controller.hpp"
-#include "franka_mover.hpp"
 
 
 namespace franka {
@@ -55,8 +58,7 @@ public:
 	franka_control_server
 		(viral_core::network_context& network,
 		 uint16 controll_port,
-		 franka_hardware_controller& controller,
-		 franka_mover& mover);
+		 franka_hardware_controller& controller);
 
 	~franka_control_server() NOTHROW;
 
@@ -70,8 +72,56 @@ private:
 		(const viral_core::string& request);
 
 
+	template <class Function>
+		static unsigned char execute_exception_to_return_value(Function&& f)
+	{
+		unsigned char ret = franka_proxy_messages::feedback_type::success;
+		try
+		{
+			f();
+		}
+		catch (const franka::ControlException&)
+		{
+			ret = franka_proxy_messages::feedback_type::control_exception;
+		}
+		catch (const franka::CommandException&)
+		{
+			ret = franka_proxy_messages::feedback_type::command_exception;
+		}
+		catch (const franka::NetworkException&)
+		{
+			ret = franka_proxy_messages::feedback_type::network_exception;
+		}
+		catch (const franka::InvalidOperationException&)
+		{
+			ret = franka_proxy_messages::feedback_type::invalid_operation;
+		}
+		catch (const franka::RealtimeException&)
+		{
+			ret = franka_proxy_messages::feedback_type::realtime_exception;
+		}
+		catch (const franka::ModelException&)
+		{
+			ret = franka_proxy_messages::feedback_type::model_exception;
+		}
+		catch (const franka::ProtocolException&)
+		{
+			ret = franka_proxy_messages::feedback_type::protocol_exception;
+		}
+		catch (const franka::IncompatibleVersionException&)
+		{
+			ret = franka_proxy_messages::feedback_type::incompatible_version;
+		}
+		catch (const franka::Exception&)
+		{
+			ret = franka_proxy_messages::feedback_type::franka_exception;
+		}
+
+		return ret;
+	}
+
+
 	franka_hardware_controller& controller_;
-	franka_mover& mover_;
 
 	const viral_core::auto_pointer<viral_core::network_server> server_;
 	viral_core::auto_pointer<viral_core::network_stream> stream_;
@@ -100,7 +150,7 @@ public:
 	franka_state_server
 		(viral_core::network_context& network,
 		 uint16 state_port,
-		 const franka_hardware_controller& controller);
+		 franka_hardware_controller& controller);
 
 	~franka_state_server() noexcept;
 
@@ -108,12 +158,10 @@ public:
 private:
 
 	void task_main() override;
-
 	void send_status_message(const viral_core::string& command);
 
 
-	const franka_hardware_controller& controller_;
-
+	franka_hardware_controller& controller_;
 
 	const uint16 state_port_;
 

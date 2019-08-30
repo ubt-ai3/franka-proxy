@@ -12,8 +12,7 @@
 #define INCLUDED__FRANKA_PROXY_CLIENT__EXCEPTION_HPP
 
 
-#include <stdexcept>
-#include <string>
+#include <exception>
 
 
 namespace franka_proxy
@@ -88,7 +87,7 @@ class network_exception : public remote_exception
 {
 	public:
 		const char* what() const noexcept override
-			{ return "Connection to the robot cannot be established, or  timeout occured."; }
+			{ return "Connection to the robot cannot be established, or timeout occured."; }
 };
 
 

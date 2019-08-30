@@ -60,71 +60,39 @@ void franka_hardware_controller::move_to(const robot_config_7dof& target)
 	MotionGenerator motion_generator
 		(speed_factor_, target, state_lock_, robot_state_, stop_motion_);
 
+	stop_motion_ = false;
+
 	try
 	{
-		bool finished = false;
-		while (!(finished || stop_motion_))
+		control_loop_running_.set(true);
 		{
-			try
-			{
-				control_loop_running_.set(true);
-				{
-					// Lock the current_state_lock_ to wait for state_thread_ to finish.
-					std::lock_guard<std::mutex> state_guard(state_lock_);
-				}
-
-				while (!(finished || stop_motion_))
-				{
-					try
-					{
-						robot_.control(motion_generator, franka::ControllerMode::kJointImpedance, true, 20.);
-						// If the control loop returns the motion is finished.
-						finished = true;
-					}
-					catch (const franka::ControlException&)
-					{
-						// for some reason, automatic error recovery
-						// is only possible after waiting some time...
-						std::this_thread::sleep_for(std::chrono::milliseconds(500));
-						robot_.automaticErrorRecovery();
-					}
-					catch (const stop_motion_trigger&)
-					{
-						// The motion was stopped.
-						control_loop_running_.set(false);
-						finished = true;
-					}
-				}
-
-				control_loop_running_.set(false);
-			}
-			catch (const franka::CommandException&)
-			{
-				std::cerr << "Encountered command exception. Probably because of wrong working mode. Waiting before retry." << std::endl;
-				viral_core::thread_util::sleep_seconds(1);
-			}
+			// Lock the current_state_lock_ to wait for state_thread_ to finish.
+			std::lock_guard<std::mutex> state_guard(state_lock_);
 		}
+
+		robot_.control(motion_generator, franka::ControllerMode::kJointImpedance, true, 20.);
 	}
-	catch (const std::exception& e)
+	catch (const stop_motion_trigger&)
 	{
 		control_loop_running_.set(false);
-		std::cerr << "Franka move_to failed with:" << std::endl;
-		std::cerr << e.what() << std::endl;
+	}
+	catch (const franka::Exception&)
+	{
+		control_loop_running_.set(false);
 		throw;
 	}
 }
 
 
 void franka_hardware_controller::stop_movement()
-	{ stop_motion_ = true; }
-void franka_hardware_controller::enable_movement()
-	{ stop_motion_ = false; }
-
-
-double franka_hardware_controller::speed_factor() const
 {
-	std::lock_guard<std::mutex> state_guard(speed_factor_lock_);
-	return speed_factor_;
+	stop_motion_ = true;
+	try
+	{
+		gripper_.stop();
+	}
+	catch (const franka::Exception&)
+	{}
 }
 
 
@@ -156,21 +124,10 @@ void franka_hardware_controller::open_gripper()
 }
 
 
-void franka_hardware_controller::close_gripper()
+void franka_hardware_controller::close_gripper(double speed, double force)
 {
-	gripper_.grasp(min_grasp_width, gripper_speed, grasping_force, 0, 1);
+	gripper_.grasp(min_grasp_width, speed, force, 0, 1);
 
-	{
-		std::lock_guard<std::mutex> state_guard(state_lock_);
-		gripper_state_ = gripper_.readOnce();
-	}
-}
-
-
-void franka_hardware_controller::stop_gripper_movement()
-{
-	gripper_.stop();
-	
 	{
 		std::lock_guard<std::mutex> state_guard(state_lock_);
 		gripper_state_ = gripper_.readOnce();
@@ -182,6 +139,12 @@ franka::GripperState franka_hardware_controller::gripper_state() const
 {
 	std::lock_guard<std::mutex> state_guard(state_lock_);
 	return gripper_state_;
+}
+
+
+void franka_hardware_controller::automatic_error_recovery()
+{
+	robot_.automaticErrorRecovery();
 }
 
 

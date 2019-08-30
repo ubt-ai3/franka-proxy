@@ -48,9 +48,7 @@ public:
 	 */
 	void move_to(const robot_config_7dof& target);
 	void stop_movement();
-	void enable_movement();
 
-	double speed_factor() const;
 	void set_speed_factor(double speed_factor);
 
 	franka::RobotState robot_state() const;
@@ -59,11 +57,12 @@ public:
 	/** Move the gripper to gripper::max_width. */
 	void open_gripper();
 	/** Grasp.... */
-	void close_gripper();
-
-	void stop_gripper_movement();
+	void close_gripper(double speed, double force);
 
 	franka::GripperState gripper_state() const;
+
+
+	void automatic_error_recovery();
 
 
 private:
@@ -96,11 +95,8 @@ private:
 	const double max_width_;
 
 	static constexpr double gripper_speed = 0.025;
-
 	static constexpr double open_epsilon = 0.1;
-
 	static constexpr double min_grasp_width = 0.003;
-	static constexpr double grasping_force = 0.05;
 
 
 	mutable std::mutex state_lock_;

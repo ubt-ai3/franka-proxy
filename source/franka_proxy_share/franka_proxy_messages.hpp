@@ -21,11 +21,23 @@ class franka_proxy_messages
 
 public:
 
-	enum message_type { move, stop, speed, open_gripper, close_gripper, message_type_count };
+	enum command_type { move, open_gripper, close_gripper, speed, error_recovery, message_type_count };
+	static constexpr const char* command_strings[5] = {"MOVE", "OPEN GRIPPER", "CLOSE GRIPPER", "SPEED", "ERRORRECOVERY"};
+	static constexpr const char* command_end_marker = ";";
 
-	static constexpr const char* message_strings[5] = {"MOVE", "STOP", "SPEED", "OPEN GRIPPER", "CLOSE GRIPPER"};
-
-	static constexpr const char* message_end_marker = ";";
+	enum feedback_type
+	{
+		success,
+		model_exception,
+		network_exception,
+		protocol_exception,
+		incompatible_version,
+		control_exception,
+		command_exception,
+		realtime_exception,
+		invalid_operation,
+		franka_exception
+	};
 };
 
 

@@ -16,7 +16,9 @@
 #include <string>
 #include <mutex>
 
-#include "viral_core/network_forward.hpp"
+#include <viral_core/network_forward.hpp>
+
+#include "franka_proxy_share/franka_proxy_messages.hpp"
 
 #include "franka_network_client.hpp"
 
@@ -37,32 +39,92 @@ public:
 		(const std::string& proxy_ip,
 		 viral_core::network_context& network);
 
-	virtual ~franka_remote_controller() noexcept;
+	~franka_remote_controller() noexcept;
 
 
 	/**
-	 * Moves the Panda robot to given target; In case
-	 * of collision, the movement is retried and continued 
-	 * after automatic error recovery
+	 * Start control-loop to move the robot to given target.
+	 *
+	 * Returns if the movement was completed successfully.
+	 * Throws some remote_exception on failure.
+	 *
+	 * @TODO: Check exceptions.
+	 *
+	 * @throw remote_exception if the movement was unsuccessful.
+	 * @throw viral_core::network_exception if the connection was lost.
 	 */
 	void move_to(const robot_config_7dof& target);
 
-	void stop_movement();
 
-	robot_config_7dof current_config() const;
+	/**
+	 * Open the gripper by moving it to max_width.
+	 *
+	 * Returns if the movement was completed successfully.
+	 * Throws some remote_exception on failure.
+	 *
+	 * @TODO: Check exceptions.
+	 *
+	 * @throw remote_exception if the movement was unsuccessful.
+	 * @throw viral_core::network_exception if the connection was lost.
+	 */
+	void open_gripper();
 
-	double speed_factor() const;
+
+	/**
+	 * Close the gripper.
+	 *
+	 * Returns if the movement was completed successfully.
+	 * Throws some remote_exception on failure.
+	 *
+	 * @TODO: Check exceptions.
+	 *
+	 * @param[in] speed Closing speed. [m/s]
+	 * @param[in] force Grasping force. [N]
+	 *
+	 * @throw remote_exception if the movement was unsuccessful.
+	 * @throw viral_core::network_exception if the connection was lost.
+	 */
+	void close_gripper(double speed = 0.025, double force = 0.05);
+
+
+	/**
+	 * Send new target speed to robot.
+	 *
+	 * @TODO: Check exceptions.
+	 *
+	 * @param[in] speed_factor Target speed factor, normalized between 0 and 1.
+	 *
+	 * @throw viral_core::network_exception if the connection was lost.
+	 */
 	void set_speed_factor(double speed_factor);
 
 
-	/** Move the gripper to gripper::max_width. */
-	void open_gripper();
-	/** Grasp.... */
-	void close_gripper();
+	/**
+	 * Runs automatic error recovery on the robot.
+	 *
+	 * Automatic error recovery e.g. resets the robot after a collision occurred.
+	 *
+	 * @TODO: Check exceptions.
+	 *
+	 * @throw remote_exception if the command was unsuccessful.
+	 * @throw viral_core::network_exception if the connection was lost.
+	 */
+	void automatic_error_recovery();
 
-	bool gripper_open();
+
+	robot_config_7dof current_config() const;
+	int current_gripper_pos() const;
+	int max_gripper_pos() const;
 
 
+	/**
+	 * Update internal robot state via the network.
+	 * Should be called regularly.
+	 *
+	 * @TODO: Check exceptions.
+	 *
+	 * @throw viral_core::network_exception if the connection was lost.
+	 */
 	void update();
 
 
@@ -70,6 +132,8 @@ private:
 	
 	void initialize_sockets();
 	void shutdown_sockets() noexcept;
+
+	void check_response(franka_proxy_messages::feedback_type response);
 
 
 	const std::string franka_ip_;
@@ -82,14 +146,11 @@ private:
 
 	mutable std::mutex state_lock_;
 	robot_config_7dof current_config_;
-	double current_speed_factor_;
-	bool gripper_open_;
 	int current_gripper_pos_;
 	int max_gripper_pos_;
-	int current_error_;
 
 
-	static constexpr unsigned short franka_controll_port = 4711;
+	static constexpr unsigned short franka_control_port = 4711;
 	static constexpr unsigned short franka_state_port = 4712;
 };
 
