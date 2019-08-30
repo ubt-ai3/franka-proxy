@@ -20,8 +20,6 @@ void print_status(const franka_proxy::franka_remote_controller& controller)
 	auto config = controller.current_config();
 	for (int i = 0; i < 7; ++i)
 		std::cout << config[i] << " ";
-	
-	std::cout << "SPEED: " << controller.speed_factor();
 
 	std::cout << std::endl;
 }

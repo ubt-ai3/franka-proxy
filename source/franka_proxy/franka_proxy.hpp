@@ -36,8 +36,6 @@ private:
 
 	franka_hardware_controller controller_;
 
-	franka_mover mover_;
-
 	std::unique_ptr<viral_core::network_context> network_;
 	franka_control_server control_server_;
 	franka_state_server state_server_;
