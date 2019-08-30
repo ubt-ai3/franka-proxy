@@ -173,7 +173,7 @@ void franka_control_client::send_command(const string& command)
 		(reinterpret_cast<const unsigned char*>(command.data()),
 		 command.size());
 	network_transfer::send_blocking
-		(connection_.object(), network_data);
+		(connection_.object(), network_data, false, 0, false, 0);
 }
 
 
@@ -181,7 +181,9 @@ unsigned char franka_control_client::receive_response()
 {
 	network_buffer network_data;
 	network_transfer::receive_blocking
-		(connection_.object(), network_data, sizeof(unsigned char));
+		(connection_.object(), network_data,
+		 sizeof(unsigned char),
+		 false, 0, false, 0);
 
 	return network_data[0];
 }

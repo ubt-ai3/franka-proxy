@@ -172,30 +172,16 @@ void franka_hardware_controller::initialize_parameters()
 {
 	while (!parameters_initialized_)
 	{
-		try
-		{
-			// A previous usae of franka_controller_hardware may have
-			// left the robot in error state -> try automatic error 
-			// recovery preventively
-			robot_.automaticErrorRecovery();
+		robot_.setCollisionBehavior(
+			{ {20.0, 20.0, 18.0, 18.0, 16.0, 14.0, 12.0} }, { {20.0, 20.0, 18.0, 18.0, 16.0, 14.0, 12.0} },
+			{ {20.0, 20.0, 18.0, 18.0, 16.0, 14.0, 12.0} }, { {20.0, 20.0, 18.0, 18.0, 16.0, 14.0, 12.0} },
+			{ {20.0, 20.0, 20.0, 25.0, 25.0, 25.0} }, { {20.0, 20.0, 20.0, 25.0, 25.0, 25.0} },
+			{ {20.0, 20.0, 20.0, 25.0, 25.0, 25.0} }, { {20.0, 20.0, 20.0, 25.0, 25.0, 25.0} });
 
-			robot_.setCollisionBehavior(
-				{ {20.0, 20.0, 18.0, 18.0, 16.0, 14.0, 12.0} }, { {20.0, 20.0, 18.0, 18.0, 16.0, 14.0, 12.0} },
-				{ {20.0, 20.0, 18.0, 18.0, 16.0, 14.0, 12.0} }, { {20.0, 20.0, 18.0, 18.0, 16.0, 14.0, 12.0} },
-				{ {20.0, 20.0, 20.0, 25.0, 25.0, 25.0} }, { {20.0, 20.0, 20.0, 25.0, 25.0, 25.0} },
-				{ {20.0, 20.0, 20.0, 25.0, 25.0, 25.0} }, { {20.0, 20.0, 20.0, 25.0, 25.0, 25.0} });
+		robot_.setJointImpedance({ {3000, 3000, 3000, 2500, 2500, 2000, 2000} });
+		robot_.setCartesianImpedance({ {3000, 3000, 3000, 300, 300, 300} });
 
-			robot_.setJointImpedance({ {3000, 3000, 3000, 2500, 2500, 2000, 2000} });
-			robot_.setCartesianImpedance({ {3000, 3000, 3000, 300, 300, 300} });
-
-			parameters_initialized_ = true;
-		}
-		catch (const franka::CommandException&)
-		{
-			std::cerr << "Wrong working mode. Release working mode switch." << std::endl;
-			using namespace std::chrono_literals;
-			std::this_thread::sleep_for(0.5s);
-		}
+		parameters_initialized_ = true;
 	}
 }
 
