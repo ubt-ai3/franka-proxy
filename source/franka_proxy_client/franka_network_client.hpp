@@ -35,37 +35,37 @@ namespace franka_proxy
 class franka_state_client
 {
 
-	public:
+public:
 
-		franka_state_client
-			(viral_core::network_context& network,
-			 const viral_core::string& remote_ip,
-			 uint16 remote_port);
+	franka_state_client
+		(viral_core::network_context& network,
+		 const viral_core::string& remote_ip,
+		 uint16 remote_port);
 
-		~franka_state_client() NOTHROW;
-
-
-		void update_messages();
-		viral_core::list<viral_core::string> messages() const;
+	~franka_state_client() noexcept;
 
 
-	private:
-
-		void update_messages_buffer();
-		viral_core::string fetch_message();
+	void update_messages();
+	viral_core::list<viral_core::string> messages() const;
 
 
-		static const int64 receive_buffer_size_ = 1024;
+private:
 
-		viral_core::network_context& network_;
+	void update_messages_buffer();
+	viral_core::string fetch_message();
 
-		const viral_core::string remote_ip_;
-		const uint16 remote_port_;
 
-		viral_core::auto_pointer<viral_core::network_connection> connection_;
+	static const int64 receive_buffer_size_ = 1024;
 
-		viral_core::string messages_buffer_;
-		viral_core::list<viral_core::string> messages_;
+	viral_core::network_context& network_;
+
+	const viral_core::string remote_ip_;
+	const uint16 remote_port_;
+
+	viral_core::auto_pointer<viral_core::network_connection> connection_;
+
+	viral_core::string messages_buffer_;
+	viral_core::list<viral_core::string> messages_;
 
 };
 
@@ -83,26 +83,28 @@ class franka_state_client
 class franka_control_client
 {
 
-	public:
+public:
 
-		franka_control_client
-			(viral_core::network_context& network,
-			 const viral_core::string& remote_ip,
-			 uint16 remote_port);
+	franka_control_client
+		(viral_core::network_context& network,
+		 const viral_core::string& remote_ip,
+		 uint16 remote_port);
 
-		~franka_control_client() NOTHROW;
-
-		void send_command(const viral_core::string& command);
+	~franka_control_client() noexcept;
 
 
-	private:
+	void send_command(const viral_core::string& command);
+	unsigned char receive_response();
 
-		viral_core::network_context& network_;
 
-		const viral_core::string remote_ip_;
-		const uint16 remote_port_;
+private:
 
-		viral_core::auto_pointer<viral_core::network_connection> connection_;
+	viral_core::network_context& network_;
+
+	const viral_core::string remote_ip_;
+	const uint16 remote_port_;
+
+	viral_core::auto_pointer<viral_core::network_connection> connection_;
 };
 
 

@@ -131,7 +131,7 @@ void franka_control_server::receive_requests()
 		// Transferring the request has not yet finished
 		// if there is no (further) end marker.
 		int64 end_index =
-			buffer.seek(franka_proxy_messages::message_end_marker);
+			buffer.seek(franka_proxy_messages::command_end_marker);
 
 		if (end_index == string::invalid_index)
 			break;
@@ -147,10 +147,10 @@ void franka_control_server::receive_requests()
 		// and from network stream.
 		buffer =
 			buffer.substring
-				(end_index + string::size(franka_proxy_messages::message_end_marker));
+				(end_index + string::size(franka_proxy_messages::command_end_marker));
 	
 		stream_->discard_receive
-			(end_index + string::size(franka_proxy_messages::message_end_marker));
+			(end_index + string::size(franka_proxy_messages::command_end_marker));
 	}
 }
 
@@ -158,13 +158,13 @@ void franka_control_server::receive_requests()
 void franka_control_server::process_request(const string& request)
 {
 	int64 pos = string::invalid_index;
-	franka_proxy_messages::message_type type = franka_proxy_messages::message_type_count;
+	franka_proxy_messages::command_type type = franka_proxy_messages::message_type_count;
 	for (int i = 0; i < franka_proxy_messages::message_type_count; ++i)
 	{
-		pos = request.seek(franka_proxy_messages::message_strings[i]);
+		pos = request.seek(franka_proxy_messages::command_strings[i]);
 		if (pos != string::invalid_index)
 		{
-			type = franka_proxy_messages::message_type(i);
+			type = franka_proxy_messages::command_type(i);
 			break;
 		}
 	}
@@ -184,7 +184,7 @@ void franka_control_server::process_request(const string& request)
 			LOG_INFO("Moving")
 			controller_.enable_movement();
 			string rest = request.substring
-				(pos + string(franka_proxy_messages::message_strings[type]).size());
+				(pos + string(franka_proxy_messages::command_strings[type]).size());
 			list<string> joint_values;
 			rest.split(' ', joint_values);
 			robot_config_7dof joint_config
@@ -212,7 +212,7 @@ void franka_control_server::process_request(const string& request)
 		{
 			LOG_INFO("Setting speed")
 			string rest = request.substring
-				(pos + string(franka_proxy_messages::message_strings[type]).size());
+				(pos + string(franka_proxy_messages::command_strings[type]).size());
 			controller_.set_speed_factor(rest.to_float());
 			break;
 		}

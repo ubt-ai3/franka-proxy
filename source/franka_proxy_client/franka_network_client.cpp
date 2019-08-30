@@ -44,7 +44,7 @@ franka_state_client::franka_state_client
 { }
 
 
-franka_state_client::~franka_state_client() NOTHROW
+franka_state_client::~franka_state_client() noexcept
 {	
 	// Enforce explicit destructor instantiation.
 }
@@ -151,15 +151,17 @@ franka_control_client::franka_control_client
 	 uint16 remote_port)
 	:
 	network_(network),
+
 	remote_ip_(remote_ip),
 	remote_port_(remote_port),
+
 	connection_
 		(network_.create_connection
 			(remote_ip_, remote_port_))
 { }
 
 
-franka_control_client::~franka_control_client() NOTHROW
+franka_control_client::~franka_control_client() noexcept
 {	
 	// Enforce explicit destructor instantiation.
 }
@@ -170,11 +172,18 @@ void franka_control_client::send_command(const string& command)
 	network_buffer network_data
 		(reinterpret_cast<const unsigned char*>(command.data()),
 		 command.size());
+	network_transfer::send_blocking
+		(connection_.object(), network_data);
+}
 
-	network_buffer_progress progress(network_data);
-	while (!progress.finished())
-		network_transfer::send_partial_nonblocking
-			(connection_.object(), network_data, progress);
+
+unsigned char franka_control_client::receive_response()
+{
+	network_buffer network_data;
+	network_transfer::receive_blocking
+		(connection_.object(), network_data, sizeof(unsigned char));
+
+	return network_data[0];
 }
 
 
