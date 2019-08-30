@@ -53,7 +53,7 @@ template <class Function>
 			std::this_thread::sleep_for(std::chrono::milliseconds(500));
 			controller.automatic_error_recovery();
 		}
-		catch (const franka_proxy::control_exception&)
+		catch (const franka_proxy::command_exception&)
 		{
 			LOG_INFO("Encountered command exception. Probably because of wrong working mode. Waiting before retry.")
 			viral_core::thread_util::sleep_seconds(1);
