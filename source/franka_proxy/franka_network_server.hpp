@@ -108,12 +108,10 @@ public:
 private:
 
 	void task_main() override;
-
 	void send_status_message(const viral_core::string& command);
 
 
 	const franka_hardware_controller& controller_;
-
 
 	const uint16 state_port_;
 

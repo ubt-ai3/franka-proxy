@@ -290,7 +290,7 @@ void franka_state_server::task_main()
 			franka::GripperState gripper_state = controller_.gripper_state();
 
 			// Send state.
-			// conf:j1,j2,j3,j4,j5,j6,j7$<gripper-open>$<gripper-position>$<gripper-max-position>$<error-code>
+			// conf:j1,j2,j3,j4,j5,j6,j7$<gripper-position>$<gripper-max-position>
 			string msg("conf:");
 
 			msg += (std::to_string(robot_state.q[0]) + ',').data();
@@ -303,19 +303,11 @@ void franka_state_server::task_main()
 
 			msg += '$';
 
-			// TODO!
-
-			msg += '$';
-
 			msg += std::to_string(gripper_state.width).data();
 
 			msg += '$';
 
 			msg += std::to_string(gripper_state.max_width).data();
-
-			msg += '$';
-
-			//msg += std::to_string(current_error_).data();
 
 			msg += '\n';
 
@@ -339,7 +331,7 @@ void franka_state_server::send_status_message(const string& command)
 		(reinterpret_cast<const unsigned char*>(command.data()), command.size());
 
 	network_buffer_progress progress(network_data);
-	while (!progress.finished())
+	while (!progress.finished() && !join_now())
 		network_transfer::send_partial_nonblocking
 			(connection_.object(), network_data, progress);
 }
