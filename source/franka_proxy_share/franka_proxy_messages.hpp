@@ -18,12 +18,22 @@ namespace franka_proxy
 
 class franka_proxy_messages
 {
-
 public:
 
-	enum command_type { move, open_gripper, close_gripper, speed, error_recovery, message_type_count };
 	static constexpr const char* command_strings[5] = {"MOVE", "OPEN GRIPPER", "CLOSE GRIPPER", "SPEED", "ERRORRECOVERY"};
 	static constexpr const char* command_end_marker = ";";
+
+	enum command_type
+	{
+		move,
+		open_gripper,
+		close_gripper,
+		speed,
+		error_recovery,
+		message_type_count
+	};
+
+
 
 	enum feedback_type
 	{
@@ -39,8 +49,6 @@ public:
 		franka_exception
 	};
 };
-
-
 
 
 } /* namespace franka_proxy */

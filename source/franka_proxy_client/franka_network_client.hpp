@@ -12,11 +12,9 @@
 #define INCLUDED__FRANKA_PROXY_CLIENT__FRANKA_NETWORK_CLIENT_HPP
 
 
-#include <viral_core/network_forward.hpp>
-
-
 #include <viral_core/auto_pointer.hpp>
 #include <viral_core/list.hpp>
+#include <viral_core/network_forward.hpp>
 #include <viral_core/string.hpp>
 
 
@@ -34,13 +32,12 @@ namespace franka_proxy
  ************************************************************************/
 class franka_state_client
 {
-
 public:
 
 	franka_state_client
-		(viral_core::network_context& network,
-		 const viral_core::string& remote_ip,
-		 uint16 remote_port);
+	(viral_core::network_context& network,
+	 const viral_core::string& remote_ip,
+	 uint16 remote_port);
 
 	~franka_state_client() noexcept;
 
@@ -66,10 +63,7 @@ private:
 
 	viral_core::string messages_buffer_;
 	viral_core::list<viral_core::string> messages_;
-
 };
-
-
 
 
 /**
@@ -82,13 +76,12 @@ private:
  ************************************************************************/
 class franka_control_client
 {
-
 public:
 
 	franka_control_client
-		(viral_core::network_context& network,
-		 const viral_core::string& remote_ip,
-		 uint16 remote_port);
+	(viral_core::network_context& network,
+	 const viral_core::string& remote_ip,
+	 uint16 remote_port);
 
 	~franka_control_client() noexcept;
 
@@ -106,8 +99,6 @@ private:
 
 	viral_core::auto_pointer<viral_core::network_connection> connection_;
 };
-
-
 
 
 } /* namespace franka_proxy */

@@ -12,27 +12,26 @@
 #define INCLUDED__FRANKA_PROXY__FRANKA_NETWORK_SERVER_HPP
 
 
-#include <franka/exception.h>
-
-#include <viral_core/network_forward.hpp>
-
 #include <viral_core/auto_pointer.hpp>
-#include <viral_core/list.hpp>
 #include <viral_core/string.hpp>
+#include <viral_core/network_forward.hpp>
 #include <viral_core/thread.hpp>
 
-#include "franka_proxy_share/franka_proxy_messages.hpp"
+#include <franka/exception.h>
 
+#include "franka_proxy_share/franka_proxy_messages.hpp"
 #include "franka_hardware_controller.hpp"
 
 
-namespace franka {
+namespace franka
+{
 struct GripperState;
 struct RobotState;
 }
 
 
-namespace std {
+namespace std
+{
 class mutex;
 }
 
@@ -49,18 +48,17 @@ namespace franka_proxy
  * Sends commands to a Franka Emika Panda robot.
  *
  ************************************************************************/
-class franka_control_server :
+class franka_control_server : 
 	public viral_core::threaded_task
 {
-
 public:
 
 	franka_control_server
-		(viral_core::network_context& network,
-		 uint16 controll_port,
-		 franka_hardware_controller& controller);
+	(viral_core::network_context& network,
+	 uint16 control_port,
+	 franka_hardware_controller& controller);
 
-	~franka_control_server() NOTHROW;
+	~franka_control_server() noexcept;
 
 
 private:
@@ -68,12 +66,11 @@ private:
 	void task_main() override;
 
 	void receive_requests();
-	void process_request
-		(const viral_core::string& request);
+	void process_request(const viral_core::string& request);
 
 
 	template <class Function>
-		static unsigned char execute_exception_to_return_value(Function&& f)
+	static unsigned char execute_exception_to_return_value(Function&& f)
 	{
 		unsigned char ret = franka_proxy_messages::feedback_type::success;
 		try
@@ -131,8 +128,6 @@ private:
 };
 
 
-
-
 /**
  *************************************************************************
  *
@@ -141,16 +136,15 @@ private:
  * Send the current state of the robot.
  *
  ************************************************************************/
-class franka_state_server :
+class franka_state_server : 
 	public viral_core::threaded_task
 {
-
 public:
 
 	franka_state_server
-		(viral_core::network_context& network,
-		 uint16 state_port,
-		 franka_hardware_controller& controller);
+	(viral_core::network_context& network,
+	 uint16 state_port,
+	 franka_hardware_controller& controller);
 
 	~franka_state_server() noexcept;
 
@@ -171,8 +165,6 @@ private:
 	static constexpr float sleep_seconds_disconnected_ = 0.01f;
 	static constexpr float sleep_seconds_connected_ = 0.002f;
 };
-
-
 
 
 } /* namespace franka_proxy */

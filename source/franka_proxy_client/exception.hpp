@@ -30,21 +30,21 @@ namespace franka_proxy
  ************************************************************************/
 class exception : public std::exception
 {
-	public:
+public:
 
-		exception() = default;
-		~exception() noexcept override = default;
+	exception() = default;
+	~exception() noexcept override = default;
 
 
-		/**
-		 * Retrieve (static, constant) description string via
-		 * the standard C++ exception interface.
-		 */
-		const char* what() const noexcept override
-			{ return "General exception"; }
+	/**
+	 * Retrieve (static, constant) description string via
+	 * the standard C++ exception interface.
+	 */
+	const char* what() const noexcept override
+	{
+		return "General exception";
+	}
 };
-
-
 
 
 /**
@@ -58,12 +58,12 @@ class exception : public std::exception
  ************************************************************************/
 class remote_exception : public exception
 {
-	public:
-		const char* what() const noexcept override
-			{ return "Exception thrown on remote side."; }
+public:
+	const char* what() const noexcept override
+	{
+		return "Exception thrown on remote side.";
+	}
 };
-
-
 
 
 /**
@@ -72,9 +72,11 @@ class remote_exception : public exception
  ************************************************************************/
 class model_exception : public remote_exception
 {
-	public:
-		const char* what() const noexcept override
-			{ return "Error while loading the model library."; }
+public:
+	const char* what() const noexcept override
+	{
+		return "Error while loading the model library.";
+	}
 };
 
 
@@ -85,9 +87,11 @@ class model_exception : public remote_exception
  ************************************************************************/
 class network_exception : public remote_exception
 {
-	public:
-		const char* what() const noexcept override
-			{ return "Connection to the robot cannot be established, or timeout occured."; }
+public:
+	const char* what() const noexcept override
+	{
+		return "Connection to the robot cannot be established, or timeout occured.";
+	}
 };
 
 
@@ -97,9 +101,11 @@ class network_exception : public remote_exception
  ************************************************************************/
 class protocol_exception : public remote_exception
 {
-	public:
-		const char* what() const noexcept override
-			{ return "Incorrect message returned by robot."; }
+public:
+	const char* what() const noexcept override
+	{
+		return "Incorrect message returned by robot.";
+	}
 };
 
 
@@ -109,9 +115,11 @@ class protocol_exception : public remote_exception
  ************************************************************************/
 class incompatible_version_exception : public remote_exception
 {
-	public:
-		const char* what() const noexcept override
-			{ return "Incompatible version of libfranka used on remote side."; }
+public:
+	const char* what() const noexcept override
+	{
+		return "Incompatible version of libfranka used on remote side.";
+	}
 };
 
 
@@ -121,9 +129,11 @@ class incompatible_version_exception : public remote_exception
  ************************************************************************/
 class control_exception : public remote_exception
 {
-	public:
-		const char* what() const noexcept override
-			{ return "An error occured during motion generation or torque control."; }
+public:
+	const char* what() const noexcept override
+	{
+		return "An error occured during motion generation or torque control.";
+	}
 };
 
 
@@ -133,9 +143,11 @@ class control_exception : public remote_exception
  ************************************************************************/
 class command_exception : public remote_exception
 {
-	public:
-		const char* what() const noexcept override
-			{ return "An error occured during command execution."; }
+public:
+	const char* what() const noexcept override
+	{
+		return "An error occured during command execution.";
+	}
 };
 
 
@@ -145,9 +157,11 @@ class command_exception : public remote_exception
  ************************************************************************/
 class realtime_exception : public remote_exception
 {
-	public:
-		const char* what() const noexcept override
-			{ return "Realtime priority cannot be set."; }
+public:
+	const char* what() const noexcept override
+	{
+		return "Realtime priority cannot be set.";
+	}
 };
 
 
@@ -157,12 +171,12 @@ class realtime_exception : public remote_exception
  ************************************************************************/
 class invalid_operation_exception : public remote_exception
 {
-	public:
-		const char* what() const noexcept override
-			{ return "An operation cannot be performed."; }
+public:
+	const char* what() const noexcept override
+	{
+		return "An operation cannot be performed.";
+	}
 };
-
-
 
 
 } /* namespace franka_proxy */

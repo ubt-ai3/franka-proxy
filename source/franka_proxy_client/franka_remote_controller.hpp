@@ -32,12 +32,11 @@ typedef std::array<double, 7> robot_config_7dof;
 
 class franka_remote_controller
 {
-
 public:
 
 	franka_remote_controller
-		(const std::string& proxy_ip,
-		 viral_core::network_context& network);
+	(const std::string& proxy_ip,
+	 viral_core::network_context& network);
 
 	~franka_remote_controller() noexcept;
 
@@ -129,7 +128,7 @@ public:
 
 
 private:
-	
+
 	void initialize_sockets();
 	void shutdown_sockets() noexcept;
 
@@ -153,8 +152,6 @@ private:
 	static constexpr unsigned short franka_control_port = 4711;
 	static constexpr unsigned short franka_state_port = 4712;
 };
-
-
 
 
 } /* namespace franka_proxy */

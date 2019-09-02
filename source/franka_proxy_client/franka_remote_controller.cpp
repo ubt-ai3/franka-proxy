@@ -30,11 +30,13 @@ using namespace viral_core;
 
 
 franka_remote_controller::franka_remote_controller
-	(const std::string& proxy_ip,
-	 network_context& network)
-	:
-	franka_ip_(proxy_ip),
-	network_(network)
+(const std::string& proxy_ip,
+ network_context& network)
+	: franka_ip_(proxy_ip),
+	  network_(network),
+	  current_config_(),
+	  current_gripper_pos_(),
+	  max_gripper_pos_()
 {
 	initialize_sockets();
 }
@@ -48,22 +50,22 @@ franka_remote_controller::~franka_remote_controller() noexcept
 
 void franka_remote_controller::move_to(const robot_config_7dof& target)
 {
-	string msg = 
-		(std::string(franka_proxy_messages::command_strings[franka_proxy_messages::move]) + ' ' +
-		 std::to_string(target[0]) + ' ' +
-		 std::to_string(target[0]) + ' ' +
-		 std::to_string(target[1]) + ' ' +
-		 std::to_string(target[2]) + ' ' +
-		 std::to_string(target[3]) + ' ' +
-		 std::to_string(target[4]) + ' ' +
-		 std::to_string(target[5]) + ' ' +
-		 std::to_string(target[6]) +
-		 franka_proxy_messages::command_end_marker).data();
+	string msg =
+	(std::string(franka_proxy_messages::command_strings[franka_proxy_messages::move]) + ' ' +
+		std::to_string(target[0]) + ' ' +
+		std::to_string(target[0]) + ' ' +
+		std::to_string(target[1]) + ' ' +
+		std::to_string(target[2]) + ' ' +
+		std::to_string(target[3]) + ' ' +
+		std::to_string(target[4]) + ' ' +
+		std::to_string(target[5]) + ' ' +
+		std::to_string(target[6]) +
+		franka_proxy_messages::command_end_marker).data();
 	socket_control_->send_command(msg);
 
 	check_response
-		(franka_proxy_messages::feedback_type
-			(socket_control_->receive_response()));
+	(franka_proxy_messages::feedback_type
+		(socket_control_->receive_response()));
 }
 
 
@@ -71,25 +73,25 @@ void franka_remote_controller::open_gripper()
 {
 	socket_control_->send_command(string
 		(franka_proxy_messages::command_strings[franka_proxy_messages::open_gripper]) +
-		 franka_proxy_messages::command_end_marker);
+		franka_proxy_messages::command_end_marker);
 
 	check_response
-		(franka_proxy_messages::feedback_type
-			(socket_control_->receive_response()));
+	(franka_proxy_messages::feedback_type
+		(socket_control_->receive_response()));
 }
 
 
 void franka_remote_controller::close_gripper(double speed, double force)
 {
-	string msg = 
-		(std::string(franka_proxy_messages::command_strings[franka_proxy_messages::close_gripper]) + ' ' +
-		 std::to_string(speed) + ' ' + std::to_string(force) +
-		 franka_proxy_messages::command_end_marker).data();
+	string msg =
+	(std::string(franka_proxy_messages::command_strings[franka_proxy_messages::close_gripper]) + ' ' +
+		std::to_string(speed) + ' ' + std::to_string(force) +
+		franka_proxy_messages::command_end_marker).data();
 	socket_control_->send_command(msg);
 
 	check_response
-		(franka_proxy_messages::feedback_type
-			(socket_control_->receive_response()));
+	(franka_proxy_messages::feedback_type
+		(socket_control_->receive_response()));
 }
 
 
@@ -97,8 +99,8 @@ void franka_remote_controller::set_speed_factor(double speed_factor)
 {
 	socket_control_->send_command(string
 		(franka_proxy_messages::command_strings[franka_proxy_messages::speed]) +
-		 " " + static_cast<float>(speed_factor) +
-		 franka_proxy_messages::command_end_marker);
+		" " + static_cast<float>(speed_factor) +
+		franka_proxy_messages::command_end_marker);
 }
 
 
@@ -106,7 +108,7 @@ void franka_remote_controller::automatic_error_recovery()
 {
 	socket_control_->send_command(string
 		(franka_proxy_messages::command_strings[franka_proxy_messages::error_recovery]) +
-		 franka_proxy_messages::command_end_marker);
+		franka_proxy_messages::command_end_marker);
 }
 
 
@@ -122,6 +124,8 @@ int franka_remote_controller::current_gripper_pos() const
 	std::lock_guard<std::mutex> state_guard(state_lock_);
 	return current_gripper_pos_;
 }
+
+
 int franka_remote_controller::max_gripper_pos() const
 {
 	std::lock_guard<std::mutex> state_guard(state_lock_);
@@ -175,13 +179,15 @@ void franka_remote_controller::update()
 		}
 
 		current_config_ =
-			{strtod(joint_values_list[0].data(), NULL),
-			 strtod(joint_values_list[1].data(), NULL),
-			 strtod(joint_values_list[2].data(), NULL),
-			 strtod(joint_values_list[3].data(), NULL),
-			 strtod(joint_values_list[4].data(), NULL),
-			 strtod(joint_values_list[5].data(), NULL),
-			 strtod(joint_values_list[6].data(), NULL)};
+		{
+			strtod(joint_values_list[0].data(), nullptr),
+			strtod(joint_values_list[1].data(), nullptr),
+			strtod(joint_values_list[2].data(), nullptr),
+			strtod(joint_values_list[3].data(), nullptr),
+			strtod(joint_values_list[4].data(), nullptr),
+			strtod(joint_values_list[5].data(), nullptr),
+			strtod(joint_values_list[6].data(), nullptr)
+		};
 
 
 		// Fetch gripper state.
@@ -198,12 +204,12 @@ void franka_remote_controller::initialize_sockets()
 	LOG_INFO("Creating network connections.");
 
 	socket_control_.reset
-		(new franka_control_client
-			(network_, franka_ip_.data(), franka_control_port));
+	(new franka_control_client
+		(network_, franka_ip_.data(), franka_control_port));
 
 	socket_state_.reset
-		(new franka_state_client
-			(network_, franka_ip_.data(), franka_state_port));
+	(new franka_state_client
+		(network_, franka_ip_.data(), franka_state_port));
 }
 
 
@@ -240,8 +246,6 @@ void franka_remote_controller::check_response(franka_proxy_messages::feedback_ty
 			throw remote_exception();
 	}
 }
-
-
 
 
 } /* namespace franka_proxy */

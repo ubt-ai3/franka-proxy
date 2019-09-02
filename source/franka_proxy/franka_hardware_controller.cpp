@@ -10,10 +10,11 @@
 
 #include "franka_hardware_controller.hpp"
 
-#include <Eigen/Core>
 #include <iostream>
+
+#include <Eigen/Core>
+
 #include <franka/exception.h>
-#include "viral_core/thread_util.hpp"
 
 
 namespace franka_proxy
@@ -28,22 +29,22 @@ namespace franka_proxy
 
 
 franka_hardware_controller::franka_hardware_controller
-	(const std::string& controller_ip)
-	:
-	robot_(controller_ip, franka::RealtimeConfig::kIgnore),
-	parameters_initialized_(false),
+(const std::string& controller_ip)
+	: robot_(controller_ip, franka::RealtimeConfig::kIgnore),
+	  parameters_initialized_(false),
+	  stop_motion_(),
+	  speed_factor_(0.05),
 
-	speed_factor_(0.05),
+	  gripper_(controller_ip),
+	  max_width_(gripper_.readOnce().max_width),
 
-	gripper_(controller_ip),
-	max_width_(gripper_.readOnce().max_width),
+	  robot_state_(robot_.readOnce()),
+	  gripper_state_(gripper_.readOnce()),
 
-	robot_state_(robot_.readOnce()),
-	gripper_state_(gripper_.readOnce()),
-
-	terminate_state_thread_(false),
-	state_thread_([this](){ state_update_loop(); })
-{}
+	  terminate_state_thread_(false),
+	  state_thread_([this]() { state_update_loop(); })
+{
+}
 
 
 franka_hardware_controller::~franka_hardware_controller() noexcept
@@ -92,7 +93,8 @@ void franka_hardware_controller::stop_movement()
 		gripper_.stop();
 	}
 	catch (const franka::Exception&)
-	{}
+	{
+	}
 }
 
 
@@ -173,19 +175,17 @@ void franka_hardware_controller::initialize_parameters()
 	while (!parameters_initialized_)
 	{
 		robot_.setCollisionBehavior(
-			{ {20.0, 20.0, 18.0, 18.0, 16.0, 14.0, 12.0} }, { {20.0, 20.0, 18.0, 18.0, 16.0, 14.0, 12.0} },
-			{ {20.0, 20.0, 18.0, 18.0, 16.0, 14.0, 12.0} }, { {20.0, 20.0, 18.0, 18.0, 16.0, 14.0, 12.0} },
-			{ {20.0, 20.0, 20.0, 25.0, 25.0, 25.0} }, { {20.0, 20.0, 20.0, 25.0, 25.0, 25.0} },
-			{ {20.0, 20.0, 20.0, 25.0, 25.0, 25.0} }, { {20.0, 20.0, 20.0, 25.0, 25.0, 25.0} });
+			{{20.0, 20.0, 18.0, 18.0, 16.0, 14.0, 12.0}}, {{20.0, 20.0, 18.0, 18.0, 16.0, 14.0, 12.0}},
+			{{20.0, 20.0, 18.0, 18.0, 16.0, 14.0, 12.0}}, {{20.0, 20.0, 18.0, 18.0, 16.0, 14.0, 12.0}},
+			{{20.0, 20.0, 20.0, 25.0, 25.0, 25.0}}, {{20.0, 20.0, 20.0, 25.0, 25.0, 25.0}},
+			{{20.0, 20.0, 20.0, 25.0, 25.0, 25.0}}, {{20.0, 20.0, 20.0, 25.0, 25.0, 25.0}});
 
-		robot_.setJointImpedance({ {3000, 3000, 3000, 2500, 2500, 2000, 2000} });
-		robot_.setCartesianImpedance({ {3000, 3000, 3000, 300, 300, 300} });
+		robot_.setJointImpedance({{3000, 3000, 3000, 2500, 2500, 2000, 2000}});
+		robot_.setCartesianImpedance({{3000, 3000, 3000, 300, 300, 300}});
 
 		parameters_initialized_ = true;
 	}
 }
-
-
 
 
 //////////////////////////////////////////////////////////////////////////
@@ -196,16 +196,15 @@ void franka_hardware_controller::initialize_parameters()
 
 
 franka_hardware_controller::MotionGenerator::MotionGenerator
-	(double speed_factor, const std::array<double, 7> q_goal,
-	 std::mutex& current_state_lock, franka::RobotState& current_state,
-	 const std::atomic_bool& stop_motion_flag)
-	:
-	q_goal_(q_goal.data()),
+(double speed_factor, const std::array<double, 7> q_goal,
+ std::mutex& current_state_lock, franka::RobotState& current_state,
+ const std::atomic_bool& stop_motion_flag)
+	: q_goal_(q_goal.data()),
 
-	current_state_lock_(current_state_lock),
-	current_state_(current_state),
+	  current_state_lock_(current_state_lock),
+	  current_state_(current_state),
 
-	stop_motion_(stop_motion_flag)
+	  stop_motion_(stop_motion_flag)
 {
 	dq_max_ *= speed_factor;
 	ddq_max_start_ *= speed_factor;
@@ -219,8 +218,9 @@ franka_hardware_controller::MotionGenerator::MotionGenerator
 	q_1_.setZero();
 }
 
+
 bool franka_hardware_controller::MotionGenerator::calculateDesiredValues
-	(double t, Vector7d* delta_q_d) const 
+(double t, Vector7d* delta_q_d) const
 {
 	Vector7i sign_delta_q;
 	for (int i = 0; i < 7; i++)
@@ -235,40 +235,47 @@ bool franka_hardware_controller::MotionGenerator::calculateDesiredValues
 	Vector7d delta_t_2_sync_ = t_f_sync_ - t_2_sync_;
 	std::array<bool, 7> joint_motion_finished{};
 
-	for (size_t i = 0; i < 7; i++) {
-		if (std::abs(delta_q_[i]) < kDeltaQMotionFinished) {
+	for (size_t i = 0; i < 7; i++)
+	{
+		if (std::abs(delta_q_[i]) < kDeltaQMotionFinished)
+		{
 			(*delta_q_d)[i] = 0;
 			joint_motion_finished[i] = true;
 		}
-		else {
-			if (t < t_1_sync_[i]) {
+		else
+		{
+			if (t < t_1_sync_[i])
+			{
 				(*delta_q_d)[i] = -1.0 / std::pow(t_1_sync_[i], 3.0) * dq_max_sync_[i] * sign_delta_q[i] *
 					(0.5 * t - t_1_sync_[i]) * std::pow(t, 3.0);
 			}
-			else if (t >= t_1_sync_[i] && t < t_2_sync_[i]) {
+			else if (t >= t_1_sync_[i] && t < t_2_sync_[i])
+			{
 				(*delta_q_d)[i] = q_1_[i] + (t - t_1_sync_[i]) * dq_max_sync_[i] * sign_delta_q[i];
 			}
-			else if (t >= t_2_sync_[i] && t < t_f_sync_[i]) {
+			else if (t >= t_2_sync_[i] && t < t_f_sync_[i])
+			{
 				(*delta_q_d)[i] = delta_q_[i] +
 					0.5 *
 					(1.0 / std::pow(delta_t_2_sync_[i], 3.0) *
-					(t - t_1_sync_[i] - 2.0 * delta_t_2_sync_[i] - t_d[i]) *
+						(t - t_1_sync_[i] - 2.0 * delta_t_2_sync_[i] - t_d[i]) *
 						std::pow((t - t_1_sync_[i] - t_d[i]), 3.0) +
 						(2.0 * t - 2.0 * t_1_sync_[i] - delta_t_2_sync_[i] - 2.0 * t_d[i])) *
 					dq_max_sync_[i] * sign_delta_q[i];
 			}
-			else {
+			else
+			{
 				(*delta_q_d)[i] = delta_q_[i];
 				joint_motion_finished[i] = true;
 			}
 		}
 	}
 	return std::all_of(joint_motion_finished.cbegin(), joint_motion_finished.cend(),
-		[](bool x) { return x; });
+	                   [](bool x) { return x; });
 }
 
 
-void franka_hardware_controller::MotionGenerator::calculateSynchronizedValues() 
+void franka_hardware_controller::MotionGenerator::calculateSynchronizedValues()
 {
 	Vector7d dq_max_reach(dq_max_);
 	Vector7d t_f = Vector7d::Zero();
@@ -284,10 +291,13 @@ void franka_hardware_controller::MotionGenerator::calculateSynchronizedValues()
 			sign_delta_q[i] = 1;
 	}
 
-	for (size_t i = 0; i < 7; i++) {
-		if (std::abs(delta_q_[i]) > kDeltaQMotionFinished) {
+	for (size_t i = 0; i < 7; i++)
+	{
+		if (std::abs(delta_q_[i]) > kDeltaQMotionFinished)
+		{
 			if (std::abs(delta_q_[i]) < (3.0 / 4.0 * (std::pow(dq_max_[i], 2.0) / ddq_max_start_[i]) +
-				3.0 / 4.0 * (std::pow(dq_max_[i], 2.0) / ddq_max_goal_[i]))) {
+				3.0 / 4.0 * (std::pow(dq_max_[i], 2.0) / ddq_max_goal_[i])))
+			{
 				dq_max_reach[i] = std::sqrt(4.0 / 3.0 * delta_q_[i] * sign_delta_q[i] *
 					(ddq_max_start_[i] * ddq_max_goal_[i]) /
 					(ddq_max_start_[i] + ddq_max_goal_[i]));
@@ -298,13 +308,16 @@ void franka_hardware_controller::MotionGenerator::calculateSynchronizedValues()
 		}
 	}
 	double max_t_f = t_f.maxCoeff();
-	for (size_t i = 0; i < 7; i++) {
-		if (std::abs(delta_q_[i]) > kDeltaQMotionFinished) {
+	for (size_t i = 0; i < 7; i++)
+	{
+		if (std::abs(delta_q_[i]) > kDeltaQMotionFinished)
+		{
 			double a = 1.5 / 2.0 * (ddq_max_goal_[i] + ddq_max_start_[i]);
 			double b = -1.0 * max_t_f * ddq_max_goal_[i] * ddq_max_start_[i];
 			double c = std::abs(delta_q_[i]) * ddq_max_goal_[i] * ddq_max_start_[i];
 			double delta = b * b - 4.0 * a * c;
-			if (delta < 0.0) {
+			if (delta < 0.0)
+			{
 				delta = 0.0;
 			}
 			dq_max_sync_[i] = (-1.0 * b - std::sqrt(delta)) / (2.0 * a);
@@ -320,7 +333,7 @@ void franka_hardware_controller::MotionGenerator::calculateSynchronizedValues()
 
 
 franka::JointPositions franka_hardware_controller::MotionGenerator::operator()
-	(const franka::RobotState& robot_state, franka::Duration period)
+(const franka::RobotState& robot_state, franka::Duration period)
 {
 	{
 		std::lock_guard<std::mutex> state_guard(current_state_lock_);
@@ -333,7 +346,8 @@ franka::JointPositions franka_hardware_controller::MotionGenerator::operator()
 
 	time_ += period.toSec();
 
-	if (time_ == 0.0) {
+	if (time_ == 0.0)
+	{
 		q_start_ = Vector7d(robot_state.q_d.data());
 		delta_q_ = q_goal_ - q_start_;
 		calculateSynchronizedValues();
@@ -342,14 +356,12 @@ franka::JointPositions franka_hardware_controller::MotionGenerator::operator()
 	Vector7d delta_q_d;
 	bool motion_finished = calculateDesiredValues(time_, &delta_q_d);
 
-	std::array<double, 7> joint_positions;
+	std::array<double, 7> joint_positions{};
 	Eigen::VectorXd::Map(&joint_positions[0], 7) = (q_start_ + delta_q_d);
 	franka::JointPositions output(joint_positions);
 	output.motion_finished = motion_finished;
 	return output;
 }
-
-
 
 
 } /* namespace franka_proxy */
