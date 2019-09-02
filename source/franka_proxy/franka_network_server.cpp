@@ -183,7 +183,7 @@ void franka_control_server::process_request(const string& request)
 			LOG_INFO("Moving")
 
 			string rest = request.substring
-				(pos + string(franka_proxy_messages::command_strings[type]).size());
+				(pos + string(franka_proxy_messages::command_strings[type]).size() + 1);
 			list<string> joint_values;
 			rest.split(' ', joint_values);
 			robot_config_7dof joint_config
@@ -193,7 +193,7 @@ void franka_control_server::process_request(const string& request)
 				  static_cast<double>(joint_values[3].to_float()),
 				  static_cast<double>(joint_values[4].to_float()),
 				  static_cast<double>(joint_values[5].to_float()),
-				static_cast<double>(joint_values[6].to_float())}};
+				  static_cast<double>(joint_values[6].to_float())}};
 
 			unsigned char response =
 				execute_exception_to_return_value([&](){controller_.move_to(joint_config);});
@@ -217,7 +217,7 @@ void franka_control_server::process_request(const string& request)
 		{
 			LOG_INFO("Closing Gripper")
 			string rest = request.substring
-				(pos + string(franka_proxy_messages::command_strings[type]).size());
+				(pos + string(franka_proxy_messages::command_strings[type]).size() + 1);
 			list<string> parameters;
 			rest.split(' ', parameters);
 
