@@ -123,8 +123,8 @@ private:
 	const viral_core::auto_pointer<viral_core::network_server> server_;
 	viral_core::auto_pointer<viral_core::network_stream> stream_;
 
-	static constexpr float sleep_seconds_disconnected_ = 0.01f;
-	static constexpr float sleep_seconds_connected_ = 0.002f;
+	static constexpr float sleep_seconds_disconnected_ = 0.033f; // todo 30hz?
+	static constexpr float sleep_seconds_connected_ = 0.002f; // todo < 16ms?
 };
 
 
@@ -162,8 +162,8 @@ private:
 	const viral_core::auto_pointer<viral_core::network_server> server_;
 	viral_core::auto_pointer<viral_core::network_connection> connection_;
 
-	static constexpr float sleep_seconds_disconnected_ = 0.01f;
-	static constexpr float sleep_seconds_connected_ = 0.002f;
+	static constexpr float sleep_seconds_disconnected_ = 0.033f; // todo 30hz?
+	static constexpr float sleep_seconds_connected_ = 0.002f; // todo < 16ms?
 };
 
 

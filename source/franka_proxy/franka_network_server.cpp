@@ -76,7 +76,7 @@ void franka_control_server::task_main()
 		if (!stream_)
 		{
 			thread_util::sleep_seconds
-				(sleep_seconds_connected_);
+				(sleep_seconds_connected_); // todo mixed up durations?
 
 			continue;
 		}

@@ -344,7 +344,7 @@ franka::JointPositions franka_hardware_controller::MotionGenerator::operator()
 		throw stop_motion_trigger();
 
 
-	time_ += period.toSec();
+	time_ += period.toSec(); // todo how long is a period?
 
 	if (time_ == 0.0)
 	{
