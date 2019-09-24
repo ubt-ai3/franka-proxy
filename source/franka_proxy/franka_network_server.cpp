@@ -76,7 +76,7 @@ void franka_control_server::task_main()
 		if (!stream_)
 		{
 			thread_util::sleep_seconds
-				(sleep_seconds_connected_); // todo mixed up durations?
+				(sleep_seconds_disconnected_);
 
 			continue;
 		}
@@ -98,7 +98,7 @@ void franka_control_server::task_main()
 		}
 
 		thread_util::sleep_seconds
-			(sleep_seconds_disconnected_);
+			(sleep_seconds_connected_);
 	}
 }
 
@@ -207,6 +207,24 @@ void franka_control_server::process_request(const string& request)
 			break;
 		}
 
+		case franka_proxy_messages::force_z:
+		{
+			string rest = request.substring
+				(pos + string(franka_proxy_messages::command_strings[type]).size() + 1);
+			list<string> parameter;
+			rest.split(' ', parameter);
+			auto mass = static_cast<double>(parameter[0].to_float());
+			auto duration = static_cast<double>(parameter[1].to_float());
+
+			LOG_INFO(std::string("force_z " + std::to_string(mass) + " " + std::to_string(duration)).c_str());
+
+			unsigned char response =
+				execute_exception_to_return_value([&]() { controller_.apply_z_force(mass, duration); });
+
+			stream_->send_nonblocking(&response, sizeof(unsigned char));
+			break;
+		}
+		
 		case franka_proxy_messages::open_gripper:
 		{
 			LOG_INFO("Opening Gripper")
@@ -314,13 +332,13 @@ void franka_state_server::task_main()
 			// conf:j1,j2,j3,j4,j5,j6,j7$<gripper-position>$<gripper-max-position>
 			string msg("conf:");
 
-			msg += (std::to_string(robot_state.q[0]) + ',').data();
-			msg += (std::to_string(robot_state.q[1]) + ',').data();
-			msg += (std::to_string(robot_state.q[2]) + ',').data();
-			msg += (std::to_string(robot_state.q[3]) + ',').data();
-			msg += (std::to_string(robot_state.q[4]) + ',').data();
-			msg += (std::to_string(robot_state.q[5]) + ',').data();
-			msg += (std::to_string(robot_state.q[6]) + ',').data();
+			msg += (std::to_string(robot_state.q[0]) + ",").data();
+			msg += (std::to_string(robot_state.q[1]) + ",").data();
+			msg += (std::to_string(robot_state.q[2]) + ",").data();
+			msg += (std::to_string(robot_state.q[3]) + ",").data();
+			msg += (std::to_string(robot_state.q[4]) + ",").data();
+			msg += (std::to_string(robot_state.q[5]) + ",").data();
+			msg += (std::to_string(robot_state.q[6])).data();
 
 			msg += '$';
 

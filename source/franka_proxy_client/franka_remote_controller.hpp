@@ -18,7 +18,7 @@
 
 #include <viral_core/network_forward.hpp>
 
-#include "franka_proxy_share/franka_proxy_messages.hpp"
+#include "../franka_proxy_share/franka_proxy_messages.hpp"
 
 #include "franka_network_client.hpp"
 
@@ -39,6 +39,12 @@ public:
 	 viral_core::network_context& network);
 
 	~franka_remote_controller() noexcept;
+
+
+	/**
+	 * todo
+	 */
+	void apply_z_force(double mass, double duration);
 
 
 	/**

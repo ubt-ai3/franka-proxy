@@ -20,19 +20,20 @@ class franka_proxy_messages
 {
 public:
 
-	static constexpr const char* command_strings[5] = {"MOVE", "OPEN GRIPPER", "CLOSE GRIPPER", "SPEED", "ERRORRECOVERY"};
+	static constexpr const char* command_strings[6] = {"MOVE", "FORCE_Z", "OPEN GRIPPER", "CLOSE GRIPPER", "SPEED", "ERRORRECOVERY"};
 	static constexpr const char* command_end_marker = ";";
+
 
 	enum command_type
 	{
 		move,
+		force_z,
 		open_gripper,
 		close_gripper,
 		speed,
 		error_recovery,
 		message_type_count
 	};
-
 
 
 	enum feedback_type

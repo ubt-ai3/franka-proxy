@@ -48,11 +48,25 @@ franka_remote_controller::~franka_remote_controller() noexcept
 }
 
 
+void franka_remote_controller::apply_z_force(double mass, double duration)
+{
+	string msg =
+	(std::string(franka_proxy_messages::command_strings[franka_proxy_messages::force_z]) + ' ' +
+		std::to_string(mass) + ' ' +
+		std::to_string(duration) +
+		franka_proxy_messages::command_end_marker).data();
+	socket_control_->send_command(msg);
+
+	check_response
+	(franka_proxy_messages::feedback_type
+		(socket_control_->receive_response()));
+}
+
+
 void franka_remote_controller::move_to(const robot_config_7dof& target)
 {
 	string msg =
 	(std::string(franka_proxy_messages::command_strings[franka_proxy_messages::move]) + ' ' +
-		std::to_string(target[0]) + ' ' +
 		std::to_string(target[0]) + ' ' +
 		std::to_string(target[1]) + ' ' +
 		std::to_string(target[2]) + ' ' +
@@ -137,9 +151,13 @@ void franka_remote_controller::update()
 {
 	std::lock_guard<std::mutex> state_guard(state_lock_);
 
-	socket_state_->update_messages();
-	list<string> messages
-		(socket_state_->messages());
+	list<string> messages;
+	while (messages.empty())
+	{
+		socket_state_->update_messages();
+		messages = list<string>
+			(socket_state_->messages());
+	}
 
 	for (list<string>::iterator it(messages.first()); it; ++it)
 	{
@@ -172,7 +190,7 @@ void franka_remote_controller::update()
 		list<string> joint_values_list;
 		state_list[0].split(',', joint_values_list);
 
-		if (joint_values_list.size() < 7)
+		if (joint_values_list.size() != 7)
 		{
 			LOG_WARN("State message does not have 7 joint values: " + *it);
 			continue;
