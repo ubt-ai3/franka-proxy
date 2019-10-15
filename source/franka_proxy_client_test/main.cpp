@@ -67,7 +67,8 @@ void execute_retry(Function&& f, franka_proxy::franka_remote_controller& control
 int main()
 {
 	viral_core::ms_network_context network("network");
-	franka_proxy::franka_remote_controller controller("127.0.0.1", network);
+	//franka_proxy::franka_remote_controller controller("127.0.0.1", network);
+	franka_proxy::franka_remote_controller controller("132.180.194.141", network);
 
 	execute_retry([&] { controller.open_gripper(); }, controller);
 	execute_retry([&] { controller.close_gripper(); }, controller);
@@ -97,6 +98,8 @@ int main()
 			-1.063268839608126
 		}
 	};
+
+	controller.set_speed_factor(0.5);
 
 	execute_retry([&] { controller.move_to(pos1); }, controller);
 
