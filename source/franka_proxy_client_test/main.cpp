@@ -99,7 +99,7 @@ int main()
 		}
 	};
 
-	controller.set_speed_factor(0.5);
+	controller.set_speed_factor(0.25);
 
 	execute_retry([&] { controller.move_to(pos1); }, controller);
 
