@@ -23,6 +23,8 @@
 
 namespace franka_proxy
 {
+
+
 //////////////////////////////////////////////////////////////////////////
 //
 // franka_hardware_controller
@@ -31,16 +33,17 @@ namespace franka_proxy
 
 
 franka_hardware_controller::franka_hardware_controller
-(const std::string& controller_ip)
-	: robot_(controller_ip, franka::RealtimeConfig::kIgnore),
-	  parameters_initialized_(false),
-	  stop_motion_(),
-	  speed_factor_(0.05),
+	(const std::string& controller_ip)
+	:
+	robot_(controller_ip, franka::RealtimeConfig::kIgnore),
+	parameters_initialized_(false),
+	stop_motion_(),
+	speed_factor_(0.05),
 
-	  robot_state_(robot_.readOnce()),
+	robot_state_(robot_.readOnce()),
 
-	  terminate_state_thread_(false),
-	  state_thread_([this]() { state_update_loop(); })
+	terminate_state_thread_(false),
+	state_thread_([this]() { state_update_loop(); })
 {
 	try
 	{
@@ -62,7 +65,8 @@ franka_hardware_controller::~franka_hardware_controller() noexcept
 }
 
 
-void franka_hardware_controller::apply_z_force(const double mass, const double duration)
+void franka_hardware_controller::apply_z_force
+	(const double mass, const double duration)
 {
 	initialize_parameters();
 
@@ -113,7 +117,10 @@ void franka_hardware_controller::move_to(const robot_config_7dof& target)
 			std::lock_guard<std::mutex> state_guard(state_lock_);
 		}
 
-		robot_.control(motion_generator, franka::ControllerMode::kJointImpedance, true, 20.);
+		robot_.control
+			(motion_generator,
+			 franka::ControllerMode::kJointImpedance,
+			 true, 20.);
 	}
 	catch (const detail::stop_motion_trigger&)
 	{
@@ -146,7 +153,10 @@ bool franka_hardware_controller::move_to_until_contact
 			std::lock_guard<std::mutex> state_guard(state_lock_);
 		}
 
-		robot_.control(motion_generator, franka::ControllerMode::kJointImpedance, true, 20.);
+		robot_.control
+			(motion_generator,
+			 franka::ControllerMode::kJointImpedance,
+			 true, 20.);
 	}
 	catch (const detail::stop_motion_trigger&)
 	{
@@ -181,8 +191,7 @@ void franka_hardware_controller::stop_movement()
 			gripper_->stop();
 	}
 	catch (const franka::Exception&)
-	{
-	}
+	{}
 }
 
 

@@ -20,7 +20,18 @@ class franka_proxy_messages
 {
 public:
 
-	static constexpr const char* command_strings[7] = {"MOVE", "MOVE_CONTACT", "FORCE_Z", "OPEN GRIPPER", "CLOSE GRIPPER", "SPEED", "ERRORRECOVERY"};
+	static constexpr const char* command_strings[7] =
+	{
+		"MOVE",
+		"MOVE_CONTACT",
+		"FORCE_Z",
+		"OPEN GRIPPER",
+		"CLOSE GRIPPER",
+		"SPEED",
+		"ERRORRECOVERY"
+	};
+
+	
 	static constexpr const char* command_end_marker = ";";
 
 
@@ -52,6 +63,8 @@ public:
 		franka_exception
 	};
 };
+
+
 
 
 } /* namespace franka_proxy */

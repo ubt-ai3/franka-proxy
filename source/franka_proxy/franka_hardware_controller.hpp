@@ -41,7 +41,7 @@ class franka_hardware_controller
 public:
 
 	franka_hardware_controller
-	(const std::string& controller_ip);
+		(const std::string& controller_ip);
 
 	virtual ~franka_hardware_controller() noexcept;
 

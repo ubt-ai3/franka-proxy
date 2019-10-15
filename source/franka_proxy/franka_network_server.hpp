@@ -23,19 +23,6 @@
 #include "franka_hardware_controller.hpp"
 
 
-namespace franka
-{
-struct GripperState;
-struct RobotState;
-}
-
-
-namespace std
-{
-class mutex;
-}
-
-
 namespace franka_proxy
 {
 
@@ -54,9 +41,9 @@ class franka_control_server :
 public:
 
 	franka_control_server
-	(viral_core::network_context& network,
-	 uint16 control_port,
-	 franka_hardware_controller& controller);
+		(viral_core::network_context& network,
+		 uint16 control_port,
+		 franka_hardware_controller& controller);
 
 	~franka_control_server() noexcept;
 
@@ -125,6 +112,8 @@ private:
 };
 
 
+
+
 /**
  *************************************************************************
  *
@@ -139,9 +128,9 @@ class franka_state_server :
 public:
 
 	franka_state_server
-	(viral_core::network_context& network,
-	 uint16 state_port,
-	 franka_hardware_controller& controller);
+		(viral_core::network_context& network,
+		 uint16 state_port,
+		 franka_hardware_controller& controller);
 
 	~franka_state_server() noexcept;
 
@@ -162,6 +151,8 @@ private:
 	static constexpr float sleep_seconds_disconnected_ = 0.033f; // todo 30hz?
 	static constexpr float sleep_seconds_connected_ = 0.002f; // todo < 16ms?
 };
+
+
 
 
 } /* namespace franka_proxy */

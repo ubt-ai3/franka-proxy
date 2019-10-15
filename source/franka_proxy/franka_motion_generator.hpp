@@ -28,8 +28,8 @@ namespace detail
 /**
  * Thrown from motion_generator to terminate it.
  */
-class stop_motion_trigger{};
-class contact_stop_trigger{};
+class stop_motion_trigger {};
+class contact_stop_trigger {};
 
 
 /**
@@ -37,9 +37,10 @@ class contact_stop_trigger{};
  *
  * @class motion_generator
  *
- * An example showing how to generate a joint pose motion to a goal position. Adapted from:
- * Wisama Khalil and Etienne Dombre. 2002. Modeling, Identification and Control of Robots
- * (Kogan Page Science Paper edition).
+ * An example showing how to generate a joint pose motion to a goal
+ * position. Adapted from:
+ * Wisama Khalil and Etienne Dombre. 2002. Modeling, Identification and
+ * Control of Robots (Kogan Page Science Paper edition).
  *
  ************************************************************************/
 class motion_generator
@@ -67,9 +68,9 @@ public:
 	 *
 	 * @return Joint positions for use inside a control loop.
 	 */
-	franka::JointPositions operator()(
-		const franka::RobotState& robot_state,
-		franka::Duration period);
+	franka::JointPositions operator()
+		(const franka::RobotState& robot_state,
+		 franka::Duration period);
 
 	
 private:
@@ -108,6 +109,8 @@ private:
 };
 
 
+
+
 /**
  *************************************************************************
  *
@@ -120,15 +123,16 @@ class force_motion_generator
 {
 public:
 
-	force_motion_generator(	franka::Robot& robot,double mass, double duration);
+	force_motion_generator
+		(franka::Robot& robot, double mass, double duration);
 
-	franka::Torques callback(
-		const franka::RobotState& robot_state,
-		franka::Duration period);
+	franka::Torques callback
+		(const franka::RobotState& robot_state,
+		 franka::Duration period);
 
 private:
 
-	Eigen::Vector3d get_position(const franka::RobotState& robot_state);;
+	Eigen::Vector3d get_position(const franka::RobotState& robot_state);
 
 
 	double time_{0.0};
@@ -148,6 +152,8 @@ private:
 
 	Eigen::Vector3d initial_position;
 };
+
+
 
 
 } /* namespace detail */

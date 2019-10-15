@@ -35,8 +35,8 @@ class franka_remote_controller
 public:
 
 	franka_remote_controller
-	(const std::string& proxy_ip,
-	 viral_core::network_context& network);
+		(const std::string& proxy_ip,
+		 viral_core::network_context& network);
 
 	~franka_remote_controller() noexcept;
 
@@ -157,7 +157,9 @@ private:
 
 	enum class response_type
 		{ success, success_contact };
-	response_type check_response(franka_proxy_messages::feedback_type response);
+
+	response_type check_response
+		(franka_proxy_messages::feedback_type response);
 
 
 	const std::string franka_ip_;

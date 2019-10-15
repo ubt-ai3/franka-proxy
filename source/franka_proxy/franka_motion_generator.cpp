@@ -15,6 +15,8 @@ namespace franka_proxy
 {
 namespace detail
 {
+
+
 //////////////////////////////////////////////////////////////////////////
 //
 // franka_motion_generator
@@ -287,6 +289,8 @@ Eigen::Vector3d force_motion_generator::get_position(const franka::RobotState& r
 		robot_state.O_T_EE[13],
 		robot_state.O_T_EE[14]);
 }
+
+
 
 
 } /* namespace detail */

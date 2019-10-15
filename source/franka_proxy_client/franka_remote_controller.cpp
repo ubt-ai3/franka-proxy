@@ -30,13 +30,14 @@ using namespace viral_core;
 
 
 franka_remote_controller::franka_remote_controller
-(const std::string& proxy_ip,
- network_context& network)
-	: franka_ip_(proxy_ip),
-	  network_(network),
-	  current_config_(),
-	  current_gripper_pos_(),
-	  max_gripper_pos_()
+	(const std::string& proxy_ip,
+	 network_context& network)
+	:
+	franka_ip_(proxy_ip),
+	network_(network),
+	current_config_(),
+	current_gripper_pos_(),
+	max_gripper_pos_()
 {
 	initialize_sockets();
 }
@@ -293,6 +294,8 @@ franka_remote_controller::response_type
 			throw remote_exception();
 	}
 }
+
+
 
 
 } /* namespace franka_proxy */

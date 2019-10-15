@@ -35,9 +35,9 @@ class franka_state_client
 public:
 
 	franka_state_client
-	(viral_core::network_context& network,
-	 const viral_core::string& remote_ip,
-	 uint16 remote_port);
+		(viral_core::network_context& network,
+		 const viral_core::string& remote_ip,
+		 uint16 remote_port);
 
 	~franka_state_client() noexcept;
 
@@ -66,6 +66,8 @@ private:
 };
 
 
+
+
 /**
  *************************************************************************
  *
@@ -79,9 +81,9 @@ class franka_control_client
 public:
 
 	franka_control_client
-	(viral_core::network_context& network,
-	 const viral_core::string& remote_ip,
-	 uint16 remote_port);
+		(viral_core::network_context& network,
+		 const viral_core::string& remote_ip,
+		 uint16 remote_port);
 
 	~franka_control_client() noexcept;
 
@@ -99,6 +101,8 @@ private:
 
 	viral_core::auto_pointer<viral_core::network_connection> connection_;
 };
+
+
 
 
 } /* namespace franka_proxy */

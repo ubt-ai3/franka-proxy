@@ -38,12 +38,13 @@ using namespace viral_core;
 
 
 franka_control_server::franka_control_server
-(network_context& network,
- uint16 control_port,
- franka_hardware_controller& controller)
-	: controller_(controller),
+	(network_context& network,
+	 uint16 control_port,
+	 franka_hardware_controller& controller)
+	:
+	controller_(controller),
 
-	  server_(network.create_server(control_port))
+	server_(network.create_server(control_port))
 {
 	start();
 }
@@ -324,6 +325,8 @@ void franka_control_server::process_request(const string& request)
 }
 
 
+
+
 //////////////////////////////////////////////////////////////////////////
 //
 // franka_state_server
@@ -332,15 +335,15 @@ void franka_control_server::process_request(const string& request)
 
 
 franka_state_server::franka_state_server
-(network_context& network,
- uint16 state_port,
- franka_hardware_controller& controller)
-	: controller_(controller),
+	(network_context& network,
+	 uint16 state_port,
+	 franka_hardware_controller& controller)
+	:
+	controller_(controller),
 
-	  state_port_(state_port),
-	  server_(network.create_server(state_port_))
-{
-}
+	state_port_(state_port),
+	server_(network.create_server(state_port_))
+{}
 
 
 franka_state_server::~franka_state_server() noexcept
@@ -422,6 +425,8 @@ void franka_state_server::send_status_message(const string& command)
 		network_transfer::send_partial_nonblocking
 			(connection_.object(), network_data, progress);
 }
+
+
 
 
 } /* namespace franka_proxy */
