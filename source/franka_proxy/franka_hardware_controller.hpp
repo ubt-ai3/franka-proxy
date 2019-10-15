@@ -55,6 +55,11 @@ public:
 	 * after automatic error recovery
 	 */
 	void move_to(const robot_config_7dof& target);
+	/**
+	 * Moves the Panda robot to given target; In case
+	 * of contact, the movement is aborted and false is returned.
+	 */
+	bool move_to_sensitive(const robot_config_7dof& target);
 	void stop_movement();
 
 	void set_speed_factor(double speed_factor);
@@ -86,6 +91,9 @@ private:
 	 * Initialize parameters such as joint impedance and collision behavior.
 	 */
 	void initialize_parameters();
+
+	void set_default_collision_behaviour();
+	void set_contact_drive_collision_behaviour();
 
 
 	// Robot

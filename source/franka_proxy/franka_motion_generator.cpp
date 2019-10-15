@@ -23,15 +23,19 @@ namespace detail
 
 
 motion_generator::motion_generator
-(double speed_factor, const std::array<double, 7> q_goal,
- std::mutex& current_state_lock, franka::RobotState& current_state,
- const std::atomic_bool& stop_motion_flag)
-	: q_goal_(q_goal.data()),
+	(double speed_factor, const std::array<double, 7> q_goal,
+	 std::mutex& current_state_lock,
+	 franka::RobotState& current_state,
+	 const std::atomic_bool& stop_motion_flag,
+	 bool stop_on_contact)
+	:
+	q_goal_(q_goal.data()),
 
-	  current_state_lock_(current_state_lock),
-	  current_state_(current_state),
+	current_state_lock_(current_state_lock),
+	current_state_(current_state),
 
-	  stop_motion_(stop_motion_flag)
+	stop_motion_(stop_motion_flag),
+	stop_on_contact_(stop_on_contact)
 {
 	dq_max_ *= speed_factor;
 	ddq_max_start_ *= speed_factor;
@@ -159,6 +163,16 @@ void motion_generator::calculateSynchronizedValues()
 }
 
 
+bool motion_generator::colliding(const franka::RobotState& state)
+{
+	for (double v : state.joint_contact)
+		if (v > 0) return true;
+	for (double v : state.cartesian_contact)
+		if (v > 0) return true;
+	return false;
+}
+
+
 franka::JointPositions motion_generator::operator()
 (const franka::RobotState& robot_state, franka::Duration period)
 {
@@ -170,6 +184,8 @@ franka::JointPositions motion_generator::operator()
 	if (stop_motion_)
 		throw stop_motion_trigger();
 
+	if (stop_on_contact_ && colliding(robot_state))
+		throw contact_stop_trigger();
 
 	time_ += period.toSec(); // todo how long is a period?
 
