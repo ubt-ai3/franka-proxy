@@ -127,7 +127,7 @@ void franka_hardware_controller::move_to(const robot_config_7dof& target)
 }
 
 
-bool franka_hardware_controller::move_to_sensitive
+bool franka_hardware_controller::move_to_until_contact
 	(const robot_config_7dof& target)
 {
 	initialize_parameters();

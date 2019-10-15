@@ -72,49 +72,46 @@ private:
 	template <class Function>
 	static unsigned char execute_exception_to_return_value(Function&& f)
 	{
-		unsigned char ret = franka_proxy_messages::feedback_type::success;
 		try
 		{
-			f();
+			return f();
 		}
 		catch (const franka::ControlException&)
 		{
-			ret = franka_proxy_messages::feedback_type::control_exception;
+			return franka_proxy_messages::feedback_type::control_exception;
 		}
 		catch (const franka::CommandException&)
 		{
-			ret = franka_proxy_messages::feedback_type::command_exception;
+			return franka_proxy_messages::feedback_type::command_exception;
 		}
 		catch (const franka::NetworkException&)
 		{
-			ret = franka_proxy_messages::feedback_type::network_exception;
+			return franka_proxy_messages::feedback_type::network_exception;
 		}
 		catch (const franka::InvalidOperationException&)
 		{
-			ret = franka_proxy_messages::feedback_type::invalid_operation;
+			return franka_proxy_messages::feedback_type::invalid_operation;
 		}
 		catch (const franka::RealtimeException&)
 		{
-			ret = franka_proxy_messages::feedback_type::realtime_exception;
+			return franka_proxy_messages::feedback_type::realtime_exception;
 		}
 		catch (const franka::ModelException&)
 		{
-			ret = franka_proxy_messages::feedback_type::model_exception;
+			return franka_proxy_messages::feedback_type::model_exception;
 		}
 		catch (const franka::ProtocolException&)
 		{
-			ret = franka_proxy_messages::feedback_type::protocol_exception;
+			return franka_proxy_messages::feedback_type::protocol_exception;
 		}
 		catch (const franka::IncompatibleVersionException&)
 		{
-			ret = franka_proxy_messages::feedback_type::incompatible_version;
+			return franka_proxy_messages::feedback_type::incompatible_version;
 		}
 		catch (const franka::Exception&)
 		{
-			ret = franka_proxy_messages::feedback_type::franka_exception;
+			return franka_proxy_messages::feedback_type::franka_exception;
 		}
-
-		return ret;
 	}
 
 

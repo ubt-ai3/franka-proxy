@@ -59,7 +59,7 @@ public:
 	 * Moves the Panda robot to given target; In case
 	 * of contact, the movement is aborted and false is returned.
 	 */
-	bool move_to_sensitive(const robot_config_7dof& target);
+	bool move_to_until_contact(const robot_config_7dof& target);
 	void stop_movement();
 
 	void set_speed_factor(double speed_factor);
