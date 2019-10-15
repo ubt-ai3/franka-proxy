@@ -208,6 +208,7 @@ void franka_control_server::process_request(const string& request)
 					return franka_proxy_messages::success;
 				});
 
+			LOG_INFO("Sending response: " + static_cast<int>(response));
 			stream_->send_nonblocking(&response, sizeof(unsigned char));
 			break;
 		}
@@ -242,6 +243,7 @@ void franka_control_server::process_request(const string& request)
 						return franka_proxy_messages::success_contact;
 				});
 
+			LOG_INFO("Sending response: " + static_cast<int>(response));
 			stream_->send_nonblocking(&response, sizeof(unsigned char));
 			break;
 		}
@@ -264,6 +266,7 @@ void franka_control_server::process_request(const string& request)
 					return franka_proxy_messages::success;
 				});
 
+			LOG_INFO("Sending response: " + static_cast<int>(response));
 			stream_->send_nonblocking(&response, sizeof(unsigned char));
 			break;
 		}
@@ -298,6 +301,7 @@ void franka_control_server::process_request(const string& request)
 					return franka_proxy_messages::success; 
 				});
 
+			LOG_INFO("Sending response: " + static_cast<int>(response));
 			stream_->send_nonblocking(&response, sizeof(unsigned char));
 			break;
 		}
