@@ -137,6 +137,7 @@ public:
 	robot_config_7dof current_config() const;
 	int current_gripper_pos() const;
 	int max_gripper_pos() const;
+	bool gripper_grasped() const;
 
 
 	/**
@@ -174,6 +175,7 @@ private:
 	robot_config_7dof current_config_;
 	int current_gripper_pos_;
 	int max_gripper_pos_;
+	bool gripper_grasped_;
 
 
 	static constexpr unsigned short franka_control_port = 4711;

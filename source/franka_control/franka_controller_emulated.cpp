@@ -92,6 +92,17 @@ void franka_controller_emulated::close_gripper(double speed, double force)
 }
 
 
+bool franka_controller_emulated::gripper_grasped() const
+	{ return false; }
+
+
+double franka_controller_emulated::speed_factor() const
+{
+	MUTEX_SCOPE(controller_mutex_);
+	return speed_normalized_;
+}
+
+
 void franka_controller_emulated::set_speed_factor(double speed_factor)
 {
 	MUTEX_SCOPE(controller_mutex_);

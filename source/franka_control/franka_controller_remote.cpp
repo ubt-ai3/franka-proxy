@@ -74,6 +74,10 @@ void franka_controller_remote::close_gripper(double speed, double force)
 	{ controller_->close_gripper(speed, force); }
 
 
+bool franka_controller_remote::gripper_grasped() const
+	{ return controller_->gripper_grasped(); }
+
+
 double franka_controller_remote::speed_factor() const
 {
 	std::lock_guard<std::mutex> l(state_lock_);

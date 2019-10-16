@@ -383,7 +383,7 @@ void franka_state_server::task_main()
 			franka::GripperState gripper_state = controller_.gripper_state();
 
 			// Send state.
-			// conf:j1,j2,j3,j4,j5,j6,j7$<gripper-position>$<gripper-max-position>
+			// conf:j1,j2,j3,j4,j5,j6,j7$<gripper-position>$<gripper-max-position>$<gripper-is-grasped>
 			string msg("conf:");
 
 			msg += (std::to_string(robot_state.q[0]) + ",").data();
@@ -401,6 +401,10 @@ void franka_state_server::task_main()
 			msg += '$';
 
 			msg += std::to_string(gripper_state.max_width).data();
+
+			msg += '$';
+
+			msg += std::to_string(gripper_state.is_grasped).data();
 
 			msg += '\n';
 

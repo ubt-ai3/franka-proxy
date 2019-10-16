@@ -45,7 +45,9 @@ public:
 
 	void open_gripper() override;
 	void close_gripper(double speed = 0.025, double force = 0.05) override;
+	bool gripper_grasped() const override;
 
+	double speed_factor() const override;
 	void set_speed_factor(double speed_factor) override;
 
 	void automatic_error_recovery() override;

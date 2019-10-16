@@ -173,6 +173,13 @@ int franka_remote_controller::max_gripper_pos() const
 }
 
 
+bool franka_remote_controller::gripper_grasped() const
+{
+	std::lock_guard<std::mutex> state_guard(state_lock_);
+	return gripper_grasped_;
+}
+
+
 void franka_remote_controller::update()
 {
 	std::lock_guard<std::mutex> state_guard(state_lock_);
@@ -188,7 +195,7 @@ void franka_remote_controller::update()
 	for (list<string>::iterator it(messages.first()); it; ++it)
 	{
 		// Incoming format from TX90:
-		// conf:j1,j2,j3,j4,j5,j6,j7$<gripper-position>$<gripper-max-position>
+		// conf:j1,j2,j3,j4,j5,j6,j7$<gripper-position>$<gripper-max-position>$<gripper-is-grasped>
 
 
 		// Separate state values from message string.
@@ -205,7 +212,7 @@ void franka_remote_controller::update()
 		list<string> state_list;
 		state_str.split('$', state_list);
 
-		if (state_list.size() != 3)
+		if (state_list.size() != 4)
 		{
 			LOG_WARN("State message has invalid format: " + *it);
 			continue;
@@ -239,6 +246,8 @@ void franka_remote_controller::update()
 			state_list[1].to_int32();
 		max_gripper_pos_ =
 			state_list[2].to_int32();
+		gripper_grasped_ =
+			state_list[3].to_int32() > 0;
 	}
 }
 
