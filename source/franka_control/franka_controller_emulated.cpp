@@ -224,6 +224,9 @@ void franka_controller_emulated::update()
 }
 
 
+const float franka_controller_emulated::max_speed_length_per_sec_ = 200;
+
+
 
 
 } /* namespace franka_control */
