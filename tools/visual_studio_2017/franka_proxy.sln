@@ -47,6 +47,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libvorbis", "..\..\external
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "zlib", "..\..\external\viral\tools\visual_studio_2017\external\zlib.vcxproj", "{57EFCBAC-C6DB-4A0A-911B-029DFD676B7B}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "franka_control", "projects\franka_control.vcxproj", "{3125ED9C-58B1-4EA5-9214-9178EF9C8EB7}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -93,6 +95,10 @@ Global
 		{57EFCBAC-C6DB-4A0A-911B-029DFD676B7B}.Debug|x64.Build.0 = Debug|x64
 		{57EFCBAC-C6DB-4A0A-911B-029DFD676B7B}.Release|x64.ActiveCfg = Release|x64
 		{57EFCBAC-C6DB-4A0A-911B-029DFD676B7B}.Release|x64.Build.0 = Release|x64
+		{3125ED9C-58B1-4EA5-9214-9178EF9C8EB7}.Debug|x64.ActiveCfg = Debug|x64
+		{3125ED9C-58B1-4EA5-9214-9178EF9C8EB7}.Debug|x64.Build.0 = Debug|x64
+		{3125ED9C-58B1-4EA5-9214-9178EF9C8EB7}.Release|x64.ActiveCfg = Release|x64
+		{3125ED9C-58B1-4EA5-9214-9178EF9C8EB7}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
