@@ -35,7 +35,7 @@ class franka_remote_controller
 public:
 
 	franka_remote_controller
-	(const std::string& proxy_ip,
+	(std::string proxy_ip,
 	 viral_core::network_context& network);
 
 	~franka_remote_controller() noexcept;

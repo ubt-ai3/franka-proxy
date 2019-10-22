@@ -115,7 +115,7 @@ class force_motion_generator
 {
 public:
 
-	force_motion_generator(	franka::Robot& robot,double mass, double duration);
+	force_motion_generator(franka::Robot& robot,double mass, double duration);
 
 	franka::Torques callback(
 		const franka::RobotState& robot_state,
@@ -123,7 +123,7 @@ public:
 
 private:
 
-	Eigen::Vector3d get_position(const franka::RobotState& robot_state);;
+	Eigen::Vector3d get_position(const franka::RobotState& robot_state);
 
 
 	double time_{0.0};
