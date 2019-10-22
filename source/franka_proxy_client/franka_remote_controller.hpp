@@ -8,8 +8,8 @@
  ************************************************************************/
 
 
-#if !defined(INCLUDED__FRANKA_PROXY_CLIENT__FRANKA_REMOTE_KONTROLLER_HPP)
-#define INCLUDED__FRANKA_PROXY_CLIENT__FRANKA_REMOTE_KONTROLLER_HPP
+#if !defined(INCLUDED__FRANKA_PROXY_CLIENT__FRANKA_REMOTE_CONTROLLER_HPP)
+#define INCLUDED__FRANKA_PROXY_CLIENT__FRANKA_REMOTE_CONTROLLER_HPP
 
 
 #include <array>
@@ -35,8 +35,8 @@ class franka_remote_controller
 public:
 
 	franka_remote_controller
-	(std::string proxy_ip,
-	 viral_core::network_context& network);
+		(const std::string& proxy_ip,
+		 viral_core::network_context& network);
 
 	~franka_remote_controller() noexcept;
 
@@ -59,6 +59,23 @@ public:
 	 * @throw viral_core::network_exception if the connection was lost.
 	 */
 	void move_to(const robot_config_7dof& target);
+
+
+	/**
+	 * Start control-loop to move the robot to given target.
+	 *
+	 * Returns if the movement was completed successfully.
+	 * Throws some remote_exception on failure.
+	 *
+	 * The motion will stop on contact. If the motions was
+	 * stopped because contact, false is returned.
+	 *
+	 * @TODO: Check exceptions.
+	 *
+	 * @throw remote_exception if the movement was unsuccessful.
+	 * @throw viral_core::network_exception if the connection was lost.
+	 */
+	bool move_to_until_contact(const robot_config_7dof& target);
 
 
 	/**
@@ -120,6 +137,7 @@ public:
 	robot_config_7dof current_config() const;
 	int current_gripper_pos() const;
 	int max_gripper_pos() const;
+	bool gripper_grasped() const;
 
 
 	/**
@@ -138,7 +156,11 @@ private:
 	void initialize_sockets();
 	void shutdown_sockets() noexcept;
 
-	void check_response(franka_proxy_messages::feedback_type response);
+	enum class response_type
+		{ success, success_contact };
+
+	response_type check_response
+		(franka_proxy_messages::feedback_type response);
 
 
 	const std::string franka_ip_;
@@ -153,6 +175,7 @@ private:
 	robot_config_7dof current_config_;
 	int current_gripper_pos_;
 	int max_gripper_pos_;
+	bool gripper_grasped_;
 
 
 	static constexpr unsigned short franka_control_port = 4711;
@@ -160,7 +183,9 @@ private:
 };
 
 
+
+
 } /* namespace franka_proxy */
 
 
-#endif /* !defined(INCLUDED__FRANKA_PROXY_CLIENT__FRANKA_REMOTE_KONTROLLER_HPP) */
+#endif /* !defined(INCLUDED__FRANKA_PROXY_CLIENT__FRANKA_REMOTE_CONTROLLER_HPP) */

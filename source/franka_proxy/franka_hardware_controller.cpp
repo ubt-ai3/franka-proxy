@@ -23,6 +23,8 @@
 
 namespace franka_proxy
 {
+
+
 //////////////////////////////////////////////////////////////////////////
 //
 // franka_hardware_controller
@@ -31,16 +33,17 @@ namespace franka_proxy
 
 
 franka_hardware_controller::franka_hardware_controller
-(const std::string& controller_ip)
-	: robot_(controller_ip, franka::RealtimeConfig::kIgnore),
-	  parameters_initialized_(false),
-	  stop_motion_(),
-	  speed_factor_(0.05),
+	(const std::string& controller_ip)
+	:
+	robot_(controller_ip, franka::RealtimeConfig::kIgnore),
+	parameters_initialized_(false),
+	stop_motion_(),
+	speed_factor_(0.05),
 
-	  robot_state_(robot_.readOnce()),
+	robot_state_(robot_.readOnce()),
 
-	  terminate_state_thread_(false),
-	  state_thread_([this]() { state_update_loop(); })
+	terminate_state_thread_(false),
+	state_thread_([this]() { state_update_loop(); })
 {
 	try
 	{
@@ -62,7 +65,8 @@ franka_hardware_controller::~franka_hardware_controller() noexcept
 }
 
 
-void franka_hardware_controller::apply_z_force(const double mass, const double duration)
+void franka_hardware_controller::apply_z_force
+	(const double mass, const double duration)
 {
 	initialize_parameters();
 
@@ -101,7 +105,7 @@ void franka_hardware_controller::move_to(const robot_config_7dof& target)
 	initialize_parameters();
 
 	detail::motion_generator motion_generator
-		(speed_factor_, target, state_lock_, robot_state_, stop_motion_);
+		(speed_factor_, target, state_lock_, robot_state_, stop_motion_, false);
 
 	stop_motion_ = false;
 
@@ -113,7 +117,10 @@ void franka_hardware_controller::move_to(const robot_config_7dof& target)
 			std::lock_guard<std::mutex> state_guard(state_lock_);
 		}
 
-		robot_.control(motion_generator, franka::ControllerMode::kJointImpedance, true, 20.);
+		robot_.control
+			(motion_generator,
+			 franka::ControllerMode::kJointImpedance,
+			 true, 20.);
 	}
 	catch (const detail::stop_motion_trigger&)
 	{
@@ -127,6 +134,53 @@ void franka_hardware_controller::move_to(const robot_config_7dof& target)
 }
 
 
+bool franka_hardware_controller::move_to_until_contact
+	(const robot_config_7dof& target)
+{
+	initialize_parameters();
+
+	detail::motion_generator motion_generator
+		(speed_factor_, target, state_lock_, robot_state_, stop_motion_, true);
+
+	stop_motion_ = false;
+	set_contact_drive_collision_behaviour();
+
+	try
+	{
+		control_loop_running_.set(true);
+		{
+			// Lock the current_state_lock_ to wait for state_thread_ to finish.
+			std::lock_guard<std::mutex> state_guard(state_lock_);
+		}
+
+		robot_.control
+			(motion_generator,
+			 franka::ControllerMode::kJointImpedance,
+			 true, 20.);
+	}
+	catch (const detail::stop_motion_trigger&)
+	{
+		control_loop_running_.set(false);
+		set_default_collision_behaviour();
+		return true;
+	}
+	catch (const detail::contact_stop_trigger&)
+	{
+		control_loop_running_.set(false);
+		set_default_collision_behaviour();
+		return false;
+	}
+	catch (const franka::Exception&)
+	{
+		control_loop_running_.set(false);
+		throw;
+	}
+	
+	set_default_collision_behaviour();
+	return true;
+}
+
+
 void franka_hardware_controller::stop_movement()
 {
 	stop_motion_ = true;
@@ -137,8 +191,7 @@ void franka_hardware_controller::stop_movement()
 			gripper_->stop();
 	}
 	catch (const franka::Exception&)
-	{
-	}
+	{}
 }
 
 
@@ -225,11 +278,7 @@ void franka_hardware_controller::initialize_parameters()
 {
 	while (!parameters_initialized_)
 	{
-		robot_.setCollisionBehavior(
-			{{20.0, 20.0, 18.0, 18.0, 16.0, 14.0, 12.0}}, {{20.0, 20.0, 18.0, 18.0, 16.0, 14.0, 12.0}},
-			{{20.0, 20.0, 18.0, 18.0, 16.0, 14.0, 12.0}}, {{20.0, 20.0, 18.0, 18.0, 16.0, 14.0, 12.0}},
-			{{20.0, 20.0, 20.0, 25.0, 25.0, 25.0}}, {{20.0, 20.0, 20.0, 25.0, 25.0, 25.0}},
-			{{20.0, 20.0, 20.0, 25.0, 25.0, 25.0}}, {{20.0, 20.0, 20.0, 25.0, 25.0, 25.0}});
+		set_default_collision_behaviour();
 
 		robot_.setJointImpedance({{3000, 3000, 3000, 2500, 2500, 2000, 2000}});
 		robot_.setCartesianImpedance({{3000, 3000, 3000, 300, 300, 300}});
@@ -237,6 +286,28 @@ void franka_hardware_controller::initialize_parameters()
 		parameters_initialized_ = true;
 	}
 }
+
+
+void franka_hardware_controller::set_default_collision_behaviour()
+{
+	robot_.setCollisionBehavior(
+		{{20.0, 20.0, 18.0, 18.0, 16.0, 14.0, 12.0}}, {{20.0, 20.0, 18.0, 18.0, 16.0, 14.0, 12.0}},
+		{{20.0, 20.0, 18.0, 18.0, 16.0, 14.0, 12.0}}, {{20.0, 20.0, 18.0, 18.0, 16.0, 14.0, 12.0}},
+		{{20.0, 20.0, 20.0, 25.0, 25.0, 25.0}}, {{20.0, 20.0, 20.0, 25.0, 25.0, 25.0}},
+		{{20.0, 20.0, 20.0, 25.0, 25.0, 25.0}}, {{20.0, 20.0, 20.0, 25.0, 25.0, 25.0}});
+}
+
+
+void franka_hardware_controller::set_contact_drive_collision_behaviour()
+{
+	robot_.setCollisionBehavior(
+		{ {5.0, 5.0, 4.5, 4.5, 4.0, 3.5, 3.0} }, { {5.0, 5.0, 4.5, 4.5, 4.0, 3.5, 3.0} },
+		{ {5.0, 5.0, 4.5, 4.5, 4.0, 3.5, 3.0} }, { {5.0, 5.0, 4.5, 4.5, 4.0, 3.5, 3.0} },
+		{ {5.0, 5.0, 5.0, 6.25, 6.25, 6.25} }, { {5.0, 5.0, 5.0, 6.25, 6.25, 6.25} },
+		{ {5.0, 5.0, 5.0, 6.25, 6.25, 6.25} }, { {5.0, 5.0, 5.0, 6.25, 6.25, 6.25} });
+}
+
+
 
 
 } /* namespace franka_proxy */

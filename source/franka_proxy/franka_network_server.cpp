@@ -38,12 +38,13 @@ using namespace viral_core;
 
 
 franka_control_server::franka_control_server
-(network_context& network,
- uint16 control_port,
- franka_hardware_controller& controller)
-	: controller_(controller),
+	(network_context& network,
+	 uint16 control_port,
+	 franka_hardware_controller& controller)
+	:
+	controller_(controller),
 
-	  server_(network.create_server(control_port))
+	server_(network.create_server(control_port))
 {
 	start();
 }
@@ -201,8 +202,48 @@ void franka_control_server::process_request(const string& request)
 			};
 
 			unsigned char response =
-				execute_exception_to_return_value([&]() { controller_.move_to(joint_config); });
+				execute_exception_to_return_value([&]()
+				{
+					controller_.move_to(joint_config);
+					return franka_proxy_messages::success;
+				});
 
+			LOG_INFO("Sending response: " + static_cast<int>(response));
+			stream_->send_nonblocking(&response, sizeof(unsigned char));
+			break;
+		}
+		
+		case franka_proxy_messages::move_contact:
+		{
+			LOG_INFO("Moving sensitive")
+
+			string rest = request.substring
+				(pos + string(franka_proxy_messages::command_strings[type]).size() + 1);
+			list<string> joint_values;
+			rest.split(' ', joint_values);
+			robot_config_7dof joint_config
+			{
+				{
+					static_cast<double>(joint_values[0].to_float()),
+					static_cast<double>(joint_values[1].to_float()),
+					static_cast<double>(joint_values[2].to_float()),
+					static_cast<double>(joint_values[3].to_float()),
+					static_cast<double>(joint_values[4].to_float()),
+					static_cast<double>(joint_values[5].to_float()),
+					static_cast<double>(joint_values[6].to_float())
+				}
+			};
+
+			unsigned char response =
+				execute_exception_to_return_value([&]()
+				{
+					if (controller_.move_to_until_contact(joint_config))
+						return franka_proxy_messages::success;
+					else
+						return franka_proxy_messages::success_contact;
+				});
+
+			LOG_INFO("Sending response: " + static_cast<int>(response));
 			stream_->send_nonblocking(&response, sizeof(unsigned char));
 			break;
 		}
@@ -219,8 +260,13 @@ void franka_control_server::process_request(const string& request)
 			LOG_INFO(std::string("force_z " + std::to_string(mass) + " " + std::to_string(duration)).c_str());
 
 			unsigned char response =
-				execute_exception_to_return_value([&]() { controller_.apply_z_force(mass, duration); });
+				execute_exception_to_return_value([&]()
+				{
+					controller_.apply_z_force(mass, duration);
+					return franka_proxy_messages::success;
+				});
 
+			LOG_INFO("Sending response: " + static_cast<int>(response));
 			stream_->send_nonblocking(&response, sizeof(unsigned char));
 			break;
 		}
@@ -230,7 +276,11 @@ void franka_control_server::process_request(const string& request)
 			LOG_INFO("Opening Gripper")
 
 			unsigned char response =
-				execute_exception_to_return_value([&]() { controller_.open_gripper(); });
+				execute_exception_to_return_value([&]()
+				{
+					controller_.open_gripper();
+					return franka_proxy_messages::success;
+				});
 
 			stream_->send_nonblocking(&response, sizeof(unsigned char));
 			break;
@@ -248,8 +298,10 @@ void franka_control_server::process_request(const string& request)
 				execute_exception_to_return_value([&]()
 				{
 					controller_.close_gripper(parameters[0].to_float(), parameters[1].to_float());
+					return franka_proxy_messages::success; 
 				});
 
+			LOG_INFO("Sending response: " + static_cast<int>(response));
 			stream_->send_nonblocking(&response, sizeof(unsigned char));
 			break;
 		}
@@ -277,6 +329,8 @@ void franka_control_server::process_request(const string& request)
 }
 
 
+
+
 //////////////////////////////////////////////////////////////////////////
 //
 // franka_state_server
@@ -285,15 +339,15 @@ void franka_control_server::process_request(const string& request)
 
 
 franka_state_server::franka_state_server
-(network_context& network,
- uint16 state_port,
- franka_hardware_controller& controller)
-	: controller_(controller),
+	(network_context& network,
+	 uint16 state_port,
+	 franka_hardware_controller& controller)
+	:
+	controller_(controller),
 
-	  state_port_(state_port),
-	  server_(network.create_server(state_port_))
-{
-}
+	state_port_(state_port),
+	server_(network.create_server(state_port_))
+{}
 
 
 franka_state_server::~franka_state_server() noexcept
@@ -329,7 +383,7 @@ void franka_state_server::task_main()
 			franka::GripperState gripper_state = controller_.gripper_state();
 
 			// Send state.
-			// conf:j1,j2,j3,j4,j5,j6,j7$<gripper-position>$<gripper-max-position>
+			// conf:j1,j2,j3,j4,j5,j6,j7$<gripper-position>$<gripper-max-position>$<gripper-is-grasped>
 			string msg("conf:");
 
 			msg += (std::to_string(robot_state.q[0]) + ",").data();
@@ -347,6 +401,10 @@ void franka_state_server::task_main()
 			msg += '$';
 
 			msg += std::to_string(gripper_state.max_width).data();
+
+			msg += '$';
+
+			msg += std::to_string(gripper_state.is_grasped).data();
 
 			msg += '\n';
 
@@ -375,6 +433,8 @@ void franka_state_server::send_status_message(const string& command)
 		network_transfer::send_partial_nonblocking
 			(connection_.object(), network_data, progress);
 }
+
+
 
 
 } /* namespace franka_proxy */

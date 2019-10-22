@@ -28,9 +28,8 @@ namespace detail
 /**
  * Thrown from motion_generator to terminate it.
  */
-class stop_motion_trigger // todo
-{
-};
+class stop_motion_trigger {};
+class contact_stop_trigger {};
 
 
 /**
@@ -38,9 +37,10 @@ class stop_motion_trigger // todo
  *
  * @class motion_generator
  *
- * An example showing how to generate a joint pose motion to a goal position. Adapted from:
- * Wisama Khalil and Etienne Dombre. 2002. Modeling, Identification and Control of Robots
- * (Kogan Page Science Paper edition).
+ * An example showing how to generate a joint pose motion to a goal
+ * position. Adapted from:
+ * Wisama Khalil and Etienne Dombre. 2002. Modeling, Identification and
+ * Control of Robots (Kogan Page Science Paper edition).
  *
  ************************************************************************/
 class motion_generator
@@ -53,11 +53,12 @@ public:
 	 * @param[in] q_goal Target joint positions.
 	 */
 	motion_generator
-	(double speed_factor,
-	 std::array<double, 7> q_goal,
-	 std::mutex& current_state_lock,
-	 franka::RobotState& current_state,
-	 const std::atomic_bool& stop_motion_flag);
+		(double speed_factor,
+		 std::array<double, 7> q_goal,
+		 std::mutex& current_state_lock,
+		 franka::RobotState& current_state,
+		 const std::atomic_bool& stop_motion_flag,
+		 bool stop_on_contact);
 
 	/**
 	 * Sends joint position calculations
@@ -67,16 +68,20 @@ public:
 	 *
 	 * @return Joint positions for use inside a control loop.
 	 */
-	franka::JointPositions operator()(
-		const franka::RobotState& robot_state,
-		franka::Duration period);
+	franka::JointPositions operator()
+		(const franka::RobotState& robot_state,
+		 franka::Duration period);
 
+	
 private:
+	
 	using Vector7d = Eigen::Matrix<double, 7, 1, Eigen::ColMajor>;
 	using Vector7i = Eigen::Matrix<int, 7, 1, Eigen::ColMajor>;
 
 	bool calculateDesiredValues(double t, Vector7d* delta_q_d) const;
 	void calculateSynchronizedValues();
+
+	static bool colliding(const franka::RobotState& state);
 
 	static constexpr double kDeltaQMotionFinished = 1e-6;
 	const Vector7d q_goal_;
@@ -100,7 +105,10 @@ private:
 	franka::RobotState& current_state_;
 
 	const std::atomic_bool& stop_motion_;
+	const bool stop_on_contact_;
 };
+
+
 
 
 /**
@@ -115,11 +123,12 @@ class force_motion_generator
 {
 public:
 
-	force_motion_generator(franka::Robot& robot,double mass, double duration);
+	force_motion_generator
+		(franka::Robot& robot, double mass, double duration);
 
-	franka::Torques callback(
-		const franka::RobotState& robot_state,
-		franka::Duration period);
+	franka::Torques callback
+		(const franka::RobotState& robot_state,
+		 franka::Duration period);
 
 private:
 
@@ -143,6 +152,8 @@ private:
 
 	Eigen::Vector3d initial_position;
 };
+
+
 
 
 } /* namespace detail */

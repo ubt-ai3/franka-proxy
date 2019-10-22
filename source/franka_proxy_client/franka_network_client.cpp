@@ -30,17 +30,17 @@ using namespace viral_core;
 
 
 franka_state_client::franka_state_client
-(network_context& network,
- const string& remote_ip,
- uint16 remote_port)
-	: network_(network),
-	  remote_ip_(remote_ip),
-	  remote_port_(remote_port),
-	  connection_
-	  (network_.create_connection
-		  (remote_ip_, remote_port_))
-{
-}
+	(network_context& network,
+	 const string& remote_ip,
+	 uint16 remote_port)
+	:
+	network_(network),
+	remote_ip_(remote_ip),
+	remote_port_(remote_port),
+	connection_
+	(network_.create_connection
+		(remote_ip_, remote_port_))
+{}
 
 
 franka_state_client::~franka_state_client() noexcept
@@ -139,6 +139,8 @@ string franka_state_client::fetch_message()
 }
 
 
+
+
 //////////////////////////////////////////////////////////////////////////
 //
 // tx90_state_client
@@ -147,19 +149,19 @@ string franka_state_client::fetch_message()
 
 
 franka_control_client::franka_control_client
-(network_context& network,
- const string& remote_ip,
- uint16 remote_port)
-	: network_(network),
+	(network_context& network,
+	 const string& remote_ip,
+	 uint16 remote_port)
+	:
+	network_(network),
 
-	  remote_ip_(remote_ip),
-	  remote_port_(remote_port),
+	remote_ip_(remote_ip),
+	remote_port_(remote_port),
 
-	  connection_
-	  (network_.create_connection
-		  (remote_ip_, remote_port_))
-{
-}
+	connection_
+		(network_.create_connection
+			(remote_ip_, remote_port_))
+{}
 
 
 franka_control_client::~franka_control_client() noexcept
@@ -171,8 +173,8 @@ franka_control_client::~franka_control_client() noexcept
 void franka_control_client::send_command(const string& command)
 {
 	network_buffer network_data
-	(reinterpret_cast<const unsigned char*>(command.data()),
-	 command.size());
+		(reinterpret_cast<const unsigned char*>(command.data()),
+		 command.size());
 	network_transfer::send_blocking
 		(connection_.object(), network_data, false, 0, false, 0);
 }
@@ -182,12 +184,14 @@ unsigned char franka_control_client::receive_response()
 {
 	network_buffer network_data;
 	network_transfer::receive_blocking
-	(connection_.object(), network_data,
-	 sizeof(unsigned char),
-	 false, 0, false, 0);
+		(connection_.object(), network_data,
+		 sizeof(unsigned char),
+		 false, 0, false, 0);
 
 	return network_data[0];
 }
+
+
 
 
 } /* namespace franka_proxy */

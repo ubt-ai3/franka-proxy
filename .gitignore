@@ -1,4 +1,7 @@
 /build
 /tools/visual_studio_2017/.vs
 /tools/visual_studio_2017/projects/*.user
+/tools/visual_studio_2019/.vs
+/tools/visual_studio_2019/projects/*.user
 /external/viral/build
+/tools/visual_studio_2019/*.DotSettings
