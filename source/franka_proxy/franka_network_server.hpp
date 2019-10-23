@@ -148,6 +148,7 @@ private:
 	const viral_core::auto_pointer<viral_core::network_server> server_;
 	viral_core::auto_pointer<viral_core::network_connection> connection_;
 
+
 	static constexpr float sleep_seconds_disconnected_ = 0.033f;
 	static constexpr float sleep_seconds_connected_ = 0.002f;
 };

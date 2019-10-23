@@ -90,13 +90,14 @@ void franka_hardware_controller::apply_z_force
 	}
 	catch (const detail::stop_motion_trigger&)
 	{
-		control_loop_running_.set(false);
 	}
 	catch (const franka::Exception&)
 	{
 		control_loop_running_.set(false);
 		throw;
 	}
+
+	control_loop_running_.set(false);
 }
 
 
@@ -124,13 +125,14 @@ void franka_hardware_controller::move_to(const robot_config_7dof& target)
 	}
 	catch (const detail::stop_motion_trigger&)
 	{
-		control_loop_running_.set(false);
 	}
 	catch (const franka::Exception&)
 	{
 		control_loop_running_.set(false);
 		throw;
 	}
+
+	control_loop_running_.set(false);
 }
 
 
@@ -160,9 +162,6 @@ bool franka_hardware_controller::move_to_until_contact
 	}
 	catch (const detail::stop_motion_trigger&)
 	{
-		control_loop_running_.set(false);
-		set_default_collision_behaviour();
-		return true;
 	}
 	catch (const detail::contact_stop_trigger&)
 	{
@@ -176,6 +175,7 @@ bool franka_hardware_controller::move_to_until_contact
 		throw;
 	}
 	
+	control_loop_running_.set(false);
 	set_default_collision_behaviour();
 	return true;
 }
@@ -264,12 +264,12 @@ void franka_hardware_controller::state_update_loop()
 		{
 			std::lock_guard<std::mutex> state_guard(state_lock_);
 			robot_state_ = robot_.readOnce();
-			if (gripper_)
+			if (gripper_) 
 				gripper_state_ = gripper_->readOnce();
 		}
 
 		using namespace std::chrono_literals;
-		std::this_thread::sleep_for(20ms);
+		std::this_thread::sleep_for(33ms);
 	}
 }
 
