@@ -99,11 +99,18 @@ public:
 	 * @throw viral_core::network_exception if the connection was lost.
 	 */
 	void open_gripper();
+	
+	
+	/**
+	 * todo
+	 */
+	void close_gripper();
 
 
 	/**
 	 * Close the gripper.
 	 *
+	 * todo
 	 * Returns if the movement was completed successfully.
 	 * Throws some remote_exception on failure.
 	 *
@@ -115,7 +122,7 @@ public:
 	 * @throw remote_exception if the movement was unsuccessful.
 	 * @throw viral_core::network_exception if the connection was lost.
 	 */
-	void close_gripper(double speed = 0.025, double force = 0.05);
+	void grasp_gripper(double speed = 0.025, double force = 0.05);
 
 
 	/**

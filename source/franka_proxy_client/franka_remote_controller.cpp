@@ -132,9 +132,8 @@ bool franka_remote_controller::move_to_until_contact
 		(franka_proxy_messages::feedback_type
 			(socket_control_->receive_response()));
 
-	if (response == response_type::success_contact)
-		return false;
-	return true;
+
+	return response != response_type::success_contact;
 }
 
 
@@ -150,10 +149,22 @@ void franka_remote_controller::open_gripper()
 }
 
 
-void franka_remote_controller::close_gripper(double speed, double force)
+void franka_remote_controller::close_gripper()
+{
+	socket_control_->send_command(string
+		(franka_proxy_messages::command_strings[franka_proxy_messages::close_gripper]) +
+		 franka_proxy_messages::command_end_marker);
+
+	check_response
+		(franka_proxy_messages::feedback_type
+			(socket_control_->receive_response()));
+}
+
+
+void franka_remote_controller::grasp_gripper(double speed, double force)
 {
 	string msg =
-		(std::string(franka_proxy_messages::command_strings[franka_proxy_messages::close_gripper]) + ' ' +
+		(std::string(franka_proxy_messages::command_strings[franka_proxy_messages::grasp_gripper]) + ' ' +
 		 std::to_string(speed) + ' ' + std::to_string(force) +
 		 franka_proxy_messages::command_end_marker).data();
 	socket_control_->send_command(msg);

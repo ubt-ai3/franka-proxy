@@ -226,12 +226,31 @@ void franka_hardware_controller::open_gripper()
 }
 
 
-void franka_hardware_controller::close_gripper(double speed, double force)
+void franka_hardware_controller::close_gripper()
 {
 	if (!gripper_)
 		return; // todo throw something usefull
 
-	gripper_->grasp(min_grasp_width, speed, force, 0, 1);
+	if (!gripper_->move(min_grasp_width, gripper_speed))
+	{
+		std::cerr << "Gripper closing failed." << std::endl;
+	}
+
+	{
+		std::lock_guard<std::mutex> state_guard(state_lock_);
+		gripper_state_ = gripper_->readOnce();
+	}
+}
+
+
+void franka_hardware_controller::grasp_gripper(double speed, double force)
+{
+	throw std::exception("wrong implementation");
+
+	if (!gripper_)
+		return; // todo throw something usefull
+
+	bool grasped = gripper_->grasp(min_grasp_width, speed, force, 0, 1);
 
 	{
 		std::lock_guard<std::mutex> state_guard(state_lock_);

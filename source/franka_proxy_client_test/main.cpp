@@ -1,5 +1,7 @@
 #include <iostream>
 
+#include <atomic>
+
 #include <viral_core/log.hpp>
 #include <viral_core/ms_network.hpp>
 #include <viral_core/thread_util.hpp>
@@ -70,11 +72,25 @@ int main()
 	//franka_proxy::franka_remote_controller controller("127.0.0.1", network);
 	franka_proxy::franka_remote_controller controller("132.180.194.141", network);
 
-	execute_retry([&] { controller.start_recording(); }, controller);
-	execute_retry([&] { controller.stop_recording(); }, controller);
+	execute_retry([&] { controller.grasp_gripper(); }, controller);
+	execute_retry([&] { controller.grasp_gripper(); }, controller);
 
-	controller.update();
-	print_status(controller);
+
+	std::atomic_bool stop(false);
+	std::thread t([&stop, &controller]()
+	{
+		int i = 0;
+		while (!stop)
+		{
+			controller.update();
+
+			if (i++ % 30 == 0)
+				print_status(controller);
+
+			std::this_thread::sleep_for(std::chrono::milliseconds(16));
+		}
+	});
+
 
 	franka_proxy::robot_config_7dof pos1{
 		{
@@ -100,22 +116,9 @@ int main()
 	};
 
 	controller.set_speed_factor(0.25);
-
 	execute_retry([&] { controller.move_to(pos1); }, controller);
-
-	while (dist_squared(controller.current_config(), pos1) > 0.001)
-	{
-		controller.update();
-		print_status(controller);
-	}
-
 	execute_retry([&] { controller.move_to(pos2); }, controller);
 
-	while (dist_squared(controller.current_config(), pos2) > 0.001)
-	{
-		controller.update();
-		print_status(controller);
-	}
-
-	std::cin.ignore();
+	stop = true;
+	t.join();
 }

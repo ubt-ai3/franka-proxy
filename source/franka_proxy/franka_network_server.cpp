@@ -288,6 +288,22 @@ void franka_control_server::process_request(const string& request)
 		case franka_proxy_messages::close_gripper:
 		{
 			LOG_INFO("Closing Gripper")
+
+			unsigned char response =
+				execute_exception_to_return_value
+					([&]()
+					{
+						controller_.close_gripper();
+						return franka_proxy_messages::success;
+					});
+
+			stream_->send_nonblocking(&response, sizeof(unsigned char));
+			break;
+		}
+
+		case franka_proxy_messages::grasp_gripper:
+		{
+			LOG_INFO("Grasping with Gripper")
 			string rest = request.substring
 				(pos + string(franka_proxy_messages::command_strings[type]).size() + 1);
 			list<string> parameters;
@@ -297,7 +313,7 @@ void franka_control_server::process_request(const string& request)
 				execute_exception_to_return_value
 					([&]()
 					{
-						controller_.close_gripper(parameters[0].to_float(), parameters[1].to_float());
+						controller_.grasp_gripper(parameters[0].to_float(), parameters[1].to_float());
 						return franka_proxy_messages::success;
 					});
 
