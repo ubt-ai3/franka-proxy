@@ -20,13 +20,15 @@ class franka_proxy_messages
 {
 public:
 
-	static constexpr const char* command_strings[7] =
+	static constexpr const char* command_strings[9] =
 	{
 		"MOVE",
 		"MOVE_CONTACT",
 		"FORCE_Z",
-		"OPEN GRIPPER",
-		"CLOSE GRIPPER",
+		"OPEN_GRIPPER",
+		"CLOSE_GRIPPER",
+		"START_RECORDING",
+		"STOP_RECORDING",
 		"SPEED",
 		"ERRORRECOVERY"
 	};
@@ -42,6 +44,8 @@ public:
 		force_z,
 		open_gripper,
 		close_gripper,
+		start_recording,
+		stop_recording,
 		speed,
 		error_recovery,
 		message_type_count

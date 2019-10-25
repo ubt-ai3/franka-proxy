@@ -65,6 +65,34 @@ void franka_remote_controller::apply_z_force(double mass, double duration)
 }
 
 
+void franka_remote_controller::start_recording()
+{
+	string msg =
+		(std::string(franka_proxy_messages::command_strings[franka_proxy_messages::start_recording]) +
+			franka_proxy_messages::command_end_marker).data();
+	socket_control_->send_command(msg);
+
+	check_response
+	(franka_proxy_messages::feedback_type
+	 (socket_control_->receive_response()));
+}
+
+
+void franka_remote_controller::stop_recording()
+{
+	string msg =
+		(std::string(franka_proxy_messages::command_strings[franka_proxy_messages::stop_recording]) +
+			franka_proxy_messages::command_end_marker).data();
+	socket_control_->send_command(msg);
+
+	// todo receive data
+
+	check_response
+	(franka_proxy_messages::feedback_type
+	 (socket_control_->receive_response()));
+}
+
+
 void franka_remote_controller::move_to(const robot_config_7dof& target)
 {
 	string msg =

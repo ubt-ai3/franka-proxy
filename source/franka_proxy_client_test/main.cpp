@@ -70,8 +70,8 @@ int main()
 	//franka_proxy::franka_remote_controller controller("127.0.0.1", network);
 	franka_proxy::franka_remote_controller controller("132.180.194.141", network);
 
-	execute_retry([&] { controller.open_gripper(); }, controller);
-	execute_retry([&] { controller.close_gripper(); }, controller);
+	execute_retry([&] { controller.start_recording(); }, controller);
+	execute_retry([&] { controller.stop_recording(); }, controller);
 
 	controller.update();
 	print_status(controller);

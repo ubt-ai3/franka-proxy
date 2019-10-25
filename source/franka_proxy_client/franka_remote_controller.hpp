@@ -46,6 +46,15 @@ public:
 	 */
 	void apply_z_force(double mass, double duration);
 
+	/**
+	 * todo
+	 */
+	void start_recording();
+
+	/**
+	 * todo
+	 */
+	void stop_recording();
 
 	/**
 	 * Start control-loop to move the robot to given target.
