@@ -51,7 +51,8 @@ public:
 	bool move_to_until_contact(const Eigen::Affine3d& target);
 
 	virtual void open_gripper() = 0;
-	virtual void close_gripper(double speed = 0.025, double force = 0.05) = 0;
+	virtual void close_gripper() = 0;
+	virtual void grasp_gripper(double speed = 0.025, double force = 0.05) = 0;
 	virtual bool gripper_grasped() const = 0;
 
 	virtual double speed_factor() const = 0;
