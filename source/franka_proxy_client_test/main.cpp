@@ -72,9 +72,20 @@ int main()
 	//franka_proxy::franka_remote_controller controller("127.0.0.1", network);
 	franka_proxy::franka_remote_controller controller("132.180.194.141", network);
 
-	execute_retry([&] { controller.grasp_gripper(); }, controller);
-	execute_retry([&] { controller.grasp_gripper(); }, controller);
+	execute_retry([&] { controller.open_gripper(); }, controller);
+	execute_retry([&] { controller.close_gripper(); }, controller);
+	execute_retry([&] { controller.close_gripper(); }, controller);
+				
+	std::this_thread::sleep_for(std::chrono::seconds(5));
 
+	execute_retry([&] { controller.open_gripper(); }, controller);
+	execute_retry([&] { controller.grasp_gripper(); }, controller);
+	execute_retry([&] { controller.grasp_gripper(); }, controller);
+				
+	std::this_thread::sleep_for(std::chrono::seconds(5));
+
+	execute_retry([&] { controller.open_gripper(); }, controller);
+	execute_retry([&] { controller.open_gripper(); }, controller);
 
 	std::atomic_bool stop(false);
 	std::thread t([&stop, &controller]()

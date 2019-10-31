@@ -169,6 +169,8 @@ void franka_remote_controller::grasp_gripper(double speed, double force)
 		 franka_proxy_messages::command_end_marker).data();
 	socket_control_->send_command(msg);
 
+	// todo receive if an object is grasped
+
 	check_response
 		(franka_proxy_messages::feedback_type
 			(socket_control_->receive_response()));
