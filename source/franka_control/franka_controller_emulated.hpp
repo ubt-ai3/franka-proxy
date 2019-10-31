@@ -44,7 +44,8 @@ public:
 	bool move_to_until_contact(const robot_config_7dof& target) override;
 
 	void open_gripper() override;
-	void close_gripper(double speed = 0.025, double force = 0.05) override;
+	void close_gripper() override;
+	void grasp_gripper(double speed = 0.025, double force = 0.05) override;
 	bool gripper_grasped() const override;
 
 	double speed_factor() const override;

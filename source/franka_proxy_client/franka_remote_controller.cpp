@@ -10,6 +10,7 @@
 
 #include "franka_remote_controller.hpp"
 
+#include <utility>
 #include <viral_core/log.hpp>
 
 #include "exception.hpp"
@@ -56,6 +57,32 @@ void franka_remote_controller::apply_z_force(double mass, double duration)
 		 std::to_string(mass) + ' ' +
 		 std::to_string(duration) +
 		 franka_proxy_messages::command_end_marker).data();
+
+	check_response
+		(franka_proxy_messages::feedback_type
+			(socket_control_->send_command_and_check_response(msg)));
+}
+
+
+void franka_remote_controller::start_recording()
+{
+	string msg =
+		(std::string(franka_proxy_messages::command_strings[franka_proxy_messages::start_recording]) +
+			franka_proxy_messages::command_end_marker).data();
+
+	check_response
+		(franka_proxy_messages::feedback_type
+			(socket_control_->send_command_and_check_response(msg)));
+}
+
+
+void franka_remote_controller::stop_recording()
+{
+	string msg =
+		(std::string(franka_proxy_messages::command_strings[franka_proxy_messages::stop_recording]) +
+			franka_proxy_messages::command_end_marker).data();
+
+	// todo receive data
 
 	check_response
 		(franka_proxy_messages::feedback_type
@@ -118,14 +145,28 @@ void franka_remote_controller::open_gripper()
 }
 
 
-void franka_remote_controller::close_gripper(double speed, double force)
+void franka_remote_controller::close_gripper()
+{
+	string msg = string
+		(franka_proxy_messages::command_strings[franka_proxy_messages::close_gripper]) +
+		 franka_proxy_messages::command_end_marker;
+
+	check_response
+		(franka_proxy_messages::feedback_type
+			(socket_control_->send_command_and_check_response(msg)));
+}
+
+
+void franka_remote_controller::grasp_gripper(double speed, double force)
 {
 	string msg =
-		(std::string(franka_proxy_messages::command_strings[franka_proxy_messages::close_gripper]) + ' ' +
+		(std::string(franka_proxy_messages::command_strings[franka_proxy_messages::grasp_gripper]) + ' ' +
 		 std::to_string(speed) + ' ' + std::to_string(force) +
 		 franka_proxy_messages::command_end_marker).data();
 	unsigned char response =
 		socket_control_->send_command_and_check_response(msg);
+	// todo receive if an object is grasped
+
 	check_response
 		(franka_proxy_messages::feedback_type(response));
 }

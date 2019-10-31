@@ -25,8 +25,6 @@
 
 namespace franka_proxy
 {
-
-
 using namespace viral_core;
 
 
@@ -70,9 +68,7 @@ void franka_control_server::task_main()
 			(server_->try_accept_connection());
 
 		if (connection)
-			stream_.reset
-			(new network_stream
-				(std::move(connection)));
+			stream_.reset(new network_stream(std::move(connection)));
 
 		if (!stream_)
 		{
@@ -202,17 +198,18 @@ void franka_control_server::process_request(const string& request)
 			};
 
 			unsigned char response =
-				execute_exception_to_return_value([&]()
-				{
-					controller_.move_to(joint_config);
-					return franka_proxy_messages::success;
-				});
+				execute_exception_to_return_value
+					([&]()
+					{
+						controller_.move_to(joint_config);
+						return franka_proxy_messages::success;
+					});
 
 			LOG_INFO("Sending response: " + static_cast<int>(response));
 			stream_->send_nonblocking(&response, sizeof(unsigned char));
 			break;
 		}
-		
+
 		case franka_proxy_messages::move_contact:
 		{
 			LOG_INFO("Moving sensitive")
@@ -235,13 +232,13 @@ void franka_control_server::process_request(const string& request)
 			};
 
 			unsigned char response =
-				execute_exception_to_return_value([&]()
-				{
-					if (controller_.move_to_until_contact(joint_config))
-						return franka_proxy_messages::success;
-					else
+				execute_exception_to_return_value
+					([&]()
+					{
+						if (controller_.move_to_until_contact(joint_config))
+							return franka_proxy_messages::success;
 						return franka_proxy_messages::success_contact;
-				});
+					});
 
 			LOG_INFO("Sending response: " + static_cast<int>(response));
 			stream_->send_nonblocking(&response, sizeof(unsigned char));
@@ -260,27 +257,29 @@ void franka_control_server::process_request(const string& request)
 			LOG_INFO(std::string("force_z " + std::to_string(mass) + " " + std::to_string(duration)).c_str());
 
 			unsigned char response =
-				execute_exception_to_return_value([&]()
-				{
-					controller_.apply_z_force(mass, duration);
-					return franka_proxy_messages::success;
-				});
+				execute_exception_to_return_value
+					([&]()
+					{
+						controller_.apply_z_force(mass, duration);
+						return franka_proxy_messages::success;
+					});
 
 			LOG_INFO("Sending response: " + static_cast<int>(response));
 			stream_->send_nonblocking(&response, sizeof(unsigned char));
 			break;
 		}
-		
+
 		case franka_proxy_messages::open_gripper:
 		{
 			LOG_INFO("Opening Gripper")
 
 			unsigned char response =
-				execute_exception_to_return_value([&]()
-				{
-					controller_.open_gripper();
-					return franka_proxy_messages::success;
-				});
+				execute_exception_to_return_value
+					([&]()
+					{
+						controller_.open_gripper();
+						return franka_proxy_messages::success;
+					});
 
 			stream_->send_nonblocking(&response, sizeof(unsigned char));
 			break;
@@ -289,20 +288,75 @@ void franka_control_server::process_request(const string& request)
 		case franka_proxy_messages::close_gripper:
 		{
 			LOG_INFO("Closing Gripper")
+
+			unsigned char response =
+				execute_exception_to_return_value
+					([&]()
+					{
+						controller_.close_gripper();
+						return franka_proxy_messages::success;
+					});
+
+			stream_->send_nonblocking(&response, sizeof(unsigned char));
+			break;
+		}
+
+		case franka_proxy_messages::grasp_gripper:
+		{
+			LOG_INFO("Grasping with Gripper")
 			string rest = request.substring
 				(pos + string(franka_proxy_messages::command_strings[type]).size() + 1);
 			list<string> parameters;
 			rest.split(' ', parameters);
 
 			unsigned char response =
-				execute_exception_to_return_value([&]()
-				{
-					controller_.close_gripper(parameters[0].to_float(), parameters[1].to_float());
-					return franka_proxy_messages::success; 
-				});
+				execute_exception_to_return_value
+					([&]()
+					{
+						controller_.grasp_gripper(parameters[0].to_float(), parameters[1].to_float());
+						return franka_proxy_messages::success;
+					});
 
 			LOG_INFO("Sending response: " + static_cast<int>(response));
 			stream_->send_nonblocking(&response, sizeof(unsigned char));
+			break;
+		}
+
+		case franka_proxy_messages::start_recording:
+		{
+			LOG_INFO("Start recording");
+
+			unsigned char response =
+				execute_exception_to_return_value
+					([&]()
+					{
+						// todo switch to recording mode
+						return franka_proxy_messages::success;
+					});
+
+			LOG_INFO("Sending response: " + static_cast<int>(response));
+			stream_->send_nonblocking(&response, sizeof(unsigned char));
+
+			break;
+		}
+
+		case franka_proxy_messages::stop_recording:
+		{
+			LOG_INFO("Stop recording");
+
+			unsigned char response =
+				execute_exception_to_return_value
+					([&]()
+					{
+						// todo switch to recording mode
+						return franka_proxy_messages::success;
+					});
+
+			// todo send data
+
+			LOG_INFO("Sending response: " + static_cast<int>(response));
+			stream_->send_nonblocking(&response, sizeof(unsigned char));
+
 			break;
 		}
 
@@ -324,11 +378,10 @@ void franka_control_server::process_request(const string& request)
 			break;
 		}
 
-		default: ;
+		case franka_proxy_messages::message_type_count:
+		default: throw std::exception("unhandled message type");
 	}
 }
-
-
 
 
 //////////////////////////////////////////////////////////////////////////
@@ -433,8 +486,6 @@ void franka_state_server::send_status_message(const string& command)
 		network_transfer::send_partial_nonblocking
 			(connection_.object(), network_data, progress);
 }
-
-
 
 
 } /* namespace franka_proxy */

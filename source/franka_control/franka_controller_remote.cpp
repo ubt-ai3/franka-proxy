@@ -70,8 +70,10 @@ bool franka_controller_remote::move_to_until_contact
 
 void franka_controller_remote::open_gripper()
 	{ controller_->open_gripper(); }
-void franka_controller_remote::close_gripper(double speed, double force)
-	{ controller_->close_gripper(speed, force); }
+void franka_controller_remote::close_gripper()
+	{ controller_->close_gripper(); }
+void franka_controller_remote::grasp_gripper(double speed, double force)
+	{ controller_->grasp_gripper(speed, force); }
 
 
 bool franka_controller_remote::gripper_grasped() const

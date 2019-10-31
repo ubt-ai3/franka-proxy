@@ -38,8 +38,6 @@ franka_proxy::franka_proxy()
 }
 
 
-
-
 } /* namespace franka_proxy */
 
 

@@ -85,7 +85,14 @@ void franka_controller_emulated::open_gripper()
 }
 
 
-void franka_controller_emulated::close_gripper(double speed, double force)
+void franka_controller_emulated::close_gripper()
+{
+	MUTEX_SCOPE(controller_mutex_);
+	gripper_open_ = false;
+}
+
+
+void franka_controller_emulated::grasp_gripper(double speed, double force)
 {
 	MUTEX_SCOPE(controller_mutex_);
 	gripper_open_ = false;

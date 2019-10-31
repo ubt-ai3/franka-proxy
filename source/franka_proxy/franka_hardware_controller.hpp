@@ -69,8 +69,10 @@ public:
 
 	/** Move the gripper to gripper::max_width. */
 	void open_gripper();
-	/** Grasp.... */
-	void close_gripper(double speed, double force);
+	/** Move the gripper to gripper::min_grasp_width. */
+	void close_gripper();
+	/** Grasp.... todo return bool + implement */
+	void grasp_gripper(double speed, double force);
 
 	franka::GripperState gripper_state() const;
 

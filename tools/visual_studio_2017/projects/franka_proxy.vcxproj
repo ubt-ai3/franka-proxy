@@ -13,6 +13,7 @@
   <ItemGroup>
     <ClInclude Include="..\..\..\source\franka_proxy\franka_hardware_controller.hpp" />
     <ClInclude Include="..\..\..\source\franka_proxy\franka_motion_generator.hpp" />
+    <ClInclude Include="..\..\..\source\franka_proxy\franka_motion_recorder.hpp" />
     <ClInclude Include="..\..\..\source\franka_proxy\franka_network_server.hpp" />
     <ClInclude Include="..\..\..\source\franka_proxy\franka_proxy.hpp" />
     <ClInclude Include="..\..\..\source\franka_proxy_share\franka_proxy_messages.hpp" />
@@ -20,6 +21,7 @@
   <ItemGroup>
     <ClCompile Include="..\..\..\source\franka_proxy\franka_hardware_controller.cpp" />
     <ClCompile Include="..\..\..\source\franka_proxy\franka_motion_generator.cpp" />
+    <ClCompile Include="..\..\..\source\franka_proxy\franka_motion_recorder.cpp" />
     <ClCompile Include="..\..\..\source\franka_proxy\franka_network_server.cpp" />
     <ClCompile Include="..\..\..\source\franka_proxy\franka_proxy.cpp" />
   </ItemGroup>
