@@ -237,7 +237,7 @@ void franka_control_server::process_request(const string& request)
 					{
 						if (controller_.move_to_until_contact(joint_config))
 							return franka_proxy_messages::success;
-						return franka_proxy_messages::success_contact;
+						return franka_proxy_messages::success_command_failed;
 					});
 
 			LOG_INFO("Sending response: " + static_cast<int>(response));
@@ -313,8 +313,9 @@ void franka_control_server::process_request(const string& request)
 				execute_exception_to_return_value
 					([&]()
 					{
-						controller_.grasp_gripper(parameters[0].to_float(), parameters[1].to_float());
-						return franka_proxy_messages::success;
+						if (controller_.grasp_gripper(parameters[0].to_float(), parameters[1].to_float()))
+							return franka_proxy_messages::success;
+						return franka_proxy_messages::success_command_failed;
 					});
 
 			LOG_INFO("Sending response: " + static_cast<int>(response));

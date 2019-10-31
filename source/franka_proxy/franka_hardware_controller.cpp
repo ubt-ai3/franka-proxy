@@ -243,18 +243,19 @@ void franka_hardware_controller::close_gripper()
 }
 
 
-void franka_hardware_controller::grasp_gripper(double speed, double force)
+bool franka_hardware_controller::grasp_gripper(double speed, double force)
 {
 	if (!gripper_)
-		return; // todo throw something usefull
+		return false; // todo throw something usefull
 
-	// todo return grasped to client
 	bool grasped = gripper_->grasp(min_grasp_width, speed, force, 0, 1);
 
 	{
 		std::lock_guard<std::mutex> state_guard(state_lock_);
 		gripper_state_ = gripper_->readOnce();
 	}
+
+	return grasped;
 }
 
 

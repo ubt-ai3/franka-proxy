@@ -57,7 +57,7 @@ public:
 	enum feedback_type
 	{
 		success,
-		success_contact,
+		success_command_failed,
 		model_exception,
 		network_exception,
 		protocol_exception,

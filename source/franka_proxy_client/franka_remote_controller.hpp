@@ -108,10 +108,8 @@ public:
 
 
 	/**
-	 * Close the gripper.
-	 *
-	 * todo
-	 * Returns if the movement was completed successfully.
+	 * Attempt to grasp an object.
+	 * Returns if the grasp was completed successfully.
 	 * Throws some remote_exception on failure.
 	 *
 	 * @TODO: Check exceptions.
@@ -122,7 +120,7 @@ public:
 	 * @throw remote_exception if the movement was unsuccessful.
 	 * @throw viral_core::network_exception if the connection was lost.
 	 */
-	void grasp_gripper(double speed = 0.025, double force = 0.05);
+	bool grasp_gripper(double speed = 0.025, double force = 0.05);
 
 
 	/**
@@ -173,7 +171,7 @@ private:
 	void shutdown_sockets() noexcept;
 
 	enum class response_type
-		{ success, success_contact };
+		{ success, success_command_failed };
 
 	response_type check_response
 		(franka_proxy_messages::feedback_type response);

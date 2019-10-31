@@ -127,7 +127,7 @@ bool franka_remote_controller::move_to_until_contact
 		(franka_proxy_messages::feedback_type
 			(socket_control_->send_command_and_check_response(msg)));
 
-	if (response == response_type::success_contact)
+	if (response == response_type::success_command_failed)
 		return false;
 	return true;
 }
@@ -157,18 +157,20 @@ void franka_remote_controller::close_gripper()
 }
 
 
-void franka_remote_controller::grasp_gripper(double speed, double force)
+bool franka_remote_controller::grasp_gripper(double speed, double force)
 {
 	string msg =
 		(std::string(franka_proxy_messages::command_strings[franka_proxy_messages::grasp_gripper]) + ' ' +
 		 std::to_string(speed) + ' ' + std::to_string(force) +
 		 franka_proxy_messages::command_end_marker).data();
-	unsigned char response =
-		socket_control_->send_command_and_check_response(msg);
-	// todo receive if an object is grasped
+	
+	response_type response = check_response
+		(franka_proxy_messages::feedback_type
+			(socket_control_->send_command_and_check_response(msg)));
 
-	check_response
-		(franka_proxy_messages::feedback_type(response));
+	if (response == response_type::success_command_failed)
+		return false;
+	return true;
 }
 
 
@@ -320,8 +322,8 @@ franka_remote_controller::response_type
 	{
 		case franka_proxy_messages::success:
 			return response_type::success;
-		case franka_proxy_messages::success_contact:
-			return response_type::success_contact;
+		case franka_proxy_messages::success_command_failed:
+			return response_type::success_command_failed;
 		case franka_proxy_messages::model_exception:
 			throw model_exception();
 		case franka_proxy_messages::network_exception:
