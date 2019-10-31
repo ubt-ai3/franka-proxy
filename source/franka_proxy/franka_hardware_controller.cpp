@@ -245,11 +245,10 @@ void franka_hardware_controller::close_gripper()
 
 void franka_hardware_controller::grasp_gripper(double speed, double force)
 {
-	throw std::exception("wrong implementation");
-
 	if (!gripper_)
 		return; // todo throw something usefull
 
+	// todo return grasped to client
 	bool grasped = gripper_->grasp(min_grasp_width, speed, force, 0, 1);
 
 	{
