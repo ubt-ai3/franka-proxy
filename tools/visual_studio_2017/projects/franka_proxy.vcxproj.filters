@@ -32,6 +32,9 @@
     <ClInclude Include="..\..\..\source\franka_proxy\franka_motion_generator.hpp">
       <Filter>Headers</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\source\franka_proxy\franka_motion_recorder.hpp">
+      <Filter>Headers</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\source\franka_proxy\franka_hardware_controller.cpp">
@@ -44,6 +47,9 @@
       <Filter>Sources</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\source\franka_proxy\franka_motion_generator.cpp">
+      <Filter>Sources</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\source\franka_proxy\franka_motion_recorder.cpp">
       <Filter>Sources</Filter>
     </ClCompile>
   </ItemGroup>
