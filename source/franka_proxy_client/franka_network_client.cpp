@@ -13,6 +13,8 @@
 #include <viral_core/buffer.hpp>
 #include <viral_core/network.hpp>
 #include <viral_core/network_transfer.hpp>
+#include <viral_core/timer.hpp>
+#include "viral_core/log.hpp"
 
 
 namespace franka_proxy
@@ -170,25 +172,71 @@ franka_control_client::~franka_control_client() noexcept
 }
 
 
-void franka_control_client::send_command(const string& command)
+void franka_control_client::send_command
+	(const string& command, float timeout_seconds)
 {
-	network_buffer network_data
-		(reinterpret_cast<const unsigned char*>(command.data()),
-		 command.size());
-	network_transfer::send_blocking
-		(connection_.object(), network_data, false, 0, false, 0);
+	free_timer t;
+	while (t.seconds_passed() < timeout_seconds)
+	{
+		try
+		{
+			if (!connection_)
+				connection_ = network_.create_connection
+					(remote_ip_, remote_port_);
+			
+			network_buffer network_data
+				(reinterpret_cast<const unsigned char*>(command.data()),
+				 command.size());
+			network_transfer::send_blocking
+				(connection_.object(), network_data, false, 0, false, 0);
+
+			return;
+		}
+		catch (const network_exception&)
+		{
+			connection_.reset();
+		}
+	}
+
+	LOG_ERROR("Failed to send.");
+	throw network_exception();
 }
 
 
-unsigned char franka_control_client::receive_response()
+unsigned char franka_control_client::send_command_and_check_response
+	(const string& command, float timeout_seconds)
 {
-	network_buffer network_data;
-	network_transfer::receive_blocking
-		(connection_.object(), network_data,
-		 sizeof(unsigned char),
-		 false, 0, false, 0);
+	free_timer t;
+	while (t.seconds_passed() < timeout_seconds)
+	{
+		try
+		{
+			if (!connection_)
+				connection_ = network_.create_connection
+					(remote_ip_, remote_port_);
+			
+			network_buffer network_data
+				(reinterpret_cast<const unsigned char*>(command.data()),
+				 command.size());
+			network_transfer::send_blocking
+				(connection_.object(), network_data, false, 0, false, 0);
+			
+			network_data = network_buffer();
+			network_transfer::receive_blocking
+				(connection_.object(), network_data,
+				 sizeof(unsigned char),
+				 false, 0, false, 0);
 
-	return network_data[0];
+			return network_data[0];
+		}
+		catch (const network_exception&)
+		{
+			connection_.reset();
+		}
+	}
+
+	LOG_ERROR("Failed to send.");
+	throw network_exception();
 }
 
 

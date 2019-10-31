@@ -56,11 +56,10 @@ void franka_remote_controller::apply_z_force(double mass, double duration)
 		 std::to_string(mass) + ' ' +
 		 std::to_string(duration) +
 		 franka_proxy_messages::command_end_marker).data();
-	socket_control_->send_command(msg);
 
 	check_response
 		(franka_proxy_messages::feedback_type
-			(socket_control_->receive_response()));
+			(socket_control_->send_command_and_check_response(msg)));
 }
 
 
@@ -76,11 +75,10 @@ void franka_remote_controller::move_to(const robot_config_7dof& target)
 		 std::to_string(target[5]) + ' ' +
 		 std::to_string(target[6]) +
 		 franka_proxy_messages::command_end_marker).data();
-	socket_control_->send_command(msg);
 
 	check_response
 		(franka_proxy_messages::feedback_type
-			(socket_control_->receive_response()));
+			(socket_control_->send_command_and_check_response(msg)));
 }
 
 
@@ -97,11 +95,10 @@ bool franka_remote_controller::move_to_until_contact
 		 std::to_string(target[5]) + ' ' +
 		 std::to_string(target[6]) +
 		 franka_proxy_messages::command_end_marker).data();
-	socket_control_->send_command(msg);
 
 	response_type response = check_response
 		(franka_proxy_messages::feedback_type
-			(socket_control_->receive_response()));
+			(socket_control_->send_command_and_check_response(msg)));
 
 	if (response == response_type::success_contact)
 		return false;
@@ -111,13 +108,13 @@ bool franka_remote_controller::move_to_until_contact
 
 void franka_remote_controller::open_gripper()
 {
-	socket_control_->send_command(string
+	string msg = string
 		(franka_proxy_messages::command_strings[franka_proxy_messages::open_gripper]) +
-		 franka_proxy_messages::command_end_marker);
-
+		 franka_proxy_messages::command_end_marker;
+	unsigned char response =
+		socket_control_->send_command_and_check_response(msg);
 	check_response
-		(franka_proxy_messages::feedback_type
-			(socket_control_->receive_response()));
+		(franka_proxy_messages::feedback_type(response));
 }
 
 
@@ -127,11 +124,10 @@ void franka_remote_controller::close_gripper(double speed, double force)
 		(std::string(franka_proxy_messages::command_strings[franka_proxy_messages::close_gripper]) + ' ' +
 		 std::to_string(speed) + ' ' + std::to_string(force) +
 		 franka_proxy_messages::command_end_marker).data();
-	socket_control_->send_command(msg);
-
+	unsigned char response =
+		socket_control_->send_command_and_check_response(msg);
 	check_response
-		(franka_proxy_messages::feedback_type
-			(socket_control_->receive_response()));
+		(franka_proxy_messages::feedback_type(response));
 }
 
 
@@ -182,8 +178,6 @@ bool franka_remote_controller::gripper_grasped() const
 
 void franka_remote_controller::update()
 {
-	std::lock_guard<std::mutex> state_guard(state_lock_);
-
 	list<string> messages;
 	while (messages.empty())
 	{
@@ -229,25 +223,29 @@ void franka_remote_controller::update()
 			continue;
 		}
 
-		current_config_ =
 		{
-			strtod(joint_values_list[0].data(), nullptr),
-			strtod(joint_values_list[1].data(), nullptr),
-			strtod(joint_values_list[2].data(), nullptr),
-			strtod(joint_values_list[3].data(), nullptr),
-			strtod(joint_values_list[4].data(), nullptr),
-			strtod(joint_values_list[5].data(), nullptr),
-			strtod(joint_values_list[6].data(), nullptr)
-		};
+			std::lock_guard<std::mutex> state_guard(state_lock_);
+
+			current_config_ =
+			{
+				strtod(joint_values_list[0].data(), nullptr),
+				strtod(joint_values_list[1].data(), nullptr),
+				strtod(joint_values_list[2].data(), nullptr),
+				strtod(joint_values_list[3].data(), nullptr),
+				strtod(joint_values_list[4].data(), nullptr),
+				strtod(joint_values_list[5].data(), nullptr),
+				strtod(joint_values_list[6].data(), nullptr)
+			};
 
 
-		// Fetch gripper state.
-		current_gripper_pos_ =
-			state_list[1].to_int32();
-		max_gripper_pos_ =
-			state_list[2].to_int32();
-		gripper_grasped_ =
-			state_list[3].to_int32() > 0;
+			// Fetch gripper state.
+			current_gripper_pos_ =
+				state_list[1].to_int32();
+			max_gripper_pos_ =
+				state_list[2].to_int32();
+			gripper_grasped_ =
+				state_list[3].to_int32() > 0;
+		}
 	}
 }
 

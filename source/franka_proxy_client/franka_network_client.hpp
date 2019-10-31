@@ -88,8 +88,12 @@ public:
 	~franka_control_client() noexcept;
 
 
-	void send_command(const viral_core::string& command);
-	unsigned char receive_response();
+	void send_command
+		(const viral_core::string& command,
+		 float timeout_seconds = 1.f);
+	unsigned char send_command_and_check_response
+		(const viral_core::string& command,
+		 float timeout_seconds = 1.f);
 
 
 private:
