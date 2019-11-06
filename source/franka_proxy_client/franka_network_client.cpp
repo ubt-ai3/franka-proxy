@@ -266,10 +266,11 @@ string franka_control_client::send_stop_recording_and_receive_squence(float time
 			network_data = network_buffer();
 			network_transfer::receive_blocking
 				(connection_.object(), network_data,
-				 sizeof(unsigned char),
+				 sizeof(int64),
 				 false, 0, false, 0);
 
-			int64 size = network_data[0];
+			// todo ntoh byteorder
+			int64 size = *(reinterpret_cast<int64*>(network_data.data()));
 			LOG_INFO(size);
 
 			// data

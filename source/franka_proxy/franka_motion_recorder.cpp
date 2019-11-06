@@ -30,13 +30,14 @@ motion_recorder::motion_recorder(double rate)
 void motion_recorder::start()
 {
 	record_.clear();
-	record_.emplace_back(1);
+
+	for (int i = 0; i < 10000; ++i)
+		record_.emplace_back(i);
 }
 
 
 void motion_recorder::stop()
 {
-	record_.emplace_back(2);
 }
 
 

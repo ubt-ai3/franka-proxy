@@ -364,8 +364,13 @@ void franka_control_server::process_request(const string& request)
 			//msg += (std::to_string(robot_state.q[4]) + ",").data();
 			//msg += (std::to_string(robot_state.q[5]) + ",").data();
 			//msg += (std::to_string(robot_state.q[6])).data();
-			message += (std::to_string(pos[0]).data());
+			for (const auto& p : pos)
+			{
+				message += (std::to_string(p).data());
+				message += '$';
+			}
 
+			// todo hton byteorder
 			int64 size = message.size();
 			stream_->send_nonblocking(reinterpret_cast<const unsigned char*>(&size), sizeof(int64));
 
