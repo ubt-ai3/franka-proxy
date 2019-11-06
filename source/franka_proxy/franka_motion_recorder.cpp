@@ -31,7 +31,7 @@ void motion_recorder::start()
 {
 	record_.clear();
 
-	for (int i = 0; i < 10000; ++i)
+	for (int i = 0; i < 100000; ++i)
 		record_.emplace_back(i);
 }
 

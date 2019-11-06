@@ -68,7 +68,7 @@ void franka_control_server::task_main()
 			(server_->try_accept_connection());
 
 		if (connection)
-			stream_.reset(new network_stream(std::move(connection)));
+			stream_.reset(new network_stream(std::move(connection), 16384, 1000000000, 16384, 1000000));
 
 		if (!stream_)
 		{
@@ -355,27 +355,33 @@ void franka_control_server::process_request(const string& request)
 						return franka_proxy_messages::success;
 					});
 
-			// todo send data
-			string message("");
-			//msg += (std::to_string(robot_state.q[0]) + ",").data();
-			//msg += (std::to_string(robot_state.q[1]) + ",").data();
-			//msg += (std::to_string(robot_state.q[2]) + ",").data();
-			//msg += (std::to_string(robot_state.q[3]) + ",").data();
-			//msg += (std::to_string(robot_state.q[4]) + ",").data();
-			//msg += (std::to_string(robot_state.q[5]) + ",").data();
-			//msg += (std::to_string(robot_state.q[6])).data();
-			for (const auto& p : pos)
-			{
-				message += (std::to_string(p).data());
-				message += '$';
-			}
-
-			// todo hton byteorder
-			int64 size = message.size();
+			int64 size = pos.size();
 			stream_->send_nonblocking(reinterpret_cast<const unsigned char*>(&size), sizeof(int64));
 
-			stream_->send_nonblocking(reinterpret_cast<const unsigned char*>(message.data()), message.size());
+			for (const auto& p : pos)
+			{
+				// todo send data
+				string message("");
+				//msg += (std::to_string(robot_state.q[0]) + ",").data();
+				//msg += (std::to_string(robot_state.q[1]) + ",").data();
+				//msg += (std::to_string(robot_state.q[2]) + ",").data();
+				//msg += (std::to_string(robot_state.q[3]) + ",").data();
+				//msg += (std::to_string(robot_state.q[4]) + ",").data();
+				//msg += (std::to_string(robot_state.q[5]) + ",").data();
+				//msg += (std::to_string(robot_state.q[6])).data();
 
+				message += (std::to_string(p).data());
+				message += '\n';
+
+				// send size and message
+				// todo hton byteorder
+				int64 size = message.size();
+				stream_->send_nonblocking(reinterpret_cast<const unsigned char*>(&size), sizeof(int64));
+				stream_->send_nonblocking(reinterpret_cast<const unsigned char*>(message.data()), message.size());
+
+				if (stream_->pending_send_bytes() > (stream_->buffer_max_size_send * 0.8))
+					std::this_thread::sleep_for(std::chrono::milliseconds(100));
+			}
 
 			LOG_INFO("Sending response: " + static_cast<int>(response));
 			stream_->send_nonblocking(&response, sizeof(unsigned char));
