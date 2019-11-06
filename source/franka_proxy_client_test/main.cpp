@@ -142,5 +142,5 @@ int main()
 	stop = true;
 	t.join();
 
-	std::cout << "success" << std::endl;
+	LOG_INFO("test_main ended");
 }

@@ -280,7 +280,7 @@ string franka_control_client::send_stop_recording_and_receive_squence(float time
 				 false, 0, false, 0);
 
 			LOG_INFO(network_data.size());
-			string data(reinterpret_cast<const char*>(network_data.data()));
+			string data(reinterpret_cast<const char*>(network_data.data()), network_data.size());
 
 			// response	
 			network_transfer::receive_blocking
