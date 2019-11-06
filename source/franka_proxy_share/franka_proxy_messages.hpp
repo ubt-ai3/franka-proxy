@@ -22,7 +22,7 @@ public:
 
 	static constexpr const char* command_strings[11] =
 	{
-		"MOVE",
+		"MOVE_PTP",
 		"MOVE_SEQUENCE",
 		"MOVE_CONTACT",
 		"FORCE_Z",
@@ -41,7 +41,7 @@ public:
 
 	enum command_type
 	{
-		move,
+		move_ptp,
 		move_sequence,
 		move_contact,
 		force_z,

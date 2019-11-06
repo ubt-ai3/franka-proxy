@@ -176,7 +176,7 @@ void franka_control_server::process_request(const string& request)
 
 	switch (type)
 	{
-		case franka_proxy_messages::move:
+		case franka_proxy_messages::move_ptp:
 		{
 			LOG_INFO("Moving")
 

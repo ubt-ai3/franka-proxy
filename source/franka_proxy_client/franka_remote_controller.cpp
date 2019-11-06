@@ -85,7 +85,7 @@ std::vector<std::array<double, 7>> franka_remote_controller::stop_recording()
 void franka_remote_controller::move_to(const robot_config_7dof& target)
 {
 	string msg =
-		(std::string(franka_proxy_messages::command_strings[franka_proxy_messages::move]) + ' ' +
+		(std::string(franka_proxy_messages::command_strings[franka_proxy_messages::move_ptp]) + ' ' +
 		 std::to_string(target[0]) + ' ' +
 		 std::to_string(target[1]) + ' ' +
 		 std::to_string(target[2]) + ' ' +
