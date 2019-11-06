@@ -95,7 +95,7 @@ public:
 	unsigned char send_command_and_check_response
 		(const viral_core::string& command,
 		 float timeout_seconds = 1.f);
-	std::string send_stop_recording_and_receive_squence(
+	viral_core::string send_stop_recording_and_receive_squence(
 		float timeout_seconds = 1.f);
 
 private:
