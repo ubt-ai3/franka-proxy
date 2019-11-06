@@ -76,9 +76,9 @@ void franka_remote_controller::start_recording()
 }
 
 
-string franka_remote_controller::stop_recording()
+std::vector<std::array<double, 7>> franka_remote_controller::stop_recording()
 {
-	return socket_control_->send_stop_recording_and_receive_squence();
+	return socket_control_->send_stop_recording_and_receive_sequence();
 }
 
 
@@ -93,6 +93,18 @@ void franka_remote_controller::move_to(const robot_config_7dof& target)
 		 std::to_string(target[4]) + ' ' +
 		 std::to_string(target[5]) + ' ' +
 		 std::to_string(target[6]) +
+		 franka_proxy_messages::command_end_marker).data();
+
+	check_response
+		(franka_proxy_messages::feedback_type
+			(socket_control_->send_command_and_check_response(msg)));
+}
+
+
+void franka_remote_controller::move_sequence(const std::vector<robot_config_7dof>& sequence)
+{	
+	string msg =
+		(std::string(franka_proxy_messages::command_strings[franka_proxy_messages::move_sequence]) +
 		 franka_proxy_messages::command_end_marker).data();
 
 	check_response

@@ -92,13 +92,13 @@ int main()
 	//execute_retry([&] { controller.open_gripper(); }, controller);
 	//execute_retry([&] { controller.close_gripper(); }, controller);
 	//execute_retry([&] { controller.close_gripper(); }, controller);
-	//			
+
 	//std::this_thread::sleep_for(std::chrono::seconds(5));
 
 	//execute_retry([&] { controller.open_gripper(); }, controller);
 	//execute_retry([&] { controller.grasp_gripper(); }, controller);
 	//execute_retry([&] { controller.grasp_gripper(); }, controller);
-	//			
+
 	//std::this_thread::sleep_for(std::chrono::seconds(5));
 
 	//execute_retry([&] { controller.open_gripper(); }, controller);
@@ -139,9 +139,11 @@ int main()
 
 	controller.start_recording();
 	std::this_thread::sleep_for(std::chrono::seconds(5));
-	viral_core::string record(controller.stop_recording());
+	std::vector<std::array<double, 7>> record(controller.stop_recording());
 
 	LOG_INFO("Finished Recording Test");
+
+	controller.move_sequence({});
 
 	stop = true;
 	t.join();

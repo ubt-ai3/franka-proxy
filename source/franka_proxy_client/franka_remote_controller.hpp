@@ -42,19 +42,19 @@ public:
 
 
 	/**
-	 * todo
+	 * todo docu
 	 */
 	void apply_z_force(double mass, double duration);
 
 	/**
-	 * todo
+	 * todo docu
 	 */
 	void start_recording();
 
 	/**
-	 * todo
+	 * todo docu
 	 */
-	viral_core::string stop_recording();
+	std::vector<std::array<double, 7>> stop_recording();
 
 	/**
 	 * Start control-loop to move the robot to given target.
@@ -68,6 +68,15 @@ public:
 	 * @throw viral_core::network_exception if the connection was lost.
 	 */
 	void move_to(const robot_config_7dof& target);
+	
+	/**
+	 * todo docu
+	 * @TODO: Check exceptions.
+	 *
+	 * @throw remote_exception if the movement was unsuccessful.
+	 * @throw viral_core::network_exception if the connection was lost.
+	 */
+	void move_sequence(const std::vector<robot_config_7dof>& sequence);
 
 
 	/**

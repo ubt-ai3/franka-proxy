@@ -16,6 +16,8 @@
 #include <viral_core/timer.hpp>
 #include "viral_core/log.hpp"
 #include "franka_proxy_share/franka_proxy_messages.hpp"
+#include <vector>
+#include <array>
 
 
 namespace franka_proxy
@@ -241,7 +243,7 @@ unsigned char franka_control_client::send_command_and_check_response
 }
 
 
-string franka_control_client::send_stop_recording_and_receive_squence(float timeout_seconds)
+std::vector<std::array<double, 7>> franka_control_client::send_stop_recording_and_receive_sequence(float timeout_seconds)
 {
 	const string command =
 		(std::string(franka_proxy_messages::command_strings[franka_proxy_messages::stop_recording]) +
@@ -263,7 +265,7 @@ string franka_control_client::send_stop_recording_and_receive_squence(float time
 				(connection_.object(), network_data, false, 0, false, 0);
 
 
-			string data;
+			std::vector<std::array<double, 7>> data;
 			// size
 			network_data = network_buffer();
 			network_transfer::receive_blocking
@@ -274,7 +276,7 @@ string franka_control_client::send_stop_recording_and_receive_squence(float time
 			// todo ntoh byteorder
 			int64 count = *reinterpret_cast<int64*>(network_data.data());
 			// estimation
-			data.reserve(count * 100);
+			data.reserve(count);
 
 			for (int64 i = 0; i < count; ++i)
 			{
@@ -296,7 +298,28 @@ string franka_control_client::send_stop_recording_and_receive_squence(float time
 					 false, 0, false, 0);
 
 				string tmp(reinterpret_cast<const char*>(network_data.data()), network_data.size());
-				data += tmp;
+
+				list<string> joint_values_list;
+				tmp.split(',', joint_values_list);
+
+				if (joint_values_list.size() != 7)
+				{
+					LOG_WARN("Joint values message does not have 7 joint values");
+					continue;
+				}
+
+				std::array<double, 7> joints
+				{{
+						strtod(joint_values_list[0].data(), nullptr),
+						strtod(joint_values_list[1].data(), nullptr),
+						strtod(joint_values_list[2].data(), nullptr),
+						strtod(joint_values_list[3].data(), nullptr),
+						strtod(joint_values_list[4].data(), nullptr),
+						strtod(joint_values_list[5].data(), nullptr),
+						strtod(joint_values_list[6].data(), nullptr)
+				}};
+
+				data.emplace_back(joints);
 			}
 
 			// response	

@@ -20,9 +20,10 @@ class franka_proxy_messages
 {
 public:
 
-	static constexpr const char* command_strings[10] =
+	static constexpr const char* command_strings[11] =
 	{
 		"MOVE",
+		"MOVE_SEQUENCE",
 		"MOVE_CONTACT",
 		"FORCE_Z",
 		"OPEN_GRIPPER",
@@ -41,6 +42,7 @@ public:
 	enum command_type
 	{
 		move,
+		move_sequence,
 		move_contact,
 		force_z,
 		open_gripper,

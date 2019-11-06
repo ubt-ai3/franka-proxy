@@ -166,7 +166,7 @@ void franka_control_server::process_request(const string& request)
 		}
 	}
 
-	if (type == franka_proxy_messages::message_type_count)
+	if (type >= franka_proxy_messages::message_type_count)
 	{
 		LOG_WARN("Invalid message: " + request);
 		return;
@@ -207,6 +207,23 @@ void franka_control_server::process_request(const string& request)
 
 			LOG_INFO("Sending response: " + static_cast<int>(response));
 			stream_->send_nonblocking(&response, sizeof(unsigned char));
+			break;
+		}
+
+		case franka_proxy_messages::move_sequence:
+		{
+			LOG_INFO("Moving sequence");
+						
+			unsigned char response =
+				execute_exception_to_return_value
+					([&]()
+					{
+						return franka_proxy_messages::success;
+					});
+
+			LOG_INFO("Sending response: " + static_cast<int>(response));
+			stream_->send_nonblocking(&response, sizeof(unsigned char));
+
 			break;
 		}
 

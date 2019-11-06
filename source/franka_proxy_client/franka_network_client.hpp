@@ -17,6 +17,7 @@
 #include <viral_core/network_forward.hpp>
 #include <viral_core/string.hpp>
 #include <string>
+#include <vector>
 
 
 namespace franka_proxy
@@ -95,8 +96,8 @@ public:
 	unsigned char send_command_and_check_response
 		(const viral_core::string& command,
 		 float timeout_seconds = 1.f);
-	viral_core::string send_stop_recording_and_receive_squence(
-		float timeout_seconds = 1.f);
+	std::vector<std::array<double, 7>> send_stop_recording_and_receive_sequence
+		(float timeout_seconds = 1.f);
 
 private:
 
