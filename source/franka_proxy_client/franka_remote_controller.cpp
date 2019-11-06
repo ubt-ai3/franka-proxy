@@ -78,7 +78,9 @@ void franka_remote_controller::start_recording()
 
 void franka_remote_controller::stop_recording()
 {
-	viral_core::string data(socket_control_->send_stop_recording_and_receive_squence());
+	string data(socket_control_->send_stop_recording_and_receive_squence());
+
+	LOG_INFO(data);
 }
 
 

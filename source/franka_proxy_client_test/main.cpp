@@ -72,21 +72,6 @@ int main()
 	//franka_proxy::franka_remote_controller controller("127.0.0.1", network);
 	franka_proxy::franka_remote_controller controller("132.180.194.141", network);
 
-	execute_retry([&] { controller.open_gripper(); }, controller);
-	execute_retry([&] { controller.close_gripper(); }, controller);
-	execute_retry([&] { controller.close_gripper(); }, controller);
-				
-	std::this_thread::sleep_for(std::chrono::seconds(5));
-
-	execute_retry([&] { controller.open_gripper(); }, controller);
-	execute_retry([&] { controller.grasp_gripper(); }, controller);
-	execute_retry([&] { controller.grasp_gripper(); }, controller);
-				
-	std::this_thread::sleep_for(std::chrono::seconds(5));
-
-	execute_retry([&] { controller.open_gripper(); }, controller);
-	execute_retry([&] { controller.open_gripper(); }, controller);
-
 	std::atomic_bool stop(false);
 	std::thread t([&stop, &controller]()
 	{
@@ -102,34 +87,60 @@ int main()
 		}
 	});
 
+	// gripper test
 
-	franka_proxy::robot_config_7dof pos1{
-		{
-			2.4673210167983628,
-			-1.053636035616098,
-			-0.935180716967433,
-			-1.670424119447617,
-			0.1367540113528485,
-			1.4206203791091001,
-			0.3347107737734215
-		}
-	};
-	franka_proxy::robot_config_7dof pos2{
-		{
-			-0.002421978837257,
-			1.2362939888338829,
-			2.4654171861844083,
-			-1.264853222554674,
-			-0.001813626296555,
-			1.9141426016730037,
-			-1.063268839608126
-		}
-	};
+	//execute_retry([&] { controller.open_gripper(); }, controller);
+	//execute_retry([&] { controller.close_gripper(); }, controller);
+	//execute_retry([&] { controller.close_gripper(); }, controller);
+	//			
+	//std::this_thread::sleep_for(std::chrono::seconds(5));
 
-	controller.set_speed_factor(0.25);
-	execute_retry([&] { controller.move_to(pos1); }, controller);
-	execute_retry([&] { controller.move_to(pos2); }, controller);
+	//execute_retry([&] { controller.open_gripper(); }, controller);
+	//execute_retry([&] { controller.grasp_gripper(); }, controller);
+	//execute_retry([&] { controller.grasp_gripper(); }, controller);
+	//			
+	//std::this_thread::sleep_for(std::chrono::seconds(5));
+
+	//execute_retry([&] { controller.open_gripper(); }, controller);
+	//execute_retry([&] { controller.open_gripper(); }, controller);
+
+
+	// motion test
+
+	//franka_proxy::robot_config_7dof pos1{
+	//	{
+	//		2.4673210167983628,
+	//		-1.053636035616098,
+	//		-0.935180716967433,
+	//		-1.670424119447617,
+	//		0.1367540113528485,
+	//		1.4206203791091001,
+	//		0.3347107737734215
+	//	}
+	//};
+	//franka_proxy::robot_config_7dof pos2{
+	//	{
+	//		-0.002421978837257,
+	//		1.2362939888338829,
+	//		2.4654171861844083,
+	//		-1.264853222554674,
+	//		-0.001813626296555,
+	//		1.9141426016730037,
+	//		-1.063268839608126
+	//	}
+	//};
+
+	//controller.set_speed_factor(0.25);
+	//execute_retry([&] { controller.move_to(pos1); }, controller);
+	//execute_retry([&] { controller.move_to(pos2); }, controller);
+
+
+	controller.start_recording();
+	controller.stop_recording();
+
 
 	stop = true;
 	t.join();
+
+	std::cout << "success" << std::endl;
 }

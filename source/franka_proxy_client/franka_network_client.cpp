@@ -262,22 +262,24 @@ string franka_control_client::send_stop_recording_and_receive_squence(float time
 			network_transfer::send_blocking
 				(connection_.object(), network_data, false, 0, false, 0);
 			
-			network_data = network_buffer();
-
 			// size
+			network_data = network_buffer();
 			network_transfer::receive_blocking
 				(connection_.object(), network_data,
 				 sizeof(unsigned char),
 				 false, 0, false, 0);
 
 			const unsigned char size = network_data[0];
+			LOG_INFO(size);
 
 			// data
+			network_data = network_buffer();
 			network_transfer::receive_blocking
 				(connection_.object(), network_data,
 				 size,
 				 false, 0, false, 0);
 
+			LOG_INFO(network_data.size());
 			string data(reinterpret_cast<const char*>(network_data.data()));
 
 			// response	
