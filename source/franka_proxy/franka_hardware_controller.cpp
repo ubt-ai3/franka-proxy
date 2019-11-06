@@ -277,8 +277,6 @@ void franka_hardware_controller::automatic_error_recovery()
 
 void franka_hardware_controller::start_recording()
 {
-	initialize_parameters();
-
 	control_loop_running_.set(true);
 	{
 		// Lock the current_state_lock_ to wait for state_thread_ to finish.

@@ -104,6 +104,7 @@ int main()
 	//execute_retry([&] { controller.open_gripper(); }, controller);
 	//execute_retry([&] { controller.open_gripper(); }, controller);
 
+	LOG_INFO("Finished Gripper Test");
 
 	// motion test
 
@@ -134,13 +135,13 @@ int main()
 	//execute_retry([&] { controller.move_to(pos1); }, controller);
 	//execute_retry([&] { controller.move_to(pos2); }, controller);
 
+	LOG_INFO("Finished ptp-Movement Test");
 
 	controller.start_recording();
 	controller.stop_recording();
 
+	LOG_INFO("Finished Recording Test");
 
 	stop = true;
 	t.join();
-
-	LOG_INFO("test_main ended");
 }
