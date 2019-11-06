@@ -345,7 +345,7 @@ void franka_control_server::process_request(const string& request)
 		{
 			LOG_INFO("Stop recording");
 
-			std::vector<int> pos;
+			std::vector<std::array<double, 7>> pos;
 
 			unsigned char response =
 				execute_exception_to_return_value
@@ -360,17 +360,14 @@ void franka_control_server::process_request(const string& request)
 
 			for (const auto& p : pos)
 			{
-				// todo send data
 				string message("");
-				//msg += (std::to_string(robot_state.q[0]) + ",").data();
-				//msg += (std::to_string(robot_state.q[1]) + ",").data();
-				//msg += (std::to_string(robot_state.q[2]) + ",").data();
-				//msg += (std::to_string(robot_state.q[3]) + ",").data();
-				//msg += (std::to_string(robot_state.q[4]) + ",").data();
-				//msg += (std::to_string(robot_state.q[5]) + ",").data();
-				//msg += (std::to_string(robot_state.q[6])).data();
-
-				message += (std::to_string(p).data());
+				message += (std::to_string(p[0]) + ",").data();
+				message += (std::to_string(p[1]) + ",").data();
+				message += (std::to_string(p[2]) + ",").data();
+				message += (std::to_string(p[3]) + ",").data();
+				message += (std::to_string(p[4]) + ",").data();
+				message += (std::to_string(p[5]) + ",").data();
+				message += (std::to_string(p[6])).data();
 				message += '\n';
 
 				// send size and message

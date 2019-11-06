@@ -287,7 +287,7 @@ void franka_hardware_controller::start_recording()
 }
 
 
-std::vector<int> franka_hardware_controller::stop_recording()
+std::vector<std::array<double, 7>> franka_hardware_controller::stop_recording()
 {
 	motion_recorder_.stop();
 	control_loop_running_.set(false);

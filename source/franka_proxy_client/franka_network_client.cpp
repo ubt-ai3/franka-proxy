@@ -248,7 +248,7 @@ string franka_control_client::send_stop_recording_and_receive_squence(float time
 			franka_proxy_messages::command_end_marker).data();
 
 	free_timer t;
-	while (t.seconds_passed() < timeout_seconds)
+	while (t.seconds_passed() < 1000)
 	{
 		try
 		{
@@ -261,7 +261,10 @@ string franka_control_client::send_stop_recording_and_receive_squence(float time
 				 command.size());
 			network_transfer::send_blocking
 				(connection_.object(), network_data, false, 0, false, 0);
-			
+
+
+			string data;
+
 			// size
 			network_data = network_buffer();
 			network_transfer::receive_blocking
@@ -270,25 +273,37 @@ string franka_control_client::send_stop_recording_and_receive_squence(float time
 				 false, 0, false, 0);
 
 			// todo ntoh byteorder
-			int64 size = *(reinterpret_cast<int64*>(network_data.data()));
-			LOG_INFO(size);
+			int64 count = *reinterpret_cast<int64*>(network_data.data());
+			LOG_INFO(count);
 
-			// data
-			network_data = network_buffer();
-			network_transfer::receive_blocking
-				(connection_.object(), network_data,
-				 size,
-				 false, 0, false, 0);
+			for (int64 i = 0; i < count; ++i)
+			{
+				// size
+				network_data = network_buffer();
+				network_transfer::receive_blocking
+					(connection_.object(), network_data,
+					 sizeof(int64),
+					 false, 0, false, 0);
 
-			LOG_INFO(network_data.size());
-			string data(reinterpret_cast<const char*>(network_data.data()), network_data.size());
+				// todo ntoh byteorder
+				int64 size = *reinterpret_cast<int64*>(network_data.data());
+
+				// data
+				network_data = network_buffer();
+				network_transfer::receive_blocking
+					(connection_.object(), network_data,
+					 size,
+					 false, 0, false, 0);
+
+				string tmp(reinterpret_cast<const char*>(network_data.data()), network_data.size());
+				data += tmp;
+			}
 
 			// response	
 			network_transfer::receive_blocking
 				(connection_.object(), network_data,
 				 sizeof(unsigned char),
 				 false, 0, false, 0);
-
 			const unsigned char response = network_data[0];
 
 			return data;

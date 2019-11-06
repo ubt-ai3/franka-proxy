@@ -84,7 +84,7 @@ public:
 
 
 	void start_recording();
-	std::vector<int> stop_recording();
+	std::vector<std::array<double, 7>> stop_recording();
 
 
 private:

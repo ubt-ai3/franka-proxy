@@ -31,8 +31,11 @@ void motion_recorder::start()
 {
 	record_.clear();
 
-	for (int i = 0; i < 100000; ++i)
-		record_.emplace_back(i);
+	for (int i = 0; i < 10000; ++i)
+	{
+		std::array<double, 7> tmp{{0.,0.,0.,0.,0.,0.,0.}};
+		record_.emplace_back(tmp);
+	}
 }
 
 
@@ -41,7 +44,7 @@ void motion_recorder::stop()
 }
 
 
-std::vector<int> motion_recorder::latest_record()
+std::vector<std::array<double, 7>> motion_recorder::latest_record()
 {
 	return record_;
 }

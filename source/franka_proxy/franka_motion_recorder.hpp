@@ -10,7 +10,9 @@
 
 #if !defined(INCLUDED__FRANKA_PROXY__FRANKA_MOTION_RECORDER_HPP)
 #define INCLUDED__FRANKA_PROXY__FRANKA_MOTION_RECORDER_HPP
+
 #include <vector>
+#include <array>
 
 
 namespace franka_proxy
@@ -37,10 +39,10 @@ public:
 
 	void stop();
 
-	std::vector<int> latest_record();
+	std::vector<std::array<double, 7>> latest_record();
 
 private:
-	std::vector<int> record_;
+	std::vector<std::array<double, 7>> record_;
 };
 
 

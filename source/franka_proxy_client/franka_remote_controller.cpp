@@ -31,10 +31,10 @@ using namespace viral_core;
 
 
 franka_remote_controller::franka_remote_controller
-	(const std::string& proxy_ip,
+	(std::string proxy_ip,
 	 network_context& network)
 	:
-	franka_ip_(proxy_ip),
+	franka_ip_(std::move(proxy_ip)),
 	network_(network),
 	current_config_(),
 	current_gripper_pos_(),
@@ -160,9 +160,7 @@ bool franka_remote_controller::grasp_gripper(double speed, double force)
 		(franka_proxy_messages::feedback_type
 			(socket_control_->send_command_and_check_response(msg)));
 
-	if (response == response_type::success_command_failed)
-		return false;
-	return true;
+	return response != response_type::success_command_failed;
 }
 
 
