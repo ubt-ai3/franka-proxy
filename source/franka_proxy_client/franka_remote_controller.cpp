@@ -76,11 +76,9 @@ void franka_remote_controller::start_recording()
 }
 
 
-void franka_remote_controller::stop_recording()
+string franka_remote_controller::stop_recording()
 {
-	string data(socket_control_->send_stop_recording_and_receive_squence());
-
-	LOG_INFO(data);
+	return socket_control_->send_stop_recording_and_receive_squence();
 }
 
 

@@ -355,8 +355,8 @@ void franka_control_server::process_request(const string& request)
 						return franka_proxy_messages::success;
 					});
 
-			int64 size = pos.size();
-			stream_->send_nonblocking(reinterpret_cast<const unsigned char*>(&size), sizeof(int64));
+			int64 count = pos.size();
+			stream_->send_nonblocking(reinterpret_cast<const unsigned char*>(&count), sizeof(int64));
 
 			for (const auto& p : pos)
 			{

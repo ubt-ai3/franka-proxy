@@ -264,7 +264,6 @@ string franka_control_client::send_stop_recording_and_receive_squence(float time
 
 
 			string data;
-
 			// size
 			network_data = network_buffer();
 			network_transfer::receive_blocking
@@ -274,7 +273,8 @@ string franka_control_client::send_stop_recording_and_receive_squence(float time
 
 			// todo ntoh byteorder
 			int64 count = *reinterpret_cast<int64*>(network_data.data());
-			LOG_INFO(count);
+			// estimation
+			data.reserve(count * 100);
 
 			for (int64 i = 0; i < count; ++i)
 			{
@@ -306,8 +306,9 @@ string franka_control_client::send_stop_recording_and_receive_squence(float time
 				 false, 0, false, 0);
 			const unsigned char response = network_data[0];
 
-			return data;
+			LOG_INFO("received: " + count);
 
+			return data;
 		}
 		catch (const network_exception&)
 		{

@@ -13,6 +13,9 @@
 
 #include <vector>
 #include <array>
+#include <thread>
+#include <atomic>
+#include <franka/robot.h>
 
 
 namespace franka_proxy
@@ -32,8 +35,9 @@ namespace detail
 class motion_recorder
 {
 public:
-	motion_recorder
-		(double rate);
+	motion_recorder(
+		double rate,
+		franka::Robot& robot);
 
 	void start();
 
@@ -43,6 +47,9 @@ public:
 
 private:
 	std::vector<std::array<double, 7>> record_;
+	std::thread t_{};
+	std::atomic_bool stop_{false};
+	franka::Robot& robot_;
 };
 
 

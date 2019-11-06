@@ -21,7 +21,10 @@ namespace detail
 // franka_motion_recorder
 //
 //////////////////////////////////////////////////////////////////////////
-motion_recorder::motion_recorder(double rate)
+
+
+motion_recorder::motion_recorder(double rate, franka::Robot& robot)
+	: robot_(robot)
 {
 	
 }
@@ -29,18 +32,22 @@ motion_recorder::motion_recorder(double rate)
 
 void motion_recorder::start()
 {
+	stop_ = false;
 	record_.clear();
 
-	for (int i = 0; i < 10000; ++i)
+	t_ = std::thread([this]()
 	{
-		std::array<double, 7> tmp{{0.,0.,0.,0.,0.,0.,0.}};
-		record_.emplace_back(tmp);
-	}
+		while (!stop_)
+		{
+			record_.emplace_back(robot_.readOnce().q);
+		}
+	});
 }
 
 
 void motion_recorder::stop()
 {
+	stop_ = true;
 }
 
 

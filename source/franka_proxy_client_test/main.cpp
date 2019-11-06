@@ -89,20 +89,20 @@ int main()
 
 	// gripper test
 
-	execute_retry([&] { controller.open_gripper(); }, controller);
-	execute_retry([&] { controller.close_gripper(); }, controller);
-	execute_retry([&] { controller.close_gripper(); }, controller);
-				
-	std::this_thread::sleep_for(std::chrono::seconds(5));
+	//execute_retry([&] { controller.open_gripper(); }, controller);
+	//execute_retry([&] { controller.close_gripper(); }, controller);
+	//execute_retry([&] { controller.close_gripper(); }, controller);
+	//			
+	//std::this_thread::sleep_for(std::chrono::seconds(5));
 
-	execute_retry([&] { controller.open_gripper(); }, controller);
-	execute_retry([&] { controller.grasp_gripper(); }, controller);
-	execute_retry([&] { controller.grasp_gripper(); }, controller);
-				
-	std::this_thread::sleep_for(std::chrono::seconds(5));
+	//execute_retry([&] { controller.open_gripper(); }, controller);
+	//execute_retry([&] { controller.grasp_gripper(); }, controller);
+	//execute_retry([&] { controller.grasp_gripper(); }, controller);
+	//			
+	//std::this_thread::sleep_for(std::chrono::seconds(5));
 
-	execute_retry([&] { controller.open_gripper(); }, controller);
-	execute_retry([&] { controller.open_gripper(); }, controller);
+	//execute_retry([&] { controller.open_gripper(); }, controller);
+	//execute_retry([&] { controller.open_gripper(); }, controller);
 
 	LOG_INFO("Finished Gripper Test");
 
@@ -138,7 +138,8 @@ int main()
 	LOG_INFO("Finished ptp-Movement Test");
 
 	controller.start_recording();
-	controller.stop_recording();
+	std::this_thread::sleep_for(std::chrono::seconds(5));
+	viral_core::string record(controller.stop_recording());
 
 	LOG_INFO("Finished Recording Test");
 

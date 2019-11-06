@@ -41,7 +41,7 @@ franka_hardware_controller::franka_hardware_controller
 	stop_motion_(),
 	speed_factor_(0.05),
 
-	motion_recorder_(10.0),
+	motion_recorder_(10.0, robot_),
 
 	robot_state_(robot_.readOnce()),
 

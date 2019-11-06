@@ -54,7 +54,7 @@ public:
 	/**
 	 * todo
 	 */
-	void stop_recording();
+	viral_core::string stop_recording();
 
 	/**
 	 * Start control-loop to move the robot to given target.
