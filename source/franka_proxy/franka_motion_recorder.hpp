@@ -37,7 +37,8 @@ class motion_recorder
 public:
 	motion_recorder(
 		double rate,
-		franka::Robot& robot);
+		franka::Robot& robot,
+		franka::RobotState& robot_state);
 
 	void start();
 
@@ -50,6 +51,7 @@ private:
 	std::thread t_{};
 	std::atomic_bool stop_{false};
 	franka::Robot& robot_;
+	franka::RobotState& robot_state_;
 };
 
 
