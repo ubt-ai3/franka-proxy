@@ -331,7 +331,7 @@ void franka_control_server::process_request(const string& request)
 				execute_exception_to_return_value
 					([&]()
 					{
-						// todo switch to recording mode
+						controller_.start_recording();
 						return franka_proxy_messages::success;
 					});
 
@@ -345,15 +345,30 @@ void franka_control_server::process_request(const string& request)
 		{
 			LOG_INFO("Stop recording");
 
+			std::vector<int> pos;
+
 			unsigned char response =
 				execute_exception_to_return_value
 					([&]()
 					{
-						// todo switch to recording mode
+						pos = controller_.stop_recording();
 						return franka_proxy_messages::success;
 					});
 
 			// todo send data
+			string message("");
+			//msg += (std::to_string(robot_state.q[0]) + ",").data();
+			//msg += (std::to_string(robot_state.q[1]) + ",").data();
+			//msg += (std::to_string(robot_state.q[2]) + ",").data();
+			//msg += (std::to_string(robot_state.q[3]) + ",").data();
+			//msg += (std::to_string(robot_state.q[4]) + ",").data();
+			//msg += (std::to_string(robot_state.q[5]) + ",").data();
+			//msg += (std::to_string(robot_state.q[6])).data();
+			message += (std::to_string(pos[0]).data());
+
+			unsigned char size = message.size();
+			stream_->send_nonblocking(&size, sizeof(unsigned char));
+			stream_->send_nonblocking(reinterpret_cast<const unsigned char*>(message.data()), message.size());
 
 			LOG_INFO("Sending response: " + static_cast<int>(response));
 			stream_->send_nonblocking(&response, sizeof(unsigned char));

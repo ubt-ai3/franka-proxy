@@ -78,15 +78,7 @@ void franka_remote_controller::start_recording()
 
 void franka_remote_controller::stop_recording()
 {
-	string msg =
-		(std::string(franka_proxy_messages::command_strings[franka_proxy_messages::stop_recording]) +
-			franka_proxy_messages::command_end_marker).data();
-
-	// todo receive data
-
-	check_response
-		(franka_proxy_messages::feedback_type
-			(socket_control_->send_command_and_check_response(msg)));
+	std::string data(socket_control_->send_stop_recording_and_receive_squence());
 }
 
 
@@ -123,13 +115,11 @@ bool franka_remote_controller::move_to_until_contact
 		 std::to_string(target[6]) +
 		 franka_proxy_messages::command_end_marker).data();
 
-	response_type response = check_response
+	const response_type response = check_response
 		(franka_proxy_messages::feedback_type
 			(socket_control_->send_command_and_check_response(msg)));
 
-	if (response == response_type::success_command_failed)
-		return false;
-	return true;
+	return response != response_type::success_command_failed;
 }
 
 

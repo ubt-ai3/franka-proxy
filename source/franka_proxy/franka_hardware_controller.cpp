@@ -19,6 +19,7 @@
 #include <franka/model.h>
 
 #include "franka_motion_generator.hpp"
+#include "franka_motion_recorder.hpp"
 
 
 namespace franka_proxy
@@ -39,6 +40,8 @@ franka_hardware_controller::franka_hardware_controller
 	parameters_initialized_(false),
 	stop_motion_(),
 	speed_factor_(0.05),
+
+	motion_recorder_(10.0),
 
 	robot_state_(robot_.readOnce()),
 
@@ -269,6 +272,29 @@ franka::GripperState franka_hardware_controller::gripper_state() const
 void franka_hardware_controller::automatic_error_recovery()
 {
 	robot_.automaticErrorRecovery();
+}
+
+
+void franka_hardware_controller::start_recording()
+{
+	initialize_parameters();
+
+	control_loop_running_.set(true);
+	{
+		// Lock the current_state_lock_ to wait for state_thread_ to finish.
+		std::lock_guard<std::mutex> state_guard(state_lock_);
+	}
+
+	motion_recorder_.start();
+}
+
+
+std::vector<int> franka_hardware_controller::stop_recording()
+{
+	motion_recorder_.stop();
+	control_loop_running_.set(false);
+
+	return motion_recorder_.latest_record();
 }
 
 

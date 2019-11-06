@@ -10,6 +10,7 @@
 
 #if !defined(INCLUDED__FRANKA_PROXY__FRANKA_MOTION_RECORDER_HPP)
 #define INCLUDED__FRANKA_PROXY__FRANKA_MOTION_RECORDER_HPP
+#include <vector>
 
 
 namespace franka_proxy
@@ -31,6 +32,15 @@ class motion_recorder
 public:
 	motion_recorder
 		(double rate);
+
+	void start();
+
+	void stop();
+
+	std::vector<int> latest_record();
+
+private:
+	std::vector<int> record_;
 };
 
 

@@ -15,6 +15,7 @@
 #include <viral_core/network_transfer.hpp>
 #include <viral_core/timer.hpp>
 #include "viral_core/log.hpp"
+#include "franka_proxy_share/franka_proxy_messages.hpp"
 
 
 namespace franka_proxy
@@ -145,7 +146,7 @@ string franka_state_client::fetch_message()
 
 //////////////////////////////////////////////////////////////////////////
 //
-// tx90_state_client
+// franka_control_client
 //
 //////////////////////////////////////////////////////////////////////////
 
@@ -240,6 +241,64 @@ unsigned char franka_control_client::send_command_and_check_response
 }
 
 
+string franka_control_client::send_stop_recording_and_receive_squence(float timeout_seconds)
+{
+	const string command =
+		(std::string(franka_proxy_messages::command_strings[franka_proxy_messages::stop_recording]) +
+			franka_proxy_messages::command_end_marker).data();
 
+	free_timer t;
+	while (t.seconds_passed() < timeout_seconds)
+	{
+		try
+		{
+			if (!connection_)
+				connection_ = network_.create_connection
+					(remote_ip_, remote_port_);
+			
+			network_buffer network_data
+				(reinterpret_cast<const unsigned char*>(command.data()),
+				 command.size());
+			network_transfer::send_blocking
+				(connection_.object(), network_data, false, 0, false, 0);
+			
+			network_data = network_buffer();
+
+			// size
+			network_transfer::receive_blocking
+				(connection_.object(), network_data,
+				 sizeof(unsigned char),
+				 false, 0, false, 0);
+
+			const unsigned char size = network_data[0];
+
+			// data
+			network_transfer::receive_blocking
+				(connection_.object(), network_data,
+				 size,
+				 false, 0, false, 0);
+
+			string data(reinterpret_cast<const char*>(network_data.data()));
+
+			// response	
+			network_transfer::receive_blocking
+				(connection_.object(), network_data,
+				 sizeof(unsigned char),
+				 false, 0, false, 0);
+
+			const unsigned char response = network_data[0];
+
+			return data;
+
+		}
+		catch (const network_exception&)
+		{
+			connection_.reset();
+		}
+	}
+
+	LOG_ERROR("Failed to send.");
+	throw network_exception();
+}
 
 } /* namespace franka_proxy */

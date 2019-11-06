@@ -8,8 +8,8 @@
  ************************************************************************/
 
 
-#if !defined(INCLUDED__FRANKA_PROXY__FRANKA_HARDWARE_KONTROLLER_HPP)
-#define INCLUDED__FRANKA_PROXY__FRANKA_HARDWARE_KONTROLLER_HPP
+#if !defined(INCLUDED__FRANKA_PROXY__FRANKA_HARDWARE_CONTROLLER_HPP)
+#define INCLUDED__FRANKA_PROXY__FRANKA_HARDWARE_CONTROLLER_HPP
 
 
 #include <atomic>
@@ -19,6 +19,9 @@
 
 #include <franka/robot.h>
 #include <franka/gripper.h>
+#include <vector>
+
+#include "franka_motion_recorder.hpp"
 
 
 namespace franka_proxy
@@ -80,6 +83,10 @@ public:
 	void automatic_error_recovery();
 
 
+	void start_recording();
+	std::vector<int> stop_recording();
+
+
 private:
 
 	/**
@@ -107,6 +114,8 @@ private:
 	mutable std::mutex speed_factor_lock_;
 	double speed_factor_;
 
+	std::atomic_bool stop_recording_;
+	detail::motion_recorder motion_recorder_;
 
 	// Gripper
 	mutable std::unique_ptr<franka::Gripper> gripper_;
@@ -130,4 +139,4 @@ private:
 } /* namespace franka_proxy */
 
 
-#endif /* !defined(INCLUDED__FRANKA_PROXY__FRANKA_HARDWARE_KONTROLLER_HPP) */
+#endif /* !defined(INCLUDED__FRANKA_PROXY__FRANKA_HARDWARE_CONTROLLER_HPP) */
