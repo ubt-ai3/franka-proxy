@@ -27,7 +27,7 @@ namespace franka_proxy
 {
 
 
-typedef std::array<double, 7> robot_config_7dof;
+using robot_config_7dof = std::array<double, 7>;
 
 
 class franka_remote_controller
@@ -198,7 +198,7 @@ private:
 	robot_config_7dof current_config_;
 	int current_gripper_pos_;
 	int max_gripper_pos_;
-	bool gripper_grasped_;
+	bool gripper_grasped_{false};
 
 
 	static constexpr unsigned short franka_control_port = 4711;

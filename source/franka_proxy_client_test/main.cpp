@@ -106,6 +106,7 @@ int main()
 
 	LOG_INFO("Finished Gripper Test");
 
+
 	// motion test
 
 	//franka_proxy::robot_config_7dof pos1{
@@ -137,13 +138,26 @@ int main()
 
 	LOG_INFO("Finished ptp-Movement Test");
 
-	controller.start_recording();
+
+	// playback test
+
 	std::this_thread::sleep_for(std::chrono::seconds(5));
+	
+	LOG_INFO("START$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$");
+	controller.start_recording();
+
+	std::this_thread::sleep_for(std::chrono::seconds(5));
+	
+	LOG_INFO("STOP$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$");
 	std::vector<std::array<double, 7>> record(controller.stop_recording());
 
-	LOG_INFO("Finished Recording Test");
+	
+	std::this_thread::sleep_for(std::chrono::seconds(5));
+	controller.move_to(record.front());
+	controller.move_sequence(record);
 
-	controller.move_sequence({});
+	LOG_INFO("Finished Playback Test");
+
 
 	stop = true;
 	t.join();

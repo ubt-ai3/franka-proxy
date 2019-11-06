@@ -103,13 +103,7 @@ void franka_remote_controller::move_to(const robot_config_7dof& target)
 
 void franka_remote_controller::move_sequence(const std::vector<robot_config_7dof>& sequence)
 {	
-	string msg =
-		(std::string(franka_proxy_messages::command_strings[franka_proxy_messages::move_sequence]) +
-		 franka_proxy_messages::command_end_marker).data();
-
-	check_response
-		(franka_proxy_messages::feedback_type
-			(socket_control_->send_command_and_check_response(msg)));
+	return socket_control_->send_move_sequence(sequence);
 }
 
 

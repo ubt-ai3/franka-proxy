@@ -213,7 +213,13 @@ void franka_control_server::process_request(const string& request)
 		case franka_proxy_messages::move_sequence:
 		{
 			LOG_INFO("Moving sequence");
-						
+				
+			int64 count;
+			while (!stream_->try_receive_nonblocking(reinterpret_cast<unsigned char*>(&count), sizeof(int64), false))
+				thread_util::sleep_slice();
+			LOG_INFO(count);
+
+
 			unsigned char response =
 				execute_exception_to_return_value
 					([&]()
@@ -394,7 +400,10 @@ void franka_control_server::process_request(const string& request)
 				stream_->send_nonblocking(reinterpret_cast<const unsigned char*>(message.data()), message.size());
 
 				if (stream_->pending_send_bytes() > (stream_->buffer_max_size_send * 0.8))
+				{
+					LOG_WARN("Network send buffer is 80 percent used.")
 					std::this_thread::sleep_for(std::chrono::milliseconds(100));
+				}
 			}
 
 			LOG_INFO("Sending response: " + static_cast<int>(response));

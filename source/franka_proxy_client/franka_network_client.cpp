@@ -250,7 +250,7 @@ std::vector<std::array<double, 7>> franka_control_client::send_stop_recording_an
 			franka_proxy_messages::command_end_marker).data();
 
 	free_timer t;
-	while (t.seconds_passed() < 1000)
+	while (t.seconds_passed() < timeout_seconds)
 	{
 		try
 		{
@@ -342,5 +342,67 @@ std::vector<std::array<double, 7>> franka_control_client::send_stop_recording_an
 	LOG_ERROR("Failed to send.");
 	throw network_exception();
 }
+
+
+void franka_control_client::send_move_sequence
+	(const std::vector<std::array<double, 7>>& sequence,
+	 float timeout_seconds)
+{
+	string command =
+	(std::string(franka_proxy_messages::command_strings[franka_proxy_messages::move_sequence]) +
+		franka_proxy_messages::command_end_marker).data();
+
+	free_timer t;
+	while (t.seconds_passed() < timeout_seconds)
+	{
+		try
+		{
+			if (!connection_)
+				connection_ = network_.create_connection
+					(remote_ip_, remote_port_);
+
+			// command
+			network_buffer network_data
+			(reinterpret_cast<const unsigned char*>(command.data()),
+			 command.size());
+			network_transfer::send_blocking
+				(connection_.object(), network_data, false, 0, false, 0);
+
+			// sequence size
+			// todo hton
+			int64 count = sequence.size();
+			network_data = network_buffer
+			(reinterpret_cast<const unsigned char*>(count),
+			 sizeof(int64));
+			network_transfer::send_blocking
+				(connection_.object(), network_data, false, 0, false, 0);
+
+			// data
+			for (const auto& p : sequence)
+			{
+				string message("");
+				message += (std::to_string(p[0]) + ",").data();
+				message += (std::to_string(p[1]) + ",").data();
+				message += (std::to_string(p[2]) + ",").data();
+				message += (std::to_string(p[3]) + ",").data();
+				message += (std::to_string(p[4]) + ",").data();
+				message += (std::to_string(p[5]) + ",").data();
+				message += (std::to_string(p[6])).data();
+				message += '\n';
+
+				// send size and message
+				// todo
+			}
+		}
+		catch (const network_exception&)
+		{
+			connection_.reset();
+		}
+	}
+
+	LOG_ERROR("Failed to send.");
+	throw network_exception();
+}
+
 
 } /* namespace franka_proxy */
