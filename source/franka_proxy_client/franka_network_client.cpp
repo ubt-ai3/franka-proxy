@@ -269,7 +269,7 @@ string franka_control_client::send_stop_recording_and_receive_squence(float time
 				 sizeof(unsigned char),
 				 false, 0, false, 0);
 
-			const unsigned char size = network_data[0];
+			int64 size = network_data[0];
 			LOG_INFO(size);
 
 			// data

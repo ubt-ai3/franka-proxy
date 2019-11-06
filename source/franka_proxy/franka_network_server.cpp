@@ -366,9 +366,11 @@ void franka_control_server::process_request(const string& request)
 			//msg += (std::to_string(robot_state.q[6])).data();
 			message += (std::to_string(pos[0]).data());
 
-			unsigned char size = static_cast<unsigned char>(message.size());
-			stream_->send_nonblocking(&size, sizeof(unsigned char));
+			int64 size = message.size();
+			stream_->send_nonblocking(reinterpret_cast<const unsigned char*>(&size), sizeof(int64));
+
 			stream_->send_nonblocking(reinterpret_cast<const unsigned char*>(message.data()), message.size());
+
 
 			LOG_INFO("Sending response: " + static_cast<int>(response));
 			stream_->send_nonblocking(&response, sizeof(unsigned char));
