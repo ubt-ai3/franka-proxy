@@ -48,6 +48,7 @@ void motion_recorder::start()
 void motion_recorder::stop()
 {
 	stop_ = true;
+	t_.join();
 }
 
 
