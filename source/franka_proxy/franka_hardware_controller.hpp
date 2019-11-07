@@ -85,6 +85,7 @@ public:
 
 	void start_recording();
 	std::vector<std::array<double, 7>> stop_recording();
+	void move_sequence(std::vector<std::array<double, 7>> q_sequence);
 
 
 private:

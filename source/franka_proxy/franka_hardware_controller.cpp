@@ -20,6 +20,7 @@
 
 #include "franka_motion_generator.hpp"
 #include "franka_motion_recorder.hpp"
+#include "viral_core/log.hpp"
 
 
 namespace franka_proxy
@@ -293,6 +294,12 @@ std::vector<std::array<double, 7>> franka_hardware_controller::stop_recording()
 	control_loop_running_.set(false);
 
 	return motion_recorder_.latest_record();
+}
+
+
+void franka_hardware_controller::move_sequence(std::vector<std::array<double, 7>> q_sequence)
+{
+	LOG_INFO("sequence received of size: " + q_sequence.size());
 }
 
 

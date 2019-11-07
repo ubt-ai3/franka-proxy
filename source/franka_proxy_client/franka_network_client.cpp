@@ -12,7 +12,6 @@
 
 #include <viral_core/buffer.hpp>
 #include <viral_core/network.hpp>
-#include <viral_core/network_transfer.hpp>
 #include <viral_core/timer.hpp>
 #include "viral_core/log.hpp"
 #include "franka_proxy_share/franka_proxy_messages.hpp"
@@ -405,22 +404,31 @@ void franka_control_client::send_move_sequence
 			stream_->send_nonblocking
 				(reinterpret_cast<const unsigned char*>(&count), sizeof(int64));
 
-			//// data
-			//for (const auto& p : sequence)
-			//{
-			//	string message;
-			//	message += (std::to_string(p[0]) + ",").data();
-			//	message += (std::to_string(p[1]) + ",").data();
-			//	message += (std::to_string(p[2]) + ",").data();
-			//	message += (std::to_string(p[3]) + ",").data();
-			//	message += (std::to_string(p[4]) + ",").data();
-			//	message += (std::to_string(p[5]) + ",").data();
-			//	message += (std::to_string(p[6])).data();
-			//	message += '\n';
+			// data
+			for (const auto& p : sequence)
+			{
+				string message;
+				message += (std::to_string(p[0]) + ",").data();
+				message += (std::to_string(p[1]) + ",").data();
+				message += (std::to_string(p[2]) + ",").data();
+				message += (std::to_string(p[3]) + ",").data();
+				message += (std::to_string(p[4]) + ",").data();
+				message += (std::to_string(p[5]) + ",").data();
+				message += (std::to_string(p[6])).data();
+				message += '\n';
 
-			//	// send size and message
-			//	// todo
-			//}
+				// send size and message
+				// todo hton byteorder
+				int64 size = message.size();
+				stream_->send_nonblocking(reinterpret_cast<const unsigned char*>(&size), sizeof(int64));
+				stream_->send_nonblocking(reinterpret_cast<const unsigned char*>(message.data()), message.size());
+
+				if (stream_->pending_send_bytes() > (stream_->buffer_max_size_send * 0.8))
+				{
+					LOG_WARN("Network send buffer is 80 percent used.")
+					std::this_thread::sleep_for(std::chrono::milliseconds(100));
+				}
+			}
 			
 			
 			// response	

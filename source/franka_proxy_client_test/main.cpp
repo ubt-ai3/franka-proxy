@@ -155,7 +155,6 @@ int main()
 	std::this_thread::sleep_for(std::chrono::seconds(5));
 	controller.move_to(record.front());
 	controller.move_sequence(record);
-	controller.move_to(record.back());
 
 	LOG_INFO("Finished Playback Test");
 

@@ -9,6 +9,9 @@
 
 #include "franka_motion_generator.hpp"
 #include <franka/model.h>
+#include <utility>
+
+#include <Eigen/Dense>
 
 
 namespace franka_proxy
@@ -178,6 +181,8 @@ bool motion_generator::colliding(const franka::RobotState& state)
 franka::JointPositions motion_generator::operator()
 (const franka::RobotState& robot_state, franka::Duration period)
 {
+	time_ += period.toSec();
+
 	{
 		std::lock_guard<std::mutex> state_guard(current_state_lock_);
 		current_state_ = robot_state;
@@ -189,7 +194,6 @@ franka::JointPositions motion_generator::operator()
 	if (stop_on_contact_ && colliding(robot_state))
 		throw contact_stop_trigger();
 
-	time_ += period.toSec(); // todo how long is a period?
 
 	if (time_ == 0.0)
 	{
@@ -291,6 +295,67 @@ Eigen::Vector3d force_motion_generator::get_position(const franka::RobotState& r
 }
 
 
+
+
+//////////////////////////////////////////////////////////////////////////
+//
+// sequence_motion_generator
+//
+//////////////////////////////////////////////////////////////////////////
+
+
+sequence_motion_generator::sequence_motion_generator
+	(double speed_factor,
+	 std::vector<std::array<double, 7>> q_sequence,
+	 std::mutex& current_state_lock,
+	 franka::RobotState& current_state,
+	 const std::atomic_bool& stop_motion_flag)
+	:
+	q_sequence_(std::move(q_sequence)),
+	speed_factor_(speed_factor),
+	current_state_lock_(current_state_lock),
+	current_state_(current_state),
+	stop_motion_(stop_motion_flag)
+{ }
+
+
+franka::JointPositions sequence_motion_generator::operator()
+	(const franka::RobotState& robot_state,
+	 franka::Duration period)
+{
+	time_ += period.toSec();
+
+	{
+		std::lock_guard<std::mutex> state_guard(current_state_lock_);
+		current_state_ = robot_state;
+	}
+
+	if (stop_motion_)
+		throw stop_motion_trigger();
+
+	// start motion 
+	if (time_ == 0.0)
+	{
+		if ((Vector7d(robot_state.q_d.data()) - Vector7d(q_sequence_.front().data())).norm() > 0.01)
+		{
+			throw std::runtime_error("Aborting; too far away from starting pose!");
+		}
+	}
+	
+	auto step = static_cast<unsigned int>(time_ * 1000.);
+	// finish motion
+	if (step >= q_sequence_.size())
+	{
+		franka::JointPositions output(q_sequence_.back());
+		output.motion_finished = true;
+		return output;
+	}
+
+	// motion
+	franka::JointPositions output(q_sequence_[step]);
+	output.motion_finished = false;
+	return output;
+}
 
 
 } /* namespace detail */
