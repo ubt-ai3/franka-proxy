@@ -68,7 +68,7 @@ void franka_control_server::task_main()
 			(server_->try_accept_connection());
 
 		if (connection)
-			stream_.reset(new network_stream(std::move(connection), 16384, 1000000000, 16384, 1000000));
+			stream_.reset(new network_stream(std::move(connection), 16384, 1000000000, 16384, 1000000000));
 
 		if (!stream_)
 		{
@@ -208,7 +208,7 @@ void franka_control_server::process_request(const string& request)
 				
 			int64 count;
 			while (!stream_->try_receive_nonblocking(reinterpret_cast<unsigned char*>(&count), sizeof(int64), false))
-				thread_util::sleep_slice();
+				stream_->update();
 			LOG_INFO(count);
 
 
@@ -220,7 +220,7 @@ void franka_control_server::process_request(const string& request)
 				int64 size;
 				while (!stream_->try_receive_nonblocking
 					(reinterpret_cast<unsigned char*>(&size), sizeof(int64), false))
-					thread_util::sleep_slice();
+					stream_->update();
 				// todo ntoh byteorder
 
 
@@ -229,7 +229,7 @@ void franka_control_server::process_request(const string& request)
 				network_data.resize(size);
 				while (!stream_->try_receive_nonblocking
 					(network_data.data(), size, false))
-					thread_util::sleep_slice();
+					stream_->update();
 
 
 				// extract data
@@ -259,6 +259,7 @@ void franka_control_server::process_request(const string& request)
 				data.emplace_back(joints);
 			}
 
+			LOG_INFO("receveid data.");
 
 			unsigned char response =
 				execute_exception_to_return_value
