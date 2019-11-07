@@ -168,12 +168,44 @@ franka_control_client::franka_control_client
 	 (network_.create_connection
 	  (remote_ip_, remote_port_),
 	  16384, 1000000000, 16384, 1000000))
-{}
+{
+	start();
+}
 
 
 franka_control_client::~franka_control_client() noexcept
 {
-	// Enforce explicit destructor instantiation.
+	try { join(); }
+	catch (...)
+	{
+		LOG_CRITICAL("Internal thread threw an exception on joining.");
+	}
+}
+
+
+void franka_control_client::task_main()
+{
+	while (!join_now())
+	{
+		if (!stream_)
+		{
+			thread_util::sleep_slice();
+			continue;
+		}
+
+		try
+		{
+			// We have an active connection,
+			// so handle incoming and outgoing network.
+			stream_->update();
+		}
+		catch (...)
+		{
+			stream_.reset();
+		}
+
+		thread_util::sleep_seconds(0.002);
+	}
 }
 
 
@@ -288,6 +320,7 @@ std::vector<std::array<double, 7>> franka_control_client::send_stop_recording_an
 
 				// data
 				network_buffer network_data = network_buffer();
+				network_data.resize(size);
 				while (!stream_->try_receive_nonblocking
 					(network_data.data(), size, false))
 					thread_util::sleep_slice();
@@ -366,14 +399,11 @@ void franka_control_client::send_move_sequence
 				(reinterpret_cast<const unsigned char*>(command.data()),
 				 command.size());
 
-			//// sequence size
-			//// todo hton
-			//int64 count = sequence.size();
-			//network_data = network_buffer
-			//	(reinterpret_cast<const unsigned char*>(&count),
-			//	 sizeof(int64));
-			//network_transfer::send_blocking
-			//	(connection_.object(), network_data, false, 0, false, 0);
+			// sequence size
+			// todo hton
+			int64 count = sequence.size();
+			stream_->send_nonblocking
+				(reinterpret_cast<const unsigned char*>(&count), sizeof(int64));
 
 			//// data
 			//for (const auto& p : sequence)
@@ -391,8 +421,15 @@ void franka_control_client::send_move_sequence
 			//	// send size and message
 			//	// todo
 			//}
+			
+			
+			// response	
+			unsigned char return_value;
+			while (!stream_->try_receive_nonblocking
+				(&return_value, sizeof(unsigned char), false))
+				thread_util::sleep_slice();
 
-			//return;
+			return;
 		}
 		catch (const network_exception&)
 		{

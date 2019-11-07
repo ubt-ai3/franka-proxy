@@ -80,6 +80,7 @@ private:
  *
  ************************************************************************/
 class franka_control_client
+	: viral_core::threaded_task
 {
 public:
 
@@ -89,6 +90,9 @@ public:
 		 uint16 remote_port);
 
 	~franka_control_client() noexcept;
+
+
+	void task_main() override;
 
 
 	void send_command
