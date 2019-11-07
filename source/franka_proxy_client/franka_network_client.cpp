@@ -18,6 +18,7 @@
 #include "franka_proxy_share/franka_proxy_messages.hpp"
 #include <vector>
 #include <array>
+#include "viral_core/network_stream.hpp"
 
 
 namespace franka_proxy
@@ -163,9 +164,10 @@ franka_control_client::franka_control_client
 	remote_ip_(remote_ip),
 	remote_port_(remote_port),
 
-	connection_
-		(network_.create_connection
-			(remote_ip_, remote_port_))
+	stream_(new network_stream
+	 (network_.create_connection
+	  (remote_ip_, remote_port_),
+	  16384, 1000000000, 16384, 1000000))
 {}
 
 
@@ -183,21 +185,21 @@ void franka_control_client::send_command
 	{
 		try
 		{
-			if (!connection_)
-				connection_ = network_.create_connection
-					(remote_ip_, remote_port_);
+			if (!stream_)
+				stream_.reset(new network_stream
+				 (network_.create_connection
+				  (remote_ip_, remote_port_),
+				  16384, 1000000000, 16384, 1000000));
 			
-			network_buffer network_data
+			stream_->send_nonblocking
 				(reinterpret_cast<const unsigned char*>(command.data()),
 				 command.size());
-			network_transfer::send_blocking
-				(connection_.object(), network_data, false, 0, false, 0);
 
 			return;
 		}
 		catch (const network_exception&)
 		{
-			connection_.reset();
+			stream_.reset();
 		}
 	}
 
@@ -214,27 +216,25 @@ unsigned char franka_control_client::send_command_and_check_response
 	{
 		try
 		{
-			if (!connection_)
-				connection_ = network_.create_connection
-					(remote_ip_, remote_port_);
+			if (!stream_)
+				stream_.reset(new network_stream
+				 (network_.create_connection
+				  (remote_ip_, remote_port_),
+				  16384, 1000000000, 16384, 1000000));
 			
-			network_buffer network_data
+			stream_->send_nonblocking
 				(reinterpret_cast<const unsigned char*>(command.data()),
 				 command.size());
-			network_transfer::send_blocking
-				(connection_.object(), network_data, false, 0, false, 0);
-			
-			network_data = network_buffer();
-			network_transfer::receive_blocking
-				(connection_.object(), network_data,
-				 sizeof(unsigned char),
-				 false, 0, false, 0);
 
-			return network_data[0];
+			unsigned char return_value;
+			while (!stream_->try_receive_nonblocking(&return_value, sizeof(unsigned char), false))
+				thread_util::sleep_slice();
+
+			return return_value;
 		}
 		catch (const network_exception&)
 		{
-			connection_.reset();
+			stream_.reset();
 		}
 	}
 
@@ -254,51 +254,47 @@ std::vector<std::array<double, 7>> franka_control_client::send_stop_recording_an
 	{
 		try
 		{
-			if (!connection_)
-				connection_ = network_.create_connection
-					(remote_ip_, remote_port_);
-			
-			network_buffer network_data
+			if (!stream_)
+				stream_.reset(new network_stream
+				 (network_.create_connection
+				  (remote_ip_, remote_port_),
+				  16384, 1000000000, 16384, 1000000));
+
+			// command
+			stream_->send_nonblocking
 				(reinterpret_cast<const unsigned char*>(command.data()),
 				 command.size());
-			network_transfer::send_blocking
-				(connection_.object(), network_data, false, 0, false, 0);
+
+
+			// count
+			int64 count;
+			while (!stream_->try_receive_nonblocking
+				(reinterpret_cast<unsigned char*>(&count), sizeof(int64), false))
+				thread_util::sleep_slice();
+			// todo ntoh byteorder
 
 
 			std::vector<std::array<double, 7>> data;
-			// size
-			network_data = network_buffer();
-			network_transfer::receive_blocking
-				(connection_.object(), network_data,
-				 sizeof(int64),
-				 false, 0, false, 0);
-
-			// todo ntoh byteorder
-			int64 count = *reinterpret_cast<int64*>(network_data.data());
-			// estimation
 			data.reserve(count);
-
 			for (int64 i = 0; i < count; ++i)
 			{
 				// size
-				network_data = network_buffer();
-				network_transfer::receive_blocking
-					(connection_.object(), network_data,
-					 sizeof(int64),
-					 false, 0, false, 0);
-
+				int64 size;
+				while (!stream_->try_receive_nonblocking
+					(reinterpret_cast<unsigned char*>(&size), sizeof(int64), false))
+					thread_util::sleep_slice();
 				// todo ntoh byteorder
-				int64 size = *reinterpret_cast<int64*>(network_data.data());
+
 
 				// data
-				network_data = network_buffer();
-				network_transfer::receive_blocking
-					(connection_.object(), network_data,
-					 size,
-					 false, 0, false, 0);
+				network_buffer network_data = network_buffer();
+				while (!stream_->try_receive_nonblocking
+					(network_data.data(), size, false))
+					thread_util::sleep_slice();
 
+
+				// extract data
 				string tmp(reinterpret_cast<const char*>(network_data.data()), network_data.size());
-
 				list<string> joint_values_list;
 				tmp.split(',', joint_values_list);
 
@@ -319,23 +315,25 @@ std::vector<std::array<double, 7>> franka_control_client::send_stop_recording_an
 						strtod(joint_values_list[6].data(), nullptr)
 				}};
 
+
+				// emplace position
 				data.emplace_back(joints);
 			}
 
 			// response	
-			network_transfer::receive_blocking
-				(connection_.object(), network_data,
-				 sizeof(unsigned char),
-				 false, 0, false, 0);
-			const unsigned char response = network_data[0];
+			unsigned char return_value;
+			while (!stream_->try_receive_nonblocking
+				(&return_value, sizeof(unsigned char), false))
+				thread_util::sleep_slice();
 
 			LOG_INFO("received: " + count);
+
 
 			return data;
 		}
 		catch (const network_exception&)
 		{
-			connection_.reset();
+			stream_.reset();
 		}
 	}
 
@@ -353,50 +351,52 @@ void franka_control_client::send_move_sequence
 		franka_proxy_messages::command_end_marker).data();
 
 	free_timer t;
-	while (t.seconds_passed() < timeout_seconds)
+	while (t.seconds_passed() < 10000)
 	{
 		try
 		{
-			if (!connection_)
-				connection_ = network_.create_connection
-					(remote_ip_, remote_port_);
+			if (!stream_)
+				stream_.reset(new network_stream
+				 (network_.create_connection
+				  (remote_ip_, remote_port_),
+				  16384, 1000000000, 16384, 1000000));
 
 			// command
-			network_buffer network_data
-			(reinterpret_cast<const unsigned char*>(command.data()),
-			 command.size());
-			network_transfer::send_blocking
-				(connection_.object(), network_data, false, 0, false, 0);
+			stream_->send_nonblocking
+				(reinterpret_cast<const unsigned char*>(command.data()),
+				 command.size());
 
-			// sequence size
-			// todo hton
-			int64 count = sequence.size();
-			network_data = network_buffer
-			(reinterpret_cast<const unsigned char*>(count),
-			 sizeof(int64));
-			network_transfer::send_blocking
-				(connection_.object(), network_data, false, 0, false, 0);
+			//// sequence size
+			//// todo hton
+			//int64 count = sequence.size();
+			//network_data = network_buffer
+			//	(reinterpret_cast<const unsigned char*>(&count),
+			//	 sizeof(int64));
+			//network_transfer::send_blocking
+			//	(connection_.object(), network_data, false, 0, false, 0);
 
-			// data
-			for (const auto& p : sequence)
-			{
-				string message("");
-				message += (std::to_string(p[0]) + ",").data();
-				message += (std::to_string(p[1]) + ",").data();
-				message += (std::to_string(p[2]) + ",").data();
-				message += (std::to_string(p[3]) + ",").data();
-				message += (std::to_string(p[4]) + ",").data();
-				message += (std::to_string(p[5]) + ",").data();
-				message += (std::to_string(p[6])).data();
-				message += '\n';
+			//// data
+			//for (const auto& p : sequence)
+			//{
+			//	string message;
+			//	message += (std::to_string(p[0]) + ",").data();
+			//	message += (std::to_string(p[1]) + ",").data();
+			//	message += (std::to_string(p[2]) + ",").data();
+			//	message += (std::to_string(p[3]) + ",").data();
+			//	message += (std::to_string(p[4]) + ",").data();
+			//	message += (std::to_string(p[5]) + ",").data();
+			//	message += (std::to_string(p[6])).data();
+			//	message += '\n';
 
-				// send size and message
-				// todo
-			}
+			//	// send size and message
+			//	// todo
+			//}
+
+			//return;
 		}
 		catch (const network_exception&)
 		{
-			connection_.reset();
+			stream_.reset();
 		}
 	}
 

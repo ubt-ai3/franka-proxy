@@ -110,7 +110,7 @@ private:
 	const viral_core::string remote_ip_;
 	const uint16 remote_port_;
 
-	viral_core::auto_pointer<viral_core::network_connection> connection_;
+	viral_core::auto_pointer<viral_core::network_stream> stream_;
 };
 
 
