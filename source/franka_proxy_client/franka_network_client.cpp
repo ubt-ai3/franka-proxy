@@ -166,7 +166,7 @@ franka_control_client::franka_control_client
 	stream_(new network_stream
 	 (network_.create_connection
 	  (remote_ip_, remote_port_),
-	  16384, 1000000000, 16384, 1000000))
+	  16384, 1000000000, 16384, 1000000000))
 {
 	start();
 }
@@ -220,7 +220,7 @@ void franka_control_client::send_command
 				stream_.reset(new network_stream
 				 (network_.create_connection
 				  (remote_ip_, remote_port_),
-				  16384, 1000000000, 16384, 1000000));
+				  16384, 1000000000, 16384, 1000000000));
 			
 			stream_->send_nonblocking
 				(reinterpret_cast<const unsigned char*>(command.data()),
@@ -251,7 +251,7 @@ unsigned char franka_control_client::send_command_and_check_response
 				stream_.reset(new network_stream
 				 (network_.create_connection
 				  (remote_ip_, remote_port_),
-				  16384, 1000000000, 16384, 1000000));
+				  16384, 1000000000, 16384, 1000000000));
 			
 			stream_->send_nonblocking
 				(reinterpret_cast<const unsigned char*>(command.data()),
@@ -289,7 +289,7 @@ std::vector<std::array<double, 7>> franka_control_client::send_stop_recording_an
 				stream_.reset(new network_stream
 				 (network_.create_connection
 				  (remote_ip_, remote_port_),
-				  16384, 1000000000, 16384, 1000000));
+				  16384, 1000000000, 16384, 1000000000));
 
 			// command
 			stream_->send_nonblocking
@@ -391,7 +391,7 @@ void franka_control_client::send_move_sequence
 				stream_.reset(new network_stream
 				 (network_.create_connection
 				  (remote_ip_, remote_port_),
-				  16384, 1000000000, 16384, 1000000));
+				  16384, 1000000000, 16384, 1000000000));
 
 			// command
 			stream_->send_nonblocking
@@ -420,8 +420,10 @@ void franka_control_client::send_move_sequence
 				// send size and message
 				// todo hton byteorder
 				int64 size = message.size();
-				stream_->send_nonblocking(reinterpret_cast<const unsigned char*>(&size), sizeof(int64));
-				stream_->send_nonblocking(reinterpret_cast<const unsigned char*>(message.data()), message.size());
+				stream_->send_nonblocking
+					(reinterpret_cast<const unsigned char*>(&size), sizeof(int64));
+				stream_->send_nonblocking
+					(reinterpret_cast<const unsigned char*>(message.data()), message.size());
 
 				if (stream_->pending_send_bytes() > (stream_->buffer_max_size_send * 0.8))
 				{
