@@ -122,8 +122,8 @@ void franka_control_server::receive_requests()
 
 	// Recover any completely transmitted requests,
 	// and remove these from the network stream.
-	while (true)
-	{
+	//while (true)
+	//{
 		// Extract full request up to next end marker.
 		// Transferring the request has not yet finished
 		// if there is no (further) end marker.
@@ -131,13 +131,11 @@ void franka_control_server::receive_requests()
 			buffer.seek(franka_proxy_messages::command_end_marker);
 
 		if (end_index == string::invalid_index)
-			break;
+			return;
+			//break;
 
 		string request_string
 			(buffer.left(end_index).trim());
-
-
-		process_request(request_string);
 
 
 		// Remove request from local buffer
@@ -148,7 +146,10 @@ void franka_control_server::receive_requests()
 
 		stream_->discard_receive
 			(end_index + string::size(franka_proxy_messages::command_end_marker));
-	}
+
+
+		process_request(request_string);
+	//}
 }
 
 
@@ -214,11 +215,25 @@ void franka_control_server::process_request(const string& request)
 		{
 			LOG_INFO("Moving sequence");
 				
-			int64 count;
-			while (!stream_->try_receive_nonblocking(reinterpret_cast<unsigned char*>(&count), sizeof(int64), false))
-				thread_util::sleep_slice();
-			LOG_INFO(count);
+			//int64 count;
+			//while (!stream_->try_receive_nonblocking(reinterpret_cast<unsigned char*>(&count), sizeof(int64), false))
+			//	thread_util::sleep_slice();
+			//LOG_INFO(count);
 
+			// Peek all pending input into string buffer.
+			while (stream_->pending_receive_bytes() < 1)
+				thread_util::sleep_slice();
+
+			string buffer;
+			buffer.resize(stream_->pending_receive_bytes());
+
+			if (!stream_->try_peek_nonblocking
+			(reinterpret_cast<unsigned char*>(buffer.data()),
+				buffer.size(), 0))
+			{
+				LOG_ERROR("Failed to fetch pending bytes from network stream.");
+				throw assert_failed();
+			}
 
 			unsigned char response =
 				execute_exception_to_return_value
