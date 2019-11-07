@@ -143,18 +143,19 @@ int main()
 
 	std::this_thread::sleep_for(std::chrono::seconds(5));
 	
-	LOG_INFO("START$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$");
+	LOG_INFO("$$$$$ START RECORDING $$$$$");
 	controller.start_recording();
 
 	std::this_thread::sleep_for(std::chrono::seconds(5));
 	
-	LOG_INFO("STOP$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$");
+	LOG_INFO("$$$$$ STOP RECORDING $$$$$");
 	std::vector<std::array<double, 7>> record(controller.stop_recording());
 
 	
 	std::this_thread::sleep_for(std::chrono::seconds(5));
 	controller.move_to(record.front());
 	controller.move_sequence(record);
+	controller.move_to(record.back());
 
 	LOG_INFO("Finished Playback Test");
 
