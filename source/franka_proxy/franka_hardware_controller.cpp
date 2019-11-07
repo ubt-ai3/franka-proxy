@@ -299,7 +299,36 @@ std::vector<std::array<double, 7>> franka_hardware_controller::stop_recording()
 
 void franka_hardware_controller::move_sequence(std::vector<std::array<double, 7>> q_sequence)
 {
-	LOG_INFO("sequence received of size: " + q_sequence.size());
+	initialize_parameters();
+
+	detail::sequence_motion_generator motion_generator
+		(1., q_sequence, state_lock_, robot_state_, stop_motion_);
+
+	stop_motion_ = false;
+
+	try
+	{
+		control_loop_running_.set(true);
+		{
+			// Lock the current_state_lock_ to wait for state_thread_ to finish.
+			std::lock_guard<std::mutex> state_guard(state_lock_);
+		}
+
+		robot_.control
+			(motion_generator,
+			 franka::ControllerMode::kJointImpedance,
+			 true, 20.);
+	}
+	catch (const detail::stop_motion_trigger&)
+	{
+	}
+	catch (const franka::Exception&)
+	{
+		control_loop_running_.set(false);
+		throw;
+	}
+
+	control_loop_running_.set(false);
 }
 
 
