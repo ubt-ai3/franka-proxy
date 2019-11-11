@@ -301,7 +301,7 @@ void franka_hardware_controller::move_sequence(std::vector<std::array<double, 7>
 {
 	initialize_parameters();
 
-	detail::sequence_motion_generator motion_generator
+	detail::sequence_joint_position_motion_generator motion_generator
 		(1., q_sequence, state_lock_, robot_state_, stop_motion_);
 
 	stop_motion_ = false;
@@ -317,7 +317,7 @@ void franka_hardware_controller::move_sequence(std::vector<std::array<double, 7>
 		robot_.control
 			(motion_generator,
 			 franka::ControllerMode::kJointImpedance,
-			 true, 20.);
+			 true, 5.);
 	}
 	catch (const detail::stop_motion_trigger&)
 	{

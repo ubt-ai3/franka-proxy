@@ -14,10 +14,12 @@
 #include <viral_core/network.hpp>
 #include <viral_core/timer.hpp>
 #include "viral_core/log.hpp"
-#include "franka_proxy_share/franka_proxy_messages.hpp"
 #include <vector>
 #include <array>
 #include "viral_core/network_stream.hpp"
+#include "../franka_proxy_share/franka_proxy_messages.hpp"
+#include <string>
+#include <thread>
 
 
 namespace franka_proxy
@@ -203,7 +205,7 @@ void franka_control_client::task_main()
 			stream_.reset();
 		}
 
-		thread_util::sleep_seconds(0.002);
+		thread_util::sleep_seconds(0.002f);
 	}
 }
 

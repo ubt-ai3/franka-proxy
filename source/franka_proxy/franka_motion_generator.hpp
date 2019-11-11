@@ -160,7 +160,7 @@ private:
 /**
  *************************************************************************
  *
- * @class sequence_motion_generator
+ * @class sequence_joint_position_motion_generator
  *
  * An example showing how to generate a joint pose motion to a goal
  * position. Adapted from:
@@ -168,7 +168,7 @@ private:
  * Control of Robots (Kogan Page Science Paper edition).
  *
  ************************************************************************/
-class sequence_motion_generator
+class sequence_joint_position_motion_generator
 {
 public:
 	/**
@@ -176,7 +176,62 @@ public:
 	 *
 	 * todo doc
 	 */
-	sequence_motion_generator
+	sequence_joint_position_motion_generator
+		(double speed_factor,
+		 std::vector<std::array<double, 7>> q_sequence,
+		 std::mutex& current_state_lock,
+		 franka::RobotState& current_state,
+		 const std::atomic_bool& stop_motion_flag);
+
+	/**
+	 * Sends joint position calculations
+	 *
+	 * todo doc
+	 */
+	franka::JointPositions operator()
+		(const franka::RobotState& robot_state,
+		 franka::Duration period);
+
+	
+private:
+	
+	using Vector7d = Eigen::Matrix<double, 7, 1, Eigen::ColMajor>;
+	using Vector7i = Eigen::Matrix<int, 7, 1, Eigen::ColMajor>;
+
+	const std::vector<std::array<double, 7>> q_sequence_;
+
+	double time_ = 0.0;
+	double speed_factor_;
+
+	std::mutex& current_state_lock_;
+	franka::RobotState& current_state_;
+
+	const std::atomic_bool& stop_motion_;
+};
+
+
+
+
+/**
+ *************************************************************************
+ *
+ * @class sequence_joint_velocity_motion_generator
+ *
+ * An example showing how to generate a joint pose motion to a goal
+ * position. Adapted from:
+ * Wisama Khalil and Etienne Dombre. 2002. Modeling, Identification and
+ * Control of Robots (Kogan Page Science Paper edition).
+ *
+ ************************************************************************/
+class sequence_joint_velocity_motion_generator
+{
+public:
+	/**
+	 * Creates a new motion_generator instance for a target q.
+	 *
+	 * todo doc
+	 */
+	sequence_joint_velocity_motion_generator
 		(double speed_factor,
 		 std::vector<std::array<double, 7>> q_sequence,
 		 std::mutex& current_state_lock,

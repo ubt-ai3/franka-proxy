@@ -11,14 +11,13 @@
 #if !defined(INCLUDED__FRANKA_PROXY_CLIENT__FRANKA_NETWORK_CLIENT_HPP)
 #define INCLUDED__FRANKA_PROXY_CLIENT__FRANKA_NETWORK_CLIENT_HPP
 
+#include <vector>
 
 #include <viral_core/auto_pointer.hpp>
 #include <viral_core/list.hpp>
 #include <viral_core/network_forward.hpp>
 #include <viral_core/string.hpp>
-#include <string>
-#include <vector>
-#include "franka_control/franka_controller_remote.hpp"
+#include <viral_core/thread.hpp>
 
 
 namespace franka_proxy

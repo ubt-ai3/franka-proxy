@@ -66,6 +66,28 @@ void execute_retry(Function&& f, franka_proxy::franka_remote_controller& control
 }
 
 
+void smooth_record(std::vector<std::array<double, 7>>& record, int interval)
+{
+	for (int i = 0; i < record.size(); ++i)
+	{
+		std::array<double, 7> result{};
+
+		for (int d = 0; d < 7; ++d)
+		{
+			int points = 0;
+			for (int j = i; j < i + interval && j < record.size(); ++j)
+			{
+				result[d] += record[j][d];
+				++points;
+			}
+			result[d] /= points;
+		}
+
+		record[i] = result;
+	}
+}
+
+
 int main()
 {
 	viral_core::ms_network_context network("network");
@@ -146,13 +168,15 @@ int main()
 	LOG_INFO("$$$$$ START RECORDING $$$$$");
 	controller.start_recording();
 
-	std::this_thread::sleep_for(std::chrono::seconds(5));
+	std::this_thread::sleep_for(std::chrono::seconds(10));
 	
 	LOG_INFO("$$$$$ STOP RECORDING $$$$$");
 	std::vector<std::array<double, 7>> record(controller.stop_recording());
 
-	
-	std::this_thread::sleep_for(std::chrono::seconds(5));
+	std::cin.get();
+
+	smooth_record(record, 200);
+
 	controller.move_to(record.front());
 	controller.move_sequence(record);
 
