@@ -27,7 +27,7 @@ namespace detail
 //////////////////////////////////////////////////////////////////////////
 
 
-motion_generator::motion_generator
+joint_motion_generator::joint_motion_generator
 	(double speed_factor, const std::array<double, 7> q_goal,
 	 std::mutex& current_state_lock,
 	 franka::RobotState& current_state,
@@ -55,7 +55,7 @@ motion_generator::motion_generator
 }
 
 
-bool motion_generator::calculateDesiredValues
+bool joint_motion_generator::calculateDesiredValues
 (double t, Vector7d* delta_q_d) const
 {
 	Vector7i sign_delta_q;
@@ -111,7 +111,7 @@ bool motion_generator::calculateDesiredValues
 }
 
 
-void motion_generator::calculateSynchronizedValues()
+void joint_motion_generator::calculateSynchronizedValues()
 {
 	Vector7d dq_max_reach(dq_max_);
 	Vector7d t_f = Vector7d::Zero();
@@ -168,7 +168,7 @@ void motion_generator::calculateSynchronizedValues()
 }
 
 
-bool motion_generator::colliding(const franka::RobotState& state)
+bool joint_motion_generator::colliding(const franka::RobotState& state)
 {
 	for (double v : state.joint_contact)
 		if (v > 0) return true;
@@ -178,7 +178,7 @@ bool motion_generator::colliding(const franka::RobotState& state)
 }
 
 
-franka::JointPositions motion_generator::operator()
+franka::JointPositions joint_motion_generator::operator()
 (const franka::RobotState& robot_state, franka::Duration period)
 {
 	time_ += period.toSec();
@@ -331,17 +331,15 @@ franka::JointPositions sequence_joint_position_motion_generator::operator()
 	}
 
 	if (stop_motion_)
-		throw stop_motion_trigger();
+		throw stop_motion_trigger();  // NOLINT(hicpp-exception-baseclass)
+
 
 	// start motion 
 	if (time_ == 0.0)
-	{
 		if ((Vector7d(robot_state.q_d.data()) - Vector7d(q_sequence_.front().data())).norm() > 0.01)
-		{
 			throw std::runtime_error("Aborting; too far away from starting pose!");
-		}
-	}
-	
+
+
 	auto step = static_cast<unsigned int>(time_ * 1000.);
 	// finish motion
 	if (step >= q_sequence_.size())
@@ -350,6 +348,7 @@ franka::JointPositions sequence_joint_position_motion_generator::operator()
 		output.motion_finished = true;
 		return output;
 	}
+
 
 	// motion
 	franka::JointPositions output(q_sequence_[step]);
@@ -365,15 +364,20 @@ sequence_joint_velocity_motion_generator::sequence_joint_velocity_motion_generat
 	 franka::RobotState& current_state,
 	 const std::atomic_bool& stop_motion_flag)
 	:
+	q_sequence_(std::move(q_sequence)),
+	speed_factor_(speed_factor),
 	current_state_lock_(current_state_lock),
 	current_state_(current_state),
-	stop_motion_(stop_motion_flag) { }
+	stop_motion_(stop_motion_flag)
+{ }
 
 
 franka::JointPositions sequence_joint_velocity_motion_generator::operator()
 	(const franka::RobotState& robot_state,
 	 franka::Duration period)
 { 	
+	auto q(robot_state.q);
+
 	time_ += period.toSec();
 
 	{
@@ -382,28 +386,33 @@ franka::JointPositions sequence_joint_velocity_motion_generator::operator()
 	}
 
 	if (stop_motion_)
-		throw stop_motion_trigger();
+		throw stop_motion_trigger();  // NOLINT(hicpp-exception-baseclass)
+
 
 	// start motion 
 	if (time_ == 0.0)
-	{
 		if ((Vector7d(robot_state.q_d.data()) - Vector7d(q_sequence_.front().data())).norm() > 0.01)
-		{
 			throw std::runtime_error("Aborting; too far away from starting pose!");
-		}
-	}
-	
+
+
 	auto step = static_cast<unsigned int>(time_ * 1000.);
 	// finish motion
 	if (step >= q_sequence_.size())
 	{
-		franka::JointPositions output(q_sequence_.back());
+		franka::JointPositions output({0.,0.,0.,0.,0.,0.,0.});
 		output.motion_finished = true;
 		return output;
 	}
 
+
 	// motion
-	franka::JointPositions output(q_sequence_[step]);
+	Vector7d q_(q.data());
+	Vector7d q_seq(q_sequence_[step].data());
+
+	std::array<double, 7> vel{};
+	Eigen::VectorXd::Map(&vel[0], 7) = (q_seq - q_) / period.toSec();
+
+	franka::JointPositions output(vel);
 	output.motion_finished = false;
 	return output;
 }

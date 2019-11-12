@@ -27,7 +27,7 @@ namespace detail
 
 
 /**
- * Thrown from motion_generator to terminate it.
+ * Thrown from motion_generators to terminate it.
  */
 class stop_motion_trigger {};
 class contact_stop_trigger {};
@@ -36,7 +36,7 @@ class contact_stop_trigger {};
 /**
  *************************************************************************
  *
- * @class motion_generator
+ * @class joint_motion_generator
  *
  * An example showing how to generate a joint pose motion to a goal
  * position. Adapted from:
@@ -44,16 +44,16 @@ class contact_stop_trigger {};
  * Control of Robots (Kogan Page Science Paper edition).
  *
  ************************************************************************/
-class motion_generator
+class joint_motion_generator
 {
 public:
 	/**
-	 * Creates a new motion_generator instance for a target q.
+	 * Creates a new joint_motion_generator instance for a target q.
 	 *
 	 * @param[in] speed_factor General speed factor in range [0, 1].
 	 * @param[in] q_goal Target joint positions.
 	 */
-	motion_generator
+	joint_motion_generator
 		(double speed_factor,
 		 std::array<double, 7> q_goal,
 		 std::mutex& current_state_lock,
@@ -162,17 +162,14 @@ private:
  *
  * @class sequence_joint_position_motion_generator
  *
- * An example showing how to generate a joint pose motion to a goal
- * position. Adapted from:
- * Wisama Khalil and Etienne Dombre. 2002. Modeling, Identification and
- * Control of Robots (Kogan Page Science Paper edition).
+ * todo
  *
  ************************************************************************/
 class sequence_joint_position_motion_generator
 {
 public:
 	/**
-	 * Creates a new motion_generator instance for a target q.
+	 * Creates a new joint_motion_generator instance for a target q.
 	 *
 	 * todo doc
 	 */
@@ -217,17 +214,14 @@ private:
  *
  * @class sequence_joint_velocity_motion_generator
  *
- * An example showing how to generate a joint pose motion to a goal
- * position. Adapted from:
- * Wisama Khalil and Etienne Dombre. 2002. Modeling, Identification and
- * Control of Robots (Kogan Page Science Paper edition).
+ * todo
  *
  ************************************************************************/
 class sequence_joint_velocity_motion_generator
 {
 public:
 	/**
-	 * Creates a new motion_generator instance for a target q.
+	 * Creates a new joint_motion_generator instance for a target q.
 	 *
 	 * todo doc
 	 */

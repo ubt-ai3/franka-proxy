@@ -109,7 +109,7 @@ void franka_hardware_controller::move_to(const robot_config_7dof& target)
 {
 	initialize_parameters();
 
-	detail::motion_generator motion_generator
+	detail::joint_motion_generator motion_generator
 		(speed_factor_, target, state_lock_, robot_state_, stop_motion_, false);
 
 	stop_motion_ = false;
@@ -145,7 +145,7 @@ bool franka_hardware_controller::move_to_until_contact
 {
 	initialize_parameters();
 
-	detail::motion_generator motion_generator
+	detail::joint_motion_generator motion_generator
 		(speed_factor_, target, state_lock_, robot_state_, stop_motion_, true);
 
 	stop_motion_ = false;
@@ -317,7 +317,7 @@ void franka_hardware_controller::move_sequence(std::vector<std::array<double, 7>
 		robot_.control
 			(motion_generator,
 			 franka::ControllerMode::kJointImpedance,
-			 true, 5.);
+			 true, 20.);
 	}
 	catch (const detail::stop_motion_trigger&)
 	{

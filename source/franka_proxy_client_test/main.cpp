@@ -158,7 +158,7 @@ int main()
 	//execute_retry([&] { controller.move_to(pos1); }, controller);
 	//execute_retry([&] { controller.move_to(pos2); }, controller);
 
-	LOG_INFO("Finished ptp-Movement Test");
+	LOG_INFO("Finished ptp-movement test.");
 
 
 	// playback test
@@ -175,7 +175,7 @@ int main()
 
 	std::cin.get();
 
-	smooth_record(record, 200);
+	smooth_record(record, 20);
 
 	controller.move_to(record.front());
 	controller.move_sequence(record);
