@@ -89,7 +89,7 @@ void franka_control_server::task_main()
 		}
 		catch (...)
 		{
-			LOG_ERROR("Error while receiving requests, dropping stream and stopping robot.");
+			LOG_ERROR("Error while processing requests, dropping stream and stopping robot.");
 			controller_.stop_movement();
 			stream_.reset();
 		}

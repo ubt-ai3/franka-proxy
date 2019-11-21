@@ -250,15 +250,16 @@ franka::Torques force_motion_generator::callback(const franka::RobotState& robot
 
 	if (time_ > duration)
 	{
+		// todo this is wrong!
 		franka::Torques current_torques(robot_state.tau_J);
 		current_torques.motion_finished = true;
 		return current_torques;
 	}
 
-	if (time_ > 0 && (get_position(robot_state) - initial_position).norm() > 0.01)
-	{
-		throw std::runtime_error("Aborting; too far away from starting pose!"); // todo
-	}
+	//if (time_ > 0 && (get_position(robot_state) - initial_position).norm() > 0.01)
+	//{
+	//	throw std::runtime_error("Aborting; too far away from starting pose!"); // todo
+	//}
 
 	// get state variables
 	std::array<double, 42> jacobian_array =
@@ -372,12 +373,10 @@ sequence_joint_velocity_motion_generator::sequence_joint_velocity_motion_generat
 { }
 
 
-franka::JointPositions sequence_joint_velocity_motion_generator::operator()
+franka::JointVelocities sequence_joint_velocity_motion_generator::operator()
 	(const franka::RobotState& robot_state,
 	 franka::Duration period)
 { 	
-	auto q(robot_state.q);
-
 	time_ += period.toSec();
 
 	{
@@ -391,28 +390,37 @@ franka::JointPositions sequence_joint_velocity_motion_generator::operator()
 
 	// start motion 
 	if (time_ == 0.0)
+	{
 		if ((Vector7d(robot_state.q_d.data()) - Vector7d(q_sequence_.front().data())).norm() > 0.01)
 			throw std::runtime_error("Aborting; too far away from starting pose!");
 
+		return franka::JointVelocities({ 0.,0.,0.,0.,0.,0.,0. });
+	}
 
 	auto step = static_cast<unsigned int>(time_ * 1000.);
 	// finish motion
 	if (step >= q_sequence_.size())
 	{
-		franka::JointPositions output({0.,0.,0.,0.,0.,0.,0.});
+		franka::JointVelocities output({0.,0.,0.,0.,0.,0.,0.});
 		output.motion_finished = true;
 		return output;
 	}
 
+	if (period.toMSec() < 1)
+		throw("Period under 1ms.");
 
 	// motion
-	Vector7d q_(q.data());
+	Vector7d q_(robot_state.q.data());
 	Vector7d q_seq(q_sequence_[step].data());
 
-	std::array<double, 7> vel{};
-	Eigen::VectorXd::Map(&vel[0], 7) = (q_seq - q_) / period.toSec();
+	if ((q_seq - q_).norm() < 0.001)
+		return franka::JointVelocities({ 0.,0.,0.,0.,0.,0.,0. });
 
-	franka::JointPositions output(vel);
+
+	std::array<double, 7> vel{};
+	Eigen::VectorXd::Map(&vel[0], 7) = (q_seq - q_);// *period.toMSec();
+
+	franka::JointVelocities output(vel);
 	output.motion_finished = false;
 	return output;
 }

@@ -90,7 +90,7 @@ void franka_hardware_controller::apply_z_force
 			    franka::Duration period) -> franka::Torques
 			{
 				return fmg.callback(robot_state, period);
-			});
+			}, true, 10.0);
 	}
 	catch (const detail::stop_motion_trigger&)
 	{
@@ -300,9 +300,13 @@ std::vector<std::array<double, 7>> franka_hardware_controller::stop_recording()
 void franka_hardware_controller::move_sequence(std::vector<std::array<double, 7>> q_sequence)
 {
 	initialize_parameters();
+	set_contact_drive_collision_behaviour();
 
-	detail::sequence_joint_position_motion_generator motion_generator
+	detail::sequence_joint_velocity_motion_generator motion_generator
 		(1., q_sequence, state_lock_, robot_state_, stop_motion_);
+
+	detail::force_motion_generator force_motion_generator
+		(robot_, 0.1, 10.0);
 
 	stop_motion_ = false;
 
@@ -314,20 +318,39 @@ void franka_hardware_controller::move_sequence(std::vector<std::array<double, 7>
 			std::lock_guard<std::mutex> state_guard(state_lock_);
 		}
 
-		robot_.control
-			(motion_generator,
-			 franka::ControllerMode::kJointImpedance,
-			 true, 20.);
+		LOG_INFO("starting control loop");
+		robot_.control(
+			[&](const franka::RobotState& robot_state,
+			 franka::Duration period) -> franka::Torques
+			{
+				return force_motion_generator.callback(robot_state, period);
+			}, 
+			[&](const franka::RobotState& robot_state,
+				franka::Duration period) -> franka::CartesianVelocities
+			{
+				return franka::CartesianVelocities({ 0.,0.,0.,0.,0.,0. });
+			},
+			true, 
+			10.);
+		//robot_.control
+		//	(motion_generator,
+		//	 franka::ControllerMode::kJointImpedance,
+		//	 true, 
+		//	 10.);
+
+		LOG_INFO("went ok");
 	}
 	catch (const detail::stop_motion_trigger&)
 	{
 	}
 	catch (const franka::Exception&)
 	{
+		LOG_ERROR("went wrong");
 		control_loop_running_.set(false);
 		throw;
 	}
 
+	LOG_ERROR("went wrong");
 	control_loop_running_.set(false);
 }
 

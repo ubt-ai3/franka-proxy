@@ -237,7 +237,7 @@ public:
 	 *
 	 * todo doc
 	 */
-	franka::JointPositions operator()
+	franka::JointVelocities operator()
 		(const franka::RobotState& robot_state,
 		 franka::Duration period);
 
