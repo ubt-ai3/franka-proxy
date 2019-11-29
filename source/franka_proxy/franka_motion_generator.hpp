@@ -133,25 +133,37 @@ public:
 
 private:
 
-	Eigen::Vector3d get_position(const franka::RobotState& robot_state);
-
-
 	double time_{0.0};
-	double k_p{1.0};
-	double k_i{2.0};
-	double filter_gain{0.01};
 	double desired_mass{0.0};
+	const double k_p{1.0};
+	const double k_i{2.0};
+	const double filter_gain{0.01};
 
-	franka::Model model;
+	// Stiffness & Damping
+	const std::array<double, 7> K_P_ = { {600.0, 600.0, 600.0, 600.0, 250.0, 150.0, 50.0} };
+	const std::array<double, 7> K_D_ = { {50.0, 50.0, 50.0, 50.0, 30.0, 25.0, 15.0} };
+
+	//const std::array<double, 7> K_P_{ {200.0, 200.0, 200.0, 200.0, 200.0, 200.0, 200.0} };
+	//const std::array<double, 7> K_D_{ {10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0} };
+
+	size_t dq_current_filter_position_ = 0;
+	const size_t dq_filter_size_ = 5;
+
+	std::array<double, 7> dq_d_;
+	std::vector<double> dq_buffer_;
 
 	double target_mass;
 	double duration;
+
+	franka::Model model;
 
 	std::array<double, 7> gravity_array;
 	Eigen::Matrix<double, 7, 1> initial_tau_ext;
 	Eigen::Matrix<double, 7, 1> tau_error_integral;
 
-	Eigen::Vector3d initial_position;
+	franka::RobotState initial_state_;
+
+	std::vector<double> forces_z{}; // debug purpose
 };
 
 
