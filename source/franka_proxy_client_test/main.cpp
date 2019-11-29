@@ -243,9 +243,9 @@ int main()
 
 	LOG_INFO("Starting Gripper Test.");
 
-	//controller.grasp_gripper();
+	controller.grasp_gripper();
 	//controller.open_gripper();
-	controller.close_gripper();
+	//controller.close_gripper();
 	//controller.open_gripper();
 
 	LOG_INFO("Finished Gripper Test.");
@@ -280,66 +280,71 @@ int main()
 	//controller.apply_z_force(0.0, 5.0);
 	//controller.apply_z_force(1.0, 5.0);
 
-	std::this_thread::sleep_for(std::chrono::seconds(5));
 	
 	LOG_INFO("Finished Force Test.");
 
-	
+
 	LOG_INFO("Starting Playback Test.");
 	
+
 	std::vector<std::array<double, 7>> record;
 
-	//LOG_INFO("$$$$$ START RECORDING $$$$$");
-	//controller.start_recording();
+	std::cin.get();
+	std::this_thread::sleep_for(std::chrono::seconds(3));
 
-	//std::this_thread::sleep_for(std::chrono::seconds(10));
-	//
-	//LOG_INFO("$$$$$ STOP RECORDING $$$$$");
-	//record = controller.stop_recording();
+	LOG_INFO("$$$$$ START RECORDING $$$$$");
+	controller.start_recording();
 
-	//{
-	//	std::ofstream csv("record.csv");
-
-	//	csv << "j0,j1,j2,j3,j4,j5,j6\n";
-	//	for (int i = 0; i < record.size(); ++i)
-	//		csv << record[i][0] << ","
-	//			<< record[i][1] << ","
-	//			<< record[i][2] << ","
-	//			<< record[i][3] << ","
-	//			<< record[i][4] << ","
-	//			<< record[i][5] << ","
-	//			<< record[i][6] << "\n";
-	//}
+	std::this_thread::sleep_for(std::chrono::seconds(10));
+	
+	LOG_INFO("$$$$$ STOP RECORDING $$$$$");
+	record = controller.stop_recording();
 
 	{
-		std::ifstream csv("record.csv");
+		std::ofstream csv("record.csv");
 
-		auto header = get_next_line_and_split_into_cells(csv);
-		if (header[0] != "j0")
-			throw std::exception("wrong header");
+		csv << "j0,j1,j2,j3,j4,j5,j6\n";
+		for (int i = 0; i < record.size(); ++i)
+			csv << record[i][0] << ","
+				<< record[i][1] << ","
+				<< record[i][2] << ","
+				<< record[i][3] << ","
+				<< record[i][4] << ","
+				<< record[i][5] << ","
+				<< record[i][6] << "\n";
+	} 
 
-		int i = 0;
-		while (!csv.eof())
-		{
-			auto line = get_next_line_and_split_into_cells(csv);
+	//{
+	//	std::ifstream csv("record.csv");
 
-			if (line.size() != 7)
-				continue;
-			++i;
+	//	auto header = get_next_line_and_split_into_cells(csv);
+	//	if (header[0] != "j0")
+	//		throw std::exception("wrong header");
 
-			std::array<double, 7> joints{};
-			for (int i = 0; i < 7; ++i)
-				joints[i] = std::stod(line[i]);
-				
-			record.emplace_back(joints);
-		}
-		LOG_INFO(i + " lines read.")
-	}
+	//	int i = 0;
+	//	while (!csv.eof())
+	//	{
+	//		auto line = get_next_line_and_split_into_cells(csv);
+
+	//		if (line.size() != 7)
+	//			continue;
+	//		++i;
+
+	//		std::array<double, 7> joints{};
+	//		for (int i = 0; i < 7; ++i)
+	//			joints[i] = std::stod(line[i]);
+	//			
+	//		record.emplace_back(joints);
+	//	}
+	//	LOG_INFO(i + " lines read.")
+	//}
 
 	std::cin.get();
 
-	record = lowpass(record, 0.001, 0.016);
-	controller.move_to({{1.0882, 0.221298, 0.241497, -2.37185, -0.155255, 2.51272, 0.717536}});
+	std::vector<std::array<double, 7>> reserve_record(record.rbegin(), record.rend());
+	//record = lowpass(record, 0.001, 0.016);
+	//controller.move_to({{1.0882, 0.221298, 0.241497, -2.37185, -0.155255, 2.51272, 0.717536}});
+	controller.move_to({{1.08554, 0.035344, 0.225367, -2.28033, -0.053305, 2.29159, 0.602587}});
 	controller.move_to(record.front());
 	controller.move_sequence(record);
 
