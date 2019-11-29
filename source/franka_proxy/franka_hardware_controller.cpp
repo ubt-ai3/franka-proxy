@@ -299,15 +299,20 @@ std::vector<std::array<double, 7>> franka_hardware_controller::stop_recording()
 
 void franka_hardware_controller::move_sequence(std::vector<std::array<double, 7>> q_sequence)
 {
-	initialize_parameters();
-	set_contact_drive_collision_behaviour();
-
-	detail::sequence_joint_velocity_motion_generator motion_generator
-		(1., q_sequence, state_lock_, robot_state_, stop_motion_);
+	robot_.setJointImpedance({ {3000, 3000, 3000, 2500, 2500, 2000, 2000} });
+	robot_.setCartesianImpedance({ {3000, 3000, 3000, 300, 300, 300} });
+	robot_.setCollisionBehavior(
+		{ {20.0, 20.0, 18.0, 18.0, 16.0, 14.0, 12.0} }, { {40.0, 40.0, 38.0, 38.0, 36.0, 34.0, 32.0} },
+		{ {20.0, 20.0, 18.0, 18.0, 16.0, 14.0, 12.0} }, { {40.0, 40.0, 38.0, 38.0, 36.0, 34.0, 32.0} },
+		{ {20.0, 20.0, 20.0, 25.0, 25.0, 25.0} }, { {40.0, 40.0, 40.0, 45.0, 45.0, 45.0} },
+		{ {20.0, 20.0, 20.0, 25.0, 25.0, 25.0} }, { {40.0, 40.0, 40.0, 45.0, 45.0, 45.0} });
 
 	detail::force_motion_generator force_motion_generator
-		(robot_, 0.1, 10.0);
-
+		(robot_, 0.0, 10.0);
+	detail::sequence_joint_velocity_motion_generator motion_generator
+		(1., q_sequence, state_lock_, robot_state_, stop_motion_);
+	//detail::sequence_joint_position_motion_generator motion_generator
+	//	(1., q_sequence, state_lock_, robot_state_, stop_motion_);
 	stop_motion_ = false;
 
 	try
@@ -319,24 +324,22 @@ void franka_hardware_controller::move_sequence(std::vector<std::array<double, 7>
 		}
 
 		LOG_INFO("starting control loop");
+
 		robot_.control(
 			[&](const franka::RobotState& robot_state,
 			 franka::Duration period) -> franka::Torques
 			{
 				return force_motion_generator.callback(robot_state, period);
 			}, 
-			[&](const franka::RobotState& robot_state,
-				franka::Duration period) -> franka::CartesianVelocities
-			{
-				return franka::CartesianVelocities({ 0.,0.,0.,0.,0.,0. });
-			},
+			motion_generator,
 			true, 
-			10.);
-		//robot_.control
-		//	(motion_generator,
-		//	 franka::ControllerMode::kJointImpedance,
-		//	 true, 
-		//	 10.);
+			1000.);
+
+		//robot_.control(
+		//	motion_generator,
+		//	franka::ControllerMode::kJointImpedance,
+		//	true,
+		//	10.);
 
 		LOG_INFO("went ok");
 	}
@@ -350,7 +353,6 @@ void franka_hardware_controller::move_sequence(std::vector<std::array<double, 7>
 		throw;
 	}
 
-	LOG_ERROR("went wrong");
 	control_loop_running_.set(false);
 }
 

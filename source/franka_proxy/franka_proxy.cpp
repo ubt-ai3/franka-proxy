@@ -41,8 +41,6 @@ franka_proxy::franka_proxy()
 } /* namespace franka_proxy */
 
 
-
-
 int main()
 {
 	franka_proxy::franka_proxy proxy;
