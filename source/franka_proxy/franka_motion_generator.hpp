@@ -13,7 +13,7 @@
 
 #include <atomic>
 
-#include <Eigen/Core>
+#include <Eigen/Geometry>
 
 #include <franka/robot.h>
 #include <franka/model.h>
@@ -169,6 +169,46 @@ private:
 
 
 
+/**
+ *************************************************************************
+ *
+ * @class cartesian_impedance_controller
+ *
+ * todo
+ *
+ ************************************************************************/
+class cartesian_impedance_controller
+{
+public:
+
+	cartesian_impedance_controller
+		(franka::Robot& robot,
+		 double translational_stiffness = 150.0,
+		 double rotational_stiffness = 10.0);
+
+	franka::Torques callback
+		(const franka::RobotState& robot_state,
+		 franka::Duration);
+
+private:
+	
+	franka::Model model;
+
+	franka::RobotState initial_state_;
+	Eigen::Affine3d initial_transform_;
+	Eigen::Vector3d position_d_;
+	Eigen::Quaterniond orientation_d_;
+
+
+
+	Eigen::MatrixXd stiffness_;
+	Eigen::MatrixXd damping_;
+
+	std::vector<double> forces_z{}; // debug purpose
+};
+
+
+
 
 /**
  *************************************************************************
@@ -211,7 +251,6 @@ private:
 	const std::vector<std::array<double, 7>> q_sequence_;
 
 	double time_ = 0.0;
-	double speed_factor_;
 
 	std::mutex& current_state_lock_;
 	franka::RobotState& current_state_;
@@ -263,7 +302,6 @@ private:
 	const std::vector<std::array<double, 7>> q_sequence_;
 
 	double time_ = 0.0;
-	double speed_factor_;
 	double k_p_ = 5.0;
 
 	std::mutex& current_state_lock_;

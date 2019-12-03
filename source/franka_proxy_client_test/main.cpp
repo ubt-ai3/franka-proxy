@@ -243,9 +243,9 @@ int main()
 
 	LOG_INFO("Starting Gripper Test.");
 
-	//controller.grasp_gripper();
+	controller.grasp_gripper();
 	//controller.open_gripper();
-	controller.close_gripper();
+	//controller.close_gripper();
 	//controller.open_gripper();
 
 	LOG_INFO("Finished Gripper Test.");
@@ -280,14 +280,17 @@ int main()
 	//controller.apply_z_force(0.0, 5.0);
 	//controller.apply_z_force(1.0, 5.0);
 
-	std::this_thread::sleep_for(std::chrono::seconds(5));
 	
 	LOG_INFO("Finished Force Test.");
 
-	
+
 	LOG_INFO("Starting Playback Test.");
 	
+
 	std::vector<std::array<double, 7>> record;
+
+	//std::cin.get();
+	//std::this_thread::sleep_for(std::chrono::seconds(3));
 
 	//LOG_INFO("$$$$$ START RECORDING $$$$$");
 	//controller.start_recording();
@@ -309,7 +312,7 @@ int main()
 	//			<< record[i][4] << ","
 	//			<< record[i][5] << ","
 	//			<< record[i][6] << "\n";
-	//}
+	//} 
 
 	{
 		std::ifstream csv("record.csv");
@@ -338,8 +341,10 @@ int main()
 
 	std::cin.get();
 
-	record = lowpass(record, 0.001, 0.016);
-	controller.move_to({{1.0882, 0.221298, 0.241497, -2.37185, -0.155255, 2.51272, 0.717536}});
+	std::vector<std::array<double, 7>> reserve_record(record.rbegin(), record.rend());
+	//record = lowpass(record, 0.001, 0.016);
+	//controller.move_to({{1.0882, 0.221298, 0.241497, -2.37185, -0.155255, 2.51272, 0.717536}});
+	controller.move_to({{1.08554, 0.035344, 0.225367, -2.28033, -0.053305, 2.29159, 0.602587}});
 	controller.move_to(record.front());
 	controller.move_sequence(record);
 
