@@ -249,8 +249,12 @@ franka::Torques force_motion_generator::callback(const franka::RobotState& robot
 	}
 
 
-	gravity_array = model.gravity(robot_state);
 	Eigen::Map<const Eigen::Matrix<double, 7, 1> > tau_measured(robot_state.tau_J.data());
+
+	std::array<double, 49> mass_array = model.mass(robot_state);
+	Eigen::Map<const Eigen::Matrix<double, 7, 7> > mass(mass_array.data());
+
+	std::array<double, 7> gravity_array = model.gravity(robot_state);
 	Eigen::Map<const Eigen::Matrix<double, 7, 1> > gravity(gravity_array.data());
 
 	std::array<double, 42> jacobian_array = model.zeroJacobian(franka::Frame::kEndEffector, robot_state);
@@ -270,39 +274,46 @@ franka::Torques force_motion_generator::callback(const franka::RobotState& robot
 	// FF + PI control
 	tau_command = tau_desired + k_p * (tau_desired - tau_existing) + k_i * tau_error_integral;
 
-
-	// updateDQFilter
-	for (size_t i = 0; i < 7; i++) {
-		dq_buffer_[dq_current_filter_position_ * 7 + i] = robot_state.dq[i];
-	}
-	dq_current_filter_position_ = (dq_current_filter_position_ + 1) % dq_filter_size_;
-
-	// compute torques
-	for (size_t i = 0; i < 7; i++) {
-		// compute dq filtered
-		double value = 0;
-		for (size_t j = i; j < 7 * dq_filter_size_; j += 7) {
-			value += dq_buffer_[j];
-		}
-		value = value / dq_filter_size_;
-
-		// impedance control law
-		tau_J_d[i] = (K_P_[i] * (robot_state.q_d[i] - robot_state.q[i]) + K_D_[i] * (dq_d_[i] - value));
-	}
-
-
 	// Smoothly update the mass to reach the desired target value.
 	desired_mass = filter_gain * target_mass + (1 - filter_gain) * desired_mass;
 
 
+	// updateDQFilter
+	update_dq_filter(robot_state);
+
+	// compute torques according to impedance control law
+	// with assumption mass = 0 (robot state does not provide ddq and own measurement too noisy)
+	for (size_t i = 0; i < 7; i++)
+		tau_J_d[i] = (K_P_[i] * (robot_state.q_d[i] - robot_state.q[i]) + K_D_[i] * (dq_d_[i] - compute_dq_filtered(i)));
+
+
 	std::array<double, 7> tau_d_array{};
-	Eigen::VectorXd::Map(&tau_d_array[0], 7) = (tau_command + tau_J_d) * .5;
+	Eigen::VectorXd::Map(&tau_d_array[0], 7) = (tau_command + tau_J_d) * 0.5;
 
 
 	forces_z.push_back(robot_state.O_F_ext_hat_K[2]);
 
 
 	return tau_d_array;
+}
+
+
+void force_motion_generator::update_dq_filter(const franka::RobotState& robot_state)
+{
+	for (int i = 0; i < 7; i++)
+		dq_buffer_[dq_current_filter_position_ * 7 + i] = robot_state.dq[i];
+
+	dq_current_filter_position_ = (dq_current_filter_position_ + 1) % dq_filter_size_;
+}
+
+
+double force_motion_generator::compute_dq_filtered(int j)
+{
+	double value = 0.0;
+	for (size_t i = j; i < 7 * dq_filter_size_; i += 7)
+		value += dq_buffer_[i];
+
+	return value / dq_filter_size_;
 }
 
 
@@ -423,12 +434,8 @@ franka::JointVelocities sequence_joint_velocity_motion_generator::operator()
 	Vector7d q_(robot_state.q.data());
 	Vector7d q_seq(q_sequence_[step].data());
 
-	if ((q_seq - q_).norm() < 0.0001)
-		return franka::JointVelocities({ 0.,0.,0.,0.,0.,0.,0. });
-
-
 	std::array<double, 7> vel{};
-	Eigen::VectorXd::Map(&vel[0], 7) = (q_seq - q_) * 1.1;// *period.toMSec(); // todo hack
+	Eigen::VectorXd::Map(&vel[0], 7) = k_p_ * (q_seq - q_);// *period.toMSec(); // todo hack
 
 	franka::JointVelocities output(vel);
 	output.motion_finished = false;

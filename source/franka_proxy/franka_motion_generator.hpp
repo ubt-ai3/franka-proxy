@@ -133,18 +133,20 @@ public:
 
 private:
 
+	void update_dq_filter(const franka::RobotState& robot_state);
+	double compute_dq_filtered(int j);
+
 	double time_{0.0};
 	double desired_mass{0.0};
 	const double k_p{1.0};
 	const double k_i{2.0};
 	const double filter_gain{0.01};
 
+
 	// Stiffness & Damping
 	const std::array<double, 7> K_P_ = { {600.0, 600.0, 600.0, 600.0, 250.0, 150.0, 50.0} };
 	const std::array<double, 7> K_D_ = { {50.0, 50.0, 50.0, 50.0, 30.0, 25.0, 15.0} };
 
-	//const std::array<double, 7> K_P_{ {200.0, 200.0, 200.0, 200.0, 200.0, 200.0, 200.0} };
-	//const std::array<double, 7> K_D_{ {10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0} };
 
 	size_t dq_current_filter_position_ = 0;
 	const size_t dq_filter_size_ = 5;
@@ -157,7 +159,6 @@ private:
 
 	franka::Model model;
 
-	std::array<double, 7> gravity_array;
 	Eigen::Matrix<double, 7, 1> initial_tau_ext;
 	Eigen::Matrix<double, 7, 1> tau_error_integral;
 
@@ -263,6 +264,7 @@ private:
 
 	double time_ = 0.0;
 	double speed_factor_;
+	double k_p_ = 5.0;
 
 	std::mutex& current_state_lock_;
 	franka::RobotState& current_state_;

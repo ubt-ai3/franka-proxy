@@ -308,7 +308,7 @@ void franka_hardware_controller::move_sequence(std::vector<std::array<double, 7>
 		{ {20.0, 20.0, 20.0, 25.0, 25.0, 25.0} }, { {40.0, 40.0, 40.0, 45.0, 45.0, 45.0} });
 
 	detail::force_motion_generator force_motion_generator
-		(robot_, 0.0, 10.0);
+		(robot_, 1.0, 10.0);
 	detail::sequence_joint_velocity_motion_generator motion_generator
 		(1., q_sequence, state_lock_, robot_state_, stop_motion_);
 	//detail::sequence_joint_position_motion_generator motion_generator
@@ -333,13 +333,13 @@ void franka_hardware_controller::move_sequence(std::vector<std::array<double, 7>
 			}, 
 			motion_generator,
 			true, 
-			1000.);
+			100.);
 
 		//robot_.control(
 		//	motion_generator,
 		//	franka::ControllerMode::kJointImpedance,
 		//	true,
-		//	10.);
+		//	100.);
 
 		LOG_INFO("went ok");
 	}
