@@ -306,6 +306,85 @@ franka::Torques force_motion_generator::callback(const franka::RobotState& robot
 }
 
 
+//////////////////////////////////////////////////////////////////////////
+//
+// cartesian_impedance_controller
+//
+//////////////////////////////////////////////////////////////////////////
+
+
+cartesian_impedance_controller::cartesian_impedance_controller
+	(franka::Robot& robot,
+	 double translational_stiffness,
+	 double rotational_stiffness)
+	:
+	model(robot.loadModel()),
+	initial_state_(robot.readOnce()),
+	initial_transform_(Eigen::Matrix4d::Map(initial_state_.O_T_EE.data())),
+	position_d_(initial_transform_.translation()),
+	orientation_d_(initial_transform_.linear()),
+	stiffness_(6, 6),
+	damping_(6, 6)
+{
+	stiffness_.setZero();
+	stiffness_.topLeftCorner(3, 3) <<
+		translational_stiffness * Eigen::MatrixXd::Identity(3, 3);
+	stiffness_.bottomRightCorner(3, 3) <<
+		rotational_stiffness * Eigen::MatrixXd::Identity(3, 3);
+	damping_.setZero();
+	damping_.topLeftCorner(3, 3) <<
+		2.0 * sqrt(translational_stiffness) * Eigen::MatrixXd::Identity(3, 3);
+	damping_.bottomRightCorner(3, 3) <<
+		2.0 * sqrt(rotational_stiffness) * Eigen::MatrixXd::Identity(3, 3);
+}
+
+
+franka::Torques cartesian_impedance_controller::callback
+	(const franka::RobotState& robot_state,
+	 franka::Duration)
+{
+	// get state variables
+	std::array<double, 7> coriolis_array = model.coriolis(robot_state);
+	std::array<double, 42> jacobian_array =
+		model.zeroJacobian(franka::Frame::kEndEffector, robot_state);
+
+	// convert to Eigen
+	Eigen::Map<const Eigen::Matrix<double, 7, 1>> coriolis(coriolis_array.data());
+	Eigen::Map<const Eigen::Matrix<double, 6, 7>> jacobian(jacobian_array.data());
+	Eigen::Map<const Eigen::Matrix<double, 7, 1>> q(robot_state.q.data());
+	Eigen::Map<const Eigen::Matrix<double, 7, 1>> dq(robot_state.dq.data());
+	Eigen::Affine3d transform(Eigen::Matrix4d::Map(robot_state.O_T_EE.data()));
+	Eigen::Vector3d position(transform.translation());
+	Eigen::Quaterniond orientation(transform.linear());
+
+	// compute error to desired equilibrium pose
+	// position error
+	Eigen::Matrix<double, 6, 1> error;
+	error.head(3) << position - position_d_;
+
+	// orientation error
+	// "difference" quaternion
+	if (orientation_d_.coeffs().dot(orientation.coeffs()) < 0.0)
+	{
+		orientation.coeffs() << -orientation.coeffs();
+	}
+	// "difference" quaternion
+	Eigen::Quaterniond error_quaternion(orientation.inverse() * orientation_d_);
+	error.tail(3) << error_quaternion.x(), error_quaternion.y(), error_quaternion.z();
+	// Transform to base frame
+	error.tail(3) << -transform.linear() * error.tail(3);
+
+	// compute control
+	Eigen::VectorXd tau_task(7), tau_d(7);
+
+	// Spring damper system with damping ratio=1
+	tau_task << jacobian.transpose() * (-stiffness_ * error - damping_ * (jacobian * dq));
+	tau_d << tau_task + coriolis;
+
+	std::array<double, 7> tau_d_array{};
+	Eigen::VectorXd::Map(&tau_d_array[0], 7) = tau_d;
+	return tau_d_array;
+}
 
 
 //////////////////////////////////////////////////////////////////////////
@@ -313,6 +392,7 @@ franka::Torques force_motion_generator::callback(const franka::RobotState& robot
 // sequence_joint_position_motion_generator
 //
 //////////////////////////////////////////////////////////////////////////
+
 
 
 sequence_joint_position_motion_generator::sequence_joint_position_motion_generator
@@ -323,7 +403,6 @@ sequence_joint_position_motion_generator::sequence_joint_position_motion_generat
 	 const std::atomic_bool& stop_motion_flag)
 	:
 	q_sequence_(std::move(q_sequence)),
-	speed_factor_(speed_factor),
 	current_state_lock_(current_state_lock),
 	current_state_(current_state),
 	stop_motion_(stop_motion_flag)
@@ -376,7 +455,6 @@ sequence_joint_velocity_motion_generator::sequence_joint_velocity_motion_generat
 	 const std::atomic_bool& stop_motion_flag)
 	:
 	q_sequence_(std::move(q_sequence)),
-	speed_factor_(speed_factor),
 	current_state_lock_(current_state_lock),
 	current_state_(current_state),
 	stop_motion_(stop_motion_flag)
