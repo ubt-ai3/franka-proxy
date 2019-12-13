@@ -183,8 +183,8 @@ public:
 
 	cartesian_impedance_controller
 		(franka::Robot& robot,
-		 double translational_stiffness = 150.0,
-		 double rotational_stiffness = 10.0);
+		 double translational_stiffness = 500.0,
+		 double rotational_stiffness = 50.0);
 
 	franka::Torques callback
 		(const franka::RobotState& robot_state,
@@ -199,14 +199,68 @@ private:
 	Eigen::Vector3d position_d_;
 	Eigen::Quaterniond orientation_d_;
 
-
-
 	Eigen::MatrixXd stiffness_;
 	Eigen::MatrixXd damping_;
 
 	std::vector<double> forces_z{}; // debug purpose
 };
 
+
+/**
+ *************************************************************************
+ *
+ * @class cartesian_impedance_and_force_controller
+ *
+ * todo
+ *
+ ************************************************************************/
+class cartesian_impedance_and_force_controller
+{
+public:
+
+	cartesian_impedance_and_force_controller
+	(franka::Robot& robot,
+		double translational_stiffness = 150.0,
+		double rotational_stiffness = 10.0);
+
+	franka::Torques callback
+	(const franka::RobotState& robot_state,
+		franka::Duration period);
+
+private:
+
+	franka::Model model;
+
+	franka::RobotState initial_state_;
+	Eigen::Affine3d initial_transform_;
+	Eigen::Vector3d position_d_;
+	Eigen::Quaterniond orientation_d_;
+
+	Eigen::MatrixXd stiffness_;
+	Eigen::MatrixXd damping_;
+
+
+	double time_{ 0.0 };
+	double desired_mass{ 0.0 };
+	const double k_p{ 1.0 };
+	const double k_i{ 2.0 };
+	const double filter_gain{ 0.01 };
+
+
+	size_t dq_current_filter_position_ = 0;
+	const size_t dq_filter_size_ = 5;
+
+	std::array<double, 7> dq_d_;
+	std::vector<double> dq_buffer_;
+
+	double target_mass;
+	double duration;
+
+	Eigen::Matrix<double, 7, 1> initial_tau_ext;
+	Eigen::Matrix<double, 7, 1> tau_error_integral;
+
+	std::vector<double> forces_z{}; // debug purpose
+};
 
 
 
