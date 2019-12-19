@@ -59,6 +59,9 @@ franka_hardware_controller::franka_hardware_controller
 	{
 		// todo
 	}
+
+	// todo JHa
+	robot_.setGuidingMode({ {true, true, true, false, false, true} }, false);
 }
 
 
@@ -308,12 +311,16 @@ void franka_hardware_controller::move_sequence(std::vector<std::array<double, 7>
 		{ {20.0, 20.0, 20.0, 25.0, 25.0, 25.0} }, { {40.0, 40.0, 40.0, 45.0, 45.0, 45.0} });
 
 	detail::force_motion_generator force_motion_generator
-		(robot_, 0.0, 10.0);
-	detail::sequence_joint_velocity_motion_generator motion_generator
+		(robot_, 0.5, 10.0);
+	detail::cartesian_impedance_and_force_controller cartesian_impedance_and_force_generator(robot_);
+	detail::cartesian_impedance_controller cartesian_impedance_generator(robot_);
+	detail::sequence_joint_velocity_motion_generator joint_velocity_motion_generator
 		(1., q_sequence, state_lock_, robot_state_, stop_motion_);
-	//detail::sequence_joint_position_motion_generator motion_generator
-	//	(1., q_sequence, state_lock_, robot_state_, stop_motion_);
 	stop_motion_ = false;
+
+	detail::sequence_cartesian_velocity_motion_generator 
+		sequence_cartesian_velocity(
+		1.0, q_sequence, state_lock_, robot_, stop_motion_);
 
 	try
 	{
@@ -325,21 +332,44 @@ void franka_hardware_controller::move_sequence(std::vector<std::array<double, 7>
 
 		LOG_INFO("starting control loop");
 
+		//robot_.control(
+		//	[&](const franka::RobotState& robot_state,
+		//		franka::Duration period) -> franka::Torques
+		//	{
+		//		return force_motion_generator.callback(robot_state, period);
+		//	},
+		//	joint_velocity_motion_generator,
+		//	true,
+		//	100.);
+		//robot_.control(
+		//	[&](const franka::RobotState& robot_state,
+		//		franka::Duration period) -> franka::Torques
+		//	{
+		//		return cartesian_impedance_and_force_generator.callback(robot_state, period);
+		//	},
+		//	joint_velocity_motion_generator,
+		//	true,
+		//	100.);
+		//robot_.control(
+		//	[&](const franka::RobotState& robot_state,
+		//		franka::Duration period) -> franka::Torques
+		//	{
+		//		return cartesian_impedance_generator.callback(robot_state, period);
+		//	},
+		//		true,
+		//		1000.);
 		robot_.control(
 			[&](const franka::RobotState& robot_state,
-			 franka::Duration period) -> franka::Torques
+				franka::Duration period) -> franka::Torques
 			{
-				return force_motion_generator.callback(robot_state, period);
-			}, 
-			motion_generator,
-			true, 
-			1000.);
-
-		//robot_.control(
-		//	motion_generator,
-		//	franka::ControllerMode::kJointImpedance,
-		//	true,
-		//	10.);
+				return cartesian_impedance_generator.callback(robot_state, period);
+			},
+			[&](const franka::RobotState& robot_state,
+				franka::Duration period) {
+				return sequence_cartesian_velocity(robot_state, period);
+			},
+			true,
+			100.);
 
 		LOG_INFO("went ok");
 	}

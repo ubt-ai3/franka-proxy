@@ -133,18 +133,20 @@ public:
 
 private:
 
+	void update_dq_filter(const franka::RobotState& robot_state);
+	double compute_dq_filtered(int j);
+
 	double time_{0.0};
 	double desired_mass{0.0};
 	const double k_p{1.0};
 	const double k_i{2.0};
 	const double filter_gain{0.01};
 
+
 	// Stiffness & Damping
 	const std::array<double, 7> K_P_ = { {600.0, 600.0, 600.0, 600.0, 250.0, 150.0, 50.0} };
 	const std::array<double, 7> K_D_ = { {50.0, 50.0, 50.0, 50.0, 30.0, 25.0, 15.0} };
 
-	//const std::array<double, 7> K_P_{ {200.0, 200.0, 200.0, 200.0, 200.0, 200.0, 200.0} };
-	//const std::array<double, 7> K_D_{ {10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0} };
 
 	size_t dq_current_filter_position_ = 0;
 	const size_t dq_filter_size_ = 5;
@@ -157,7 +159,6 @@ private:
 
 	franka::Model model;
 
-	std::array<double, 7> gravity_array;
 	Eigen::Matrix<double, 7, 1> initial_tau_ext;
 	Eigen::Matrix<double, 7, 1> tau_error_integral;
 
@@ -182,8 +183,8 @@ public:
 
 	cartesian_impedance_controller
 		(franka::Robot& robot,
-		 double translational_stiffness = 150.0,
-		 double rotational_stiffness = 10.0);
+		 double translational_stiffness = 500.0,
+		 double rotational_stiffness = 50.0);
 
 	franka::Torques callback
 		(const franka::RobotState& robot_state,
@@ -198,14 +199,68 @@ private:
 	Eigen::Vector3d position_d_;
 	Eigen::Quaterniond orientation_d_;
 
-
-
 	Eigen::MatrixXd stiffness_;
 	Eigen::MatrixXd damping_;
 
 	std::vector<double> forces_z{}; // debug purpose
 };
 
+
+/**
+ *************************************************************************
+ *
+ * @class cartesian_impedance_and_force_controller
+ *
+ * todo
+ *
+ ************************************************************************/
+class cartesian_impedance_and_force_controller
+{
+public:
+
+	cartesian_impedance_and_force_controller
+	(franka::Robot& robot,
+		double translational_stiffness = 150.0,
+		double rotational_stiffness = 10.0);
+
+	franka::Torques callback
+	(const franka::RobotState& robot_state,
+		franka::Duration period);
+
+private:
+
+	franka::Model model;
+
+	franka::RobotState initial_state_;
+	Eigen::Affine3d initial_transform_;
+	Eigen::Vector3d position_d_;
+	Eigen::Quaterniond orientation_d_;
+
+	Eigen::MatrixXd stiffness_;
+	Eigen::MatrixXd damping_;
+
+
+	double time_{ 0.0 };
+	double desired_mass{ 0.0 };
+	const double k_p{ 1.0 };
+	const double k_i{ 2.0 };
+	const double filter_gain{ 0.01 };
+
+
+	size_t dq_current_filter_position_ = 0;
+	const size_t dq_filter_size_ = 5;
+
+	std::array<double, 7> dq_d_;
+	std::vector<double> dq_buffer_;
+
+	double target_mass;
+	double duration;
+
+	Eigen::Matrix<double, 7, 1> initial_tau_ext;
+	Eigen::Matrix<double, 7, 1> tau_error_integral;
+
+	std::vector<double> forces_z{}; // debug purpose
+};
 
 
 
@@ -301,11 +356,70 @@ private:
 	const std::vector<std::array<double, 7>> q_sequence_;
 
 	double time_ = 0.0;
+	double k_p_ = 5.0;
 
 	std::mutex& current_state_lock_;
 	franka::RobotState& current_state_;
 
 	const std::atomic_bool& stop_motion_;
+};
+
+
+/**
+ *************************************************************************
+ *
+ * @class sequence_joint_velocity_motion_generator
+ *
+ * todo
+ *
+ ************************************************************************/
+class sequence_cartesian_velocity_motion_generator
+{
+public:
+	/**
+	 * Creates a new joint_motion_generator instance for a target q.
+	 *
+	 * todo doc
+	 */
+	sequence_cartesian_velocity_motion_generator
+	(double speed_factor,
+		std::vector<std::array<double, 7>> q_sequence,
+		std::mutex& current_state_lock,
+		franka::Robot& robot,
+		const std::atomic_bool& stop_motion_flag);
+
+	~sequence_cartesian_velocity_motion_generator();
+
+	/**
+	 * Sends cartesian position calculations
+	 *
+	 * todo doc
+	 */
+	franka::CartesianVelocities operator()
+		(const franka::RobotState& robot_state,
+			franka::Duration period);
+
+
+private:
+
+	franka::Model model;
+
+	using Vector7d = Eigen::Matrix<double, 7, 1, Eigen::ColMajor>;
+	using Vector7i = Eigen::Matrix<int, 7, 1, Eigen::ColMajor>;
+
+	const std::vector<std::array<double, 7>> q_sequence_;
+
+	double time_ = 0.0;
+	double k_p_ = 2.0;
+
+	std::mutex& current_state_lock_;
+	franka::RobotState& current_state_;
+
+	const std::atomic_bool& stop_motion_;
+
+	std::vector<std::array<double, 6>> error_log_;
+	std::vector<Eigen::Affine3d> pose_log_;
+	std::vector<Eigen::Affine3d> pose_d_log_;
 };
 
 
