@@ -11,6 +11,9 @@
 #include "FftComplex.hpp"
 #include <random>
 #include <fstream>
+#include <Eigen/Core>
+#include "franka_control/franka_util.hpp"
+#include "viral_core/geo_util.hpp"
 
 
 void print(const franka_proxy::robot_config_7dof& config)
@@ -236,7 +239,7 @@ int main()
 			if (i++ % 30 == 0)
 				print_status(controller);
 
-			viral_core::thread_util::sleep_seconds(0.016);
+			viral_core::thread_util::sleep_seconds(0.016f);
 		}
 	});
 
@@ -289,62 +292,80 @@ int main()
 
 	std::vector<std::array<double, 7>> record;
 
-	//std::cin.get();
-	//std::this_thread::sleep_for(std::chrono::seconds(3));
+	Eigen::Affine3d pose
+		(franka_control::franka_util::fk(
+		(franka_control::robot_config_7dof() 
+			<< 1.08615, 0.044619, 0.227112, -2.26678, -0.059792, 2.27532, 0.605723).finished()).back());
 
-	//LOG_INFO("$$$$$ START RECORDING $$$$$");
-	//controller.start_recording();
+	pose.linear() << 0.707107, 0.707107, 0,
+		0.707107, - 0.707107, -0,
+		0, 0, -1; 
 
-	//std::this_thread::sleep_for(std::chrono::seconds(10));
-	//
-	//LOG_INFO("$$$$$ STOP RECORDING $$$$$");
-	//record = controller.stop_recording();
+	auto ik_solution = franka_control::franka_util::ik_fast_closest
+		(pose,
+		 franka_control::robot_config_7dof(controller.current_config().data()));
 
-	//{
-	//	std::ofstream csv("record.csv");
+	franka_proxy::robot_config_7dof q{};
+	Eigen::VectorXd::Map(&q[0], 7) = ik_solution;
+	controller.move_to(q);
 
-	//	csv << "j0,j1,j2,j3,j4,j5,j6\n";
-	//	for (int i = 0; i < record.size(); ++i)
-	//		csv << record[i][0] << ","
-	//			<< record[i][1] << ","
-	//			<< record[i][2] << ","
-	//			<< record[i][3] << ","
-	//			<< record[i][4] << ","
-	//			<< record[i][5] << ","
-	//			<< record[i][6] << "\n";
-	//} 
-
-	{
-		std::ifstream csv("record.csv");
-
-		auto header = get_next_line_and_split_into_cells(csv);
-		if (header[0] != "j0")
-			throw std::exception("wrong header");
-
-		int i = 0;
-		while (!csv.eof())
-		{
-			auto line = get_next_line_and_split_into_cells(csv);
-
-			if (line.size() != 7)
-				continue;
-			++i;
-
-			std::array<double, 7> joints{};
-			for (int i = 0; i < 7; ++i)
-				joints[i] = std::stod(line[i]);
-				
-			record.emplace_back(joints);
-		}
-		LOG_INFO(i + " lines read.")
-	}
 
 	std::cin.get();
+	std::this_thread::sleep_for(std::chrono::seconds(3));
 
-	std::vector<std::array<double, 7>> reserve_record(record.rbegin(), record.rend());
+	LOG_INFO("$$$$$ START RECORDING $$$$$");
+	controller.start_recording();
+
+	std::this_thread::sleep_for(std::chrono::seconds(10));
+	
+	LOG_INFO("$$$$$ STOP RECORDING $$$$$");
+	record = controller.stop_recording();
+
+	{
+		std::ofstream csv("record.csv");
+
+		csv << "j0,j1,j2,j3,j4,j5,j6\n";
+		for (int i = 0; i < record.size(); ++i)
+			csv << record[i][0] << ","
+				<< record[i][1] << ","
+				<< record[i][2] << ","
+				<< record[i][3] << ","
+				<< record[i][4] << ","
+				<< record[i][5] << ","
+				<< record[i][6] << "\n";
+	}
+
+	//{
+	//	std::ifstream csv("record.csv");
+
+	//	auto header = get_next_line_and_split_into_cells(csv);
+	//	if (header[0] != "j0")
+	//		throw std::exception("wrong header");
+
+	//	int i = 0;
+	//	while (!csv.eof())
+	//	{
+	//		auto line = get_next_line_and_split_into_cells(csv);
+
+	//		if (line.size() != 7)
+	//			continue;
+	//		++i;
+
+	//		std::array<double, 7> joints{};
+	//		for (int i = 0; i < 7; ++i)
+	//			joints[i] = std::stod(line[i]);
+	//			
+	//		record.emplace_back(joints);
+	//	}
+	//	LOG_INFO(i + " lines read.")
+	//}
+	
+	std::cin.get();
+
+	//std::vector<std::array<double, 7>> reserve_record(record.rbegin(), record.rend());
 	//record = lowpass(record, 0.001, 0.016);
 	//controller.move_to({{1.0882, 0.221298, 0.241497, -2.37185, -0.155255, 2.51272, 0.717536}});
-	controller.move_to({{1.08554, 0.035344, 0.225367, -2.28033, -0.053305, 2.29159, 0.602587}});
+	//controller.move_to({{1.08554, 0.035344, 0.225367, -2.28033, -0.053305, 2.29159, 0.602587}});
 	controller.move_to(record.front());
 	controller.move_sequence(record);
 

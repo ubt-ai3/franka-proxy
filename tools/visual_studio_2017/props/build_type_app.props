@@ -13,7 +13,7 @@
       </PrecompiledHeaderOutputFile>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>franka_proxy_client.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>franka_proxy_client.lib;franka_control.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <ImportLibrary>$(IntDir)$(TargetName).lib</ImportLibrary>
       <SubSystem>Console</SubSystem>
     </Link>
