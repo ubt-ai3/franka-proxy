@@ -673,11 +673,7 @@ sequence_cartesian_velocity_motion_generator::sequence_cartesian_velocity_motion
 	stop_motion_(stop_motion_flag)
 { }
 
-sequence_cartesian_velocity_motion_generator::~sequence_cartesian_velocity_motion_generator()
-{
-	std::cout << "~sequence_cartesian_velocity_motion_generator()" << std::endl;
-}
-
+sequence_cartesian_velocity_motion_generator::~sequence_cartesian_velocity_motion_generator() = default;
 
 franka::CartesianVelocities sequence_cartesian_velocity_motion_generator::operator()
 (const franka::RobotState& robot_state,
@@ -712,8 +708,9 @@ franka::CartesianVelocities sequence_cartesian_velocity_motion_generator::operat
 		return output;
 	}
 
+	// todo remove
 	if (period.toMSec() < 1)
-		throw("Period under 1ms.");
+		throw std::exception("Period under 1ms.");
 
 	// motion
 	Eigen::Affine3d current_transform(Eigen::Matrix4d::Map(robot_state.O_T_EE.data()));
@@ -766,6 +763,148 @@ franka::CartesianVelocities sequence_cartesian_velocity_motion_generator::operat
 	franka::CartesianVelocities output(vel);
 	output.motion_finished = false;
 	return output;
+}
+
+
+seq_cart_vel_tau_generator::seq_cart_vel_tau_generator
+	(double speed_factor,
+	 std::vector<std::array<double, 7>> q_sequence,
+	 std::mutex& current_state_lock,
+	 franka::Robot& robot,
+	 const std::atomic_bool& stop_motion_flag)
+	:
+	model(robot.loadModel()),
+	q_sequence_(std::move(q_sequence)),
+	current_state_lock_(current_state_lock),
+	current_state_(robot.readOnce()),
+	stop_motion_(stop_motion_flag),
+	stiffness_(6, 6),
+	damping_(6, 6)
+{
+	stiffness_.setZero();
+	stiffness_.topLeftCorner(3, 3) <<
+		translational_stiffness_ * Eigen::MatrixXd::Identity(3, 3);
+	stiffness_.bottomRightCorner(3, 3) <<
+		rotational_stiffness_ * Eigen::MatrixXd::Identity(3, 3);
+	damping_.setZero();
+	damping_.topLeftCorner(3, 3) <<
+		2.0 * sqrt(translational_stiffness_) * Eigen::MatrixXd::Identity(3, 3);
+	damping_.bottomRightCorner(3, 3) <<
+		2.0 * sqrt(rotational_stiffness_) * Eigen::MatrixXd::Identity(3, 3);
+}
+
+
+seq_cart_vel_tau_generator::~seq_cart_vel_tau_generator() = default;
+
+
+franka::Torques seq_cart_vel_tau_generator::callback(const franka::RobotState& robot_state, franka::Duration period)
+{
+	time_ += period.toSec();
+
+
+	{
+		std::lock_guard<std::mutex> state_guard(current_state_lock_);
+		current_state_ = robot_state;
+	}
+
+
+	if (stop_motion_)
+		throw stop_motion_trigger();  // NOLINT(hicpp-exception-baseclass)
+
+
+	// start motion 
+	if (time_ == 0.0)
+	{
+		if ((Vector7d(robot_state.q_d.data()) - Vector7d(q_sequence_.front().data())).norm() > 0.01)
+			throw std::runtime_error("Aborting; too far away from starting pose!");
+
+		return franka::Torques({ 0.,0.,0.,0.,0.,0. });
+	}
+
+	auto step = static_cast<unsigned int>(time_ * 1000.);
+	// finish motion
+	if (step >= q_sequence_.size())
+	{
+		franka::Torques output({ 0.,0.,0.,0.,0.,0. });
+		output.motion_finished = true;
+		return output;
+	}
+
+
+	// todo remove
+	if (period.toMSec() < 1)
+		throw std::exception("Period under 1ms.");
+
+
+	// get state variables
+	std::array<double, 7> coriolis_array = model.coriolis(robot_state);
+	std::array<double, 42> jacobian_array =
+		model.zeroJacobian(franka::Frame::kEndEffector, robot_state);
+
+	// convert to Eigen
+	Eigen::Map<const Eigen::Matrix<double, 7, 1>> coriolis(coriolis_array.data());
+	Eigen::Map<const Eigen::Matrix<double, 6, 7>> jacobian(jacobian_array.data());
+	Eigen::Map<const Eigen::Matrix<double, 7, 1>> dq(robot_state.dq.data());
+
+
+	// motion
+	Eigen::Affine3d current_transform(Eigen::Matrix4d::Map(robot_state.O_T_EE.data()));
+	Eigen::Vector3d position(current_transform.translation());
+	Eigen::Quaterniond orientation(current_transform.linear());
+
+	// calculate pose from desired joints 
+	auto desired_pose = model.pose(franka::Frame::kEndEffector, q_sequence_[step], robot_state.F_T_EE, robot_state.EE_T_K);
+
+	Eigen::Affine3d desired_transform(Eigen::Matrix4d::Map(desired_pose.data()));
+	Eigen::Vector3d position_d(desired_transform.translation());
+	Eigen::Quaterniond orientation_d(desired_transform.linear());
+
+
+	// compute error to desired pose
+	Eigen::Matrix<double, 6, 1> error;
+
+	// position error
+	error.head(3) = position - position_d;
+
+	// orientation error
+	if (orientation_d.coeffs().dot(orientation.coeffs()) < 0.0)
+		orientation.coeffs() = -orientation.coeffs();
+	// "difference" quaternion
+	Eigen::Quaterniond error_quaternion(orientation.inverse() * orientation_d);
+	error.tail(3) << error_quaternion.x(), error_quaternion.y(), error_quaternion.z();
+
+
+	// v_z, o_x, o_y from force
+	error[2] = 0.0;
+	error[3] = 0.0;
+	error[4] = 0.0;
+
+
+	// Transform to base frame todo JHa
+	error.tail(3) = -desired_transform.linear() * error.tail(3);
+	
+
+	std::array<double, 6> vel{};
+	Eigen::VectorXd::Map(&vel[0], 6) = - k_p_ * error;
+
+
+	// debug
+	pose_log_.emplace_back(current_transform);
+	pose_d_log_.emplace_back(desired_transform);
+	error_log_.emplace_back(vel);
+
+
+	// compute control
+	Eigen::VectorXd tau_task(7), tau_d(7);
+
+	// Spring damper system with damping ratio=1
+	tau_task << jacobian.transpose() * (-stiffness_ * error - damping_ * (jacobian * dq));
+	tau_d << tau_task + coriolis;
+
+
+	std::array<double, 7> tau_d_array{};
+	Eigen::VectorXd::Map(&tau_d_array[0], 7) = tau_d;
+	return tau_d_array;
 }
 
 
