@@ -365,6 +365,64 @@ private:
 };
 
 
+/**
+ *************************************************************************
+ *
+ * @class sequence_joint_velocity_motion_generator
+ *
+ * todo
+ *
+ ************************************************************************/
+class sequence_cartesian_velocity_motion_generator
+{
+public:
+	/**
+	 * Creates a new joint_motion_generator instance for a target q.
+	 *
+	 * todo doc
+	 */
+	sequence_cartesian_velocity_motion_generator
+	(double speed_factor,
+		std::vector<std::array<double, 7>> q_sequence,
+		std::mutex& current_state_lock,
+		franka::Robot& robot,
+		const std::atomic_bool& stop_motion_flag);
+
+	~sequence_cartesian_velocity_motion_generator();
+
+	/**
+	 * Sends cartesian position calculations
+	 *
+	 * todo doc
+	 */
+	franka::CartesianVelocities operator()
+		(const franka::RobotState& robot_state,
+			franka::Duration period);
+
+
+private:
+
+	franka::Model model;
+
+	using Vector7d = Eigen::Matrix<double, 7, 1, Eigen::ColMajor>;
+	using Vector7i = Eigen::Matrix<int, 7, 1, Eigen::ColMajor>;
+
+	const std::vector<std::array<double, 7>> q_sequence_;
+
+	double time_ = 0.0;
+	double k_p_ = 2.0;
+
+	std::mutex& current_state_lock_;
+	franka::RobotState& current_state_;
+
+	const std::atomic_bool& stop_motion_;
+
+	std::vector<std::array<double, 6>> error_log_;
+	std::vector<Eigen::Affine3d> pose_log_;
+	std::vector<Eigen::Affine3d> pose_d_log_;
+};
+
+
 } /* namespace detail */
 } /* namespace franka_proxy */
 

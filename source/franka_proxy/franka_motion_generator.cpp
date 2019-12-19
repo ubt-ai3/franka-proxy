@@ -659,5 +659,115 @@ franka::JointVelocities sequence_joint_velocity_motion_generator::operator()
 }
 
 
+sequence_cartesian_velocity_motion_generator::sequence_cartesian_velocity_motion_generator
+(double speed_factor,
+	std::vector<std::array<double, 7>> q_sequence,
+	std::mutex& current_state_lock,
+	franka::Robot& robot,
+	const std::atomic_bool& stop_motion_flag)
+	:
+	model(robot.loadModel()),
+	q_sequence_(std::move(q_sequence)),
+	current_state_lock_(current_state_lock),
+	current_state_(robot.readOnce()),
+	stop_motion_(stop_motion_flag)
+{ }
+
+sequence_cartesian_velocity_motion_generator::~sequence_cartesian_velocity_motion_generator()
+{
+	std::cout << "~sequence_cartesian_velocity_motion_generator()" << std::endl;
+}
+
+
+franka::CartesianVelocities sequence_cartesian_velocity_motion_generator::operator()
+(const franka::RobotState& robot_state,
+	franka::Duration period)
+{
+	time_ += period.toSec();
+
+	{
+		std::lock_guard<std::mutex> state_guard(current_state_lock_);
+		current_state_ = robot_state;
+	}
+
+	if (stop_motion_)
+		throw stop_motion_trigger();  // NOLINT(hicpp-exception-baseclass)
+
+
+	// start motion 
+	if (time_ == 0.0)
+	{
+		if ((Vector7d(robot_state.q_d.data()) - Vector7d(q_sequence_.front().data())).norm() > 0.01)
+			throw std::runtime_error("Aborting; too far away from starting pose!");
+
+		return franka::CartesianVelocities({ 0.,0.,0.,0.,0.,0. });
+	}
+
+	auto step = static_cast<unsigned int>(time_ * 1000.);
+	// finish motion
+	if (step >= q_sequence_.size())
+	{
+		franka::CartesianVelocities output({ 0.,0.,0.,0.,0.,0. });
+		output.motion_finished = true;
+		return output;
+	}
+
+	if (period.toMSec() < 1)
+		throw("Period under 1ms.");
+
+	// motion
+	Eigen::Affine3d current_transform(Eigen::Matrix4d::Map(robot_state.O_T_EE.data()));
+	//auto current_pose = model.pose(franka::Frame::kEndEffector, robot_state.q, robot_state.F_T_EE, robot_state.EE_T_K);
+	//Eigen::Affine3d current_transform(Eigen::Matrix4d::Map(current_pose.data()));
+	pose_log_.emplace_back(current_transform);
+	Eigen::Vector3d position(current_transform.translation());
+	Eigen::Quaterniond orientation(current_transform.linear());
+
+	// calculate pose from desired joints 
+	auto desired_pose = model.pose(franka::Frame::kEndEffector, q_sequence_[step], robot_state.F_T_EE, robot_state.EE_T_K);
+
+	Eigen::Affine3d desired_transform(Eigen::Matrix4d::Map(desired_pose.data()));
+	pose_d_log_.emplace_back(desired_transform);
+	Eigen::Vector3d position_d(desired_transform.translation());
+	Eigen::Quaterniond orientation_d(desired_transform.linear());
+
+
+	// compute error to desired pose
+	Eigen::Matrix<double, 6, 1> error;
+
+	
+	// position error
+	error.head(3) = position - position_d;
+
+
+	// orientation error
+	if (orientation_d.coeffs().dot(orientation.coeffs()) < 0.0)
+		orientation.coeffs() = -orientation.coeffs();
+	// "difference" quaternion
+	Eigen::Quaterniond error_quaternion(orientation.inverse() * orientation_d);
+	error.tail(3) << error_quaternion.x(), error_quaternion.y(), error_quaternion.z();
+
+
+	// v_z, o_x, o_y from force
+	error[2] = 0.0;
+	error[3] = 0.0;
+	error[4] = 0.0;
+
+
+	// Transform to base frame todo JHa
+	error.tail(3) = -desired_transform.linear() * error.tail(3);
+	
+
+	std::array<double, 6> vel{};
+	Eigen::VectorXd::Map(&vel[0], 6) = - k_p_ * error;
+
+	error_log_.emplace_back(vel);
+
+	franka::CartesianVelocities output(vel);
+	output.motion_finished = false;
+	return output;
+}
+
+
 } /* namespace detail */
 } /* namespace franka_proxy */

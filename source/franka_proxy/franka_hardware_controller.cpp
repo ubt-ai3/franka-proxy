@@ -59,6 +59,9 @@ franka_hardware_controller::franka_hardware_controller
 	{
 		// todo
 	}
+
+	// todo JHa
+	robot_.setGuidingMode({ {true, true, true, false, false, true} }, false);
 }
 
 
@@ -315,6 +318,10 @@ void franka_hardware_controller::move_sequence(std::vector<std::array<double, 7>
 		(1., q_sequence, state_lock_, robot_state_, stop_motion_);
 	stop_motion_ = false;
 
+	detail::sequence_cartesian_velocity_motion_generator 
+		sequence_cartesian_velocity(
+		1.0, q_sequence, state_lock_, robot_, stop_motion_);
+
 	try
 	{
 		control_loop_running_.set(true);
@@ -334,15 +341,15 @@ void franka_hardware_controller::move_sequence(std::vector<std::array<double, 7>
 		//	joint_velocity_motion_generator,
 		//	true,
 		//	100.);
-		robot_.control(
-			[&](const franka::RobotState& robot_state,
-				franka::Duration period) -> franka::Torques
-			{
-				return cartesian_impedance_and_force_generator.callback(robot_state, period);
-			},
-			joint_velocity_motion_generator,
-			true,
-			100.);
+		//robot_.control(
+		//	[&](const franka::RobotState& robot_state,
+		//		franka::Duration period) -> franka::Torques
+		//	{
+		//		return cartesian_impedance_and_force_generator.callback(robot_state, period);
+		//	},
+		//	joint_velocity_motion_generator,
+		//	true,
+		//	100.);
 		//robot_.control(
 		//	[&](const franka::RobotState& robot_state,
 		//		franka::Duration period) -> franka::Torques
@@ -351,11 +358,18 @@ void franka_hardware_controller::move_sequence(std::vector<std::array<double, 7>
 		//	},
 		//		true,
 		//		1000.);
-		//robot_.control(
-		//	motion_generator,
-		//	franka::ControllerMode::kJointImpedance,
-		//	true,
-		//	100.);
+		robot_.control(
+			[&](const franka::RobotState& robot_state,
+				franka::Duration period) -> franka::Torques
+			{
+				return cartesian_impedance_generator.callback(robot_state, period);
+			},
+			[&](const franka::RobotState& robot_state,
+				franka::Duration period) {
+				return sequence_cartesian_velocity(robot_state, period);
+			},
+			true,
+			100.);
 
 		LOG_INFO("went ok");
 	}
