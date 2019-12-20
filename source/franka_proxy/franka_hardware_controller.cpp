@@ -322,6 +322,9 @@ void franka_hardware_controller::move_sequence(std::vector<std::array<double, 7>
 		sequence_cartesian_velocity(
 		1.0, q_sequence, state_lock_, robot_, stop_motion_);
 
+	detail::seq_cart_vel_tau_generator scvtg(
+		1.0, q_sequence, state_lock_, robot_state_, robot_, stop_motion_);
+
 	try
 	{
 		control_loop_running_.set(true);
@@ -356,20 +359,28 @@ void franka_hardware_controller::move_sequence(std::vector<std::array<double, 7>
 		//	{
 		//		return cartesian_impedance_generator.callback(robot_state, period);
 		//	},
-		//		true,
-		//		1000.);
+		//	true,
+		//	1000.);
+		//robot_.control(
+		//	[&](const franka::RobotState& robot_state,
+		//		franka::Duration period) -> franka::Torques
+		//	{
+		//		return cartesian_impedance_generator.callback(robot_state, period);
+		//	},
+		//	[&](const franka::RobotState& robot_state,
+		//		franka::Duration period) {
+		//		return sequence_cartesian_velocity(robot_state, period);
+		//	},
+		//	true,
+		//	100.);
 		robot_.control(
 			[&](const franka::RobotState& robot_state,
 				franka::Duration period) -> franka::Torques
 			{
-				return cartesian_impedance_generator.callback(robot_state, period);
-			},
-			[&](const franka::RobotState& robot_state,
-				franka::Duration period) {
-				return sequence_cartesian_velocity(robot_state, period);
+				return scvtg.callback(robot_state, period);
 			},
 			true,
-			100.);
+			1000.);
 
 		LOG_INFO("went ok");
 	}

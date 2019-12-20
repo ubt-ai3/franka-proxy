@@ -444,6 +444,7 @@ public:
 	(double speed_factor,
 		std::vector<std::array<double, 7>> q_sequence,
 		std::mutex& current_state_lock,
+		franka::RobotState& current_state,
 		franka::Robot& robot,
 		const std::atomic_bool& stop_motion_flag);
 
@@ -476,14 +477,22 @@ private:
 
 	const std::atomic_bool& stop_motion_;
 
-	std::vector<std::array<double, 6>> error_log_;
 	std::vector<Eigen::Affine3d> pose_log_;
 	std::vector<Eigen::Affine3d> pose_d_log_;
 
-	const double translational_stiffness_{150.0};
-	const double rotational_stiffness_{10.0};
+	const double translational_stiffness_{500.0};
+	const double rotational_stiffness_{50.0};
 	Eigen::MatrixXd stiffness_;
 	Eigen::MatrixXd damping_;
+
+	const double target_mass{0.3};
+	double desired_mass_{0.0};
+	double filter_gain{0.02};
+
+	std::vector< Eigen::Matrix<double, 6, 1>> error_log_;
+	std::vector< Eigen::Matrix<double, 6, 1>> ft_log_;
+
+	std::vector< Eigen::Matrix<double, 6, 1>> ft_existing_log_;
 };
 
 
