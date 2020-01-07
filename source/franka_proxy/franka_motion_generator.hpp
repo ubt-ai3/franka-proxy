@@ -36,7 +36,7 @@ class contact_stop_trigger {};
 /**
  *************************************************************************
  *
- * @class joint_motion_generator
+ * @class franka_joint_motion_generator
  *
  * An example showing how to generate a joint pose motion to a goal
  * position. Adapted from:
@@ -44,7 +44,7 @@ class contact_stop_trigger {};
  * Control of Robots (Kogan Page Science Paper edition).
  *
  ************************************************************************/
-class joint_motion_generator
+class franka_joint_motion_generator
 {
 public:
 	/**
@@ -53,7 +53,7 @@ public:
 	 * @param[in] speed_factor General speed factor in range [0, 1].
 	 * @param[in] q_goal Target joint positions.
 	 */
-	joint_motion_generator
+	franka_joint_motion_generator
 		(double speed_factor,
 		 std::array<double, 7> q_goal,
 		 std::mutex& current_state_lock,
@@ -451,34 +451,40 @@ public:
 	~seq_cart_vel_tau_generator();
 
 	/**
-	 * Sends cartesian position calculations
-	 *
 	 * todo doc
 	 */
-	franka::Torques callback
+	franka::Torques step
 		(const franka::RobotState& robot_state,
 			franka::Duration period);
 
 
 private:
 
-	franka::Model model;
 
-	using Vector7d = Eigen::Matrix<double, 7, 1, Eigen::ColMajor>;
-	using Vector7i = Eigen::Matrix<int, 7, 1, Eigen::ColMajor>;
+	void update_dq_filter(const franka::RobotState& robot_state);
 
-	const std::vector<std::array<double, 7>> q_sequence_;
+	Eigen::Matrix<double, 7, 1> compute_dq_filtered();
 
-	double time_ = 0.0;
-	double k_p_ = 2.0;
+
+	using eigen_vector7d = Eigen::Matrix<double, 7, 1>;
 
 	std::mutex& current_state_lock_;
 	franka::RobotState& current_state_;
-
 	const std::atomic_bool& stop_motion_;
 
-	std::vector<Eigen::Affine3d> pose_log_;
-	std::vector<Eigen::Affine3d> pose_d_log_;
+
+	franka::Model model;
+
+
+	double time_ = 0.0;
+	bool log_ = true;
+	const std::vector<std::array<double, 7>> q_sequence_;
+
+
+	size_t dq_current_filter_position_ = 0;
+	size_t dq_filter_size_ = 10;
+	std::vector<eigen_vector7d> dq_buffer_;
+
 
 	const double translational_stiffness_{500.0};
 	const double rotational_stiffness_{50.0};
@@ -489,10 +495,12 @@ private:
 	double desired_mass_{0.0};
 	double filter_gain{0.02};
 
-	std::vector< Eigen::Matrix<double, 6, 1>> error_log_;
-	std::vector< Eigen::Matrix<double, 6, 1>> ft_log_;
 
-	std::vector< Eigen::Matrix<double, 6, 1>> ft_existing_log_;
+	std::vector<Eigen::Affine3d> pose_log_;
+	std::vector<Eigen::Affine3d> pose_d_log_;
+	std::vector<Eigen::Matrix<double, 6, 1>> error_log_;
+	std::vector<Eigen::Matrix<double, 6, 1>> ft_log_;
+	std::vector<Eigen::Matrix<double, 6, 1>> ft_existing_log_;
 };
 
 

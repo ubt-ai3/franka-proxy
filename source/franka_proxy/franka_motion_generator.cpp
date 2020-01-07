@@ -16,821 +16,349 @@
 
 namespace franka_proxy
 {
-	namespace detail
+namespace detail
+{
+
+
+//////////////////////////////////////////////////////////////////////////
+//
+// franka_motion_generator
+//
+//////////////////////////////////////////////////////////////////////////
+
+
+franka_joint_motion_generator::franka_joint_motion_generator
+(double speed_factor, const std::array<double, 7> q_goal,
+	std::mutex& current_state_lock,
+	franka::RobotState& current_state,
+	const std::atomic_bool& stop_motion_flag,
+	bool stop_on_contact)
+	:
+	q_goal_(q_goal.data()),
+
+	current_state_lock_(current_state_lock),
+	current_state_(current_state),
+
+	stop_motion_(stop_motion_flag),
+	stop_on_contact_(stop_on_contact)
+{
+	dq_max_ *= speed_factor;
+	ddq_max_start_ *= speed_factor;
+	ddq_max_goal_ *= speed_factor;
+	dq_max_sync_.setZero();
+	q_start_.setZero();
+	delta_q_.setZero();
+	t_1_sync_.setZero();
+	t_2_sync_.setZero();
+	t_f_sync_.setZero();
+	q_1_.setZero();
+}
+
+
+bool franka_joint_motion_generator::calculateDesiredValues
+(double t, Vector7d* delta_q_d) const
+{
+	Vector7i sign_delta_q;
+	for (int i = 0; i < 7; i++)
 	{
+		if (delta_q_[i] < 0)
+			sign_delta_q[i] = -1;
+		else
+			sign_delta_q[i] = 1;
+	}
 
+	Vector7d t_d = t_2_sync_ - t_1_sync_;
+	Vector7d delta_t_2_sync_ = t_f_sync_ - t_2_sync_;
+	std::array<bool, 7> joint_motion_finished{};
 
-		//////////////////////////////////////////////////////////////////////////
-		//
-		// franka_motion_generator
-		//
-		//////////////////////////////////////////////////////////////////////////
-
-
-		joint_motion_generator::joint_motion_generator
-		(double speed_factor, const std::array<double, 7> q_goal,
-			std::mutex& current_state_lock,
-			franka::RobotState& current_state,
-			const std::atomic_bool& stop_motion_flag,
-			bool stop_on_contact)
-			:
-			q_goal_(q_goal.data()),
-
-			current_state_lock_(current_state_lock),
-			current_state_(current_state),
-
-			stop_motion_(stop_motion_flag),
-			stop_on_contact_(stop_on_contact)
+	for (size_t i = 0; i < 7; i++)
+	{
+		if (std::abs(delta_q_[i]) < kDeltaQMotionFinished)
 		{
-			dq_max_ *= speed_factor;
-			ddq_max_start_ *= speed_factor;
-			ddq_max_goal_ *= speed_factor;
-			dq_max_sync_.setZero();
-			q_start_.setZero();
-			delta_q_.setZero();
-			t_1_sync_.setZero();
-			t_2_sync_.setZero();
-			t_f_sync_.setZero();
-			q_1_.setZero();
+			(*delta_q_d)[i] = 0;
+			joint_motion_finished[i] = true;
 		}
-
-
-		bool joint_motion_generator::calculateDesiredValues
-		(double t, Vector7d* delta_q_d) const
+		else
 		{
-			Vector7i sign_delta_q;
-			for (int i = 0; i < 7; i++)
+			if (t < t_1_sync_[i])
 			{
-				if (delta_q_[i] < 0)
-					sign_delta_q[i] = -1;
-				else
-					sign_delta_q[i] = 1;
+				(*delta_q_d)[i] = -1.0 / std::pow(t_1_sync_[i], 3.0) * dq_max_sync_[i] * sign_delta_q[i] *
+					(0.5 * t - t_1_sync_[i]) * std::pow(t, 3.0);
 			}
-
-			Vector7d t_d = t_2_sync_ - t_1_sync_;
-			Vector7d delta_t_2_sync_ = t_f_sync_ - t_2_sync_;
-			std::array<bool, 7> joint_motion_finished{};
-
-			for (size_t i = 0; i < 7; i++)
+			else if (t >= t_1_sync_[i] && t < t_2_sync_[i])
 			{
-				if (std::abs(delta_q_[i]) < kDeltaQMotionFinished)
-				{
-					(*delta_q_d)[i] = 0;
-					joint_motion_finished[i] = true;
-				}
-				else
-				{
-					if (t < t_1_sync_[i])
-					{
-						(*delta_q_d)[i] = -1.0 / std::pow(t_1_sync_[i], 3.0) * dq_max_sync_[i] * sign_delta_q[i] *
-							(0.5 * t - t_1_sync_[i]) * std::pow(t, 3.0);
-					}
-					else if (t >= t_1_sync_[i] && t < t_2_sync_[i])
-					{
-						(*delta_q_d)[i] = q_1_[i] + (t - t_1_sync_[i]) * dq_max_sync_[i] * sign_delta_q[i];
-					}
-					else if (t >= t_2_sync_[i] && t < t_f_sync_[i])
-					{
-						(*delta_q_d)[i] = delta_q_[i] +
-							0.5 *
-							(1.0 / std::pow(delta_t_2_sync_[i], 3.0) *
-							(t - t_1_sync_[i] - 2.0 * delta_t_2_sync_[i] - t_d[i]) *
-								std::pow((t - t_1_sync_[i] - t_d[i]), 3.0) +
-								(2.0 * t - 2.0 * t_1_sync_[i] - delta_t_2_sync_[i] - 2.0 * t_d[i])) *
-							dq_max_sync_[i] * sign_delta_q[i];
-					}
-					else
-					{
-						(*delta_q_d)[i] = delta_q_[i];
-						joint_motion_finished[i] = true;
-					}
-				}
+				(*delta_q_d)[i] = q_1_[i] + (t - t_1_sync_[i]) * dq_max_sync_[i] * sign_delta_q[i];
 			}
-			return std::all_of(joint_motion_finished.cbegin(), joint_motion_finished.cend(),
-				[](bool x) { return x; });
-		}
-
-
-		void joint_motion_generator::calculateSynchronizedValues()
-		{
-			Vector7d dq_max_reach(dq_max_);
-			Vector7d t_f = Vector7d::Zero();
-			Vector7d delta_t_2 = Vector7d::Zero();
-			Vector7d t_1 = Vector7d::Zero();
-			Vector7d delta_t_2_sync = Vector7d::Zero();
-			Vector7i sign_delta_q;
-			for (int i = 0; i < 7; i++)
+			else if (t >= t_2_sync_[i] && t < t_f_sync_[i])
 			{
-				if (delta_q_[i] < 0)
-					sign_delta_q[i] = -1;
-				else
-					sign_delta_q[i] = 1;
+				(*delta_q_d)[i] = delta_q_[i] +
+					0.5 *
+					(1.0 / std::pow(delta_t_2_sync_[i], 3.0) *
+					(t - t_1_sync_[i] - 2.0 * delta_t_2_sync_[i] - t_d[i]) *
+						std::pow((t - t_1_sync_[i] - t_d[i]), 3.0) +
+						(2.0 * t - 2.0 * t_1_sync_[i] - delta_t_2_sync_[i] - 2.0 * t_d[i])) *
+					dq_max_sync_[i] * sign_delta_q[i];
 			}
-
-			for (size_t i = 0; i < 7; i++)
+			else
 			{
-				if (std::abs(delta_q_[i]) > kDeltaQMotionFinished)
-				{
-					if (std::abs(delta_q_[i]) < (3.0 / 4.0 * (std::pow(dq_max_[i], 2.0) / ddq_max_start_[i]) +
-						3.0 / 4.0 * (std::pow(dq_max_[i], 2.0) / ddq_max_goal_[i])))
-					{
-						dq_max_reach[i] = std::sqrt(4.0 / 3.0 * delta_q_[i] * sign_delta_q[i] *
-							(ddq_max_start_[i] * ddq_max_goal_[i]) /
-							(ddq_max_start_[i] + ddq_max_goal_[i]));
-					}
-					t_1[i] = 1.5 * dq_max_reach[i] / ddq_max_start_[i];
-					delta_t_2[i] = 1.5 * dq_max_reach[i] / ddq_max_goal_[i];
-					t_f[i] = t_1[i] / 2.0 + delta_t_2[i] / 2.0 + std::abs(delta_q_[i]) / dq_max_reach[i];
-				}
-			}
-			double max_t_f = t_f.maxCoeff();
-			for (size_t i = 0; i < 7; i++)
-			{
-				if (std::abs(delta_q_[i]) > kDeltaQMotionFinished)
-				{
-					double a = 1.5 / 2.0 * (ddq_max_goal_[i] + ddq_max_start_[i]);
-					double b = -1.0 * max_t_f * ddq_max_goal_[i] * ddq_max_start_[i];
-					double c = std::abs(delta_q_[i]) * ddq_max_goal_[i] * ddq_max_start_[i];
-					double delta = b * b - 4.0 * a * c;
-					if (delta < 0.0)
-					{
-						delta = 0.0;
-					}
-					dq_max_sync_[i] = (-1.0 * b - std::sqrt(delta)) / (2.0 * a);
-					t_1_sync_[i] = 1.5 * dq_max_sync_[i] / ddq_max_start_[i];
-					delta_t_2_sync[i] = 1.5 * dq_max_sync_[i] / ddq_max_goal_[i];
-					t_f_sync_[i] =
-						(t_1_sync_)[i] / 2.0 + delta_t_2_sync[i] / 2.0 + std::abs(delta_q_[i] / dq_max_sync_[i]);
-					t_2_sync_[i] = (t_f_sync_)[i] - delta_t_2_sync[i];
-					q_1_[i] = (dq_max_sync_)[i] * sign_delta_q[i] * (0.5 * (t_1_sync_)[i]);
-				}
+				(*delta_q_d)[i] = delta_q_[i];
+				joint_motion_finished[i] = true;
 			}
 		}
+	}
+	return std::all_of(joint_motion_finished.cbegin(), joint_motion_finished.cend(),
+		[](bool x) { return x; });
+}
 
 
-		bool joint_motion_generator::colliding(const franka::RobotState& state)
+void franka_joint_motion_generator::calculateSynchronizedValues()
+{
+	Vector7d dq_max_reach(dq_max_);
+	Vector7d t_f = Vector7d::Zero();
+	Vector7d delta_t_2 = Vector7d::Zero();
+	Vector7d t_1 = Vector7d::Zero();
+	Vector7d delta_t_2_sync = Vector7d::Zero();
+	Vector7i sign_delta_q;
+	for (int i = 0; i < 7; i++)
+	{
+		if (delta_q_[i] < 0)
+			sign_delta_q[i] = -1;
+		else
+			sign_delta_q[i] = 1;
+	}
+
+	for (size_t i = 0; i < 7; i++)
+	{
+		if (std::abs(delta_q_[i]) > kDeltaQMotionFinished)
 		{
-			for (double v : state.joint_contact)
-				if (v > 0) return true;
-			for (double v : state.cartesian_contact)
-				if (v > 0) return true;
-			return false;
-		}
-
-
-		franka::JointPositions joint_motion_generator::operator()
-			(const franka::RobotState& robot_state, franka::Duration period)
-		{
-			time_ += period.toSec();
-
+			if (std::abs(delta_q_[i]) < (3.0 / 4.0 * (std::pow(dq_max_[i], 2.0) / ddq_max_start_[i]) +
+				3.0 / 4.0 * (std::pow(dq_max_[i], 2.0) / ddq_max_goal_[i])))
 			{
-				std::lock_guard<std::mutex> state_guard(current_state_lock_);
-				current_state_ = robot_state;
+				dq_max_reach[i] = std::sqrt(4.0 / 3.0 * delta_q_[i] * sign_delta_q[i] *
+					(ddq_max_start_[i] * ddq_max_goal_[i]) /
+					(ddq_max_start_[i] + ddq_max_goal_[i]));
 			}
-
-			if (stop_motion_)
-				throw stop_motion_trigger();
-
-			if (stop_on_contact_ && colliding(robot_state))
-				throw contact_stop_trigger();
-
-
-			if (time_ == 0.0)
+			t_1[i] = 1.5 * dq_max_reach[i] / ddq_max_start_[i];
+			delta_t_2[i] = 1.5 * dq_max_reach[i] / ddq_max_goal_[i];
+			t_f[i] = t_1[i] / 2.0 + delta_t_2[i] / 2.0 + std::abs(delta_q_[i]) / dq_max_reach[i];
+		}
+	}
+	double max_t_f = t_f.maxCoeff();
+	for (size_t i = 0; i < 7; i++)
+	{
+		if (std::abs(delta_q_[i]) > kDeltaQMotionFinished)
+		{
+			double a = 1.5 / 2.0 * (ddq_max_goal_[i] + ddq_max_start_[i]);
+			double b = -1.0 * max_t_f * ddq_max_goal_[i] * ddq_max_start_[i];
+			double c = std::abs(delta_q_[i]) * ddq_max_goal_[i] * ddq_max_start_[i];
+			double delta = b * b - 4.0 * a * c;
+			if (delta < 0.0)
 			{
-				q_start_ = Vector7d(robot_state.q_d.data());
-				delta_q_ = q_goal_ - q_start_;
-				calculateSynchronizedValues();
+				delta = 0.0;
 			}
-
-			Vector7d delta_q_d;
-			bool motion_finished = calculateDesiredValues(time_, &delta_q_d);
-
-			std::array<double, 7> joint_positions{};
-			Eigen::VectorXd::Map(&joint_positions[0], 7) = (q_start_ + delta_q_d);
-			franka::JointPositions output(joint_positions);
-			output.motion_finished = motion_finished;
-			return output;
+			dq_max_sync_[i] = (-1.0 * b - std::sqrt(delta)) / (2.0 * a);
+			t_1_sync_[i] = 1.5 * dq_max_sync_[i] / ddq_max_start_[i];
+			delta_t_2_sync[i] = 1.5 * dq_max_sync_[i] / ddq_max_goal_[i];
+			t_f_sync_[i] =
+				(t_1_sync_)[i] / 2.0 + delta_t_2_sync[i] / 2.0 + std::abs(delta_q_[i] / dq_max_sync_[i]);
+			t_2_sync_[i] = (t_f_sync_)[i] - delta_t_2_sync[i];
+			q_1_[i] = (dq_max_sync_)[i] * sign_delta_q[i] * (0.5 * (t_1_sync_)[i]);
 		}
+	}
+}
 
 
+bool franka_joint_motion_generator::colliding(const franka::RobotState& state)
+{
+	for (double v : state.joint_contact)
+		if (v > 0) return true;
+	for (double v : state.cartesian_contact)
+		if (v > 0) return true;
+	return false;
+}
 
 
-		//////////////////////////////////////////////////////////////////////////
-		//
-		// force_motion_generator
-		//
-		//////////////////////////////////////////////////////////////////////////
-
-
-		force_motion_generator::force_motion_generator(
-			franka::Robot& robot,
-			double mass,
-			double duration)
-			: model(robot.loadModel()),
-			target_mass(mass),
-			duration(duration),
-			dq_d_({ 0.,0.,0.,0.,0.,0.,0. }),
-			dq_buffer_(dq_filter_size_ * 7, 0)
-		{
-			initial_state_ = robot.readOnce();
-		}
-
-
-		franka::Torques force_motion_generator::callback(const franka::RobotState& robot_state, franka::Duration period)
-		{
-			time_ += period.toSec();
-
-			if (time_ > duration)
-			{
-				// todo this may be wrong!
-				franka::Torques current_torques(robot_state.tau_J);
-				current_torques.motion_finished = true;
-				return current_torques;
-			}
-
-
-			Eigen::Map<const Eigen::Matrix<double, 7, 1> > tau_measured(robot_state.tau_J.data());
-
-			std::array<double, 49> mass_array = model.mass(robot_state);
-			Eigen::Map<const Eigen::Matrix<double, 7, 7> > mass(mass_array.data());
-
-			std::array<double, 7> gravity_array = model.gravity(robot_state);
-			Eigen::Map<const Eigen::Matrix<double, 7, 1> > gravity(gravity_array.data());
-
-			std::array<double, 42> jacobian_array = model.zeroJacobian(franka::Frame::kEndEffector, robot_state);
-			Eigen::Map<const Eigen::Matrix<double, 6, 7> > jacobian(jacobian_array.data());
-
-
-			Eigen::VectorXd desired_force_torque(6), tau_existing(7), tau_desired(7), tau_command(7), tau_J_d(7);
-
-
-			desired_force_torque.setZero();
-			desired_force_torque(2) = desired_mass * -9.81;
-
-
-			tau_existing = tau_measured - gravity;
-			tau_desired = jacobian.transpose() * desired_force_torque;
-			tau_error_integral += period.toSec() * (tau_desired - tau_existing);
-			// FF + PI control
-			tau_command = tau_desired + k_p * (tau_desired - tau_existing) + k_i * tau_error_integral;
-
-			// Smoothly update the mass to reach the desired target value.
-			desired_mass = filter_gain * target_mass + (1 - filter_gain) * desired_mass;
-
-
-			// updateDQFilter
-			update_dq_filter(robot_state);
-
-			// compute torques according to impedance control law
-			// with assumption mass = 0 (robot state does not provide ddq and own measurement too noisy)
-			for (size_t i = 0; i < 7; i++)
-				tau_J_d[i] = (K_P_[i] * (robot_state.q_d[i] - robot_state.q[i]) + K_D_[i] * (dq_d_[i] - compute_dq_filtered(i)));
-
-
-			std::array<double, 7> tau_d_array{};
-			Eigen::VectorXd::Map(&tau_d_array[0], 7) = (tau_command + tau_J_d) * 0.5;
-
-
-			forces_z.push_back(robot_state.O_F_ext_hat_K[2]);
-
-
-			return tau_d_array;
-		}
-
-
-		void force_motion_generator::update_dq_filter(const franka::RobotState& robot_state)
-		{
-			for (int i = 0; i < 7; i++)
-				dq_buffer_[dq_current_filter_position_ * 7 + i] = robot_state.dq[i];
-
-			dq_current_filter_position_ = (dq_current_filter_position_ + 1) % dq_filter_size_;
-		}
-
-
-		double force_motion_generator::compute_dq_filtered(int j)
-		{
-			double value = 0.0;
-			for (size_t i = j; i < 7 * dq_filter_size_; i += 7)
-				value += dq_buffer_[i];
-
-			return value / dq_filter_size_;
-		}
-
-
-
-
-		//////////////////////////////////////////////////////////////////////////
-		//
-		// cartesian_impedance_controller
-		//
-		//////////////////////////////////////////////////////////////////////////
-
-
-		cartesian_impedance_controller::cartesian_impedance_controller
-		(franka::Robot& robot,
-			double translational_stiffness,
-			double rotational_stiffness)
-			:
-			model(robot.loadModel()),
-			initial_state_(robot.readOnce()),
-			initial_transform_(Eigen::Matrix4d::Map(initial_state_.O_T_EE.data())),
-			position_d_(initial_transform_.translation()),
-			orientation_d_(initial_transform_.linear()),
-			stiffness_(6, 6),
-			damping_(6, 6)
-		{
-			stiffness_.setZero();
-			stiffness_.topLeftCorner(3, 3) <<
-				translational_stiffness * Eigen::MatrixXd::Identity(3, 3);
-			stiffness_.bottomRightCorner(3, 3) <<
-				rotational_stiffness * Eigen::MatrixXd::Identity(3, 3);
-			damping_.setZero();
-			damping_.topLeftCorner(3, 3) <<
-				2.0 * sqrt(translational_stiffness) * Eigen::MatrixXd::Identity(3, 3);
-			damping_.bottomRightCorner(3, 3) <<
-				2.0 * sqrt(rotational_stiffness) * Eigen::MatrixXd::Identity(3, 3);
-		}
-
-
-		franka::Torques cartesian_impedance_controller::callback
-		(const franka::RobotState& robot_state,
-			franka::Duration)
-		{
-			Eigen::Affine3d pose_d(Eigen::Matrix4d::Map(robot_state.O_T_EE_d.data()));
-			position_d_ = pose_d.translation();
-			orientation_d_ = pose_d.linear();
-
-			// get state variables
-			std::array<double, 7> coriolis_array = model.coriolis(robot_state);
-			std::array<double, 42> jacobian_array =
-				model.zeroJacobian(franka::Frame::kEndEffector, robot_state);
-
-			// convert to Eigen
-			Eigen::Map<const Eigen::Matrix<double, 7, 1>> coriolis(coriolis_array.data());
-			Eigen::Map<const Eigen::Matrix<double, 6, 7>> jacobian(jacobian_array.data());
-			Eigen::Map<const Eigen::Matrix<double, 7, 1>> q(robot_state.q.data());
-			Eigen::Map<const Eigen::Matrix<double, 7, 1>> dq(robot_state.dq.data());
-			Eigen::Affine3d transform(Eigen::Matrix4d::Map(robot_state.O_T_EE.data()));
-			Eigen::Vector3d position(transform.translation());
-			Eigen::Quaterniond orientation(transform.linear());
-
-			// compute error to desired equilibrium pose
-			// position error
-			Eigen::Matrix<double, 6, 1> error;
-			error.head(3) << position - position_d_;
-
-			// orientation error
-			// "difference" quaternion
-			if (orientation_d_.coeffs().dot(orientation.coeffs()) < 0.0)
-			{
-				orientation.coeffs() << -orientation.coeffs();
-			}
-			// "difference" quaternion
-			Eigen::Quaterniond error_quaternion(orientation.inverse() * orientation_d_);
-			error.tail(3) << error_quaternion.x(), error_quaternion.y(), error_quaternion.z();
-			// Transform to base frame
-			error.tail(3) << -transform.linear() * error.tail(3);
-
-			// compute control
-			Eigen::VectorXd tau_task(7), tau_d(7);
-
-			// Spring damper system with damping ratio=1
-			tau_task << jacobian.transpose() * (-stiffness_ * error - damping_ * (jacobian * dq));
-			tau_d << tau_task + coriolis;
-
-			std::array<double, 7> tau_d_array{};
-			Eigen::VectorXd::Map(&tau_d_array[0], 7) = tau_d;
-			return tau_d_array;
-		}
-
-
-		//////////////////////////////////////////////////////////////////////////
-		//
-		// cartesian_impedance_and_force_controller
-		//
-		//////////////////////////////////////////////////////////////////////////
-
-
-		cartesian_impedance_and_force_controller::cartesian_impedance_and_force_controller
-		(franka::Robot& robot,
-			double translational_stiffness,
-			double rotational_stiffness)
-			:
-			model(robot.loadModel()),
-			initial_state_(robot.readOnce()),
-			initial_transform_(Eigen::Matrix4d::Map(initial_state_.O_T_EE.data())),
-			position_d_(initial_transform_.translation()),
-			orientation_d_(initial_transform_.linear()),
-			stiffness_(6, 6),
-			damping_(6, 6),
-			target_mass(0.5)
-		{
-			stiffness_.setZero();
-			stiffness_.topLeftCorner(3, 3) <<
-				translational_stiffness * Eigen::MatrixXd::Identity(3, 3);
-			stiffness_.bottomRightCorner(3, 3) <<
-				rotational_stiffness * Eigen::MatrixXd::Identity(3, 3);
-			damping_.setZero();
-			damping_.topLeftCorner(3, 3) <<
-				2.0 * sqrt(translational_stiffness) * Eigen::MatrixXd::Identity(3, 3);
-			damping_.bottomRightCorner(3, 3) <<
-				2.0 * sqrt(rotational_stiffness) * Eigen::MatrixXd::Identity(3, 3);
-		}
-
-
-		franka::Torques cartesian_impedance_and_force_controller::callback
-		(const franka::RobotState& robot_state,
-			franka::Duration period)
-		{
-			Eigen::Affine3d pose_d(Eigen::Matrix4d::Map(robot_state.O_T_EE_d.data()));
-			position_d_ = pose_d.translation();
-			orientation_d_ = pose_d.linear();
-
-			// get state variables
-			std::array<double, 7> coriolis_array = model.coriolis(robot_state);
-			std::array<double, 42> jacobian_array =
-				model.zeroJacobian(franka::Frame::kEndEffector, robot_state);
-
-			// convert to Eigen
-			Eigen::Map<const Eigen::Matrix<double, 7, 1>> coriolis(coriolis_array.data());
-			Eigen::Map<const Eigen::Matrix<double, 6, 7>> jacobian(jacobian_array.data());
-			Eigen::Map<const Eigen::Matrix<double, 7, 1>> q(robot_state.q.data());
-			Eigen::Map<const Eigen::Matrix<double, 7, 1>> dq(robot_state.dq.data());
-			Eigen::Map<const Eigen::Matrix<double, 7, 1>> dq_d(robot_state.dq_d.data());
-			Eigen::Affine3d transform(Eigen::Matrix4d::Map(robot_state.O_T_EE.data()));
-			Eigen::Vector3d position(transform.translation());
-			Eigen::Quaterniond orientation(transform.linear());
-
-			// compute error to desired equilibrium pose
-			// position error
-			Eigen::Matrix<double, 6, 1> error;
-			error.head(3) << position - position_d_;
-
-			// orientation error
-			// "difference" quaternion
-			if (orientation_d_.coeffs().dot(orientation.coeffs()) < 0.0)
-			{
-				orientation.coeffs() << -orientation.coeffs();
-			}
-			// "difference" quaternion
-			Eigen::Quaterniond error_quaternion(orientation.inverse() * orientation_d_);
-			error.tail(3) << error_quaternion.x(), error_quaternion.y(), error_quaternion.z();
-			// Transform to base frame
-			error.tail(3) << -transform.linear() * error.tail(3);
-
-			// compute control
-			Eigen::VectorXd tau_task(7), tau_d(7);
-
-			Eigen::Matrix<double, 6, 1> cart_pos_xy_error = error;
-			cart_pos_xy_error[2] = cart_pos_xy_error[3] = cart_pos_xy_error[4] = 0;
-			Eigen::Matrix<double, 6, 1> cart_vel_xy_error = jacobian * (dq_d - dq);
-			cart_vel_xy_error[2] = cart_vel_xy_error[3] = cart_vel_xy_error[4] = 0;
-			// Spring damper system with damping ratio=1
-			Eigen::VectorXd desired_force_torque_cartesian_impedance = (-stiffness_ * cart_pos_xy_error + damping_ * cart_vel_xy_error);
-
-			//static int i = 0;
-			//if (++i % 100 == 0)
-			//	std::cout << desired_force_torque_cartesian_impedance.transpose() << std::endl;
-
-
-
-
-			Eigen::Map<const Eigen::Matrix<double, 7, 1> > tau_measured(robot_state.tau_J.data());
-
-			std::array<double, 49> mass_array = model.mass(robot_state);
-			Eigen::Map<const Eigen::Matrix<double, 7, 7> > mass(mass_array.data());
-
-			std::array<double, 7> gravity_array = model.gravity(robot_state);
-			Eigen::Map<const Eigen::Matrix<double, 7, 1> > gravity(gravity_array.data());
-
-
-			Eigen::VectorXd desired_force_torque_z_force(6), tau_existing(7), tau_desired(7), tau_command(7), tau_J_d(7);
-
-
-			desired_force_torque_z_force.setZero();
-			desired_force_torque_z_force(2) = desired_mass * -9.81;
-
-
-			tau_existing = tau_measured - gravity;
-			tau_existing;
-			tau_desired = jacobian.transpose() * desired_force_torque_z_force;
-			tau_error_integral += period.toSec() * (tau_desired - tau_existing);
-			// FF + PI control
-			tau_command = tau_desired + k_p * (tau_desired - tau_existing) + k_i * tau_error_integral;
-
-			// Smoothly update the mass to reach the desired target value.
-			desired_mass = filter_gain * target_mass + (1 - filter_gain) * desired_mass;
-
-
-			forces_z.push_back(robot_state.O_F_ext_hat_K[2]);
-
-
-			tau_task << (jacobian.transpose() * desired_force_torque_cartesian_impedance);/*  + tau_command) * 0.5;*/
-			tau_d << tau_task + coriolis;
-
-
-			std::array<double, 7> tau_d_array{};
-			Eigen::VectorXd::Map(&tau_d_array[0], 7) = tau_d;
-			return tau_d_array;
-		}
-
-
-
-		//////////////////////////////////////////////////////////////////////////
-		//
-		// sequence_joint_position_motion_generator
-		//
-		//////////////////////////////////////////////////////////////////////////
-
-
-
-		sequence_joint_position_motion_generator::sequence_joint_position_motion_generator
-		(double speed_factor,
-			std::vector<std::array<double, 7>> q_sequence,
-			std::mutex& current_state_lock,
-			franka::RobotState& current_state,
-			const std::atomic_bool& stop_motion_flag)
-			:
-			q_sequence_(std::move(q_sequence)),
-			current_state_lock_(current_state_lock),
-			current_state_(current_state),
-			stop_motion_(stop_motion_flag)
-		{ }
-
-
-		franka::JointPositions sequence_joint_position_motion_generator::operator()
-			(const franka::RobotState& robot_state,
-				franka::Duration period)
-		{
-			time_ += period.toSec();
-
-			{
-				std::lock_guard<std::mutex> state_guard(current_state_lock_);
-				current_state_ = robot_state;
-			}
-
-			if (stop_motion_)
-				throw stop_motion_trigger();  // NOLINT(hicpp-exception-baseclass)
-
-
-			// start motion 
-			if (time_ == 0.0)
-				if ((Vector7d(robot_state.q_d.data()) - Vector7d(q_sequence_.front().data())).norm() > 0.01)
-					throw std::runtime_error("Aborting; too far away from starting pose!");
-
-
-			auto step = static_cast<unsigned int>(time_ * 1000.);
-			// finish motion
-			if (step >= q_sequence_.size())
-			{
-				franka::JointPositions output(q_sequence_.back());
-				output.motion_finished = true;
-				return output;
-			}
-
-
-			// motion
-			franka::JointPositions output(q_sequence_[step]);
-			output.motion_finished = false;
-			return output;
-		}
-
-
-		sequence_joint_velocity_motion_generator::sequence_joint_velocity_motion_generator
-		(double speed_factor,
-			std::vector<std::array<double, 7>> q_sequence,
-			std::mutex& current_state_lock,
-			franka::RobotState& current_state,
-			const std::atomic_bool& stop_motion_flag)
-			:
-			q_sequence_(std::move(q_sequence)),
-			current_state_lock_(current_state_lock),
-			current_state_(current_state),
-			stop_motion_(stop_motion_flag)
-		{ }
-
-
-		franka::JointVelocities sequence_joint_velocity_motion_generator::operator()
-			(const franka::RobotState& robot_state,
-				franka::Duration period)
-		{
-			time_ += period.toSec();
-
-			{
-				std::lock_guard<std::mutex> state_guard(current_state_lock_);
-				current_state_ = robot_state;
-			}
-
-			if (stop_motion_)
-				throw stop_motion_trigger();  // NOLINT(hicpp-exception-baseclass)
-
-
-			// start motion 
-			if (time_ == 0.0)
-			{
-				if ((Vector7d(robot_state.q_d.data()) - Vector7d(q_sequence_.front().data())).norm() > 0.01)
-					throw std::runtime_error("Aborting; too far away from starting pose!");
-
-				return franka::JointVelocities({ 0.,0.,0.,0.,0.,0.,0. });
-			}
-
-			auto step = static_cast<unsigned int>(time_ * 1000.);
-			// finish motion
-			if (step >= q_sequence_.size())
-			{
-				franka::JointVelocities output({ 0.,0.,0.,0.,0.,0.,0. });
-				output.motion_finished = true;
-				return output;
-			}
-
-			if (period.toMSec() < 1)
-				throw("Period under 1ms.");
-
-			// motion
-			Vector7d q_(robot_state.q.data());
-			Vector7d q_seq(q_sequence_[step].data());
-
-			std::array<double, 7> vel{};
-			Eigen::VectorXd::Map(&vel[0], 7) = k_p_ * (q_seq - q_);// *period.toMSec(); // todo hack
-
-			franka::JointVelocities output(vel);
-			output.motion_finished = false;
-			return output;
-		}
-
-
-		sequence_cartesian_velocity_motion_generator::sequence_cartesian_velocity_motion_generator
-		(double speed_factor,
-			std::vector<std::array<double, 7>> q_sequence,
-			std::mutex& current_state_lock,
-			franka::Robot& robot,
-			const std::atomic_bool& stop_motion_flag)
-			:
-			model(robot.loadModel()),
-			q_sequence_(std::move(q_sequence)),
-			current_state_lock_(current_state_lock),
-			current_state_(robot.readOnce()),
-			stop_motion_(stop_motion_flag)
-		{ }
-
-		sequence_cartesian_velocity_motion_generator::~sequence_cartesian_velocity_motion_generator() = default;
-
-		franka::CartesianVelocities sequence_cartesian_velocity_motion_generator::operator()
-			(const franka::RobotState& robot_state,
-				franka::Duration period)
-		{
-			time_ += period.toSec();
-
-			{
-				std::lock_guard<std::mutex> state_guard(current_state_lock_);
-				current_state_ = robot_state;
-			}
-
-			if (stop_motion_)
-				throw stop_motion_trigger();  // NOLINT(hicpp-exception-baseclass)
-
-
-			// start motion 
-			if (time_ == 0.0)
-			{
-				if ((Vector7d(robot_state.q_d.data()) - Vector7d(q_sequence_.front().data())).norm() > 0.01)
-					throw std::runtime_error("Aborting; too far away from starting pose!");
-
-				return franka::CartesianVelocities({ 0.,0.,0.,0.,0.,0. });
-			}
-
-			auto step = static_cast<unsigned int>(time_ * 1000.);
-			// finish motion
-			if (step >= q_sequence_.size())
-			{
-				franka::CartesianVelocities output({ 0.,0.,0.,0.,0.,0. });
-				output.motion_finished = true;
-				return output;
-			}
-
-			// todo remove
-			if (period.toMSec() < 1)
-				throw std::exception("Period under 1ms.");
-
-			// motion
-			Eigen::Affine3d current_transform(Eigen::Matrix4d::Map(robot_state.O_T_EE.data()));
-			//auto current_pose = model.pose(franka::Frame::kEndEffector, robot_state.q, robot_state.F_T_EE, robot_state.EE_T_K);
-			//Eigen::Affine3d current_transform(Eigen::Matrix4d::Map(current_pose.data()));
-			pose_log_.emplace_back(current_transform);
-			Eigen::Vector3d position(current_transform.translation());
-			Eigen::Quaterniond orientation(current_transform.linear());
-
-			// calculate pose from desired joints 
-			auto desired_pose = model.pose(franka::Frame::kEndEffector, q_sequence_[step], robot_state.F_T_EE, robot_state.EE_T_K);
-
-			Eigen::Affine3d desired_transform(Eigen::Matrix4d::Map(desired_pose.data()));
-			pose_d_log_.emplace_back(desired_transform);
-			Eigen::Vector3d position_d(desired_transform.translation());
-			Eigen::Quaterniond orientation_d(desired_transform.linear());
-
-
-			// compute error to desired pose
-			Eigen::Matrix<double, 6, 1> error;
-
-
-			// position error
-			error.head(3) = position - position_d;
-
-
-			// orientation error
-			if (orientation_d.coeffs().dot(orientation.coeffs()) < 0.0)
-				orientation.coeffs() = -orientation.coeffs();
-			// "difference" quaternion
-			Eigen::Quaterniond error_quaternion(orientation.inverse() * orientation_d);
-			error.tail(3) << error_quaternion.x(), error_quaternion.y(), error_quaternion.z();
-
-
-			// v_z, o_x, o_y from force
-			error[2] = 0.0;
-			error[3] = 0.0;
-			error[4] = 0.0;
-
-
-			// Transform to base frame todo JHa
-			error.tail(3) = -desired_transform.linear() * error.tail(3);
-
-
-			std::array<double, 6> vel{};
-			Eigen::VectorXd::Map(&vel[0], 6) = -k_p_ * error;
-
-			error_log_.emplace_back(vel);
-
-			franka::CartesianVelocities output(vel);
-			output.motion_finished = false;
-			return output;
-		}
-
-
-		seq_cart_vel_tau_generator::seq_cart_vel_tau_generator
-		(double speed_factor,
-			std::vector<std::array<double, 7>> q_sequence,
-			std::mutex& current_state_lock,
-			franka::RobotState& current_state,
-			franka::Robot& robot,
-			const std::atomic_bool& stop_motion_flag)
-			:
-			model(robot.loadModel()),
-			q_sequence_(std::move(q_sequence)),
-			current_state_lock_(current_state_lock),
-			current_state_(current_state),
-			stop_motion_(stop_motion_flag),
-			stiffness_(6, 6),
-			damping_(6, 6)
-		{
-			stiffness_.setZero();
-			stiffness_.topLeftCorner(3, 3) <<
-				translational_stiffness_ * Eigen::MatrixXd::Identity(3, 3);
-			stiffness_.bottomRightCorner(3, 3) <<
-				rotational_stiffness_ * Eigen::MatrixXd::Identity(3, 3);
-			damping_.setZero();
-			damping_.topLeftCorner(3, 3) <<
-				2.0 * sqrt(translational_stiffness_) * Eigen::MatrixXd::Identity(3, 3);
-			damping_.bottomRightCorner(3, 3) <<
-				2.0 * sqrt(rotational_stiffness_) * Eigen::MatrixXd::Identity(3, 3);
-		}
-
-
-		seq_cart_vel_tau_generator::~seq_cart_vel_tau_generator()
-		{
-			std::cout << "end" << std::endl;
-		}
-
-
-franka::Torques seq_cart_vel_tau_generator::callback(const franka::RobotState& robot_state, franka::Duration period)
+franka::JointPositions franka_joint_motion_generator::operator()
+	(const franka::RobotState& robot_state, franka::Duration period)
 {
 	time_ += period.toSec();
-	unsigned int step = static_cast<unsigned int>(time_ * 1000.);
 
 	{
 		std::lock_guard<std::mutex> state_guard(current_state_lock_);
 		current_state_ = robot_state;
 	}
 
-
 	if (stop_motion_)
-		throw stop_motion_trigger();  // NOLINT(hicpp-exception-baseclass)
+		throw stop_motion_trigger();
+
+	if (stop_on_contact_ && colliding(robot_state))
+		throw contact_stop_trigger();
 
 
-	// start motion 
 	if (time_ == 0.0)
 	{
-		if ((Vector7d(robot_state.q.data()) - Vector7d(q_sequence_.front().data())).norm() > 0.01)
-			throw std::runtime_error("Aborting; too far away from starting pose!");
+		q_start_ = Vector7d(robot_state.q_d.data());
+		delta_q_ = q_goal_ - q_start_;
+		calculateSynchronizedValues();
 	}
 
-	bool motion_finished = false;
-	// finish motion
-	if (step >= q_sequence_.size())
+	Vector7d delta_q_d;
+	bool motion_finished = calculateDesiredValues(time_, &delta_q_d);
+
+	std::array<double, 7> joint_positions{};
+	Eigen::VectorXd::Map(&joint_positions[0], 7) = (q_start_ + delta_q_d);
+	franka::JointPositions output(joint_positions);
+	output.motion_finished = motion_finished;
+	return output;
+}
+
+
+
+
+//////////////////////////////////////////////////////////////////////////
+//
+// force_motion_generator
+//
+//////////////////////////////////////////////////////////////////////////
+
+
+force_motion_generator::force_motion_generator(
+	franka::Robot& robot,
+	double mass,
+	double duration)
+	: model(robot.loadModel()),
+	target_mass(mass),
+	duration(duration),
+	dq_d_({ 0.,0.,0.,0.,0.,0.,0. }),
+	dq_buffer_(dq_filter_size_ * 7, 0)
+{
+	initial_state_ = robot.readOnce();
+}
+
+
+franka::Torques force_motion_generator::callback(const franka::RobotState& robot_state, franka::Duration period)
+{
+	time_ += period.toSec();
+
+	if (time_ > duration)
 	{
-		step = q_sequence_.size() - 1;
-		motion_finished = true;
+		// todo this may be wrong!
+		franka::Torques current_torques(robot_state.tau_J);
+		current_torques.motion_finished = true;
+		return current_torques;
 	}
 
+
+	Eigen::Map<const Eigen::Matrix<double, 7, 1> > tau_measured(robot_state.tau_J.data());
+
+	std::array<double, 49> mass_array = model.mass(robot_state);
+	Eigen::Map<const Eigen::Matrix<double, 7, 7> > mass(mass_array.data());
+
+	std::array<double, 7> gravity_array = model.gravity(robot_state);
+	Eigen::Map<const Eigen::Matrix<double, 7, 1> > gravity(gravity_array.data());
+
+	std::array<double, 42> jacobian_array = model.zeroJacobian(franka::Frame::kEndEffector, robot_state);
+	Eigen::Map<const Eigen::Matrix<double, 6, 7> > jacobian(jacobian_array.data());
+
+
+	Eigen::VectorXd desired_force_torque(6), tau_existing(7), tau_desired(7), tau_command(7), tau_J_d(7);
+
+
+	desired_force_torque.setZero();
+	desired_force_torque(2) = desired_mass * -9.81;
+
+
+	tau_existing = tau_measured - gravity;
+	tau_desired = jacobian.transpose() * desired_force_torque;
+	tau_error_integral += period.toSec() * (tau_desired - tau_existing);
+	// FF + PI control
+	tau_command = tau_desired + k_p * (tau_desired - tau_existing) + k_i * tau_error_integral;
+
+	// Smoothly update the mass to reach the desired target value.
+	desired_mass = filter_gain * target_mass + (1 - filter_gain) * desired_mass;
+
+
+	// updateDQFilter
+	update_dq_filter(robot_state);
+
+	// compute torques according to impedance control law
+	// with assumption mass = 0 (robot state does not provide ddq and own measurement too noisy)
+	for (size_t i = 0; i < 7; i++)
+		tau_J_d[i] = (K_P_[i] * (robot_state.q_d[i] - robot_state.q[i]) + K_D_[i] * (dq_d_[i] - compute_dq_filtered(i)));
+
+
+	std::array<double, 7> tau_d_array{};
+	Eigen::VectorXd::Map(&tau_d_array[0], 7) = (tau_command + tau_J_d) * 0.5;
+
+
+	forces_z.push_back(robot_state.O_F_ext_hat_K[2]);
+
+
+	return tau_d_array;
+}
+
+
+void force_motion_generator::update_dq_filter(const franka::RobotState& robot_state)
+{
+	for (int i = 0; i < 7; i++)
+		dq_buffer_[dq_current_filter_position_ * 7 + i] = robot_state.dq[i];
+
+	dq_current_filter_position_ = (dq_current_filter_position_ + 1) % dq_filter_size_;
+}
+
+
+double force_motion_generator::compute_dq_filtered(int j)
+{
+	double value = 0.0;
+	for (size_t i = j; i < 7 * dq_filter_size_; i += 7)
+		value += dq_buffer_[i];
+
+	return value / dq_filter_size_;
+}
+
+
+
+
+//////////////////////////////////////////////////////////////////////////
+//
+// cartesian_impedance_controller
+//
+//////////////////////////////////////////////////////////////////////////
+
+
+cartesian_impedance_controller::cartesian_impedance_controller
+(franka::Robot& robot,
+	double translational_stiffness,
+	double rotational_stiffness)
+	:
+	model(robot.loadModel()),
+	initial_state_(robot.readOnce()),
+	initial_transform_(Eigen::Matrix4d::Map(initial_state_.O_T_EE.data())),
+	position_d_(initial_transform_.translation()),
+	orientation_d_(initial_transform_.linear()),
+	stiffness_(6, 6),
+	damping_(6, 6)
+{
+	stiffness_.setZero();
+	stiffness_.topLeftCorner(3, 3) <<
+		translational_stiffness * Eigen::MatrixXd::Identity(3, 3);
+	stiffness_.bottomRightCorner(3, 3) <<
+		rotational_stiffness * Eigen::MatrixXd::Identity(3, 3);
+	damping_.setZero();
+	damping_.topLeftCorner(3, 3) <<
+		2.0 * sqrt(translational_stiffness) * Eigen::MatrixXd::Identity(3, 3);
+	damping_.bottomRightCorner(3, 3) <<
+		2.0 * sqrt(rotational_stiffness) * Eigen::MatrixXd::Identity(3, 3);
+}
+
+
+franka::Torques cartesian_impedance_controller::callback
+(const franka::RobotState& robot_state,
+	franka::Duration)
+{
+	Eigen::Affine3d pose_d(Eigen::Matrix4d::Map(robot_state.O_T_EE_d.data()));
+	position_d_ = pose_d.translation();
+	orientation_d_ = pose_d.linear();
 
 	// get state variables
 	std::array<double, 7> coriolis_array = model.coriolis(robot_state);
@@ -840,19 +368,498 @@ franka::Torques seq_cart_vel_tau_generator::callback(const franka::RobotState& r
 	// convert to Eigen
 	Eigen::Map<const Eigen::Matrix<double, 7, 1>> coriolis(coriolis_array.data());
 	Eigen::Map<const Eigen::Matrix<double, 6, 7>> jacobian(jacobian_array.data());
+	Eigen::Map<const Eigen::Matrix<double, 7, 1>> q(robot_state.q.data());
 	Eigen::Map<const Eigen::Matrix<double, 7, 1>> dq(robot_state.dq.data());
+	Eigen::Affine3d transform(Eigen::Matrix4d::Map(robot_state.O_T_EE.data()));
+	Eigen::Vector3d position(transform.translation());
+	Eigen::Quaterniond orientation(transform.linear());
+
+	// compute error to desired equilibrium pose
+	// position error
+	Eigen::Matrix<double, 6, 1> error;
+	error.head(3) << position - position_d_;
+
+	// orientation error
+	// "difference" quaternion
+	if (orientation_d_.coeffs().dot(orientation.coeffs()) < 0.0)
+	{
+		orientation.coeffs() << -orientation.coeffs();
+	}
+	// "difference" quaternion
+	Eigen::Quaterniond error_quaternion(orientation.inverse() * orientation_d_);
+	error.tail(3) << error_quaternion.x(), error_quaternion.y(), error_quaternion.z();
+	// Transform to base frame
+	error.tail(3) << -transform.linear() * error.tail(3);
+
+	// compute control
+	Eigen::VectorXd tau_task(7), tau_d(7);
+
+	// Spring damper system with damping ratio=1
+	tau_task << jacobian.transpose() * (-stiffness_ * error - damping_ * (jacobian * dq));
+	tau_d << tau_task + coriolis;
+
+	std::array<double, 7> tau_d_array{};
+	Eigen::VectorXd::Map(&tau_d_array[0], 7) = tau_d;
+	return tau_d_array;
+}
+
+
+//////////////////////////////////////////////////////////////////////////
+//
+// cartesian_impedance_and_force_controller
+//
+//////////////////////////////////////////////////////////////////////////
+
+
+cartesian_impedance_and_force_controller::cartesian_impedance_and_force_controller
+(franka::Robot& robot,
+	double translational_stiffness,
+	double rotational_stiffness)
+	:
+	model(robot.loadModel()),
+	initial_state_(robot.readOnce()),
+	initial_transform_(Eigen::Matrix4d::Map(initial_state_.O_T_EE.data())),
+	position_d_(initial_transform_.translation()),
+	orientation_d_(initial_transform_.linear()),
+	stiffness_(6, 6),
+	damping_(6, 6),
+	target_mass(0.5)
+{
+	stiffness_.setZero();
+	stiffness_.topLeftCorner(3, 3) <<
+		translational_stiffness * Eigen::MatrixXd::Identity(3, 3);
+	stiffness_.bottomRightCorner(3, 3) <<
+		rotational_stiffness * Eigen::MatrixXd::Identity(3, 3);
+	damping_.setZero();
+	damping_.topLeftCorner(3, 3) <<
+		2.0 * sqrt(translational_stiffness) * Eigen::MatrixXd::Identity(3, 3);
+	damping_.bottomRightCorner(3, 3) <<
+		2.0 * sqrt(rotational_stiffness) * Eigen::MatrixXd::Identity(3, 3);
+}
+
+
+franka::Torques cartesian_impedance_and_force_controller::callback
+(const franka::RobotState& robot_state,
+	franka::Duration period)
+{
+	Eigen::Affine3d pose_d(Eigen::Matrix4d::Map(robot_state.O_T_EE_d.data()));
+	position_d_ = pose_d.translation();
+	orientation_d_ = pose_d.linear();
+
+	// get state variables
+	std::array<double, 7> coriolis_array = model.coriolis(robot_state);
+	std::array<double, 42> jacobian_array =
+		model.zeroJacobian(franka::Frame::kEndEffector, robot_state);
+
+	// convert to Eigen
+	Eigen::Map<const Eigen::Matrix<double, 7, 1>> coriolis(coriolis_array.data());
+	Eigen::Map<const Eigen::Matrix<double, 6, 7>> jacobian(jacobian_array.data());
+	Eigen::Map<const Eigen::Matrix<double, 7, 1>> q(robot_state.q.data());
+	Eigen::Map<const Eigen::Matrix<double, 7, 1>> dq(robot_state.dq.data());
+	Eigen::Map<const Eigen::Matrix<double, 7, 1>> dq_d(robot_state.dq_d.data());
+	Eigen::Affine3d transform(Eigen::Matrix4d::Map(robot_state.O_T_EE.data()));
+	Eigen::Vector3d position(transform.translation());
+	Eigen::Quaterniond orientation(transform.linear());
+
+	// compute error to desired equilibrium pose
+	// position error
+	Eigen::Matrix<double, 6, 1> error;
+	error.head(3) << position - position_d_;
+
+	// orientation error
+	// "difference" quaternion
+	if (orientation_d_.coeffs().dot(orientation.coeffs()) < 0.0)
+	{
+		orientation.coeffs() << -orientation.coeffs();
+	}
+	// "difference" quaternion
+	Eigen::Quaterniond error_quaternion(orientation.inverse() * orientation_d_);
+	error.tail(3) << error_quaternion.x(), error_quaternion.y(), error_quaternion.z();
+	// Transform to base frame
+	error.tail(3) << -transform.linear() * error.tail(3);
+
+	// compute control
+	Eigen::VectorXd tau_task(7), tau_d(7);
+
+	Eigen::Matrix<double, 6, 1> cart_pos_xy_error = error;
+	cart_pos_xy_error[2] = cart_pos_xy_error[3] = cart_pos_xy_error[4] = 0;
+	Eigen::Matrix<double, 6, 1> cart_vel_xy_error = jacobian * (dq_d - dq);
+	cart_vel_xy_error[2] = cart_vel_xy_error[3] = cart_vel_xy_error[4] = 0;
+	// Spring damper system with damping ratio=1
+	Eigen::VectorXd desired_force_torque_cartesian_impedance = (-stiffness_ * cart_pos_xy_error + damping_ * cart_vel_xy_error);
+
+	//static int i = 0;
+	//if (++i % 100 == 0)
+	//	std::cout << desired_force_torque_cartesian_impedance.transpose() << std::endl;
+
+
+
+
+	Eigen::Map<const Eigen::Matrix<double, 7, 1> > tau_measured(robot_state.tau_J.data());
+
+	std::array<double, 49> mass_array = model.mass(robot_state);
+	Eigen::Map<const Eigen::Matrix<double, 7, 7> > mass(mass_array.data());
+
+	std::array<double, 7> gravity_array = model.gravity(robot_state);
+	Eigen::Map<const Eigen::Matrix<double, 7, 1> > gravity(gravity_array.data());
+
+
+	Eigen::VectorXd desired_force_torque_z_force(6), tau_existing(7), tau_desired(7), tau_command(7), tau_J_d(7);
+
+
+	desired_force_torque_z_force.setZero();
+	desired_force_torque_z_force(2) = desired_mass * -9.81;
+
+
+	tau_existing = tau_measured - gravity;
+	tau_existing;
+	tau_desired = jacobian.transpose() * desired_force_torque_z_force;
+	tau_error_integral += period.toSec() * (tau_desired - tau_existing);
+	// FF + PI control
+	tau_command = tau_desired + k_p * (tau_desired - tau_existing) + k_i * tau_error_integral;
+
+	// Smoothly update the mass to reach the desired target value.
+	desired_mass = filter_gain * target_mass + (1 - filter_gain) * desired_mass;
+
+
+	forces_z.push_back(robot_state.O_F_ext_hat_K[2]);
+
+
+	tau_task << (jacobian.transpose() * desired_force_torque_cartesian_impedance);/*  + tau_command) * 0.5;*/
+	tau_d << tau_task + coriolis;
+
+
+	std::array<double, 7> tau_d_array{};
+	Eigen::VectorXd::Map(&tau_d_array[0], 7) = tau_d;
+	return tau_d_array;
+}
+
+
+
+//////////////////////////////////////////////////////////////////////////
+//
+// sequence_joint_position_motion_generator
+//
+//////////////////////////////////////////////////////////////////////////
+
+
+
+sequence_joint_position_motion_generator::sequence_joint_position_motion_generator
+(double speed_factor,
+	std::vector<std::array<double, 7>> q_sequence,
+	std::mutex& current_state_lock,
+	franka::RobotState& current_state,
+	const std::atomic_bool& stop_motion_flag)
+	:
+	q_sequence_(std::move(q_sequence)),
+	current_state_lock_(current_state_lock),
+	current_state_(current_state),
+	stop_motion_(stop_motion_flag)
+{ }
+
+
+franka::JointPositions sequence_joint_position_motion_generator::operator()
+	(const franka::RobotState& robot_state,
+		franka::Duration period)
+{
+	time_ += period.toSec();
+
+	{
+		std::lock_guard<std::mutex> state_guard(current_state_lock_);
+		current_state_ = robot_state;
+	}
+
+	if (stop_motion_)
+		throw stop_motion_trigger();  // NOLINT(hicpp-exception-baseclass)
+
+
+	// start motion 
+	if (time_ == 0.0)
+		if ((Vector7d(robot_state.q_d.data()) - Vector7d(q_sequence_.front().data())).norm() > 0.01)
+			throw std::runtime_error("Aborting; too far away from starting pose!");
+
+
+	auto step = static_cast<unsigned int>(time_ * 1000.);
+	// finish motion
+	if (step >= q_sequence_.size())
+	{
+		franka::JointPositions output(q_sequence_.back());
+		output.motion_finished = true;
+		return output;
+	}
 
 
 	// motion
+	franka::JointPositions output(q_sequence_[step]);
+	output.motion_finished = false;
+	return output;
+}
+
+
+sequence_joint_velocity_motion_generator::sequence_joint_velocity_motion_generator
+(double speed_factor,
+	std::vector<std::array<double, 7>> q_sequence,
+	std::mutex& current_state_lock,
+	franka::RobotState& current_state,
+	const std::atomic_bool& stop_motion_flag)
+	:
+	q_sequence_(std::move(q_sequence)),
+	current_state_lock_(current_state_lock),
+	current_state_(current_state),
+	stop_motion_(stop_motion_flag)
+{ }
+
+
+franka::JointVelocities sequence_joint_velocity_motion_generator::operator()
+	(const franka::RobotState& robot_state,
+		franka::Duration period)
+{
+	time_ += period.toSec();
+
+	{
+		std::lock_guard<std::mutex> state_guard(current_state_lock_);
+		current_state_ = robot_state;
+	}
+
+	if (stop_motion_)
+		throw stop_motion_trigger();  // NOLINT(hicpp-exception-baseclass)
+
+
+	// start motion 
+	if (time_ == 0.0)
+	{
+		if ((Vector7d(robot_state.q_d.data()) - Vector7d(q_sequence_.front().data())).norm() > 0.01)
+			throw std::runtime_error("Aborting; too far away from starting pose!");
+
+		return franka::JointVelocities({ 0.,0.,0.,0.,0.,0.,0. });
+	}
+
+	auto step = static_cast<unsigned int>(time_ * 1000.);
+	// finish motion
+	if (step >= q_sequence_.size())
+	{
+		franka::JointVelocities output({ 0.,0.,0.,0.,0.,0.,0. });
+		output.motion_finished = true;
+		return output;
+	}
+
+	if (period.toMSec() < 1)
+		throw("Period under 1ms.");
+
+	// motion
+	Vector7d q_(robot_state.q.data());
+	Vector7d q_seq(q_sequence_[step].data());
+
+	std::array<double, 7> vel{};
+	Eigen::VectorXd::Map(&vel[0], 7) = k_p_ * (q_seq - q_);// *period.toMSec(); // todo hack
+
+	franka::JointVelocities output(vel);
+	output.motion_finished = false;
+	return output;
+}
+
+
+sequence_cartesian_velocity_motion_generator::sequence_cartesian_velocity_motion_generator
+(double speed_factor,
+	std::vector<std::array<double, 7>> q_sequence,
+	std::mutex& current_state_lock,
+	franka::Robot& robot,
+	const std::atomic_bool& stop_motion_flag)
+	:
+	model(robot.loadModel()),
+	q_sequence_(std::move(q_sequence)),
+	current_state_lock_(current_state_lock),
+	current_state_(robot.readOnce()),
+	stop_motion_(stop_motion_flag)
+{ }
+
+sequence_cartesian_velocity_motion_generator::~sequence_cartesian_velocity_motion_generator() = default;
+
+franka::CartesianVelocities sequence_cartesian_velocity_motion_generator::operator()
+	(const franka::RobotState& robot_state,
+		franka::Duration period)
+{
+	time_ += period.toSec();
+
+	{
+		std::lock_guard<std::mutex> state_guard(current_state_lock_);
+		current_state_ = robot_state;
+	}
+
+	if (stop_motion_)
+		throw stop_motion_trigger();  // NOLINT(hicpp-exception-baseclass)
+
+
+	// start motion 
+	if (time_ == 0.0)
+	{
+		if ((Vector7d(robot_state.q_d.data()) - Vector7d(q_sequence_.front().data())).norm() > 0.01)
+			throw std::runtime_error("Aborting; too far away from starting pose!");
+
+		return franka::CartesianVelocities({ 0.,0.,0.,0.,0.,0. });
+	}
+
+	auto step = static_cast<unsigned int>(time_ * 1000.);
+	// finish motion
+	if (step >= q_sequence_.size())
+	{
+		franka::CartesianVelocities output({ 0.,0.,0.,0.,0.,0. });
+		output.motion_finished = true;
+		return output;
+	}
+
+	// todo remove
+	if (period.toMSec() < 1)
+		throw std::exception("Period under 1ms.");
+
+	// motion
+	Eigen::Affine3d current_transform(Eigen::Matrix4d::Map(robot_state.O_T_EE.data()));
+	//auto current_pose = model.pose(franka::Frame::kEndEffector, robot_state.q, robot_state.F_T_EE, robot_state.EE_T_K);
+	//Eigen::Affine3d current_transform(Eigen::Matrix4d::Map(current_pose.data()));
+	pose_log_.emplace_back(current_transform);
+	Eigen::Vector3d position(current_transform.translation());
+	Eigen::Quaterniond orientation(current_transform.linear());
+
+	// calculate pose from desired joints 
+	auto desired_pose = model.pose(franka::Frame::kEndEffector, q_sequence_[step], robot_state.F_T_EE, robot_state.EE_T_K);
+
+	Eigen::Affine3d desired_transform(Eigen::Matrix4d::Map(desired_pose.data()));
+	pose_d_log_.emplace_back(desired_transform);
+	Eigen::Vector3d position_d(desired_transform.translation());
+	Eigen::Quaterniond orientation_d(desired_transform.linear());
+
+
+	// compute error to desired pose
+	Eigen::Matrix<double, 6, 1> error;
+
+
+	// position error
+	error.head(3) = position - position_d;
+
+
+	// orientation error
+	if (orientation_d.coeffs().dot(orientation.coeffs()) < 0.0)
+		orientation.coeffs() = -orientation.coeffs();
+	// "difference" quaternion
+	Eigen::Quaterniond error_quaternion(orientation.inverse() * orientation_d);
+	error.tail(3) << error_quaternion.x(), error_quaternion.y(), error_quaternion.z();
+
+
+	// v_z, o_x, o_y from force
+	error[2] = 0.0;
+	error[3] = 0.0;
+	error[4] = 0.0;
+
+
+	// Transform to base frame todo JHa
+	error.tail(3) = -desired_transform.linear() * error.tail(3);
+
+
+	std::array<double, 6> vel{};
+	Eigen::VectorXd::Map(&vel[0], 6) = -k_p_ * error;
+
+	error_log_.emplace_back(vel);
+
+	franka::CartesianVelocities output(vel);
+	output.motion_finished = false;
+	return output;
+}
+
+
+seq_cart_vel_tau_generator::seq_cart_vel_tau_generator
+(double speed_factor,
+	std::vector<std::array<double, 7>> q_sequence,
+	std::mutex& current_state_lock,
+	franka::RobotState& current_state,
+	franka::Robot& robot,
+	const std::atomic_bool& stop_motion_flag)
+	:
+	model(robot.loadModel()),
+	q_sequence_(std::move(q_sequence)),
+	current_state_lock_(current_state_lock),
+	current_state_(current_state),
+	stop_motion_(stop_motion_flag),
+	stiffness_(6, 6),
+	damping_(6, 6),
+	dq_buffer_(6, eigen_vector7d::Zero())
+{
+	stiffness_.setZero();
+	stiffness_.topLeftCorner(3, 3) =
+		translational_stiffness_ * Eigen::MatrixXd::Identity(3, 3);
+	stiffness_.bottomRightCorner(3, 3) =
+		rotational_stiffness_ * Eigen::MatrixXd::Identity(3, 3);
+
+	damping_.setZero();
+	damping_.topLeftCorner(3, 3) =
+		2.0 * sqrt(translational_stiffness_) * Eigen::MatrixXd::Identity(3, 3);
+	damping_.bottomRightCorner(3, 3) =
+		2.0 * sqrt(rotational_stiffness_) * Eigen::MatrixXd::Identity(3, 3);
+}
+
+
+seq_cart_vel_tau_generator::~seq_cart_vel_tau_generator()
+{
+	std::cout << "end" << std::endl;
+}
+
+
+franka::Torques seq_cart_vel_tau_generator::step(const franka::RobotState& robot_state, franka::Duration period)
+{
+	{
+		std::lock_guard<std::mutex> state_guard(current_state_lock_);
+		current_state_ = robot_state;
+	}
+
+	if (stop_motion_)
+		throw stop_motion_trigger();  // NOLINT(hicpp-exception-baseclass)
+
+
+	time_ += period.toSec();
+	bool motion_finished = false;
+	size_t current_step = 
+		static_cast<size_t>(time_ * 1000.);
+
+
+	// motion start
+	if (time_ == 0.0)
+	{
+		if ((eigen_vector7d(robot_state.q.data())
+			- eigen_vector7d(q_sequence_.front().data())).norm() > 0.01)
+			throw std::runtime_error("Aborting; too far away from starting pose!");
+	}
+
+	// motion end
+	if (current_step >= q_sequence_.size())
+	{
+		current_step = q_sequence_.size() - 1;
+		motion_finished = true;
+	}
+
+
+	// get state variables
+	update_dq_filter(robot_state);
+	Eigen::Map<const eigen_vector7d> tau_measured(robot_state.tau_J.data());
+
+	std::array<double, 42> jacobian_array =
+		model.zeroJacobian(franka::Frame::kEndEffector, robot_state);
+	Eigen::Map<const Eigen::Matrix<double, 6, 7>> jacobian(jacobian_array.data());
+
+	std::array<double, 49> mass_array = model.mass(robot_state);
+	Eigen::Map<eigen_vector7d> mass(mass_array.data());
+	std::array<double, 7> coriolis_array = model.coriolis(robot_state);
+	Eigen::Map<eigen_vector7d> coriolis(coriolis_array.data());
+	std::array<double, 7> gravity_array = model.gravity(robot_state);
+	Eigen::Map<eigen_vector7d> gravity(gravity_array.data());
+
+
+	// cartesian motion
 	Eigen::Affine3d transform(Eigen::Matrix4d::Map(robot_state.O_T_EE.data()));
 	Eigen::Vector3d position(transform.translation());
 	Eigen::Quaterniond orientation(transform.linear());
 
 
-
-
 	// calculate pose from desired joints 
-	auto desired_pose = model.pose(franka::Frame::kEndEffector, q_sequence_[step], robot_state.F_T_EE, robot_state.EE_T_K);
+	auto desired_pose = model.pose(franka::Frame::kEndEffector, q_sequence_[current_step], robot_state.F_T_EE, robot_state.EE_T_K);
 	Eigen::Affine3d transform_d(Eigen::Matrix4d::Map(desired_pose.data()));
 	Eigen::Vector3d position_d(transform_d.translation());
 	Eigen::Quaterniond orientation_d(transform_d.linear());
@@ -867,38 +874,22 @@ franka::Torques seq_cart_vel_tau_generator::callback(const franka::RobotState& r
 	// orientation error
 	if (orientation_d.coeffs().dot(orientation.coeffs()) < 0.0)
 		orientation.coeffs() = -orientation.coeffs();
-	// "difference" quaternion
 	Eigen::Quaterniond error_quaternion(orientation.inverse() * orientation_d);
 	error.tail(3) << error_quaternion.x(), error_quaternion.y(), error_quaternion.z();
-
-
-	// Transform to base frame todo JHa
+	// transform to base frame
 	error.tail(3) = -transform_d.linear() * error.tail(3);
 	
 
-	// debug
-	pose_log_.emplace_back(transform);
-	pose_d_log_.emplace_back(transform_d);
-
-
-	// compute control
-	Eigen::VectorXd tau_task(7), tau_d(7);
-
-	// Spring damper system with damping ratio=1
-	Eigen::Matrix<double, 6, 1> ft_cartesian = -stiffness_ * error -damping_ * (jacobian * dq);
+	// spring damper system with damping ratio=1 and filtered dq
+	Eigen::Matrix<double, 6, 1> ft_cartesian_motion = 
+		-stiffness_ * error - damping_ * (jacobian * compute_dq_filtered());
 
 
 
 
 
 
-	Eigen::Map<const Eigen::Matrix<double, 7, 1> > tau_measured(robot_state.tau_J.data());		
 
-	std::array<double, 49> mass_array = model.mass(robot_state);
-	Eigen::Map<const Eigen::Matrix<double, 7, 7> > mass(mass_array.data());
-
-	std::array<double, 7> gravity_array = model.gravity(robot_state);
-	Eigen::Map<const Eigen::Matrix<double, 7, 1> > gravity(gravity_array.data());
 
 	Eigen::VectorXd desired_force_torque_z_force(6), tau_existing(7), tau_desired(7), tau_command(7), tau_J_d(7);
 
@@ -926,17 +917,26 @@ franka::Torques seq_cart_vel_tau_generator::callback(const franka::RobotState& r
 
 
 	// f_z, m_x, m_y from force
-	ft_cartesian[2] = ft_command[2];
+	ft_cartesian_motion[2] = ft_command[2];
 	//ft_cartesian[3] = 0.0;
 	//ft_cartesian[4] = 0.0;
 
-	error_log_.emplace_back(error);
-	ft_log_.emplace_back(ft_cartesian);
-	ft_existing_log_.emplace_back(ft_existing);
+	// compute control
+	Eigen::VectorXd tau_task(7), tau_d(7);
 
-
-	tau_task << jacobian.transpose() * ft_cartesian;
+	tau_task << jacobian.transpose() * ft_cartesian_motion;
 	tau_d << tau_task + coriolis;
+
+
+
+	if (log_)
+	{
+		pose_log_.emplace_back(transform);
+		pose_d_log_.emplace_back(transform_d);
+		error_log_.emplace_back(error);
+		ft_log_.emplace_back(ft_cartesian_motion);
+		ft_existing_log_.emplace_back(ft_existing);
+	}
 
 
 
@@ -948,6 +948,24 @@ franka::Torques seq_cart_vel_tau_generator::callback(const franka::RobotState& r
 	franka::Torques output(tau_d_array);
 	output.motion_finished = motion_finished;
 	return output;
+}
+
+
+void seq_cart_vel_tau_generator::update_dq_filter(const franka::RobotState& robot_state)
+{
+	dq_buffer_[dq_current_filter_position_] = eigen_vector7d(robot_state.dq.data());
+
+	dq_current_filter_position_ = (dq_current_filter_position_ + 1) % dq_filter_size_;
+}
+
+
+Eigen::Matrix<double, 7, 1> seq_cart_vel_tau_generator::compute_dq_filtered()
+{
+	eigen_vector7d value(eigen_vector7d::Zero());
+	for (size_t i = 0; i < dq_filter_size_; ++i)
+		value += dq_buffer_[i];
+
+	return value / dq_filter_size_;
 }
 
 
