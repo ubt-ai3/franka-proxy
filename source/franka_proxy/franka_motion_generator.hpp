@@ -491,10 +491,10 @@ private:
 	Eigen::MatrixXd stiffness_;
 	Eigen::MatrixXd damping_;
 
-	const double target_mass{0.3};
+	const double target_mass{0.5};
 	double desired_mass_{0.0};
-	double filter_gain{0.02};
-
+	double filter_gain{0.05};
+	Eigen::Matrix<double, 6, 1> force_error_integral_{Eigen::Matrix<double, 6, 1>::Zero()};
 
 	std::vector<Eigen::Affine3d> pose_log_;
 	std::vector<Eigen::Affine3d> pose_d_log_;
