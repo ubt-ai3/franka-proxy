@@ -781,7 +781,7 @@ seq_cart_vel_tau_generator::seq_cart_vel_tau_generator
 	stop_motion_(stop_motion_flag),
 	stiffness_(6, 6),
 	damping_(6, 6),
-	dq_buffer_(6, eigen_vector7d::Zero())
+	dq_buffer_(dq_filter_size_, eigen_vector7d::Zero())
 {
 	stiffness_.setZero();
 	stiffness_.topLeftCorner(3, 3) =
@@ -902,8 +902,16 @@ franka::Torques seq_cart_vel_tau_generator::step(const franka::RobotState& robot
 	//auto ft_existing = jacobian * tau_existing;
 	std::array<double, 6> ft_existing_array = robot_state.O_F_ext_hat_K;
 	Eigen::Map<const Eigen::Matrix<double, 6, 1>> ft_existing(ft_existing_array.data());
-	auto ft_command = desired_force_torque_z_force + 1.0 * (desired_force_torque_z_force - ft_existing);
+	Eigen::Matrix<double, 6, 1> ft_existing_from_tau = 
+		(jacobian * jacobian.transpose()).inverse() * jacobian * tau_existing;
 
+	auto ft_command = desired_force_torque_z_force;
+
+	//if (ft_existing_from_tau[2] < 0.0)
+	//{
+	//	force_error_integral_ += period.toSec() * (desired_force_torque_z_force - ft_existing_from_tau);
+	//	ft_command += 1.0 * (desired_force_torque_z_force - ft_existing_from_tau) + 1.0 * force_error_integral_;
+	//}
 	//tau_desired = jacobian.transpose() * desired_force_torque_z_force;
 	//tau_error_integral += period.toSec() * (tau_desired - tau_existing);
 	//// FF + PI control
@@ -924,8 +932,8 @@ franka::Torques seq_cart_vel_tau_generator::step(const franka::RobotState& robot
 	// compute control
 	Eigen::VectorXd tau_task(7), tau_d(7);
 
-	tau_task << jacobian.transpose() * ft_cartesian_motion;
-	tau_d << tau_task + coriolis;
+	tau_task = jacobian.transpose() * ft_cartesian_motion;
+	tau_d = tau_task + coriolis;
 
 
 
@@ -934,7 +942,7 @@ franka::Torques seq_cart_vel_tau_generator::step(const franka::RobotState& robot
 		pose_log_.emplace_back(transform);
 		pose_d_log_.emplace_back(transform_d);
 		error_log_.emplace_back(error);
-		ft_log_.emplace_back(ft_cartesian_motion);
+		ft_log_.emplace_back(ft_command);
 		ft_existing_log_.emplace_back(ft_existing);
 	}
 
