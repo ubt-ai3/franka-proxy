@@ -900,7 +900,7 @@ franka::Torques seq_cart_vel_tau_generator::step(const franka::RobotState& robot
 
 	tau_existing = tau_measured - gravity;
 	//auto ft_existing = jacobian * tau_existing;
-	std::array<double, 6> ft_existing_array = robot_state.O_F_ext_hat_K;
+	auto ft_existing_array = robot_state.O_F_ext_hat_K;
 	Eigen::Map<const Eigen::Matrix<double, 6, 1>> ft_existing(ft_existing_array.data());
 	auto ft_command = desired_force_torque_z_force + 1.0 * (desired_force_torque_z_force - ft_existing);
 
