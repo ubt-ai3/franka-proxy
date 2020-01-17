@@ -1,4 +1,4 @@
-/**
+	/**
  *************************************************************************
  *
  * @file franka_hardware_controller.hpp
@@ -49,8 +49,6 @@ public:
 	virtual ~franka_hardware_controller() noexcept;
 
 
-	void apply_z_force(double mass, double duration);
-
 
 	/**
 	 * Moves the Panda robot to given target; In case
@@ -63,6 +61,7 @@ public:
 	 * of contact, the movement is aborted and false is returned.
 	 */
 	bool move_to_until_contact(const robot_config_7dof& target);
+
 	void stop_movement();
 
 	void set_speed_factor(double speed_factor);
@@ -74,7 +73,7 @@ public:
 	void open_gripper();
 	/** Move the gripper to gripper::min_grasp_width. */
 	void close_gripper();
-	/** Grasp.... todo return bool + implement */
+	/** Grasp. */
 	bool grasp_gripper(double speed, double force);
 
 	franka::GripperState gripper_state() const;
@@ -83,9 +82,31 @@ public:
 	void automatic_error_recovery();
 
 
+
+	void apply_z_force(
+		double mass, 
+		double duration);
+
+	/**
+	 * Starts/Stops the recording callback.
+	 */
 	void start_recording();
 	std::vector<std::array<double, 7>> stop_recording();
-	void move_sequence(std::vector<std::array<double, 7>> q_sequence);
+	
+	/**
+	 * Moves the Panda robot along a given sequence.
+	 */
+	void move_sequence(
+		std::vector<std::array<double, 7>> q_sequence);
+
+	void move_sequence(
+		std::vector<std::array<double, 7>> q_sequence,
+		double f_z);
+
+	void move_sequence(
+		std::vector<std::array<double, 7>> q_sequence,
+		std::vector<std::array<double, 6>> f_sequence,
+		std::array<double, 6> selection_vector);
 
 
 private:

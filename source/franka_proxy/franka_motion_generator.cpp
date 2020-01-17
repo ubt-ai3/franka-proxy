@@ -767,15 +767,17 @@ franka::CartesianVelocities sequence_cartesian_velocity_motion_generator::operat
 
 
 seq_cart_vel_tau_generator::seq_cart_vel_tau_generator
-(double speed_factor,
-	std::vector<std::array<double, 7>> q_sequence,
-	std::mutex& current_state_lock,
+(std::mutex& current_state_lock,
 	franka::RobotState& current_state,
 	franka::Robot& robot,
-	const std::atomic_bool& stop_motion_flag)
+	const std::atomic_bool& stop_motion_flag,
+	std::vector<std::array<double, 7>> q_sequence,
+	std::vector<std::array<double, 6>> f_sequence,
+	std::array<double, 6> selection_vector)
 	:
 	model(robot.loadModel()),
 	q_sequence_(std::move(q_sequence)),
+	f_sequence_(std::move(f_sequence)),
 	current_state_lock_(current_state_lock),
 	current_state_(current_state),
 	stop_motion_(stop_motion_flag),
@@ -797,10 +799,7 @@ seq_cart_vel_tau_generator::seq_cart_vel_tau_generator
 }
 
 
-seq_cart_vel_tau_generator::~seq_cart_vel_tau_generator()
-{
-	std::cout << "end" << std::endl;
-}
+seq_cart_vel_tau_generator::~seq_cart_vel_tau_generator() {}
 
 
 franka::Torques seq_cart_vel_tau_generator::step(const franka::RobotState& robot_state, franka::Duration period)
@@ -836,6 +835,11 @@ franka::Torques seq_cart_vel_tau_generator::step(const franka::RobotState& robot
 	}
 
 
+	// get target variables
+	auto q_d = q_sequence_[current_step];
+	auto f_d = f_sequence_[current_step];
+
+
 	// get state variables
 	update_dq_filter(robot_state);
 	Eigen::Map<const eigen_vector7d> tau_measured(robot_state.tau_J.data());
@@ -859,7 +863,7 @@ franka::Torques seq_cart_vel_tau_generator::step(const franka::RobotState& robot
 
 
 	// calculate pose from desired joints 
-	auto desired_pose = model.pose(franka::Frame::kEndEffector, q_sequence_[current_step], robot_state.F_T_EE, robot_state.EE_T_K);
+	auto desired_pose = model.pose(franka::Frame::kEndEffector, q_d, robot_state.F_T_EE, robot_state.EE_T_K);
 	Eigen::Affine3d transform_d(Eigen::Matrix4d::Map(desired_pose.data()));
 	Eigen::Vector3d position_d(transform_d.translation());
 	Eigen::Quaterniond orientation_d(transform_d.linear());
@@ -923,16 +927,13 @@ franka::Torques seq_cart_vel_tau_generator::step(const franka::RobotState& robot
 	
 
 
+	auto ft_task = ft_cartesian_motion;
+	ft_task[2] = ft_command[2]; // todo use selection vector
 
-	// f_z, m_x, m_y from force
-	ft_cartesian_motion[2] = ft_command[2];
-	//ft_cartesian[3] = 0.0;
-	//ft_cartesian[4] = 0.0;
 
 	// compute control
 	Eigen::VectorXd tau_task(7), tau_d(7);
-
-	tau_task = jacobian.transpose() * ft_cartesian_motion;
+	tau_task = jacobian.transpose() * ft_task;
 	tau_d = tau_task + coriolis;
 
 

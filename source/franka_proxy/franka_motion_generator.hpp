@@ -441,12 +441,13 @@ public:
 	 * todo doc
 	 */
 	seq_cart_vel_tau_generator
-	(double speed_factor,
-		std::vector<std::array<double, 7>> q_sequence,
-		std::mutex& current_state_lock,
+	(std::mutex& current_state_lock,
 		franka::RobotState& current_state,
 		franka::Robot& robot,
-		const std::atomic_bool& stop_motion_flag);
+		const std::atomic_bool& stop_motion_flag,
+		std::vector<std::array<double, 7>> q_sequence,
+		std::vector<std::array<double, 6>> f_sequence,
+		std::array<double, 6> selection_vector);
 
 	~seq_cart_vel_tau_generator();
 
@@ -468,18 +469,19 @@ private:
 
 	using eigen_vector7d = Eigen::Matrix<double, 7, 1>;
 
+
 	std::mutex& current_state_lock_;
 	franka::RobotState& current_state_;
-	const std::atomic_bool& stop_motion_;
+	const std::atomic_bool& stop_motion_; // todo use it!
 
 
 	franka::Model model;
 
 
 	double time_ = 0.0;
-	bool log_ = true;
-	const std::vector<std::array<double, 7>> q_sequence_;
 
+	const std::vector<std::array<double, 7>> q_sequence_;
+	const std::vector<std::array<double, 6>> f_sequence_;
 
 	size_t dq_current_filter_position_ = 0;
 	size_t dq_filter_size_ = 10;
@@ -496,6 +498,9 @@ private:
 	double filter_gain{0.05};
 	Eigen::Matrix<double, 6, 1> force_error_integral_{Eigen::Matrix<double, 6, 1>::Zero()};
 
+
+
+	bool log_ = true;
 	std::vector<Eigen::Affine3d> pose_log_;
 	std::vector<Eigen::Affine3d> pose_d_log_;
 	std::vector<Eigen::Matrix<double, 6, 1>> error_log_;
