@@ -312,11 +312,12 @@ void franka_hardware_controller::move_sequence(std::vector<std::array<double, 7>
 
 
 	std::vector<std::array<double, 6>> f_sequence(q_sequence.size(), {0,0,0,0,0,0});
-	std::array<double, 6> selection_vector{ 1,1,1,1,1,1 };
+	std::vector<std::array<double, 6>> selection_vector_sequence(q_sequence.size(), { 1,1,1,1,1,1 });
 
 
 	stop_motion_ = false;
-	detail::seq_cart_vel_tau_generator motion_generator(state_lock_, robot_state_, robot_, stop_motion_, q_sequence, f_sequence, selection_vector);
+	detail::seq_cart_vel_tau_generator motion_generator(state_lock_, robot_state_, robot_, stop_motion_, q_sequence, f_sequence, selection_vector_sequence);
+
 
 	try
 	{
@@ -364,11 +365,13 @@ void franka_hardware_controller::move_sequence(std::vector<std::array<double, 7>
 	//detail::sequence_joint_velocity_motion_generator joint_velocity_motion_generator(1., q_sequence, state_lock_, robot_state_, stop_motion_);
 	
 
-	std::vector<std::array<double, 6>> f_sequence(q_sequence.size(), { 0,0,f_z,0,0,0 });
-	std::array<double, 6> selection_vector{ 1,1,0,1,1,1 };
+	double f_x = -5.0;
+
+	std::vector<std::array<double, 6>> f_sequence(q_sequence.size(), { f_x,0,f_z,0,0,0 });
+	std::vector<std::array<double, 6>> selection_vector_sequence(q_sequence.size(), { 0,1,0,1,1,1 });
 
 	stop_motion_ = false;
-	detail::seq_cart_vel_tau_generator motion_generator(state_lock_, robot_state_, robot_, stop_motion_, q_sequence, f_sequence, selection_vector);
+	detail::seq_cart_vel_tau_generator motion_generator(state_lock_, robot_state_, robot_, stop_motion_, q_sequence, f_sequence, selection_vector_sequence);
 
 	try
 	{

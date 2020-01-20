@@ -265,7 +265,8 @@ void franka_control_server::process_request(const string& request)
 				execute_exception_to_return_value
 					([&]()
 					{
-						controller_.move_sequence(data);
+						//controller_.move_sequence(data);
+						controller_.move_sequence(data, -5.0);
 						return franka_proxy_messages::success;
 					});
 

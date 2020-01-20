@@ -447,7 +447,7 @@ public:
 		const std::atomic_bool& stop_motion_flag,
 		std::vector<std::array<double, 7>> q_sequence,
 		std::vector<std::array<double, 6>> f_sequence,
-		std::array<double, 6> selection_vector);
+		std::vector<std::array<double, 6>> selection_vector_sequence);
 
 	~seq_cart_vel_tau_generator();
 
@@ -463,8 +463,12 @@ private:
 
 
 	void update_dq_filter(const franka::RobotState& robot_state);
-
 	Eigen::Matrix<double, 7, 1> compute_dq_filtered();
+
+
+	void update_ft_filter(const std::array<double, 6>& current_ft);
+	Eigen::Matrix<double, 6, 1> compute_ft_filtered();
+
 
 
 	using eigen_vector7d = Eigen::Matrix<double, 7, 1>;
@@ -482,7 +486,7 @@ private:
 
 	const std::vector<std::array<double, 7>> q_sequence_;
 	const std::vector<std::array<double, 6>> f_sequence_;
-	std::array<double, 6> selection_vector_;
+	const std::vector<std::array<double, 6>> selection_vector_sequence_;
 
 
 	size_t dq_current_filter_position_ = 0;
@@ -490,12 +494,17 @@ private:
 	std::vector<eigen_vector7d> dq_buffer_;
 
 
-	const double translational_stiffness_{500.0};
-	const double rotational_stiffness_{50.0};
+	size_t ft_current_filter_position_ = 0;
+	size_t ft_filter_size_ = 20;
+	std::vector<Eigen::Matrix<double, 6, 1>> ft_buffer_;
+
+
+	const double translational_stiffness_{300.0};
+	const double rotational_stiffness_{30.0};
 	Eigen::MatrixXd stiffness_;
 	Eigen::MatrixXd damping_;
 
-	const double target_mass{0.5};
+	const double target_mass{0.0};
 	double desired_mass_{0.0};
 	double filter_gain{0.05};
 	Eigen::Matrix<double, 6, 1> force_error_integral_{Eigen::Matrix<double, 6, 1>::Zero()};
