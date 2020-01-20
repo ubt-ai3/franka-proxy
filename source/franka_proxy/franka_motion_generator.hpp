@@ -482,6 +482,8 @@ private:
 
 	const std::vector<std::array<double, 7>> q_sequence_;
 	const std::vector<std::array<double, 6>> f_sequence_;
+	std::array<double, 6> selection_vector_;
+
 
 	size_t dq_current_filter_position_ = 0;
 	size_t dq_filter_size_ = 10;

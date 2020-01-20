@@ -778,6 +778,7 @@ seq_cart_vel_tau_generator::seq_cart_vel_tau_generator
 	model(robot.loadModel()),
 	q_sequence_(std::move(q_sequence)),
 	f_sequence_(std::move(f_sequence)),
+	selection_vector_(std::move(selection_vector)),
 	current_state_lock_(current_state_lock),
 	current_state_(current_state),
 	stop_motion_(stop_motion_flag),
@@ -815,11 +816,10 @@ franka::Torques seq_cart_vel_tau_generator::step(const franka::RobotState& robot
 
 	time_ += period.toSec();
 	bool motion_finished = false;
-	size_t current_step = 
-		static_cast<size_t>(time_ * 1000.);
+	auto current_step = static_cast<size_t>(time_ * 1000.);
 
 
-	// motion start
+	// q_start
 	if (time_ == 0.0)
 	{
 		if ((eigen_vector7d(robot_state.q.data())
@@ -827,7 +827,7 @@ franka::Torques seq_cart_vel_tau_generator::step(const franka::RobotState& robot
 			throw std::runtime_error("Aborting; too far away from starting pose!");
 	}
 
-	// motion end
+	// q_end
 	if (current_step >= q_sequence_.size())
 	{
 		current_step = q_sequence_.size() - 1;
@@ -835,9 +835,10 @@ franka::Torques seq_cart_vel_tau_generator::step(const franka::RobotState& robot
 	}
 
 
+	
 	// get target variables
-	auto q_d = q_sequence_[current_step];
-	auto f_d = f_sequence_[current_step];
+	std::array<double, 7> q_d = q_sequence_[current_step];
+	std::array<double, 6> f_d = f_sequence_[current_step];
 
 
 	// get state variables
@@ -856,7 +857,9 @@ franka::Torques seq_cart_vel_tau_generator::step(const franka::RobotState& robot
 	Eigen::Map<eigen_vector7d> gravity(gravity_array.data());
 
 
-	// cartesian motion
+	
+	// --- cartesian motion ---
+	
 	Eigen::Affine3d transform(Eigen::Matrix4d::Map(robot_state.O_T_EE.data()));
 	Eigen::Vector3d position(transform.translation());
 	Eigen::Quaterniond orientation(transform.linear());
@@ -888,14 +891,13 @@ franka::Torques seq_cart_vel_tau_generator::step(const franka::RobotState& robot
 	Eigen::Matrix<double, 6, 1> ft_cartesian_motion = 
 		-stiffness_ * error - damping_ * (jacobian * compute_dq_filtered());
 
+	// --- cartesian motion end --- 
 
-
-
-
-
-
-
-	Eigen::VectorXd desired_force_torque_z_force(6), tau_existing(7), tau_desired(7), tau_command(7), tau_J_d(7);
+	
+	// --- force motion ---
+	
+	Eigen::Matrix<double, 6, 1> desired_force_torque_z_force;
+	Eigen::Matrix<double, 7, 1> tau_existing, tau_desired, tau_command, tau_J_d;
 
 
 	desired_force_torque_z_force.setZero();
@@ -909,7 +911,9 @@ franka::Torques seq_cart_vel_tau_generator::step(const franka::RobotState& robot
 	Eigen::Matrix<double, 6, 1> ft_existing_from_tau = 
 		(jacobian * jacobian.transpose()).inverse() * jacobian * tau_existing;
 
-	auto ft_command = desired_force_torque_z_force;
+
+	// todo use f_sequence
+	Eigen::Matrix<double, 6, 1> ft_force = desired_force_torque_z_force;
 
 	//if (ft_existing_from_tau[2] < 0.0)
 	//{
@@ -924,17 +928,16 @@ franka::Torques seq_cart_vel_tau_generator::step(const franka::RobotState& robot
 	// Smoothly update the mass to reach the desired target value.
 	desired_mass_ = filter_gain * target_mass + (1 - filter_gain) * desired_mass_;
 
+	Eigen::Matrix<double, 6, 1> ft_task;
+	for (int i = 0; i < 6; ++i)
+		ft_task[i] = selection_vector_[i] * ft_cartesian_motion[i] + (1 - selection_vector_[i]) * ft_force[i];
+
+	// --- force motion end ---
+
 	
-
-
-	auto ft_task = ft_cartesian_motion;
-	ft_task[2] = ft_command[2]; // todo use selection vector
-
-
-	// compute control
-	Eigen::VectorXd tau_task(7), tau_d(7);
-	tau_task = jacobian.transpose() * ft_task;
-	tau_d = tau_task + coriolis;
+	// --- compute control ---
+	Eigen::Matrix<double, 7, 1> tau_task = jacobian.transpose() * ft_task;
+	Eigen::Matrix<double, 7, 1> tau_d = tau_task + coriolis;
 
 
 
@@ -943,17 +946,14 @@ franka::Torques seq_cart_vel_tau_generator::step(const franka::RobotState& robot
 		pose_log_.emplace_back(transform);
 		pose_d_log_.emplace_back(transform_d);
 		error_log_.emplace_back(error);
-		ft_log_.emplace_back(ft_command);
+		ft_log_.emplace_back(ft_force);
 		ft_existing_log_.emplace_back(ft_existing);
 	}
 
 
 
-	//todo
 	std::array<double, 7> tau_d_array{};
 	Eigen::VectorXd::Map(&tau_d_array[0], 7) = tau_d;
-
-
 	franka::Torques output(tau_d_array);
 	output.motion_finished = motion_finished;
 	return output;
@@ -971,6 +971,7 @@ void seq_cart_vel_tau_generator::update_dq_filter(const franka::RobotState& robo
 Eigen::Matrix<double, 7, 1> seq_cart_vel_tau_generator::compute_dq_filtered()
 {
 	eigen_vector7d value(eigen_vector7d::Zero());
+
 	for (size_t i = 0; i < dq_filter_size_; ++i)
 		value += dq_buffer_[i];
 
