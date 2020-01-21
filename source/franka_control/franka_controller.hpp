@@ -43,8 +43,6 @@ public:
 	virtual ~franka_controller() noexcept;
 
 	
-	virtual void apply_z_force(double mass, double duration) = 0;
-
 	virtual void move_to(const robot_config_7dof& target) = 0;
 	void move_to(const Eigen::Affine3d& target);
 	virtual bool move_to_until_contact(const robot_config_7dof& target) = 0;

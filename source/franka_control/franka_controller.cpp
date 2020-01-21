@@ -14,6 +14,7 @@
 #include <viral_core/timer.hpp>
 #include <vector>
 #include "franka_util.hpp"
+#include <iostream>
 
 
 namespace franka_control
@@ -112,7 +113,7 @@ void franka_update_task::task_main()
 }
 
 
-const float franka_update_task::update_timestep_secs_ = 0.01f;
+const float franka_update_task::update_timestep_secs_ = 0.01667f;
 
 
 

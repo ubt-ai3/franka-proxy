@@ -43,12 +43,6 @@ franka_controller_remote::franka_controller_remote
 franka_controller_remote::~franka_controller_remote() noexcept = default;
 
 
-void franka_controller_remote::apply_z_force(double mass, double duration)
-{
-	controller_->apply_z_force(mass ,duration);
-}
-
-
 void franka_controller_remote::move_to(const robot_config_7dof& target)
 {
 	controller_->move_to

@@ -51,8 +51,6 @@ public:
 	~franka_controller_remote() noexcept override;
 
 
-	void apply_z_force(double mass, double duration) override;
-
 	void move_to(const robot_config_7dof& target) override;
 	bool move_to_until_contact(const robot_config_7dof& target) override;
 

@@ -42,13 +42,6 @@ franka_controller_emulated::franka_controller_emulated()
 franka_controller_emulated::~franka_controller_emulated() noexcept = default;
 
 
-void franka_controller_emulated::apply_z_force(double mass, double duration)
-{
-	LOG_ERROR("Not implemented.");
-	throw not_implemented(); // TODO: Throw something else.
-}
-
-
 bool almost_equal(const robot_config_7dof& xes, const robot_config_7dof& array)
 {
 	for (int64 i = 0; i < 7; ++i)
