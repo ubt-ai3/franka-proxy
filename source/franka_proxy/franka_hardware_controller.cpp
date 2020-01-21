@@ -430,12 +430,14 @@ void franka_hardware_controller::state_update_loop()
 		if (control_loop_running_.get())
 			continue;
 
+		try
 		{
 			std::lock_guard<std::mutex> state_guard(state_lock_);
 			robot_state_ = robot_.readOnce();
 			if (gripper_) 
 				gripper_state_ = gripper_->readOnce();
 		}
+		catch (...) {} // Don't propagate ugly error on robot shutdown...
 
 		using namespace std::chrono_literals;
 		std::this_thread::sleep_for(33ms);
