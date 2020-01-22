@@ -17,6 +17,7 @@
 #include <Eigen/Geometry>
 
 #include <viral_core/thread.hpp>
+#include "franka_proxy_client/franka_remote_controller.hpp"
 
 
 namespace franka_control
@@ -65,6 +66,10 @@ public:
 	virtual void update() = 0;
 
 	Eigen::Affine3d current_nsa_T_world() const;
+	
+	virtual void start_recording() = 0;
+	virtual std::vector<std::array<double, 7>> stop_recording() = 0;
+	virtual void move_sequence(std::vector<std::array<double, 7>> sequence) = 0;
 };
 
 

@@ -13,6 +13,18 @@
 #include <viral_core/log.hpp>
 
 #include "franka_proxy_client/franka_remote_controller.hpp"
+#include <iosfwd>
+#include <vector>
+#include <iosfwd>
+#include <vector>
+#include <iosfwd>
+#include <vector>
+#include <iosfwd>
+#include <vector>
+#include <iosfwd>
+#include <vector>
+#include <iosfwd>
+#include <vector>
 
 
 namespace franka_control
@@ -113,6 +125,23 @@ void franka_controller_remote::update()
 	{ controller_->update(); }
 
 
+void franka_controller_remote::start_recording()
+{
+	controller_->start_recording();
+}
+
+
+std::vector<std::array<double, 7>> franka_controller_remote::stop_recording()
+{
+	return controller_->stop_recording();
+}
+
+
+void franka_controller_remote::move_sequence(std::vector<std::array<double, 7>> sequence)
+{
+	controller_->move_to(sequence.front());
+	controller_->move_sequence(sequence);
+}
 
 
 } /* namespace franka_control */

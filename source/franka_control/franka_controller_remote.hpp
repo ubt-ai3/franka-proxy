@@ -71,6 +71,10 @@ public:
 	void update() override;
 
 
+	void start_recording() override;
+	std::vector<std::array<double, 7>> stop_recording() override;
+	void move_sequence(std::vector<std::array<double, 7>> sequence) override;
+	
 private:
 
 	std::unique_ptr<franka_proxy::franka_remote_controller> controller_;

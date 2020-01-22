@@ -224,6 +224,24 @@ void franka_controller_emulated::update()
 }
 
 
+void franka_controller_emulated::start_recording()
+{
+	throw std::exception("not implemented");
+}
+
+
+std::vector<std::array<double, 7>> franka_controller_emulated::stop_recording()
+{
+	throw std::exception("not implemented");
+}
+
+
+void franka_controller_emulated::move_sequence(std::vector<std::array<double, 7>> sequence)
+{
+	throw std::exception("not implemented");
+}
+
+
 const float franka_controller_emulated::max_speed_length_per_sec_ = 200;
 
 
