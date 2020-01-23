@@ -292,22 +292,22 @@ int main()
 
 	std::vector<std::array<double, 7>> record;
 
-	Eigen::Affine3d pose
-		(franka_control::franka_util::fk(
-		(franka_control::robot_config_7dof() 
-			<< 1.08615, 0.044619, 0.227112, -2.26678, -0.059792, 2.27532, 0.605723).finished()).back());
+	//Eigen::Affine3d pose
+	//	(franka_control::franka_util::fk(
+	//	(franka_control::robot_config_7dof() 
+	//		<< 1.08615, 0.044619, 0.227112, -2.26678, -0.059792, 2.27532, 0.605723).finished()).back());
 
-	pose.linear() << 0.707107, 0.707107, 0,
-		0.707107, - 0.707107, -0,
-		0, 0, -1; 
+	//pose.linear() << 0.707107, 0.707107, 0,
+	//	0.707107, - 0.707107, -0,
+	//	0, 0, -1; 
 
-	auto ik_solution = franka_control::franka_util::ik_fast_closest
-		(pose,
-		 franka_control::robot_config_7dof(controller.current_config().data()));
+	//auto ik_solution = franka_control::franka_util::ik_fast_closest
+	//	(pose,
+	//	 franka_control::robot_config_7dof(controller.current_config().data()));
 
-	franka_proxy::robot_config_7dof q{};
-	Eigen::VectorXd::Map(&q[0], 7) = ik_solution;
-	controller.move_to(q);
+	//franka_proxy::robot_config_7dof q{};
+	//Eigen::VectorXd::Map(&q[0], 7) = ik_solution;
+	//controller.move_to(q);
 
 
 	//std::cin.get();
@@ -361,7 +361,8 @@ int main()
 	}
 	
 	std::cin.get();
-
+	std::this_thread::sleep_for(std::chrono::seconds(3));
+	
 	//std::vector<std::array<double, 7>> reserve_record(record.rbegin(), record.rend());
 	//record = lowpass(record, 0.001, 0.016);
 	//controller.move_to({{1.0882, 0.221298, 0.241497, -2.37185, -0.155255, 2.51272, 0.717536}});

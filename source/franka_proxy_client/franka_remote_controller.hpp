@@ -76,7 +76,10 @@ public:
 	 * @throw remote_exception if the movement was unsuccessful.
 	 * @throw viral_core::network_exception if the connection was lost.
 	 */
-	void move_sequence(const std::vector<robot_config_7dof>& sequence);
+	void move_sequence(
+		const std::vector<robot_config_7dof>& q_sequence,
+		const std::vector<std::array<double, 6>>& f_sequence,
+		const std::vector<std::array<double, 6>>& selection_vector_sequence);
 
 
 	/**

@@ -376,8 +376,10 @@ std::vector<std::array<double, 7>> franka_control_client::send_stop_recording_an
 }
 
 
-void franka_control_client::send_move_sequence
-	(const std::vector<std::array<double, 7>>& sequence,
+void franka_control_client::send_move_sequence(
+	const std::vector<std::array<double, 7>>& q_sequence,
+	const std::vector<std::array<double, 6>>& f_sequence,
+	const std::vector<std::array<double, 6>>& selection_vector_sequence,
 	 float timeout_seconds)
 {
 	string command =
@@ -402,12 +404,12 @@ void franka_control_client::send_move_sequence
 
 			// sequence size
 			// todo hton
-			int64 count = sequence.size();
+			int64 count = q_sequence.size();
 			stream_->send_nonblocking
 				(reinterpret_cast<const unsigned char*>(&count), sizeof(int64));
 
 			// data
-			for (const auto& p : sequence)
+			for (const auto& p : q_sequence)
 			{
 				string message;
 				message += (std::to_string(p[0]) + ",").data();
@@ -433,7 +435,60 @@ void franka_control_client::send_move_sequence
 					std::this_thread::sleep_for(std::chrono::milliseconds(100));
 				}
 			}
-			
+
+			// data
+			for (const auto& p : f_sequence)
+			{
+				string message;
+				message += (std::to_string(p[0]) + ",").data();
+				message += (std::to_string(p[1]) + ",").data();
+				message += (std::to_string(p[2]) + ",").data();
+				message += (std::to_string(p[3]) + ",").data();
+				message += (std::to_string(p[4]) + ",").data();
+				message += (std::to_string(p[5])).data();
+				message += '\n';
+
+				// send size and message
+				// todo hton byteorder
+				int64 size = message.size();
+				stream_->send_nonblocking
+				(reinterpret_cast<const unsigned char*>(&size), sizeof(int64));
+				stream_->send_nonblocking
+				(reinterpret_cast<const unsigned char*>(message.data()), message.size());
+
+				if (stream_->pending_send_bytes() > (stream_->buffer_max_size_send * 0.8))
+				{
+					LOG_WARN("Network send buffer is 80 percent used.")
+						std::this_thread::sleep_for(std::chrono::milliseconds(100));
+				}
+			}
+
+			// data
+			for (const auto& p : selection_vector_sequence)
+			{
+				string message;
+				message += (std::to_string(p[0]) + ",").data();
+				message += (std::to_string(p[1]) + ",").data();
+				message += (std::to_string(p[2]) + ",").data();
+				message += (std::to_string(p[3]) + ",").data();
+				message += (std::to_string(p[4]) + ",").data();
+				message += (std::to_string(p[5])).data();
+				message += '\n';
+
+				// send size and message
+				// todo hton byteorder
+				int64 size = message.size();
+				stream_->send_nonblocking
+				(reinterpret_cast<const unsigned char*>(&size), sizeof(int64));
+				stream_->send_nonblocking
+				(reinterpret_cast<const unsigned char*>(message.data()), message.size());
+
+				if (stream_->pending_send_bytes() > (stream_->buffer_max_size_send * 0.8))
+				{
+					LOG_WARN("Network send buffer is 80 percent used.")
+						std::this_thread::sleep_for(std::chrono::milliseconds(100));
+				}
+			}
 			
 			// response	
 			unsigned char return_value;

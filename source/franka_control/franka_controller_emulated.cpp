@@ -42,13 +42,6 @@ franka_controller_emulated::franka_controller_emulated()
 franka_controller_emulated::~franka_controller_emulated() noexcept = default;
 
 
-void franka_controller_emulated::apply_z_force(double mass, double duration)
-{
-	LOG_ERROR("Not implemented.");
-	throw not_implemented(); // TODO: Throw something else.
-}
-
-
 bool almost_equal(const robot_config_7dof& xes, const robot_config_7dof& array)
 {
 	for (int64 i = 0; i < 7; ++i)
@@ -228,6 +221,27 @@ void franka_controller_emulated::update()
 	// This enables changes of state only on update(),
 	// as required by the robot_controller interface.
 	state_joint_values_ = current_joint_values_;
+}
+
+
+void franka_controller_emulated::start_recording()
+{
+	throw std::exception("not implemented");
+}
+
+
+std::vector<std::array<double, 7>> franka_controller_emulated::stop_recording()
+{
+	throw std::exception("not implemented");
+}
+
+
+void franka_controller_emulated::move_sequence(
+	std::vector<std::array<double, 7>> q_sequence,
+	std::vector<std::array<double, 6>> f_sequence, 
+	std::vector<std::array<double, 6>> selection_vector_sequence)
+{
+	throw std::exception("not implemented");
 }
 
 

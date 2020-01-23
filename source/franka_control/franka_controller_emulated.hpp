@@ -38,8 +38,6 @@ public:
 	~franka_controller_emulated() noexcept override;
 
 
-	void apply_z_force(double mass, double duration) override;
-
 	void move_to(const robot_config_7dof& target) override;
 	bool move_to_until_contact(const robot_config_7dof& target) override;
 
@@ -60,6 +58,13 @@ public:
 	void update() override;
 
 
+	void start_recording() override;
+	std::vector<std::array<double, 7>> stop_recording() override;
+	void move_sequence(
+		std::vector<std::array<double, 7>> q_sequence,
+		std::vector<std::array<double, 6>> f_sequence,
+		std::vector<std::array<double, 6>> selection_vector_sequence) override;
+	
 private:
 
 	static const float max_speed_length_per_sec_;
