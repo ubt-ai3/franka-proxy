@@ -236,7 +236,10 @@ std::vector<std::array<double, 7>> franka_controller_emulated::stop_recording()
 }
 
 
-void franka_controller_emulated::move_sequence(std::vector<std::array<double, 7>> sequence)
+void franka_controller_emulated::move_sequence(
+	std::vector<std::array<double, 7>> q_sequence,
+	std::vector<std::array<double, 6>> f_sequence, 
+	std::vector<std::array<double, 6>> selection_vector_sequence)
 {
 	throw std::exception("not implemented");
 }

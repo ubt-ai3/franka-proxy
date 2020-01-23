@@ -137,10 +137,14 @@ std::vector<std::array<double, 7>> franka_controller_remote::stop_recording()
 }
 
 
-void franka_controller_remote::move_sequence(std::vector<std::array<double, 7>> sequence)
+void franka_controller_remote::move_sequence(
+	std::vector<std::array<double, 7>> q_sequence,
+	std::vector<std::array<double, 6>> f_sequence,
+	std::vector<std::array<double, 6>> selection_vector_sequence)
 {
-	controller_->move_to(sequence.front());
-	controller_->move_sequence(sequence);
+	controller_->move_to(q_sequence.front());
+	controller_->move_sequence(q_sequence, f_sequence, selection_vector_sequence);
+	controller_->move_to(q_sequence.back());
 }
 
 

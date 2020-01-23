@@ -101,9 +101,12 @@ void franka_remote_controller::move_to(const robot_config_7dof& target)
 }
 
 
-void franka_remote_controller::move_sequence(const std::vector<robot_config_7dof>& sequence)
+void franka_remote_controller::move_sequence(
+	const std::vector<robot_config_7dof>& q_sequence,
+	const std::vector<std::array<double, 6>>& f_sequence,
+	const std::vector<std::array<double, 6>>& selection_vector_sequence)
 {	
-	return socket_control_->send_move_sequence(sequence);
+	return socket_control_->send_move_sequence(q_sequence, f_sequence, selection_vector_sequence);
 }
 
 

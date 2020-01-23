@@ -69,7 +69,10 @@ public:
 	
 	virtual void start_recording() = 0;
 	virtual std::vector<std::array<double, 7>> stop_recording() = 0;
-	virtual void move_sequence(std::vector<std::array<double, 7>> sequence) = 0;
+	virtual void move_sequence(
+		std::vector<std::array<double, 7>> q_sequence,
+		std::vector<std::array<double, 6>> f_sequence, 
+		std::vector<std::array<double, 6>> selection_vector_sequence) = 0;
 };
 
 
