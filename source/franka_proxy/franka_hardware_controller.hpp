@@ -97,16 +97,16 @@ public:
 	 * Moves the Panda robot along a given sequence.
 	 */
 	void move_sequence(
-		std::vector<std::array<double, 7>> q_sequence);
+		const std::vector<std::array<double, 7>>& q_sequence);
 
 	void move_sequence(
-		std::vector<std::array<double, 7>> q_sequence,
+		const std::vector<std::array<double, 7>>& q_sequence,
 		double f_z);
 
 	void move_sequence(
-		std::vector<std::array<double, 7>> q_sequence,
-		std::vector<std::array<double, 6>> f_sequence,
-		std::array<double, 6> selection_vector);
+		const std::vector<std::array<double, 7>>& q_sequence,
+		const std::vector<std::array<double, 6>>& f_sequence,
+		const std::vector<std::array<double, 6>>& selection_vector);
 
 
 private:

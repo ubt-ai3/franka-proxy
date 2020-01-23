@@ -212,8 +212,8 @@ void franka_control_server::process_request(const string& request)
 			LOG_INFO(count);
 
 
-			std::vector<std::array<double, 7>> data;
-			data.reserve(count);
+			std::vector<std::array<double, 7>> q_data;
+			q_data.reserve(count);
 			for (int64 i = 0; i < count; ++i)
 			{
 				// size
@@ -256,7 +256,98 @@ void franka_control_server::process_request(const string& request)
 
 
 				// emplace position
-				data.emplace_back(joints);
+				q_data.emplace_back(joints);
+			}
+
+			std::vector<std::array<double, 6>> f_data;
+			f_data.reserve(count);
+			for (int64 i = 0; i < count; ++i)
+			{
+				// size
+				int64 size;
+				while (!stream_->try_receive_nonblocking
+				(reinterpret_cast<unsigned char*>(&size), sizeof(int64), false))
+					stream_->update();
+				// todo ntoh byteorder
+
+
+				// data
+				network_buffer network_data = network_buffer();
+				network_data.resize(size);
+				while (!stream_->try_receive_nonblocking
+				(network_data.data(), size, false))
+					stream_->update();
+
+
+				// extract data
+				string tmp(reinterpret_cast<const char*>(network_data.data()), network_data.size());
+				list<string> joint_values_list;
+				tmp.split(',', joint_values_list);
+
+				if (joint_values_list.size() != 6)
+				{
+					LOG_WARN("Force values message does not have 6 values");
+					continue;
+				}
+
+				std::array<double, 6> joints
+				{ {
+						strtod(joint_values_list[0].data(), nullptr),
+						strtod(joint_values_list[1].data(), nullptr),
+						strtod(joint_values_list[2].data(), nullptr),
+						strtod(joint_values_list[3].data(), nullptr),
+						strtod(joint_values_list[4].data(), nullptr),
+						strtod(joint_values_list[5].data(), nullptr)
+				} };
+
+
+				// emplace position
+				f_data.emplace_back(joints);
+			}
+
+			std::vector<std::array<double, 6>> s_data;
+			s_data.reserve(count);			for (int64 i = 0; i < count; ++i)
+			{
+				// size
+				int64 size;
+				while (!stream_->try_receive_nonblocking
+				(reinterpret_cast<unsigned char*>(&size), sizeof(int64), false))
+					stream_->update();
+				// todo ntoh byteorder
+
+
+				// data
+				network_buffer network_data = network_buffer();
+				network_data.resize(size);
+				while (!stream_->try_receive_nonblocking
+				(network_data.data(), size, false))
+					stream_->update();
+
+
+				// extract data
+				string tmp(reinterpret_cast<const char*>(network_data.data()), network_data.size());
+				list<string> joint_values_list;
+				tmp.split(',', joint_values_list);
+
+				if (joint_values_list.size() != 6)
+				{
+					LOG_WARN("Selection vector message does not have 6 values.");
+					continue;
+				}
+
+				std::array<double, 6> joints
+				{ {
+						strtod(joint_values_list[0].data(), nullptr),
+						strtod(joint_values_list[1].data(), nullptr),
+						strtod(joint_values_list[2].data(), nullptr),
+						strtod(joint_values_list[3].data(), nullptr),
+						strtod(joint_values_list[4].data(), nullptr),
+						strtod(joint_values_list[5].data(), nullptr)
+				} };
+
+
+				// emplace position
+				s_data.emplace_back(joints);
 			}
 
 			LOG_INFO("receveid data.");
@@ -265,8 +356,8 @@ void franka_control_server::process_request(const string& request)
 				execute_exception_to_return_value
 					([&]()
 					{
-						//controller_.move_sequence(data);
-						controller_.move_sequence(data, -5.0);
+						controller_.move_sequence(q_data, f_data, s_data);
+						//controller_.move_sequence(data, -5.0);
 						return franka_proxy_messages::success;
 					});
 
