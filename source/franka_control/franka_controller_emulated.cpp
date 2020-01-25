@@ -35,6 +35,10 @@ franka_controller_emulated::franka_controller_emulated()
 	speed_normalized_(0.f),
 	gripper_open_(false),
 
+state_joint_values_((robot_config_7dof() << 0.001079, 0.573482, 0.097172, -1.94773, -0.099817, 2.47049, 0.906731).finished()),
+	current_joint_values_((robot_config_7dof() << 0.001079, 0.573482, 0.097172, -1.94773, -0.099817, 2.47049, 0.906731).finished()),
+	next_waymark_((robot_config_7dof() << 0.001079, 0.573482, 0.097172, -1.94773, -0.099817, 2.47049, 0.906731).finished()),
+
 	max_gripper_pos_(50)
 { }
 
@@ -191,20 +195,24 @@ void franka_controller_emulated::update()
 	// Move robot joints by given length.
 	// We possibly must fetch new waymarks,
 	// maybe multiple times in one update().
-	while (true)
-	{
+	//
+	// TODO
+	//while (true)
+	//{
 		double length_to_next =
 			length(next_waymark_ - current_joint_values_);
 
-
+		if (length_to_next < 0.001)
+			return;
+		
 		// If the next waymark is in reach, move there.
 		// Further handling in the above.
-		if (length_to_next < move_length)
-		{
-			current_joint_values_ = next_waymark_;
-			move_length -= length_to_next;
-			continue;
-		}
+		//if (length_to_next < move_length)
+		//{
+		//	current_joint_values_ = next_waymark_;
+		//	move_length -= length_to_next;
+		//	continue;
+		//}
 
 
 		// Move into the direction of the next waymark,
@@ -213,8 +221,8 @@ void franka_controller_emulated::update()
 			(next_waymark_ - current_joint_values_) *
 				(move_length / length_to_next);
 
-		break;
-	}
+	//	break;
+	//}
 
 
 	// Copy from process variables to exposed state.
