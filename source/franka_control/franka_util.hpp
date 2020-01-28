@@ -66,7 +66,14 @@ public:
 		 const robot_config_7dof& current_configuration,
 		 double stepsize = 0.174533);
 
+	static double tool_mass();
+	static Eigen::Vector3d tool_center_of_mass();
+	static Eigen::Matrix3d tool_inertia();
+
 	static const joint_limit joint_limits_[];
+
+private:
+	static Eigen::Matrix3d a_tilde(const Eigen::Vector3d& a);
 };
 
 

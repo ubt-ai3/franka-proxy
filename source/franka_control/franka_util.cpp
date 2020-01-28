@@ -259,6 +259,146 @@ robot_config_7dof franka_util::ik_fast_closest
 }
 
 
+double franka_util::tool_mass()
+{
+	const double m_print1 = 0.01,
+		m_fts = 0.372,
+		m_print2 = 0.029,
+		m_gripper = 0.73,
+		m_camera = 0.09;
+
+	return m_print1 + m_fts + m_print2 + m_gripper + m_camera;
+}
+
+
+Eigen::Vector3d franka_util::tool_center_of_mass()
+{
+	const double
+		m_print1 = 0.01,
+		m_fts = 0.372,
+		m_print2 = 0.029,
+		m_gripper = 0.73,
+		m_camera = 0.09;
+
+	const Eigen::Vector3d
+		c_print1(0, 0, 0.001),
+		c_fts(0, 0, 0.0175),
+		c_print2(0, 0, 0.043),
+		c_gripper(-0.007, -0.007, 0.083),
+		c_camera(-0.028, 0.028, 0.103);
+
+	return m_print1 * c_print1 + m_fts * c_fts + m_print2 * c_print2 + m_gripper * c_gripper + m_camera * c_camera;
+}
+
+
+Eigen::Matrix3d franka_util::tool_inertia()
+{
+	const double
+		m_print1 = 0.01,
+		m_fts = 0.372,
+		m_print2 = 0.029,
+		m_gripper = 0.73,
+		m_camera = 0.09;
+
+	const Eigen::Vector3d
+		c_print1(0, 0, 0.001),
+		c_fts(0, 0, 0.0175),
+		c_print2(0, 0, 0.043),
+		c_gripper(-0.00707107, -0.00707107, 0.083),
+		c_camera(-0.028, 0.028, 0.103);
+
+	const Eigen::Vector3d c(tool_center_of_mass());
+
+
+	// print1 as cylinder
+	Eigen::Matrix3d inertia_print1(Eigen::Matrix3d::Zero());
+	inertia_print1(0, 0) = inertia_print1(1, 1) = 1 / 12. * m_print1 * (3 * 0.0315 * 0.0315 + 0.002 * 0.002);
+	inertia_print1(2, 2) = 0.5 * m_print1 * (0.0315 * 0.0315);
+
+	auto a_tilde_print1 = a_tilde(c_print1 - c);
+	const Eigen::Matrix3d inertia_print1_center_of_mass =
+		inertia_print1 + m_print1 * a_tilde_print1.transpose() * a_tilde_print1;
+	
+	
+	// fts as thick-walled cylindrical tube
+	Eigen::Matrix3d inertia_fts(Eigen::Matrix3d::Zero());
+	inertia_fts(0, 0) = inertia_fts(1, 1) = 1 / 12. * m_fts * (3 * (0.04445 * 0.04445 + 0.015 * 0.015) + 0.031 * 0.031);
+	inertia_fts(2, 2) = 0.5 * m_fts * (0.04445 * 0.04445 + 0.015 * 0.015);
+	
+	auto a_tilde_fts = a_tilde(c_fts - c);
+	const Eigen::Matrix3d inertia_fts_center_of_mass =
+		inertia_fts + m_fts * a_tilde_fts.transpose() * a_tilde_fts;
+
+
+	// print2 as cylinder
+	Eigen::Matrix3d inertia_print2(Eigen::Matrix3d::Zero());
+	inertia_print2(0, 0) = inertia_print2(1, 1) = 1 / 12. * m_print2 * (3 * 0.0315 * 0.0315 + 0.02 * 0.02);
+	inertia_print2(2, 2) = 0.5 * m_print2 * (0.0315 * 0.0315);
+
+	auto a_tilde_print2 = a_tilde(c_print2 - c);
+	const Eigen::Matrix3d inertia_print2_center_of_mass =
+		inertia_print2 + m_print2 * a_tilde_print2.transpose() * a_tilde_print2;
+	
+	
+	// gripper with rotation correction
+	Eigen::Matrix3d inertia_gripper(Eigen::Matrix3d::Zero());
+	inertia_gripper(0, 0) = 0.0025;
+	inertia_gripper(1, 1) = 0.001;
+	inertia_gripper(2, 2) = 0.0017;
+
+	inertia_gripper =
+		Eigen::Matrix3d(Eigen::AngleAxisd(
+			135. / 180. * viral_core::geo_constants::pi, Eigen::Vector3d(0, 0, 1))).transpose()
+		* inertia_gripper
+		* Eigen::Matrix3d(Eigen::AngleAxisd(
+			135. / 180. * viral_core::geo_constants::pi, Eigen::Vector3d(0, 0, 1)));
+	
+	auto a_tilde_gripper = a_tilde(c_gripper - c);
+	const Eigen::Matrix3d inertia_gripper_center_of_mass =
+		inertia_gripper + m_gripper * a_tilde_gripper.transpose() * a_tilde_gripper;
+
+
+	// camera as solid cuboid (10 x 3 x 3)
+	Eigen::Matrix3d inertia_camera(Eigen::Matrix3d::Zero());
+	inertia_camera(0, 0) = 1 / 12. * m_camera * (0.1 * 0.1 + 0.03 * 0.03);
+	inertia_camera(1, 1) = 1 / 12. * m_camera * (0.03 * 0.03 + 0.03 * 0.03);
+	inertia_camera(2, 2) = 1 / 12. * m_camera * (0.03 * 0.03 + 0.1 * 0.1);
+
+	inertia_camera =
+		Eigen::Matrix3d(Eigen::AngleAxisd(
+			135. / 180. * viral_core::geo_constants::pi, Eigen::Vector3d(0, 0, 1))).transpose()
+		* inertia_camera
+		* Eigen::Matrix3d(Eigen::AngleAxisd(
+			135. / 180. * viral_core::geo_constants::pi, Eigen::Vector3d(0, 0, 1)));
+
+	auto a_tilde_camera = a_tilde(c_camera - c);
+	const Eigen::Matrix3d inertia_camera_center_of_mass =
+		inertia_camera + m_camera * a_tilde_camera.transpose() * a_tilde_camera;
+	
+
+	return inertia_print1_center_of_mass
+		+ inertia_fts_center_of_mass
+		+ inertia_print2_center_of_mass
+		+ inertia_gripper_center_of_mass
+		+ inertia_camera_center_of_mass;
+}
+
+
+Eigen::Matrix3d franka_util::a_tilde(const Eigen::Vector3d& a)
+{
+	Eigen::Matrix3d a_tilde(Eigen::Matrix3d::Zero());
+	
+	a_tilde(1, 0) = a(2);
+	a_tilde(2, 0) = -a(1);
+	a_tilde(0, 1) = -a(2);
+	a_tilde(2, 1) = a(0);
+	a_tilde(0, 2) = a(1);
+	a_tilde(1, 2) = -a(0);
+	
+	return a_tilde;
+}
+
+
 const joint_limit franka_util::joint_limits_[] =
 {
 	{-2.8973, 2.8973},

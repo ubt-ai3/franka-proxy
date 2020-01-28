@@ -10,11 +10,13 @@
 
 #include "franka_controller.hpp"
 
+#include <vector>
+
 #include <viral_core/log.hpp>
 #include <viral_core/timer.hpp>
-#include <vector>
+#include <viral_core/geo_util.hpp>
+
 #include "franka_util.hpp"
-#include <iostream>
 
 
 namespace franka_control
@@ -31,7 +33,7 @@ using namespace viral_core;
 //////////////////////////////////////////////////////////////////////////
 
 
-franka_controller::franka_controller() {}
+franka_controller::franka_controller() = default;
 
 
 franka_controller::~franka_controller() noexcept = default;
@@ -56,6 +58,19 @@ Eigen::Affine3d franka_controller::current_nsa_T_world() const
 }
 
 
+Eigen::Affine3d franka_controller::current_flange_T_world() const
+{
+	return Eigen::Translation3d(0, 0, -0.107) 
+		* current_nsa_T_world();
+}
+
+
+Eigen::Affine3d franka_controller::current_tcp_T_world() const
+{
+	return Eigen::AngleAxisd(-135.0/180.0 * geo_constants::pi, Eigen::Vector3d(0,0,1))
+		* Eigen::Translation3d(0, 0, -0.1564)
+		* current_flange_T_world();
+}
 
 
 //////////////////////////////////////////////////////////////////////////

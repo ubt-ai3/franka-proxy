@@ -66,6 +66,8 @@ public:
 	virtual void update() = 0;
 
 	Eigen::Affine3d current_nsa_T_world() const;
+	Eigen::Affine3d current_flange_T_world() const;
+	Eigen::Affine3d current_tcp_T_world() const;
 	
 	virtual void start_recording() = 0;
 	virtual std::vector<std::array<double, 7>> stop_recording() = 0;
