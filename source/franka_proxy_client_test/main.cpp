@@ -367,8 +367,8 @@ int main()
 	//record = lowpass(record, 0.001, 0.016);
 	//controller.move_to({{1.0882, 0.221298, 0.241497, -2.37185, -0.155255, 2.51272, 0.717536}});
 	//controller.move_to({{1.08554, 0.035344, 0.225367, -2.28033, -0.053305, 2.29159, 0.602587}});
-	controller.move_to(record.front());
-	controller.move_sequence(record);
+	//controller.move_to(record.front());
+	//controller.move_sequence(record);
 
 	LOG_INFO("Finished Playback Test.");
 
