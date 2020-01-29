@@ -17,6 +17,8 @@
     <ClInclude Include="..\..\..\source\franka_proxy\franka_network_server.hpp" />
     <ClInclude Include="..\..\..\source\franka_proxy\franka_proxy.hpp" />
     <ClInclude Include="..\..\..\source\franka_proxy_share\franka_proxy_messages.hpp" />
+    <ClInclude Include="..\..\..\source\jr3_fts\force_torque_sensor.hpp" />
+    <ClInclude Include="..\..\..\source\jr3_fts\fore_torque_sensor_JR3PCIIoctls.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\source\franka_proxy\franka_hardware_controller.cpp" />
@@ -24,6 +26,7 @@
     <ClCompile Include="..\..\..\source\franka_proxy\franka_motion_recorder.cpp" />
     <ClCompile Include="..\..\..\source\franka_proxy\franka_network_server.cpp" />
     <ClCompile Include="..\..\..\source\franka_proxy\franka_proxy.cpp" />
+    <ClCompile Include="..\..\..\source\jr3_fts\force_torque_sensor.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{68BC76EE-6A3E-4109-B187-BD78D5EEF8F9}</ProjectGuid>

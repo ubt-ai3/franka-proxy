@@ -503,20 +503,23 @@ void franka_control_server::process_request(const string& request)
 		{
 			LOG_INFO("Stop recording");
 
-			std::vector<std::array<double, 7>> pos;
+			std::vector<std::array<double, 7>> q_sequence;
+			std::vector<std::array<double, 6>> f_sequence;
 
 			unsigned char response =
 				execute_exception_to_return_value
 					([&]()
 					{
-						pos = controller_.stop_recording();
+						auto tmp = controller_.stop_recording();
+						q_sequence = std::move(tmp.first);
+						f_sequence = std::move(tmp.second);
 						return franka_proxy_messages::success;
 					});
 
-			int64 count = pos.size();
+			int64 count = q_sequence.size();
 			stream_->send_nonblocking(reinterpret_cast<const unsigned char*>(&count), sizeof(int64));
 
-			for (const auto& p : pos)
+			for (const auto& p : q_sequence)
 			{
 				string message("");
 				message += (std::to_string(p[0]) + ",").data();
@@ -538,6 +541,33 @@ void franka_control_server::process_request(const string& request)
 				{
 					LOG_WARN("Network send buffer is 80 percent used.")
 					std::this_thread::sleep_for(std::chrono::milliseconds(100));
+				}
+			}
+
+			count = f_sequence.size();
+			stream_->send_nonblocking(reinterpret_cast<const unsigned char*>(&count), sizeof(int64));
+
+			for (const auto& f : f_sequence)
+			{
+				string message("");
+				message += (std::to_string(f[0]) + ",").data();
+				message += (std::to_string(f[1]) + ",").data();
+				message += (std::to_string(f[2]) + ",").data();
+				message += (std::to_string(f[3]) + ",").data();
+				message += (std::to_string(f[4]) + ",").data();
+				message += (std::to_string(f[5])).data();
+				message += '\n';
+
+				// send size and message
+				// todo hton byteorder
+				int64 size = message.size();
+				stream_->send_nonblocking(reinterpret_cast<const unsigned char*>(&size), sizeof(int64));
+				stream_->send_nonblocking(reinterpret_cast<const unsigned char*>(message.data()), message.size());
+
+				if (stream_->pending_send_bytes() > (stream_->buffer_max_size_send * 0.8))
+				{
+					LOG_WARN("Network send buffer is 80 percent used.")
+						std::this_thread::sleep_for(std::chrono::milliseconds(100));
 				}
 			}
 

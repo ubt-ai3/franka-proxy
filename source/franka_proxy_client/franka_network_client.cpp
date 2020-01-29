@@ -276,7 +276,7 @@ unsigned char franka_control_client::send_command_and_check_response
 }
 
 
-std::vector<std::array<double, 7>> franka_control_client::send_stop_recording_and_receive_sequence(float timeout_seconds)
+std::pair<std::vector<std::array<double, 7>>, std::vector<std::array<double, 6>>> franka_control_client::send_stop_recording_and_receive_sequence(float timeout_seconds)
 {
 	const string command =
 		(std::string(franka_proxy_messages::command_strings[franka_proxy_messages::stop_recording]) +
@@ -307,8 +307,8 @@ std::vector<std::array<double, 7>> franka_control_client::send_stop_recording_an
 			// todo ntoh byteorder
 
 
-			std::vector<std::array<double, 7>> data;
-			data.reserve(count);
+			std::vector<std::array<double, 7>> q_sequence;
+			q_sequence.reserve(count);
 			for (int64 i = 0; i < count; ++i)
 			{
 				// size
@@ -351,7 +351,60 @@ std::vector<std::array<double, 7>> franka_control_client::send_stop_recording_an
 
 
 				// emplace position
-				data.emplace_back(joints);
+				q_sequence.emplace_back(joints);
+			}
+
+			// count
+			while (!stream_->try_receive_nonblocking
+			(reinterpret_cast<unsigned char*>(&count), sizeof(int64), false))
+				thread_util::sleep_slice();
+			// todo ntoh byteorder
+
+
+			std::vector<std::array<double, 6>> f_sequence;
+			f_sequence.reserve(count);
+			for (int64 i = 0; i < count; ++i)
+			{
+				// size
+				int64 size;
+				while (!stream_->try_receive_nonblocking
+				(reinterpret_cast<unsigned char*>(&size), sizeof(int64), false))
+					thread_util::sleep_slice();
+				// todo ntoh byteorder
+
+
+				// data
+				network_buffer network_data = network_buffer();
+				network_data.resize(size);
+				while (!stream_->try_receive_nonblocking
+				(network_data.data(), size, false))
+					thread_util::sleep_slice();
+
+
+				// extract data
+				string tmp(reinterpret_cast<const char*>(network_data.data()), network_data.size());
+				list<string> joint_values_list;
+				tmp.split(',', joint_values_list);
+
+				if (joint_values_list.size() != 6)
+				{
+					LOG_WARN("Joint values message does not have 7 joint values");
+					continue;
+				}
+
+				std::array<double, 6> forces
+				{ {
+						strtod(joint_values_list[0].data(), nullptr),
+						strtod(joint_values_list[1].data(), nullptr),
+						strtod(joint_values_list[2].data(), nullptr),
+						strtod(joint_values_list[3].data(), nullptr),
+						strtod(joint_values_list[4].data(), nullptr),
+						strtod(joint_values_list[5].data(), nullptr)
+				} };
+
+
+				// emplace position
+				f_sequence.emplace_back(forces);
 			}
 
 			// response	
@@ -363,7 +416,7 @@ std::vector<std::array<double, 7>> franka_control_client::send_stop_recording_an
 			LOG_INFO("received: " + count);
 
 
-			return data;
+			return { q_sequence, f_sequence };
 		}
 		catch (const network_exception&)
 		{

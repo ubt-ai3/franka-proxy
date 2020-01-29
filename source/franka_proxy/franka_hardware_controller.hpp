@@ -91,7 +91,7 @@ public:
 	 * Starts/Stops the recording callback.
 	 */
 	void start_recording();
-	std::vector<std::array<double, 7>> stop_recording();
+	std::pair<std::vector<std::array<double, 7>>, std::vector<std::array<double, 6>>> stop_recording();
 	
 	/**
 	 * Moves the Panda robot along a given sequence.

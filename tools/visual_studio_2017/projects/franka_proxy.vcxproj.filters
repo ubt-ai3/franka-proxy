@@ -35,6 +35,12 @@
     <ClInclude Include="..\..\..\source\franka_proxy\franka_motion_recorder.hpp">
       <Filter>Headers</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\source\jr3_fts\fore_torque_sensor_JR3PCIIoctls.h">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\source\jr3_fts\force_torque_sensor.hpp">
+      <Filter>Headers</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\source\franka_proxy\franka_hardware_controller.cpp">
@@ -50,6 +56,9 @@
       <Filter>Sources</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\source\franka_proxy\franka_motion_recorder.cpp">
+      <Filter>Sources</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\source\jr3_fts\force_torque_sensor.cpp">
       <Filter>Sources</Filter>
     </ClCompile>
   </ItemGroup>

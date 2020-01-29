@@ -291,12 +291,12 @@ void franka_hardware_controller::start_recording()
 }
 
 
-std::vector<std::array<double, 7>> franka_hardware_controller::stop_recording()
+std::pair<std::vector<std::array<double, 7>>, std::vector<std::array<double, 6>>> franka_hardware_controller::stop_recording()
 {
 	motion_recorder_.stop();
 	control_loop_running_.set(false);
 
-	return motion_recorder_.latest_record();
+	return { motion_recorder_.latest_record(), motion_recorder_.latest_fts_record() };
 }
 
 
