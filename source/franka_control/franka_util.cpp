@@ -208,14 +208,14 @@ std::vector<robot_config_7dof> franka_util::ik_fast
 
 
 std::vector<robot_config_7dof> franka_util::ik_fast_robust
-	(const Eigen::Affine3d& world_T_nsa, double stepsize)
+	(const Eigen::Affine3d& world_T_nsa, double step_size)
 {
 	std::vector<robot_config_7dof> solutions = ik_fast(world_T_nsa);
 	double joint_4 = joint_limits_[4].min;
 	while (solutions.empty() && joint_4 < joint_limits_[4].max)
 	{
 		solutions = ik_fast(world_T_nsa, joint_4);
-		joint_4 += stepsize;
+		joint_4 += step_size;
 	}
 	return solutions;
 }
@@ -224,11 +224,11 @@ std::vector<robot_config_7dof> franka_util::ik_fast_robust
 robot_config_7dof franka_util::ik_fast_closest
 	(const Eigen::Affine3d& target_world_T_nsa,
 	 const robot_config_7dof& current_configuration,
-	 double stepsize)
+	 double step_size)
 {
 	// Calculate possible solutions
 	std::vector<robot_config_7dof> solutions;
-	for (double joint_4 = joint_limits_[4].min; joint_4 < joint_limits_[4].max; joint_4 += stepsize)
+	for (double joint_4 = joint_limits_[4].min; joint_4 < joint_limits_[4].max; joint_4 += step_size)
 	{
 		std::vector<robot_config_7dof> new_solutions =
 			ik_fast(target_world_T_nsa, joint_4);

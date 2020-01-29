@@ -60,17 +60,21 @@ public:
 		(const Eigen::Affine3d& world_T_nsa, double joint_4_value = 0.);
 	
 	static std::vector<robot_config_7dof> ik_fast_robust
-		(const Eigen::Affine3d& world_T_nsa, double stepsize = 0.174533);
+		(const Eigen::Affine3d& world_T_nsa, double step_size = 0.174533);
 	static robot_config_7dof ik_fast_closest
 		(const Eigen::Affine3d& target_world_T_nsa,
 		 const robot_config_7dof& current_configuration,
-		 double stepsize = 0.174533);
+		 double step_size = 0.174533);
 
+	static const joint_limit joint_limits_[];
+
+	/**
+	 * Helper functions to calculate tool mass, mass center and inertia tensor.
+	 * Settings must be changed in franka web interface.
+	 */
 	static double tool_mass();
 	static Eigen::Vector3d tool_center_of_mass();
 	static Eigen::Matrix3d tool_inertia();
-
-	static const joint_limit joint_limits_[];
 
 private:
 	static Eigen::Matrix3d a_tilde(const Eigen::Vector3d& a);
