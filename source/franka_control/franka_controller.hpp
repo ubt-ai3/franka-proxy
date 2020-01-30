@@ -70,7 +70,7 @@ public:
 	Eigen::Affine3d current_tcp_T_world() const;
 	
 	virtual void start_recording() = 0;
-	virtual std::vector<std::array<double, 7>> stop_recording() = 0;
+	virtual std::pair<std::vector<std::array<double, 7>>, std::vector<std::array<double, 6>>> stop_recording() = 0;
 	virtual void move_sequence(
 		std::vector<std::array<double, 7>> q_sequence,
 		std::vector<std::array<double, 6>> f_sequence, 

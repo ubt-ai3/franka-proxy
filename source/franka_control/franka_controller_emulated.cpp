@@ -238,7 +238,7 @@ void franka_controller_emulated::start_recording()
 }
 
 
-std::vector<std::array<double, 7>> franka_controller_emulated::stop_recording()
+std::pair<std::vector<std::array<double, 7>>, std::vector<std::array<double, 6>>> franka_controller_emulated::stop_recording()
 {
 	throw std::exception("not implemented");
 }

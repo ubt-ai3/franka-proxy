@@ -59,7 +59,7 @@ public:
 
 
 	void start_recording() override;
-	std::vector<std::array<double, 7>> stop_recording() override;
+	std::pair<std::vector<std::array<double, 7>>, std::vector<std::array<double, 6>>> stop_recording() override;
 	void move_sequence(
 		std::vector<std::array<double, 7>> q_sequence,
 		std::vector<std::array<double, 6>> f_sequence,

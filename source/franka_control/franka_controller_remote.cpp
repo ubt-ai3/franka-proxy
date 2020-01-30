@@ -131,7 +131,7 @@ void franka_controller_remote::start_recording()
 }
 
 
-std::vector<std::array<double, 7>> franka_controller_remote::stop_recording()
+std::pair<std::vector<std::array<double, 7>>, std::vector<std::array<double, 6>>> franka_controller_remote::stop_recording()
 {
 	return controller_->stop_recording();
 }
