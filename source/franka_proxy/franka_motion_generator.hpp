@@ -18,6 +18,7 @@
 #include <franka/robot.h>
 #include <franka/model.h>
 #include <vector>
+#include <jr3_fts\force_torque_sensor.hpp>
 
 
 namespace franka_proxy
@@ -356,7 +357,7 @@ private:
 	const std::vector<std::array<double, 7>> q_sequence_;
 
 	double time_ = 0.0;
-	double k_p_ = 5.0;
+	double k_p_ = 1.2;
 
 	std::mutex& current_state_lock_;
 	franka::RobotState& current_state_;
@@ -466,7 +467,7 @@ private:
 	Eigen::Matrix<double, 7, 1> compute_dq_filtered();
 
 
-	void update_ft_filter(const std::array<double, 6>& current_ft);
+	void update_ft_filter(const Eigen::Matrix<double, 6, 1>& current_ft);
 	Eigen::Matrix<double, 6, 1> compute_ft_filtered();
 
 
@@ -499,8 +500,8 @@ private:
 	std::vector<Eigen::Matrix<double, 6, 1>> ft_buffer_;
 
 
-	const double translational_stiffness_{300.0};
-	const double rotational_stiffness_{30.0};
+	const double translational_stiffness_{3000.0};
+	const double rotational_stiffness_{300.0};
 	Eigen::MatrixXd stiffness_;
 	Eigen::MatrixXd damping_;
 
@@ -509,6 +510,8 @@ private:
 	double filter_gain{0.05};
 	Eigen::Matrix<double, 6, 1> force_error_integral_{Eigen::Matrix<double, 6, 1>::Zero()};
 
+
+	ft_sensor_jr3 fts_;
 
 
 	bool log_ = true;

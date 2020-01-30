@@ -140,7 +140,7 @@ void ft_sensor_jr3::update()
 		raw_values_f3_[i] = data_f3;
 		raw_values_f4_[i] = data_f4;
 
-		values_[i] = raw_values_f3_[i] * adapt[i];
+		values_[i] = raw_values_f0_[i] * adapt[i];
 	}
 }
 

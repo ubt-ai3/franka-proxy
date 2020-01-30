@@ -447,9 +447,9 @@ void franka_hardware_controller::move_sequence(
 			std::lock_guard<std::mutex> state_guard(state_lock_);
 		}
 
-		robot_.control(
-			[&](const franka::RobotState& robot_state,
-				franka::Duration period) -> franka::Torques
+		robot_.control([&](
+			const franka::RobotState& robot_state,
+			franka::Duration period) -> franka::Torques
 			{
 				return motion_generator.step(robot_state, period);
 			},
