@@ -790,9 +790,9 @@ seq_cart_vel_tau_generator::seq_cart_vel_tau_generator
 
 	damping_.setZero();
 	damping_.topLeftCorner(3, 3) =
-		2.0 * sqrt(translational_stiffness_) * Eigen::MatrixXd::Identity(3, 3);
+		.5 * sqrt(translational_stiffness_) * Eigen::MatrixXd::Identity(3, 3);
 	damping_.bottomRightCorner(3, 3) =
-		2.0 * sqrt(rotational_stiffness_) * Eigen::MatrixXd::Identity(3, 3);
+		.5 * sqrt(rotational_stiffness_) * Eigen::MatrixXd::Identity(3, 3);
 }
 
 
@@ -890,15 +890,17 @@ franka::Torques seq_cart_vel_tau_generator::step(const franka::RobotState& robot
 	error.tail(3) = -transform_d.linear() * error.tail(3);
 
 	
-	if (error.head(3).norm() > 0.005)
+	if (error.head(3).norm() > 0.005 &&
+		selection_vector[0] == 1 && selection_vector[1] == 1 && selection_vector[2] == 1)
 	{
+		error.head(3) = error.head(3).normalized() * 0.005;
 		contact_change_motion = true;
 	}
 
 	
 	// spring damper system with damping ratio=1 and filtered dq
 	Eigen::Matrix<double, 6, 1> ft_cartesian_motion =
-		-stiffness_ * error - damping_ * (jacobian * compute_dq_filtered());
+		-stiffness_ * error -damping_ * (jacobian * compute_dq_filtered());
 
 	// --- cartesian motion end --- 
 
@@ -975,15 +977,8 @@ franka::Torques seq_cart_vel_tau_generator::step(const franka::RobotState& robot
 
 
 	if (contact_change_motion)
-		time_ -= period.toSec(); // stay at the same step  todo better doc
+		time_ -= 0.001; // period.toSec(); // stay at the same step  todo better doc/ hack atm
 
-
-	//Eigen::Matrix<double, 7, 1> tau_J_d;
-
-	//const std::array<double, 7> K_P_ = { {400.0, 400.0, 400.0, 400.0, 400.0, 400.0, 400.0} };
-	//const std::array<double, 7> K_D_ = { {20.0, 20.0, 20.0, 20.0, 20.0, 20.0, 20.0} };
-	//tau_J_d = Eigen::Matrix<double, 7, 1>(K_P_.data()).cwiseProduct((Eigen::Matrix<double, 7, 1>(robot_state.q_d.data()) - Eigen::Matrix<double, 7, 1>(robot_state.q.data())))
-	//	+ Eigen::Matrix<double, 7, 1>(K_D_.data()).cwiseProduct((Eigen::Matrix<double, 7, 1>(robot_state.dq_d.data()) - compute_dq_filtered()));
 
 
 	std::array<double, 7> tau_d_array{};
