@@ -809,6 +809,9 @@ franka::Torques seq_cart_vel_tau_generator::step(const franka::RobotState& robot
 	if (stop_motion_)
 		throw stop_motion_trigger();  // NOLINT(hicpp-exception-baseclass)
 
+	
+	bool contact_change_motion = false;
+	
 
 	time_ += period.toSec();
 	bool motion_finished = false;
@@ -885,11 +888,17 @@ franka::Torques seq_cart_vel_tau_generator::step(const franka::RobotState& robot
 	error.tail(3) << error_quaternion.x(), error_quaternion.y(), error_quaternion.z();
 	// transform to base frame
 	error.tail(3) = -transform_d.linear() * error.tail(3);
-	
 
+	
+	if (error.head(3).norm() > 0.005)
+	{
+		contact_change_motion = true;
+	}
+
+	
 	// spring damper system with damping ratio=1 and filtered dq
 	Eigen::Matrix<double, 6, 1> ft_cartesian_motion =
-		-stiffness_ * error; //- damping_ * (jacobian * compute_dq_filtered());
+		-stiffness_ * error - damping_ * (jacobian * compute_dq_filtered());
 
 	// --- cartesian motion end --- 
 
@@ -913,16 +922,17 @@ franka::Torques seq_cart_vel_tau_generator::step(const franka::RobotState& robot
 
 	Eigen::Matrix<double, 6, 1> ft_force = ft_desired;
 
-	if (ft_existing(2) > -1 && ft_desired(2) < -1) // no contact
+	if (ft_existing(2) > -1 && ft_desired(2) < -1) // move to no contact
 	{
+		contact_change_motion = true;
 		ft_force(2) = -2;
 	}
-	else if (ft_existing(2) < -3) // ft value not really useful
+	else if (ft_existing(2) < -3) // ft sensor value not really useful
 	{
 		; // todo
 	}
 	else
-		ft_force = ft_desired + 1.0 * (ft_desired - ft_existing); //+ k_i * tau_error_integral;;
+		ft_force += 1.0 * (ft_desired - ft_existing); //+ k_i * tau_error_integral;;
 
 	update_ft_filter(ft_force); // todo use selection vector
 	ft_force = compute_ft_filtered();
@@ -963,6 +973,9 @@ franka::Torques seq_cart_vel_tau_generator::step(const franka::RobotState& robot
 	}
 
 
+
+	if (contact_change_motion)
+		time_ -= period.toSec(); // stay at the same step  todo better doc
 
 
 	//Eigen::Matrix<double, 7, 1> tau_J_d;
