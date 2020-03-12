@@ -38,6 +38,7 @@ public:
 	void update();
 
 	std::array<double, 6> current_values() const;
+	std::array<double, 6> current_values_f2() const;
 	std::array<int, 6> current_raw_values_f0() const;
 	std::array<int, 6> current_raw_values_f2() const;
 	std::array<int, 6> current_raw_values_f3() const;

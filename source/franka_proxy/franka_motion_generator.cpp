@@ -12,7 +12,7 @@
 #include <utility>
 #include <iostream>
 #include <Eigen/Dense>
-
+#include <fstream>
 
 namespace franka_proxy
 {
@@ -796,7 +796,28 @@ seq_cart_vel_tau_generator::seq_cart_vel_tau_generator
 }
 
 
-seq_cart_vel_tau_generator::~seq_cart_vel_tau_generator() {}
+seq_cart_vel_tau_generator::~seq_cart_vel_tau_generator()
+{
+	if (log_)
+	{
+		{
+			std::ofstream csv("motion_log.csv");
+
+			csv << "f0,f1,f2,e0,e1,e2,e3,e4,e5\n";
+			for (int i = 0; i < ft_existing_log_.size(); ++i)
+				csv << ft_existing_log_[i][0] << ","
+				<< ft_existing_log_[i][1] << ","
+				<< ft_existing_log_[i][2] << "," 
+				<< error_log_[i][0] << ","
+				<< error_log_[i][1] << ","
+				<< error_log_[i][2] << ","
+				<< error_log_[i][3] << ","
+				<< error_log_[i][4] << ","
+				<< error_log_[i][5] << "\n";
+		}
+		std::cout << "did logging" << std::endl;
+	}
+}
 
 
 franka::Torques seq_cart_vel_tau_generator::step(const franka::RobotState& robot_state, franka::Duration period)
@@ -924,17 +945,51 @@ franka::Torques seq_cart_vel_tau_generator::step(const franka::RobotState& robot
 
 	Eigen::Matrix<double, 6, 1> ft_force = ft_desired;
 
-	if (ft_existing(2) > -1 && ft_desired(2) < -1) // move to no contact
+	// pi controller using fts for neg z-direction
+	if (selection_vector[2] == 0)
 	{
-		contact_change_motion = true;
-		ft_force(2) = -2;
+		int contact_dim = 2;
+
+		if (ft_existing(2) > -1 && ft_desired(contact_dim) < -1) // move to no contact
+		{
+			contact_change_motion = true;
+			ft_force(contact_dim) = -3.0;
+		}
+		else if (ft_existing(2) > -3) // ft sensor value not really useful
+		{
+			; // todo
+		}
+		else
+		{
+			double error_fz = (ft_desired(contact_dim) - ft_existing(2));
+			double f_z_error_derivate = (error_fz - pre_error_fz_) / period.toSec();
+			f_z_error_integral_ += error_fz * period.toSec();
+			ft_force(contact_dim) += 0.3 * error_fz + 30.0 * f_z_error_integral_;// +0.0001 * f_z_error_derivate;
+
+			pre_error_fz_ = error_fz;
+		}
 	}
-	else if (ft_existing(2) < -3) // ft sensor value not really useful
+
+	// pi controller for neg z-direction	
+	if (selection_vector[0] == 0)
 	{
-		; // todo
+		int contact_dim = 0;
+
+		if (ft_existing(2) > -1 && ft_desired(contact_dim) > 1) // move to no contact
+		{
+			//contact_change_motion = true;
+			ft_force(contact_dim) = 5.0;
+		}
+		else if (ft_existing(2) > -3) // ft sensor value not really useful
+		{
+			; // todo
+		}
+		else
+		{
+			f_x_error_integral_ += (ft_desired(contact_dim) - (-ft_existing(2))) * period.toSec();
+			ft_force(contact_dim) += 0.2 * (ft_desired(contact_dim) - (-ft_existing(2))) + 5.0 * f_x_error_integral_;
+		}
 	}
-	else
-		ft_force += 1.0 * (ft_desired - ft_existing); //+ k_i * tau_error_integral;;
 
 	update_ft_filter(ft_force); // todo use selection vector
 	ft_force = compute_ft_filtered();

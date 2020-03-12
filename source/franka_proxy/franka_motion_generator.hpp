@@ -510,6 +510,9 @@ private:
 	double filter_gain{0.05};
 	Eigen::Matrix<double, 6, 1> force_error_integral_{Eigen::Matrix<double, 6, 1>::Zero()};
 
+	double f_x_error_integral_{0.0};
+	double f_z_error_integral_{0.0};
+	double pre_error_fz_{0.0};
 
 	ft_sensor_jr3 fts_;
 

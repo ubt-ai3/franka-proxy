@@ -151,6 +151,17 @@ std::array<double, 6> ft_sensor_jr3::current_values() const
 }
 
 
+std::array<double, 6> ft_sensor_jr3::current_values_f2() const
+{
+	std::array<double, 6> values;
+
+	for (int i = 0; i < 6; ++i)
+		values[i] = raw_values_f2_[i] * adapt[i];
+
+	return values;
+}
+
+
 std::array<int, 6> ft_sensor_jr3::current_raw_values_f0() const
 {
 	return raw_values_f0_;
