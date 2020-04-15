@@ -44,8 +44,7 @@ public:
 
 	void start();
 
-	// todo what happens if stop is not called
-	// add timeout?
+	// todo maybe add a timeout
 	void stop();
 
 	std::vector<std::array<double, 7>> latest_record();

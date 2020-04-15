@@ -1,6 +1,10 @@
 #include <iostream>
 
 #include <atomic>
+#include <random>
+#include <fstream>
+
+#include <Eigen/Core>
 
 #include <viral_core/log.hpp>
 #include <viral_core/ms_network.hpp>
@@ -8,12 +12,7 @@
 
 #include "franka_proxy_client/exception.hpp"
 #include "franka_proxy_client/franka_remote_controller.hpp"
-#include "FftComplex.hpp"
-#include <random>
-#include <fstream>
-#include <Eigen/Core>
 #include "franka_control/franka_util.hpp"
-#include "viral_core/geo_util.hpp"
 
 
 void print(const franka_proxy::robot_config_7dof& config)
@@ -148,83 +147,9 @@ std::vector<std::string> get_next_line_and_split_into_cells(std::istream& str)
 
 int main()
 {
-	//std::default_random_engine randGen((std::random_device())());
-	//std::uniform_real_distribution<double> valueDist(-1.0, 1.0);
-	//std::vector<std::complex<double>> result, save, trans;
-
-	//for (int i = 0; i < 1024; i++)
-	//	result.emplace_back
-	//	((std::sin(static_cast<double>(i) * 2. * M_PI / 1024.) 
-	//		+ 0.5 * std::cos((static_cast<double>(i) + 1024./4.) * 4. *  M_PI / 1024.) + valueDist(randGen) /*+ i * 0.02*/), 0.);
-
-	//save = result;
-
-	//Fft::transform(result);
-
-	//trans = result;
-
-	//std::vector<std::complex<double>> test(1024, std::complex<double>(0.,0.));
-	//test[0] = result[0];
-	//int n = 100;
-	//for (int i = 0; i < n; ++i)
-	//{
-	//	*(test.begin() + 1 + i) = *(result.begin() + 1 + i); 
-	//	*(test.rbegin() + i) = *(result.rbegin() + i); 
-	//}
-
-	//Fft::inverseTransform(result);
-	//Fft::inverseTransform(test);
-
-	//{
-	//	std::ofstream csv;
-	//	csv.open("test123.csv");
-	//	csv << "test,res\n";
-	//	for (int i = 0; i < 1024; ++i)
-	//		csv << test[i].real()/1024. << "," << save[i].real() << "\n";
-	//	csv.close();
-	//}
-
-
-	//std::vector<std::array<double, 7>> filter_test2;
-	//for (int i = 0; i < 1024; i++)
-	//	filter_test2.emplace_back
-	//	(std::array<double, 7>{
-	//		(std::sin(static_cast<double>(i) * 2. * M_PI / 1024.)
-	//			+ 0.5 * std::cos((static_cast<double>(i) + 1024. / 4.) * 4. * M_PI / 1024.)
-	//			+ valueDist(randGen) 
-	//			+ i * 0.02),
-	//		0.,
-	//		0.,
-	//		0.,
-	//		0.,
-	//		0.,
-	//		0.
-	//	});
-
-	//auto filter_test2_filtered = lowpass(filter_test2, 0.001, 0.05);
-	//{
-	//	std::ofstream csv;
-	//	csv.open("lowpass.csv");
-	//	csv << "test,filtered\n";
-	//	for (int i = 0; i < 1024; ++i)
-	//		csv << filter_test2[i][0] << "," << filter_test2_filtered[i][0] << "\n";
-	//	csv.close();
-	//}
-	//
-	//auto filter_test3_filtered = roll_mean(filter_test2, 200);
-	//{
-	//	std::ofstream csv;
-	//	csv.open("roll_mean.csv");
-	//	csv << "test,filtered\n";
-	//	for (int i = 0; i < 1024; ++i)
-	//		csv << filter_test2[i][0] << "," << filter_test3_filtered[i][0] << "\n";
-	//	csv.close();
-	//}
-
-
 	viral_core::ms_network_context network("network");
 	//franka_proxy::franka_remote_controller controller("127.0.0.1", network);
-	franka_proxy::franka_remote_controller controller("132.180.194.141", network);
+	franka_proxy::franka_remote_controller controller("132.180.194.112", network);
 
 	// status test
 

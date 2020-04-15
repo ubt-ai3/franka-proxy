@@ -118,7 +118,7 @@ private:
  *
  * @class force_motion_generator
  *
- * todo
+ * in use
  *
  ************************************************************************/
 class force_motion_generator
@@ -175,7 +175,7 @@ private:
  *
  * @class cartesian_impedance_controller
  *
- * todo
+ * deprecated
  *
  ************************************************************************/
 class cartesian_impedance_controller
@@ -212,7 +212,7 @@ private:
  *
  * @class cartesian_impedance_and_force_controller
  *
- * todo
+ * deprecated
  *
  ************************************************************************/
 class cartesian_impedance_and_force_controller
@@ -270,7 +270,7 @@ private:
  *
  * @class sequence_joint_position_motion_generator
  *
- * todo
+ * deprecated
  *
  ************************************************************************/
 class sequence_joint_position_motion_generator
@@ -321,7 +321,7 @@ private:
  *
  * @class sequence_joint_velocity_motion_generator
  *
- * todo
+ * deprecated
  *
  ************************************************************************/
 class sequence_joint_velocity_motion_generator
@@ -371,7 +371,7 @@ private:
  *
  * @class sequence_cartesian_velocity_motion_generator
  *
- * todo
+ * deprecated
  *
  ************************************************************************/
 class sequence_cartesian_velocity_motion_generator
@@ -430,7 +430,7 @@ private:
  *
  * @class seq_cart_vel_tau_generator
  *
- * todo
+ * in use
  *
  ************************************************************************/
 class seq_cart_vel_tau_generator

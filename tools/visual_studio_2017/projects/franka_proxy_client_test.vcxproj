@@ -11,11 +11,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\source\franka_proxy_client_test\FftComplex.cpp" />
     <ClCompile Include="..\..\..\source\franka_proxy_client_test\main.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="..\..\..\source\franka_proxy_client_test\FftComplex.hpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{CA9F7D3E-0D62-4877-88C6-3DCD4CE482AC}</ProjectGuid>

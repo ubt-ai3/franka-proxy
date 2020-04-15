@@ -20,13 +20,5 @@
     <ClCompile Include="..\..\..\source\franka_proxy_client_test\main.cpp">
       <Filter>Sources</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\source\franka_proxy_client_test\FftComplex.cpp">
-      <Filter>Sources</Filter>
-    </ClCompile>
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="..\..\..\source\franka_proxy_client_test\FftComplex.hpp">
-      <Filter>Headers</Filter>
-    </ClInclude>
   </ItemGroup>
 </Project>
