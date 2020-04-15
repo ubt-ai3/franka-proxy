@@ -955,7 +955,7 @@ franka::Torques seq_cart_vel_tau_generator::step(const franka::RobotState& robot
 			contact_change_motion = true;
 			ft_force(contact_dim) = -3.0;
 		}
-		else if (ft_existing(2) > -3) // ft sensor value not really useful
+		else if (ft_existing(2) > -2.5) // ft sensor value not really useful
 		{
 			; // todo
 		}
@@ -964,7 +964,7 @@ franka::Torques seq_cart_vel_tau_generator::step(const franka::RobotState& robot
 			double error_fz = (ft_desired(contact_dim) - ft_existing(2));
 			double f_z_error_derivate = (error_fz - pre_error_fz_) / period.toSec();
 			f_z_error_integral_ += error_fz * period.toSec();
-			ft_force(contact_dim) += 0.5 * error_fz +30.0 * f_z_error_integral_;// +0.0001 * f_z_error_derivate;
+			ft_force(contact_dim) += 0.3 * error_fz +30.0 * f_z_error_integral_;// +0.0001 * f_z_error_derivate;
 
 			pre_error_fz_ = error_fz;
 		}
