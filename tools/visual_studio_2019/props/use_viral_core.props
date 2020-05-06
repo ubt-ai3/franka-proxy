@@ -3,8 +3,8 @@
   <ImportGroup Label="PropertySheets" />
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
-    <IncludePath>$(ProjectDir)..\..\..\external\viral\source;$(ProjectDir)..\..\..\external\viral\external\gl;$(IncludePath)</IncludePath>
-    <LibraryPath>$(ProjectDir)..\..\..\external\viral\build\$(Platform)_$(Configuration);$(LibraryPath)</LibraryPath>
+    <IncludePath>$(ProjectDir)..\..\..\..\viral\source;$(ProjectDir)..\..\..\.\viral\external\gl;$(IncludePath)</IncludePath>
+    <LibraryPath>$(ProjectDir)..\..\..\..\viral\build\$(Platform)_$(Configuration);$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup>
     <Link>
