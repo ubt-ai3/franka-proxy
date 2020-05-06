@@ -96,7 +96,7 @@ void franka_update_task::task_main()
 
 	while (true)
 	{
-		if (join_now()) break;
+		if (joining_now()) break;
 
 		timer.try_sleep();
 		timer.update();
