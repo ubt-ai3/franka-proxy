@@ -47,7 +47,7 @@
     <Import Project="..\props\build_common.props" />
     <Import Project="..\props\build_type_standalone.props" />
     <Import Project="..\props\build_mode_debug.props" />
-    <Import Project="..\props\build_use_libfranka_debug.props" />
+    <Import Project="..\props\build_use_libfranka.props" />
     <Import Project="..\props\build_use_eigen.props" />
     <Import Project="..\props\use_viral_core.props" />
     <Import Project="..\props\build_copy_assets.props" />
@@ -56,7 +56,7 @@
     <Import Project="..\props\build_common.props" />
     <Import Project="..\props\build_type_standalone.props" />
     <Import Project="..\props\build_mode_release.props" />
-    <Import Project="..\props\build_use_libfranka_release.props" />
+    <Import Project="..\props\build_use_libfranka.props" />
     <Import Project="..\props\build_use_eigen.props" />
     <Import Project="..\props\use_viral_core.props" />
     <Import Project="..\props\build_copy_assets.props" />
