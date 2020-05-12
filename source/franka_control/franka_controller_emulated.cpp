@@ -10,10 +10,11 @@
 
 #include "franka_controller_emulated.hpp"
 
+#include <viral_core/geo_util.hpp>
 #include <viral_core/log.hpp>
+#include <viral_core/timer.hpp>
 
 #include "exception.hpp"
-#include "viral_core/timer.hpp"
 
 
 namespace franka_control
@@ -34,6 +35,10 @@ franka_controller_emulated::franka_controller_emulated()
 	:
 	speed_normalized_(0.f),
 	gripper_open_(false),
+
+	state_joint_values_
+		((Eigen::Matrix<double, 7, 1>() <<
+			0, 0, 0, -0.0698, 0, 0, 0).finished()),
 
 	max_gripper_pos_(50)
 { }
@@ -61,12 +66,95 @@ bool almost_equal(const robot_config_7dof& xes, const robot_config_7dof& array)
 }
 
 
+robot_config_7dof operator+
+	(const robot_config_7dof& xes, const robot_config_7dof& rhs)
+{
+	robot_config_7dof ret;
+	for (int i = 0; i < 7; ++i)
+		ret[i] = xes[i] + rhs[i];
+	return ret;
+}
+
+
+robot_config_7dof operator-
+	(const robot_config_7dof& xes, const robot_config_7dof& rhs)
+{
+	robot_config_7dof ret;
+	for (int i = 0; i < 7; ++i)
+		ret[i] = xes[i] - rhs[i];
+	return ret;
+}
+
+
+double length(const robot_config_7dof& xes)
+{
+	double len = 0;
+
+	for (int64 i = 0; i < 7; ++i)
+		len += xes[i] * xes[i];
+
+	return sqrt(len);
+}
+
+
+robot_config_7dof operator*(const robot_config_7dof& xes, double rhs)
+{
+	robot_config_7dof ret;
+	for (int i = 0; i < 7; ++i)
+		ret[i] = xes[i] * rhs;
+	return ret;
+}
+
+
 void franka_controller_emulated::move_to(const robot_config_7dof& target)
 {
-	next_waymark_ = target;
+	robot_config_7dof current_joint_values = current_config();
 
-	while (!almost_equal(next_waymark_, current_joint_values_))
-		viral_core::thread_util::sleep_seconds(0.01f);
+	step_timer tick_timer(update_timestep_secs_, 1.f);
+	free_timer timer;
+
+	while (!almost_equal(target, current_joint_values))
+	{
+		tick_timer.try_sleep();
+		tick_timer.update();
+		if (!tick_timer.has_next_timestep()) continue;
+
+		while (tick_timer.next_timestep())
+		{
+			// Determine joint-space length each joint has moved
+			// since the last call to update().
+			double move_length =
+				timer.seconds_passed() *
+				speed_normalized_ *
+				max_speed_length_per_sec_;
+
+			timer.restart();
+
+			// Move robot joints by given length.
+			double length_to_next =
+				length(target - current_joint_values);
+
+			if (length_to_next < move_length)
+			{
+				// If the next waymark is in reach, move there.
+				current_joint_values = target;
+			}
+			else
+			{
+				// Move into the direction of the next waymark,
+				// but don't actually reach it.
+				current_joint_values = current_joint_values +
+					(target - current_joint_values) *
+						(move_length / length_to_next);
+			}
+
+			// Copy from process variables to exposed state.
+			// This enables changes of state only on update(),
+			// as required by the robot_controller interface.
+			MUTEX_SCOPE(controller_mutex_);
+			state_joint_values_ = current_joint_values;
+		}
+	}
 }
 
 
@@ -140,98 +228,11 @@ int franka_controller_emulated::max_gripper_pos() const
 }
 
 
-robot_config_7dof operator+
-	(const robot_config_7dof& xes, const robot_config_7dof& rhs)
-{
-	robot_config_7dof ret;
-	for (int i = 0; i < 7; ++i)
-		ret[i] = xes[i] + rhs[i];
-	return ret;
-}
+void franka_controller_emulated::update() {}
 
 
-robot_config_7dof operator-
-	(const robot_config_7dof& xes, const robot_config_7dof& rhs)
-{
-	robot_config_7dof ret;
-	for (int i = 0; i < 7; ++i)
-		ret[i] = xes[i] - rhs[i];
-	return ret;
-}
-
-
-double length(const robot_config_7dof& xes)
-{
-	double len = 0;
-
-	for (int64 i = 0; i < 7; ++i)
-		len += xes[i] * xes[i];
-
-	return sqrt(len);
-}
-
-
-robot_config_7dof operator*(const robot_config_7dof& xes, double rhs)
-{
-	robot_config_7dof ret;
-	for (int i = 0; i < 7; ++i)
-		ret[i] = xes[i] * rhs;
-	return ret;
-}
-
-
-void franka_controller_emulated::update()
-{
-	MUTEX_SCOPE(controller_mutex_);
-
-
-	// Determine joint-space length each joint has moved
-	// since the last call to update().
-	double move_length =
-		timer_.seconds_passed() *
-		speed_normalized_ *
-		max_speed_length_per_sec_;
-
-	timer_.restart();
-
-
-	// Move robot joints by given length.
-	// We possibly must fetch new waymarks,
-	// maybe multiple times in one update().
-	while (true)
-	{
-		double length_to_next =
-			length(next_waymark_ - current_joint_values_);
-
-
-		// If the next waymark is in reach, move there.
-		// Further handling in the above.
-		if (length_to_next < move_length)
-		{
-			current_joint_values_ = next_waymark_;
-			move_length -= length_to_next;
-			continue;
-		}
-
-
-		// Move into the direction of the next waymark,
-		// but don't actually reach it.
-		current_joint_values_ = current_joint_values_ +
-			(next_waymark_ - current_joint_values_) *
-				(move_length / length_to_next);
-
-		break;
-	}
-
-
-	// Copy from process variables to exposed state.
-	// This enables changes of state only on update(),
-	// as required by the robot_controller interface.
-	state_joint_values_ = current_joint_values_;
-}
-
-
-const float franka_controller_emulated::max_speed_length_per_sec_ = 200;
+const float franka_controller_emulated::max_speed_length_per_sec_ = 200 * geo_constants::degrees_to_radians;
+const float franka_controller_emulated::update_timestep_secs_ = 0.01f;
 
 
 

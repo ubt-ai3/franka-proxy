@@ -63,6 +63,7 @@ public:
 private:
 
 	static const float max_speed_length_per_sec_;
+	static const float update_timestep_secs_;
 
 	mutable viral_core::mutex controller_mutex_;
 	double speed_normalized_;
@@ -71,11 +72,6 @@ private:
 	robot_config_7dof state_joint_values_;
 
 	int max_gripper_pos_;
-
-	viral_core::free_timer timer_;
-
-	robot_config_7dof current_joint_values_;
-	robot_config_7dof next_waymark_;
 };
 
 
