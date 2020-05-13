@@ -3,7 +3,7 @@
  *
  * @file franka_controller_emulated.hpp
  *
- * Franka controller to emulate a robot.
+ * Franka controller to emulate a virtual robot.
  *
  ************************************************************************/
 
@@ -26,7 +26,11 @@ namespace franka_control
  *
  * @class franka_controller_emulated
  *
- * TODO!
+ * A franka_controller that emulates robot movement.
+ *
+ * Usage notes:
+ * - The robot_emulator does not have any acceleration limits
+ *		and uses an implementation-specific maximum speed.
  *
  ************************************************************************/
 class franka_controller_emulated :
@@ -62,11 +66,11 @@ public:
 
 private:
 
-	static const float max_speed_length_per_sec_;
-	static const float update_timestep_secs_;
+	static constexpr float max_speed_length_per_sec_ = 3.5f; // ~200 deg
+	static constexpr float move_update_rate_ = 0.01f;
 
 	mutable viral_core::mutex controller_mutex_;
-	double speed_normalized_;
+	double speed_factor_;
 	bool gripper_open_;
 
 	robot_config_7dof state_joint_values_;

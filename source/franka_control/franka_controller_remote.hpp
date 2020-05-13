@@ -38,7 +38,7 @@ namespace franka_control
  *
  * @class franka_controller_remote
  *
- * TODO!
+ * Control a franka emika panda robot via the franka_proxy server.
  *
  ************************************************************************/
 class franka_controller_remote :

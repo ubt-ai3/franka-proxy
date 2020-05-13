@@ -10,7 +10,6 @@
 
 #include "franka_controller_emulated.hpp"
 
-#include <viral_core/geo_util.hpp>
 #include <viral_core/log.hpp>
 #include <viral_core/timer.hpp>
 
@@ -33,7 +32,7 @@ using namespace viral_core;
 
 franka_controller_emulated::franka_controller_emulated()
 	:
-	speed_normalized_(0.f),
+	speed_factor_(0.f),
 	gripper_open_(false),
 
 	state_joint_values_
@@ -110,7 +109,7 @@ void franka_controller_emulated::move_to(const robot_config_7dof& target)
 {
 	robot_config_7dof current_joint_values = current_config();
 
-	step_timer tick_timer(update_timestep_secs_, 1.f);
+	step_timer tick_timer(move_update_rate_, 1.f);
 	free_timer timer;
 
 	while (!almost_equal(target, current_joint_values))
@@ -125,7 +124,7 @@ void franka_controller_emulated::move_to(const robot_config_7dof& target)
 			// since the last call to update().
 			double move_length =
 				timer.seconds_passed() *
-				speed_normalized_ *
+				speed_factor_ *
 				max_speed_length_per_sec_;
 
 			timer.restart();
@@ -194,14 +193,14 @@ bool franka_controller_emulated::gripper_grasped() const
 double franka_controller_emulated::speed_factor() const
 {
 	MUTEX_SCOPE(controller_mutex_);
-	return speed_normalized_;
+	return speed_factor_;
 }
 
 
 void franka_controller_emulated::set_speed_factor(double speed_factor)
 {
 	MUTEX_SCOPE(controller_mutex_);
-	speed_normalized_ = speed_factor;
+	speed_factor_ = speed_factor;
 }
 
 
@@ -229,10 +228,6 @@ int franka_controller_emulated::max_gripper_pos() const
 
 
 void franka_controller_emulated::update() {}
-
-
-const float franka_controller_emulated::max_speed_length_per_sec_ = 200 * geo_constants::degrees_to_radians;
-const float franka_controller_emulated::update_timestep_secs_ = 0.01f;
 
 
 
