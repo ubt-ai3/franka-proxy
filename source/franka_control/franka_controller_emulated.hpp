@@ -66,7 +66,10 @@ public:
 
 private:
 
-	static constexpr float max_speed_length_per_sec_ = 3.5f; // ~200 deg
+	void move_gripper(int target, double speed_mps);
+
+
+	static constexpr double max_speed_length_per_sec_ = 3.5; // ~200 deg
 	static constexpr float move_update_rate_ = 0.01f;
 
 	mutable viral_core::mutex controller_mutex_;
@@ -74,8 +77,11 @@ private:
 	bool gripper_open_;
 
 	robot_config_7dof state_joint_values_;
+	int state_gripper_pos_;
 
-	int max_gripper_pos_;
+	static constexpr int max_gripper_pos_ = 50;
+	static constexpr int gripper_unit_per_m_ = 1000;
+	static constexpr double gripper_default_speed_mps_ = 0.025;
 };
 
 
