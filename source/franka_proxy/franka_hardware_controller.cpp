@@ -19,6 +19,8 @@
 #include <franka/model.h>
 
 #include "franka_motion_generator.hpp"
+#include "franka_motion_recorder.hpp"
+#include "viral_core/log.hpp"
 
 
 namespace franka_proxy
@@ -40,6 +42,8 @@ franka_hardware_controller::franka_hardware_controller
 	stop_motion_(),
 	speed_factor_(0.05),
 
+	motion_recorder_(10.0, robot_, robot_state_),
+
 	robot_state_(robot_.readOnce()),
 
 	terminate_state_thread_(false),
@@ -55,6 +59,9 @@ franka_hardware_controller::franka_hardware_controller
 	{
 		// todo
 	}
+
+	// todo JHa
+	//robot_.setGuidingMode({ {true, true, true, false, false, true} }, false);
 }
 
 
@@ -86,7 +93,7 @@ void franka_hardware_controller::apply_z_force
 			    franka::Duration period) -> franka::Torques
 			{
 				return fmg.callback(robot_state, period);
-			});
+			}, true, 10.0);
 	}
 	catch (const detail::stop_motion_trigger&)
 	{
@@ -105,7 +112,7 @@ void franka_hardware_controller::move_to(const robot_config_7dof& target)
 {
 	initialize_parameters();
 
-	detail::motion_generator motion_generator
+	detail::franka_joint_motion_generator motion_generator
 		(speed_factor_, target, state_lock_, robot_state_, stop_motion_, false);
 
 	stop_motion_ = false;
@@ -141,7 +148,7 @@ bool franka_hardware_controller::move_to_until_contact
 {
 	initialize_parameters();
 
-	detail::motion_generator motion_generator
+	detail::franka_joint_motion_generator motion_generator
 		(speed_factor_, target, state_lock_, robot_state_, stop_motion_, true);
 
 	stop_motion_ = false;
@@ -272,6 +279,197 @@ void franka_hardware_controller::automatic_error_recovery()
 }
 
 
+void franka_hardware_controller::start_recording()
+{
+	control_loop_running_.set(true);
+	{
+		// Lock the current_state_lock_ to wait for state_thread_ to finish.
+		std::lock_guard<std::mutex> state_guard(state_lock_);
+	}
+
+	motion_recorder_.start();
+}
+
+
+std::pair<std::vector<std::array<double, 7>>, std::vector<std::array<double, 6>>> franka_hardware_controller::stop_recording()
+{
+	motion_recorder_.stop();
+	control_loop_running_.set(false);
+
+	return { motion_recorder_.latest_record(), motion_recorder_.latest_fts_record() };
+}
+
+
+void franka_hardware_controller::move_sequence(const std::vector<std::array<double, 7>>& q_sequence)
+{
+	robot_.setJointImpedance({ {3000, 3000, 3000, 2500, 2500, 2000, 2000} });
+	robot_.setCartesianImpedance({ {3000, 3000, 3000, 300, 300, 300} });
+	robot_.setCollisionBehavior(
+		{ {20.0, 20.0, 18.0, 18.0, 16.0, 14.0, 12.0} }, { {40.0, 40.0, 38.0, 38.0, 36.0, 34.0, 32.0} },
+		{ {20.0, 20.0, 18.0, 18.0, 16.0, 14.0, 12.0} }, { {40.0, 40.0, 38.0, 38.0, 36.0, 34.0, 32.0} },
+		{ {20.0, 20.0, 20.0, 25.0, 25.0, 25.0} }, { {40.0, 40.0, 40.0, 45.0, 45.0, 45.0} },
+		{ {20.0, 20.0, 20.0, 25.0, 25.0, 25.0} }, { {40.0, 40.0, 40.0, 45.0, 45.0, 45.0} });
+
+
+	std::vector<std::array<double, 6>> f_sequence(q_sequence.size(), {0,0,0,0,0,0});
+	std::vector<std::array<double, 6>> selection_vector_sequence(q_sequence.size(), { 1,1,1,1,1,1 });
+
+
+	stop_motion_ = false;
+	detail::seq_cart_vel_tau_generator motion_generator(state_lock_, robot_state_, robot_, stop_motion_, q_sequence, f_sequence, selection_vector_sequence);
+
+
+	try
+	{
+		control_loop_running_.set(true);
+		{
+			// Lock the current_state_lock_ to wait for state_thread_ to finish.
+			std::lock_guard<std::mutex> state_guard(state_lock_);
+		}
+
+		robot_.control(
+			[&](const franka::RobotState& robot_state,
+				franka::Duration period) -> franka::Torques
+			{
+				return motion_generator.step(robot_state, period);
+			},
+			true,
+			1000.);
+
+	}
+	catch (const detail::stop_motion_trigger&)
+	{
+	}
+	catch (const franka::Exception&)
+	{
+		control_loop_running_.set(false);
+		throw;
+	}
+
+	control_loop_running_.set(false);
+}
+
+
+void franka_hardware_controller::move_sequence(const std::vector<std::array<double, 7>>& q_sequence, double f_z)
+{
+	robot_.setJointImpedance({ {3000, 3000, 3000, 2500, 2500, 2000, 2000} });
+	robot_.setCartesianImpedance({ {3000, 3000, 3000, 300, 300, 300} });
+	robot_.setCollisionBehavior(
+		{ {20.0, 20.0, 18.0, 18.0, 16.0, 14.0, 12.0} }, { {40.0, 40.0, 38.0, 38.0, 36.0, 34.0, 32.0} },
+		{ {20.0, 20.0, 18.0, 18.0, 16.0, 14.0, 12.0} }, { {40.0, 40.0, 38.0, 38.0, 36.0, 34.0, 32.0} },
+		{ {20.0, 20.0, 20.0, 25.0, 25.0, 25.0} }, { {40.0, 40.0, 40.0, 45.0, 45.0, 45.0} },
+		{ {20.0, 20.0, 20.0, 25.0, 25.0, 25.0} }, { {40.0, 40.0, 40.0, 45.0, 45.0, 45.0} });
+
+	// wrong implementation
+	//detail::force_motion_generator force_motion_generator(robot_, 0.5, 10.0);
+	//detail::sequence_joint_velocity_motion_generator joint_velocity_motion_generator(1., q_sequence, state_lock_, robot_state_, stop_motion_);
+	
+
+
+	std::vector<std::array<double, 6>> f_sequence(q_sequence.size(), { 0,0,f_z,0,0,0 });
+	std::vector<std::array<double, 6>> selection_vector_sequence(q_sequence.size(), { 1,1,0,1,1,1 });
+
+
+	//double f_x = -5.0;
+
+	//std::vector<std::array<double, 6>> f_sequence(q_sequence.size(), { f_x,0,f_z,0,0,0 });
+	//std::vector<std::array<double, 6>> selection_vector_sequence(q_sequence.size(), { 0,1,0,1,1,1 });
+
+
+	stop_motion_ = false;
+	detail::seq_cart_vel_tau_generator motion_generator(state_lock_, robot_state_, robot_, stop_motion_, q_sequence, f_sequence, selection_vector_sequence);
+
+	try
+	{
+		control_loop_running_.set(true);
+		{
+			// Lock the current_state_lock_ to wait for state_thread_ to finish.
+			std::lock_guard<std::mutex> state_guard(state_lock_);
+		}
+
+
+		// wrong implementation
+		//robot_.control(
+		//	[&](const franka::RobotState& robot_state,
+		//		franka::Duration period) -> franka::Torques
+		//	{
+		//		return force_motion_generator.callback(robot_state, period);
+		//	},
+		//	joint_velocity_motion_generator,
+		//	true,
+		//	100.);
+
+		robot_.control(
+			[&](const franka::RobotState& robot_state,
+				franka::Duration period) -> franka::Torques
+			{
+				return motion_generator.step(robot_state, period);
+			},
+			true,
+			1000.);
+
+	}
+	catch (const detail::stop_motion_trigger&)
+	{
+	}
+	catch (const franka::Exception&)
+	{
+		control_loop_running_.set(false);
+		throw;
+	}
+
+	control_loop_running_.set(false);
+}
+
+
+void franka_hardware_controller::move_sequence(
+	const std::vector<std::array<double, 7>>& q_sequence,
+	const std::vector<std::array<double, 6>>& f_sequence, 
+	const std::vector<std::array<double, 6>>& selection_vector)
+{
+	robot_.setJointImpedance({ {3000, 3000, 3000, 2500, 2500, 2000, 2000} });
+	robot_.setCartesianImpedance({ {3000, 3000, 3000, 300, 300, 300} });
+	robot_.setCollisionBehavior(
+		{ {20.0, 20.0, 18.0, 18.0, 16.0, 14.0, 12.0} }, { {40.0, 40.0, 38.0, 38.0, 36.0, 34.0, 32.0} },
+		{ {20.0, 20.0, 18.0, 18.0, 16.0, 14.0, 12.0} }, { {40.0, 40.0, 38.0, 38.0, 36.0, 34.0, 32.0} },
+		{ {20.0, 20.0, 20.0, 25.0, 25.0, 25.0} }, { {40.0, 40.0, 40.0, 45.0, 45.0, 45.0} },
+		{ {20.0, 20.0, 20.0, 25.0, 25.0, 25.0} }, { {40.0, 40.0, 40.0, 45.0, 45.0, 45.0} });
+
+
+	stop_motion_ = false;
+	detail::seq_cart_vel_tau_generator motion_generator(state_lock_, robot_state_, robot_, stop_motion_, q_sequence, f_sequence, selection_vector);
+
+	try
+	{
+		control_loop_running_.set(true);
+		{
+			// Lock the current_state_lock_ to wait for state_thread_ to finish.
+			std::lock_guard<std::mutex> state_guard(state_lock_);
+		}
+
+		robot_.control([&](
+			const franka::RobotState& robot_state,
+			franka::Duration period) -> franka::Torques
+			{
+				return motion_generator.step(robot_state, period);
+			},
+			true,
+			1000.);
+
+	}
+	catch (const detail::stop_motion_trigger&)
+	{
+	}
+	catch (const franka::Exception&)
+	{
+		control_loop_running_.set(false);
+		throw;
+	}
+
+	control_loop_running_.set(false);
+}
+
+
 void franka_hardware_controller::state_update_loop()
 {
 	while (!terminate_state_thread_)
@@ -312,10 +510,10 @@ void franka_hardware_controller::initialize_parameters()
 void franka_hardware_controller::set_default_collision_behaviour()
 {
 	robot_.setCollisionBehavior(
-		{{20.0, 20.0, 18.0, 18.0, 16.0, 14.0, 12.0}}, {{20.0, 20.0, 18.0, 18.0, 16.0, 14.0, 12.0}},
-		{{20.0, 20.0, 18.0, 18.0, 16.0, 14.0, 12.0}}, {{20.0, 20.0, 18.0, 18.0, 16.0, 14.0, 12.0}},
-		{{20.0, 20.0, 20.0, 25.0, 25.0, 25.0}}, {{20.0, 20.0, 20.0, 25.0, 25.0, 25.0}},
-		{{20.0, 20.0, 20.0, 25.0, 25.0, 25.0}}, {{20.0, 20.0, 20.0, 25.0, 25.0, 25.0}});
+		{ {20.0, 20.0, 18.0, 18.0, 16.0, 14.0, 12.0} }, { {40.0, 40.0, 38.0, 38.0, 36.0, 34.0, 32.0} },
+		{ {20.0, 20.0, 18.0, 18.0, 16.0, 14.0, 12.0} }, { {40.0, 40.0, 38.0, 38.0, 36.0, 34.0, 32.0} },
+		{ {20.0, 20.0, 20.0, 25.0, 25.0, 25.0} }, { {40.0, 40.0, 40.0, 45.0, 45.0, 45.0} },
+		{ {20.0, 20.0, 20.0, 25.0, 25.0, 25.0} }, { {40.0, 40.0, 40.0, 45.0, 45.0, 45.0} });
 }
 
 

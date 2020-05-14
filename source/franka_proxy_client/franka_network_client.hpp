@@ -11,11 +11,13 @@
 #if !defined(INCLUDED__FRANKA_PROXY_CLIENT__FRANKA_NETWORK_CLIENT_HPP)
 #define INCLUDED__FRANKA_PROXY_CLIENT__FRANKA_NETWORK_CLIENT_HPP
 
+#include <vector>
 
 #include <viral_core/auto_pointer.hpp>
 #include <viral_core/list.hpp>
 #include <viral_core/network_forward.hpp>
 #include <viral_core/string.hpp>
+#include <viral_core/thread.hpp>
 
 
 namespace franka_proxy
@@ -77,6 +79,7 @@ private:
  *
  ************************************************************************/
 class franka_control_client
+	: viral_core::threaded_task
 {
 public:
 
@@ -88,6 +91,9 @@ public:
 	~franka_control_client() noexcept;
 
 
+	void task_main() override;
+
+
 	void send_command
 		(const viral_core::string& command,
 		 float timeout_seconds = 1.f);
@@ -96,6 +102,16 @@ public:
 		 float timeout_seconds = 1.f);
 
 
+	// todo split up function
+	std::pair<std::vector<std::array<double, 7>>, std::vector<std::array<double, 6>>>
+		send_stop_recording_and_receive_sequence
+			(float timeout_seconds = 1.f);
+	void send_move_sequence
+		(const std::vector<std::array<double, 7>>& q_sequence,
+		 const std::vector<std::array<double, 6>>& f_sequence,
+		 const std::vector<std::array<double, 6>>& selection_vector_sequence,
+		 float timeout_seconds = 1.f);
+
 private:
 
 	viral_core::network_context& network_;
@@ -103,7 +119,7 @@ private:
 	const viral_core::string remote_ip_;
 	const uint16 remote_port_;
 
-	viral_core::auto_pointer<viral_core::network_connection> connection_;
+	viral_core::auto_pointer<viral_core::network_stream> stream_;
 };
 
 

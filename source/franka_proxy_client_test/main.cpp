@@ -1,6 +1,10 @@
 #include <iostream>
 
 #include <atomic>
+#include <random>
+#include <fstream>
+
+#include <Eigen/Core>
 
 #include <viral_core/log.hpp>
 #include <viral_core/ms_network.hpp>
@@ -8,15 +12,7 @@
 
 #include "franka_proxy_client/exception.hpp"
 #include "franka_proxy_client/franka_remote_controller.hpp"
-
-
-void print(const franka_proxy::robot_config_7dof& config)
-{
-	for (int i = 0; i < 7; ++i)
-		std::cout << config[i] << " ";
-
-	std::cout << std::endl;
-}
+//#include "franka_control/franka_util.hpp"
 
 
 void print_status(const franka_proxy::franka_remote_controller& controller)
@@ -27,15 +23,6 @@ void print_status(const franka_proxy::franka_remote_controller& controller)
 		std::cout << config[i] << " ";
 
 	std::cout << std::endl;
-}
-
-
-double dist_squared(const franka_proxy::robot_config_7dof& c1, const franka_proxy::robot_config_7dof& c2)
-{
-	double sum = 0;
-	for (int i = 0; i < 7; ++i)
-		sum += (c1[i] - c2[i]) * (c1[i] - c2[i]);
-	return sum;
 }
 
 
@@ -70,66 +57,128 @@ int main()
 {
 	viral_core::ms_network_context network("network");
 	//franka_proxy::franka_remote_controller controller("127.0.0.1", network);
-	franka_proxy::franka_remote_controller controller("132.180.194.141", network);
+	franka_proxy::franka_remote_controller controller("132.180.194.112", network);
 
-	execute_retry([&] { controller.open_gripper(); }, controller);
-	execute_retry([&] { controller.close_gripper(); }, controller);
-	execute_retry([&] { controller.close_gripper(); }, controller);
-				
-	std::this_thread::sleep_for(std::chrono::seconds(5));
-
-	execute_retry([&] { controller.open_gripper(); }, controller);
-	execute_retry([&] { controller.grasp_gripper(); }, controller);
-	execute_retry([&] { controller.grasp_gripper(); }, controller);
-				
-	std::this_thread::sleep_for(std::chrono::seconds(5));
-
-	execute_retry([&] { controller.open_gripper(); }, controller);
-	execute_retry([&] { controller.open_gripper(); }, controller);
-
+	// status test
 	std::atomic_bool stop(false);
-	std::thread t([&stop, &controller]()
-	{
-		int i = 0;
-		while (!stop)
+	std::thread t
+		([&stop, &controller]()
 		{
-			controller.update();
+			int i = 0;
+			while (!stop)
+			{
+				controller.update();
 
-			if (i++ % 30 == 0)
-				print_status(controller);
+				if (i++ % 30 == 0)
+					print_status(controller);
 
-			std::this_thread::sleep_for(std::chrono::milliseconds(16));
-		}
-	});
+				viral_core::thread_util::sleep_seconds(0.016f);
+			}
+		});
 
 
-	franka_proxy::robot_config_7dof pos1{
-		{
-			2.4673210167983628,
-			-1.053636035616098,
-			-0.935180716967433,
-			-1.670424119447617,
-			0.1367540113528485,
-			1.4206203791091001,
-			0.3347107737734215
-		}
-	};
-	franka_proxy::robot_config_7dof pos2{
-		{
-			-0.002421978837257,
-			1.2362939888338829,
-			2.4654171861844083,
-			-1.264853222554674,
-			-0.001813626296555,
-			1.9141426016730037,
-			-1.063268839608126
-		}
-	};
+	LOG_INFO("Starting Gripper Test.");
 
-	controller.set_speed_factor(0.25);
+	controller.grasp_gripper();
+	controller.open_gripper();
+	controller.close_gripper();
+	controller.open_gripper();
+
+	LOG_INFO("Finished Gripper Test.");
+
+
+	LOG_INFO("Starting PTP-Movement Test.");
+
+	franka_proxy::robot_config_7dof pos1
+		{{2.46732, -1.0536, -0.9351, -1.6704, 0.13675, 1.42062, 0.33471}};
+	franka_proxy::robot_config_7dof pos2
+		{{-0.00242, 1.236293, 2.465417, -1.26485, -0.00181, 1.914142, -1.06326}};
+
+	controller.set_speed_factor(0.2);
 	execute_retry([&] { controller.move_to(pos1); }, controller);
 	execute_retry([&] { controller.move_to(pos2); }, controller);
 
+	LOG_INFO("Finished PTP-Movement Test.");
+
+
+	LOG_INFO("Starting Force Test.");
+
+	franka_proxy::robot_config_7dof pos_with_scale
+		{{1.09452, 0.475923, 0.206959, -2.33289, -0.289467, 2.7587, 0.830083}};
+	franka_proxy::robot_config_7dof pos_above_table
+		{{1.09703, 0.505084, 0.216472, -2.29691, -0.302112, 2.72655, 0.817159}};
+	//{{1.10689, 0.660073, 0.240198, -2.03228, -0.33317, 2.63551, 0.784704}};
+
+	controller.set_speed_factor(0.2);
+	controller.move_to(pos_with_scale);
+	controller.move_to_until_contact(pos_above_table);
+
+	controller.apply_z_force(0.0, 5.0);
+	controller.apply_z_force(1.0, 5.0);
+
+	LOG_INFO("Finished Force Test.");
+
+
+	LOG_INFO("Starting FK/IK Test.");
+
+	//Eigen::Affine3d pose
+	//	(franka_control::franka_util::fk
+	//	 (
+	//	  (franka_control::robot_config_7dof()
+	//		  << 1.08615, 0.044619, 0.227112, -2.26678, -0.059792, 2.27532, 0.605723).finished()).back());
+
+	//pose.linear() << 0.707107, 0.707107, 0,
+	//	0.707107, - 0.707107, -0,
+	//	0, 0, -1;
+
+	//auto ik_solution = franka_control::franka_util::ik_fast_closest
+	//	(pose,
+	//	 franka_control::robot_config_7dof(controller.current_config().data()));
+
+	//franka_proxy::robot_config_7dof q{};
+	//Eigen::VectorXd::Map(&q[0], 7) = ik_solution;
+	//controller.move_to(q);
+
+	LOG_INFO("Finished FK/IK Test.");
+
+
+	LOG_INFO("Starting Playback Test.");
+
+	franka_proxy::robot_config_7dof q
+		{{1.08615, 0.044619, 0.227112, -2.26678, -0.059792, 2.27532, 0.605723}};
+	controller.move_to(q);
+	
+	LOG_INFO("--- press to start in 3s ---");
+	std::cin.get();
+	std::this_thread::sleep_for(std::chrono::seconds(3));
+
+	LOG_INFO("--- starting demonstration ---");
+	controller.start_recording();
+	std::this_thread::sleep_for(std::chrono::seconds(10));
+
+	LOG_INFO("--- stopped demonstration ---");
+	std::pair<std::vector<std::array<double, 7>>, std::vector<std::array<double, 6>>> record
+		(
+		 controller.stop_recording());
+
+	LOG_INFO("--- press to start reproduction in 3s ---");
+	std::cin.get();
+	std::this_thread::sleep_for(std::chrono::seconds(3));
+
+	controller.move_to(q);
+	controller.move_to(record.first.front());
+	const std::vector<std::array<double, 6>> selection_vectors
+		(
+		 record.second.size(), std::array<double, 6>{1, 1, 1, 1, 1, 1});
+	controller.move_sequence(record.first, record.second, selection_vectors);
+
+	LOG_INFO("Finished Playback Test.");
+
+
+	// cleanup status test
 	stop = true;
 	t.join();
+
+
+	return 0;
 }

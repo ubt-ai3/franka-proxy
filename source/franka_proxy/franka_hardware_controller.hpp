@@ -8,8 +8,8 @@
  ************************************************************************/
 
 
-#if !defined(INCLUDED__FRANKA_PROXY__FRANKA_HARDWARE_KONTROLLER_HPP)
-#define INCLUDED__FRANKA_PROXY__FRANKA_HARDWARE_KONTROLLER_HPP
+#if !defined(INCLUDED__FRANKA_PROXY__FRANKA_HARDWARE_CONTROLLER_HPP)
+#define INCLUDED__FRANKA_PROXY__FRANKA_HARDWARE_CONTROLLER_HPP
 
 
 #include <atomic>
@@ -19,6 +19,9 @@
 
 #include <franka/robot.h>
 #include <franka/gripper.h>
+#include <vector>
+
+#include "franka_motion_recorder.hpp"
 
 
 namespace franka_proxy
@@ -46,8 +49,6 @@ public:
 	virtual ~franka_hardware_controller() noexcept;
 
 
-	void apply_z_force(double mass, double duration);
-
 
 	/**
 	 * Moves the Panda robot to given target; In case
@@ -60,6 +61,7 @@ public:
 	 * of contact, the movement is aborted and false is returned.
 	 */
 	bool move_to_until_contact(const robot_config_7dof& target);
+
 	void stop_movement();
 
 	void set_speed_factor(double speed_factor);
@@ -71,13 +73,40 @@ public:
 	void open_gripper();
 	/** Move the gripper to gripper::min_grasp_width. */
 	void close_gripper();
-	/** Grasp.... todo return bool + implement */
+	/** Grasp. */
 	bool grasp_gripper(double speed, double force);
 
 	franka::GripperState gripper_state() const;
 
 
 	void automatic_error_recovery();
+
+
+
+	void apply_z_force(
+		double mass, 
+		double duration);
+
+	/**
+	 * Starts/Stops the recording callback.
+	 */
+	void start_recording();
+	std::pair<std::vector<std::array<double, 7>>, std::vector<std::array<double, 6>>> stop_recording();
+	
+	/**
+	 * Moves the Panda robot along a given sequence.
+	 */
+	void move_sequence(
+		const std::vector<std::array<double, 7>>& q_sequence);
+
+	void move_sequence(
+		const std::vector<std::array<double, 7>>& q_sequence,
+		double f_z);
+
+	void move_sequence(
+		const std::vector<std::array<double, 7>>& q_sequence,
+		const std::vector<std::array<double, 6>>& f_sequence,
+		const std::vector<std::array<double, 6>>& selection_vector);
 
 
 private:
@@ -107,6 +136,7 @@ private:
 	mutable std::mutex speed_factor_lock_;
 	double speed_factor_;
 
+	detail::motion_recorder motion_recorder_;
 
 	// Gripper
 	mutable std::unique_ptr<franka::Gripper> gripper_;
@@ -130,4 +160,4 @@ private:
 } /* namespace franka_proxy */
 
 
-#endif /* !defined(INCLUDED__FRANKA_PROXY__FRANKA_HARDWARE_KONTROLLER_HPP) */
+#endif /* !defined(INCLUDED__FRANKA_PROXY__FRANKA_HARDWARE_CONTROLLER_HPP) */

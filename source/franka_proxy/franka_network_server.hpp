@@ -35,8 +35,8 @@ namespace franka_proxy
  * Sends commands to a Franka Emika Panda robot.
  *
  ************************************************************************/
-class franka_control_server : 
-	public viral_core::threaded_task
+class franka_control_server
+	: public viral_core::threaded_task
 {
 public:
 
@@ -108,7 +108,7 @@ private:
 	viral_core::auto_pointer<viral_core::network_stream> stream_;
 
 	static constexpr float sleep_seconds_disconnected_ = 0.033f; // todo 30hz?
-	static constexpr float sleep_seconds_connected_ = 0.002f; // todo < 16ms?
+	static constexpr float sleep_seconds_connected_ = 0.002f; // todo <16ms?
 };
 
 
@@ -122,8 +122,8 @@ private:
  * Send the current state of the robot.
  *
  ************************************************************************/
-class franka_state_server : 
-	public viral_core::threaded_task
+class franka_state_server
+	: public viral_core::threaded_task
 {
 public:
 
@@ -152,8 +152,6 @@ private:
 	static constexpr float sleep_seconds_disconnected_ = 0.033f;
 	static constexpr float sleep_seconds_connected_ = 0.002f;
 };
-
-
 
 
 } /* namespace franka_proxy */

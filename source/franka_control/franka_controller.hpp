@@ -17,6 +17,7 @@
 #include <Eigen/Geometry>
 
 #include <viral_core/thread.hpp>
+#include "franka_proxy_client/franka_remote_controller.hpp"
 
 
 namespace franka_control
@@ -53,8 +54,6 @@ public:
 	virtual ~franka_controller() noexcept;
 
 	
-	virtual void apply_z_force(double mass, double duration) = 0;
-
 	virtual void move_to(const robot_config_7dof& target) = 0;
 	void move_to(const Eigen::Affine3d& target);
 	virtual bool move_to_until_contact(const robot_config_7dof& target) = 0;
@@ -82,6 +81,15 @@ public:
 	virtual void update() = 0;
 
 	Eigen::Affine3d current_nsa_T_world() const;
+	Eigen::Affine3d current_flange_T_world() const;
+	Eigen::Affine3d current_tcp_T_world() const;
+	
+	virtual void start_recording() = 0;
+	virtual std::pair<std::vector<std::array<double, 7>>, std::vector<std::array<double, 6>>> stop_recording() = 0;
+	virtual void move_sequence(
+		std::vector<std::array<double, 7>> q_sequence,
+		std::vector<std::array<double, 6>> f_sequence, 
+		std::vector<std::array<double, 6>> selection_vector_sequence) = 0;
 };
 
 

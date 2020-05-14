@@ -43,12 +43,6 @@ franka_controller_remote::franka_controller_remote
 franka_controller_remote::~franka_controller_remote() noexcept = default;
 
 
-void franka_controller_remote::apply_z_force(double mass, double duration)
-{
-	controller_->apply_z_force(mass ,duration);
-}
-
-
 void franka_controller_remote::move_to(const robot_config_7dof& target)
 {
 	controller_->move_to
@@ -119,6 +113,27 @@ void franka_controller_remote::update()
 	{ controller_->update(); }
 
 
+void franka_controller_remote::start_recording()
+{
+	controller_->start_recording();
+}
+
+
+std::pair<std::vector<std::array<double, 7>>, std::vector<std::array<double, 6>>> franka_controller_remote::stop_recording()
+{
+	return controller_->stop_recording();
+}
+
+
+void franka_controller_remote::move_sequence(
+	std::vector<std::array<double, 7>> q_sequence,
+	std::vector<std::array<double, 6>> f_sequence,
+	std::vector<std::array<double, 6>> selection_vector_sequence)
+{
+	controller_->move_to(q_sequence.front());
+	controller_->move_sequence(q_sequence, f_sequence, selection_vector_sequence);
+	controller_->move_to(q_sequence.back());
+}
 
 
 } /* namespace franka_control */

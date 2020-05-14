@@ -22,8 +22,6 @@
 
 namespace franka_proxy
 {
-
-
 /**
  *************************************************************************
  *
@@ -47,9 +45,10 @@ private:
 
 	franka_control_server control_server_;
 	franka_state_server state_server_;
+
+    static constexpr unsigned short franka_control_port = 4711;
+    static constexpr unsigned short franka_state_port = 4712;
 };
-
-
 
 
 } /* namespace franka_proxy */
