@@ -136,7 +136,6 @@ private:
 	mutable std::mutex speed_factor_lock_;
 	double speed_factor_;
 
-	std::atomic_bool stop_recording_;
 	detail::motion_recorder motion_recorder_;
 
 	// Gripper

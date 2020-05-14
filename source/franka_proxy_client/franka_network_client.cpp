@@ -186,7 +186,7 @@ franka_control_client::~franka_control_client() noexcept
 
 void franka_control_client::task_main()
 {
-	while (!join_now())
+	while (!joining_now())
 	{
 		if (!stream_)
 		{

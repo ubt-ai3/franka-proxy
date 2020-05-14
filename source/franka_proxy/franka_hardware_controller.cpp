@@ -61,7 +61,7 @@ franka_hardware_controller::franka_hardware_controller
 	}
 
 	// todo JHa
-	robot_.setGuidingMode({ {true, true, true, false, false, true} }, false);
+	//robot_.setGuidingMode({ {true, true, true, false, false, true} }, false);
 }
 
 

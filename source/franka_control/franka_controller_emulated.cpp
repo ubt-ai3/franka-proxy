@@ -45,13 +45,6 @@ franka_controller_emulated::franka_controller_emulated()
 franka_controller_emulated::~franka_controller_emulated() noexcept = default;
 
 
-void franka_controller_emulated::apply_z_force(double mass, double duration)
-{
-	LOG_ERROR("Not implemented.");
-	throw not_implemented(); // TODO: Throw something else.
-}
-
-
 bool almost_equal(const robot_config_7dof& xes, const robot_config_7dof& array)
 {
 	for (int64 i = 0; i < 7; ++i)
@@ -216,6 +209,31 @@ int franka_controller_emulated::max_gripper_pos() const
 
 
 void franka_controller_emulated::update() {}
+
+	
+void franka_controller_emulated::start_recording()
+{
+	LOG_ERROR("Not implemented.");
+	throw not_implemented();
+}
+
+	
+std::pair<std::vector<std::array<double, 7>>, std::vector<std::array<double, 6>>>
+	franka_controller_emulated::stop_recording()
+{
+	LOG_ERROR("Not implemented.");
+	throw not_implemented();
+}
+
+	
+void franka_controller_emulated::move_sequence
+	(std::vector<std::array<double, 7>> q_sequence,
+	 std::vector<std::array<double, 6>> f_sequence,
+	 std::vector<std::array<double, 6>> selection_vector_sequence)
+{
+	LOG_ERROR("Not implemented.");
+	throw not_implemented();
+}
 
 
 void franka_controller_emulated::move_gripper(int target, double speed_mps)

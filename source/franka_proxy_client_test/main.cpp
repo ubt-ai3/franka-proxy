@@ -12,7 +12,7 @@
 
 #include "franka_proxy_client/exception.hpp"
 #include "franka_proxy_client/franka_remote_controller.hpp"
-#include "franka_control/franka_util.hpp"
+//#include "franka_control/franka_util.hpp"
 
 
 void print_status(const franka_proxy::franka_remote_controller& controller)
@@ -121,29 +121,33 @@ int main()
 
 	LOG_INFO("Starting FK/IK Test.");
 
-	Eigen::Affine3d pose
-		(franka_control::franka_util::fk
-		 (
-		  (franka_control::robot_config_7dof()
-			  << 1.08615, 0.044619, 0.227112, -2.26678, -0.059792, 2.27532, 0.605723).finished()).back());
+	//Eigen::Affine3d pose
+	//	(franka_control::franka_util::fk
+	//	 (
+	//	  (franka_control::robot_config_7dof()
+	//		  << 1.08615, 0.044619, 0.227112, -2.26678, -0.059792, 2.27532, 0.605723).finished()).back());
 
-	pose.linear() << 0.707107, 0.707107, 0,
-		0.707107, - 0.707107, -0,
-		0, 0, -1;
+	//pose.linear() << 0.707107, 0.707107, 0,
+	//	0.707107, - 0.707107, -0,
+	//	0, 0, -1;
 
-	auto ik_solution = franka_control::franka_util::ik_fast_closest
-		(pose,
-		 franka_control::robot_config_7dof(controller.current_config().data()));
+	//auto ik_solution = franka_control::franka_util::ik_fast_closest
+	//	(pose,
+	//	 franka_control::robot_config_7dof(controller.current_config().data()));
 
-	franka_proxy::robot_config_7dof q{};
-	Eigen::VectorXd::Map(&q[0], 7) = ik_solution;
-	controller.move_to(q);
+	//franka_proxy::robot_config_7dof q{};
+	//Eigen::VectorXd::Map(&q[0], 7) = ik_solution;
+	//controller.move_to(q);
 
 	LOG_INFO("Finished FK/IK Test.");
 
 
 	LOG_INFO("Starting Playback Test.");
 
+	franka_proxy::robot_config_7dof q
+		{{1.08615, 0.044619, 0.227112, -2.26678, -0.059792, 2.27532, 0.605723}};
+	controller.move_to(q);
+	
 	LOG_INFO("--- press to start in 3s ---");
 	std::cin.get();
 	std::this_thread::sleep_for(std::chrono::seconds(3));
