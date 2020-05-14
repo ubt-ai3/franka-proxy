@@ -12,11 +12,11 @@
 
 #include <string>
 
-#include "viral_core/network.hpp"
-#include "viral_core/network_stream.hpp"
-#include "viral_core/network_transfer.hpp"
-#include "viral_core/log.hpp"
-
+#include <viral_core/network.hpp>
+#include <viral_core/network_stream.hpp>
+#include <viral_core/network_transfer.hpp>
+#include <viral_core/log.hpp>
+		 
 #include <franka/robot_state.h>
 #include <franka/gripper_state.h>
 
@@ -25,6 +25,8 @@
 
 namespace franka_proxy
 {
+
+
 using namespace viral_core;
 
 
@@ -191,21 +193,21 @@ void franka_control_server::process_request(const string& request)
 
 			unsigned char response =
 				execute_exception_to_return_value
-					([&]()
-					{
-						controller_.move_to(joint_config);
-						return franka_proxy_messages::success;
-					});
+				([&]()
+				{
+					controller_.move_to(joint_config);
+					return franka_proxy_messages::success;
+				});
 
 			LOG_INFO("Sending response: " + static_cast<int>(response));
 			stream_->send_nonblocking(&response, sizeof(unsigned char));
 			break;
 		}
 
-		case franka_proxy_messages::move_sequence:
+		case franka_proxy_messages::move_hybrid_sequence:
 		{
 			LOG_INFO("Moving sequence");
-				
+
 			int64 count;
 			while (!stream_->try_receive_nonblocking(reinterpret_cast<unsigned char*>(&count), sizeof(int64), false))
 				stream_->update();
@@ -244,7 +246,8 @@ void franka_control_server::process_request(const string& request)
 				}
 
 				std::array<double, 7> joints
-				{{
+				{
+					{
 						strtod(joint_values_list[0].data(), nullptr),
 						strtod(joint_values_list[1].data(), nullptr),
 						strtod(joint_values_list[2].data(), nullptr),
@@ -252,7 +255,8 @@ void franka_control_server::process_request(const string& request)
 						strtod(joint_values_list[4].data(), nullptr),
 						strtod(joint_values_list[5].data(), nullptr),
 						strtod(joint_values_list[6].data(), nullptr)
-				}};
+					}
+				};
 
 
 				// emplace position
@@ -266,7 +270,7 @@ void franka_control_server::process_request(const string& request)
 				// size
 				int64 size;
 				while (!stream_->try_receive_nonblocking
-				(reinterpret_cast<unsigned char*>(&size), sizeof(int64), false))
+					(reinterpret_cast<unsigned char*>(&size), sizeof(int64), false))
 					stream_->update();
 				// todo ntoh byteorder
 
@@ -275,7 +279,7 @@ void franka_control_server::process_request(const string& request)
 				network_buffer network_data = network_buffer();
 				network_data.resize(size);
 				while (!stream_->try_receive_nonblocking
-				(network_data.data(), size, false))
+					(network_data.data(), size, false))
 					stream_->update();
 
 
@@ -291,14 +295,16 @@ void franka_control_server::process_request(const string& request)
 				}
 
 				std::array<double, 6> joints
-				{ {
+				{
+					{
 						strtod(joint_values_list[0].data(), nullptr),
 						strtod(joint_values_list[1].data(), nullptr),
 						strtod(joint_values_list[2].data(), nullptr),
 						strtod(joint_values_list[3].data(), nullptr),
 						strtod(joint_values_list[4].data(), nullptr),
 						strtod(joint_values_list[5].data(), nullptr)
-				} };
+					}
+				};
 
 
 				// emplace position
@@ -306,12 +312,13 @@ void franka_control_server::process_request(const string& request)
 			}
 
 			std::vector<std::array<double, 6>> s_data;
-			s_data.reserve(count);			for (int64 i = 0; i < count; ++i)
+			s_data.reserve(count);
+			for (int64 i = 0; i < count; ++i)
 			{
 				// size
 				int64 size;
 				while (!stream_->try_receive_nonblocking
-				(reinterpret_cast<unsigned char*>(&size), sizeof(int64), false))
+					(reinterpret_cast<unsigned char*>(&size), sizeof(int64), false))
 					stream_->update();
 				// todo ntoh byteorder
 
@@ -320,7 +327,7 @@ void franka_control_server::process_request(const string& request)
 				network_buffer network_data = network_buffer();
 				network_data.resize(size);
 				while (!stream_->try_receive_nonblocking
-				(network_data.data(), size, false))
+					(network_data.data(), size, false))
 					stream_->update();
 
 
@@ -336,14 +343,16 @@ void franka_control_server::process_request(const string& request)
 				}
 
 				std::array<double, 6> joints
-				{ {
+				{
+					{
 						strtod(joint_values_list[0].data(), nullptr),
 						strtod(joint_values_list[1].data(), nullptr),
 						strtod(joint_values_list[2].data(), nullptr),
 						strtod(joint_values_list[3].data(), nullptr),
 						strtod(joint_values_list[4].data(), nullptr),
 						strtod(joint_values_list[5].data(), nullptr)
-				} };
+					}
+				};
 
 
 				// emplace position
@@ -354,12 +363,12 @@ void franka_control_server::process_request(const string& request)
 
 			unsigned char response =
 				execute_exception_to_return_value
-					([&]()
-					{
-						controller_.move_sequence(q_data, f_data, s_data);
-						//controller_.move_sequence(data, -5.0);
-						return franka_proxy_messages::success;
-					});
+				([&]()
+				{
+					controller_.move_sequence(q_data, f_data, s_data);
+					//controller_.move_hybrid_sequence(data, -5.0);
+					return franka_proxy_messages::success;
+				});
 
 
 			LOG_INFO("Sending response: " + static_cast<int>(response));
@@ -391,12 +400,12 @@ void franka_control_server::process_request(const string& request)
 
 			unsigned char response =
 				execute_exception_to_return_value
-					([&]()
-					{
-						if (controller_.move_to_until_contact(joint_config))
-							return franka_proxy_messages::success;
-						return franka_proxy_messages::success_command_failed;
-					});
+				([&]()
+				{
+					if (controller_.move_to_until_contact(joint_config))
+						return franka_proxy_messages::success;
+					return franka_proxy_messages::success_command_failed;
+				});
 
 			LOG_INFO("Sending response: " + static_cast<int>(response));
 			stream_->send_nonblocking(&response, sizeof(unsigned char));
@@ -416,11 +425,11 @@ void franka_control_server::process_request(const string& request)
 
 			unsigned char response =
 				execute_exception_to_return_value
-					([&]()
-					{
-						controller_.apply_z_force(mass, duration);
-						return franka_proxy_messages::success;
-					});
+				([&]()
+				{
+					controller_.apply_z_force(mass, duration);
+					return franka_proxy_messages::success;
+				});
 
 			LOG_INFO("Sending response: " + static_cast<int>(response));
 			stream_->send_nonblocking(&response, sizeof(unsigned char));
@@ -433,11 +442,11 @@ void franka_control_server::process_request(const string& request)
 
 			unsigned char response =
 				execute_exception_to_return_value
-					([&]()
-					{
-						controller_.open_gripper();
-						return franka_proxy_messages::success;
-					});
+				([&]()
+				{
+					controller_.open_gripper();
+					return franka_proxy_messages::success;
+				});
 
 			stream_->send_nonblocking(&response, sizeof(unsigned char));
 			break;
@@ -449,11 +458,11 @@ void franka_control_server::process_request(const string& request)
 
 			unsigned char response =
 				execute_exception_to_return_value
-					([&]()
-					{
-						controller_.close_gripper();
-						return franka_proxy_messages::success;
-					});
+				([&]()
+				{
+					controller_.close_gripper();
+					return franka_proxy_messages::success;
+				});
 
 			stream_->send_nonblocking(&response, sizeof(unsigned char));
 			break;
@@ -469,12 +478,12 @@ void franka_control_server::process_request(const string& request)
 
 			unsigned char response =
 				execute_exception_to_return_value
-					([&]()
-					{
-						if (controller_.grasp_gripper(parameters[0].to_float(), parameters[1].to_float()))
-							return franka_proxy_messages::success;
-						return franka_proxy_messages::success_command_failed;
-					});
+				([&]()
+				{
+					if (controller_.grasp_gripper(parameters[0].to_float(), parameters[1].to_float()))
+						return franka_proxy_messages::success;
+					return franka_proxy_messages::success_command_failed;
+				});
 
 			LOG_INFO("Sending response: " + static_cast<int>(response));
 			stream_->send_nonblocking(&response, sizeof(unsigned char));
@@ -487,11 +496,11 @@ void franka_control_server::process_request(const string& request)
 
 			unsigned char response =
 				execute_exception_to_return_value
-					([&]()
-					{
-						controller_.start_recording();
-						return franka_proxy_messages::success;
-					});
+				([&]()
+				{
+					controller_.start_recording();
+					return franka_proxy_messages::success;
+				});
 
 			LOG_INFO("Sending response: " + static_cast<int>(response));
 			stream_->send_nonblocking(&response, sizeof(unsigned char));
@@ -508,13 +517,13 @@ void franka_control_server::process_request(const string& request)
 
 			unsigned char response =
 				execute_exception_to_return_value
-					([&]()
-					{
-						auto tmp = controller_.stop_recording();
-						q_sequence = std::move(tmp.first);
-						f_sequence = std::move(tmp.second);
-						return franka_proxy_messages::success;
-					});
+				([&]()
+				{
+					auto tmp = controller_.stop_recording();
+					q_sequence = std::move(tmp.first);
+					f_sequence = std::move(tmp.second);
+					return franka_proxy_messages::success;
+				});
 
 			int64 count = q_sequence.size();
 			stream_->send_nonblocking(reinterpret_cast<const unsigned char*>(&count), sizeof(int64));
@@ -567,7 +576,7 @@ void franka_control_server::process_request(const string& request)
 				if (stream_->pending_send_bytes() > (stream_->buffer_max_size_send * 0.8))
 				{
 					LOG_WARN("Network send buffer is 80 percent used.")
-						std::this_thread::sleep_for(std::chrono::milliseconds(100));
+					std::this_thread::sleep_for(std::chrono::milliseconds(100));
 				}
 			}
 
@@ -599,6 +608,8 @@ void franka_control_server::process_request(const string& request)
 		default: throw std::exception("unhandled message type");
 	}
 }
+
+
 
 
 //////////////////////////////////////////////////////////////////////////

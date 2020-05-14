@@ -47,6 +47,8 @@ public:
 };
 
 
+
+
 /**
  *************************************************************************
  *
@@ -66,6 +68,8 @@ public:
 };
 
 
+
+
 /**
  *************************************************************************
  * Thrown if an error occurs when loading the model library.
@@ -78,6 +82,8 @@ public:
 		return "Error while loading the model library.";
 	}
 };
+
+
 
 
 /**
@@ -95,6 +101,8 @@ public:
 };
 
 
+
+
 /**
  *************************************************************************
  * Thrown if the robot returns an incorrect message.
@@ -107,6 +115,8 @@ public:
 		return "Incorrect message returned by robot.";
 	}
 };
+
+
 
 
 /**
@@ -123,6 +133,8 @@ public:
 };
 
 
+
+
 /**
  *************************************************************************
  * Thrown if an error occurs during motion generation or torque control.
@@ -135,6 +147,8 @@ public:
 		return "An error occured during motion generation or torque control.";
 	}
 };
+
+
 
 
 /**
@@ -151,6 +165,8 @@ public:
 };
 
 
+
+
 /**
  *************************************************************************
  * Thrown if realtime priority cannot be set.
@@ -163,6 +179,8 @@ public:
 		return "Realtime priority cannot be set.";
 	}
 };
+
+
 
 
 /**

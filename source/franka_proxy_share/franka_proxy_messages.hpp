@@ -20,40 +20,54 @@ class franka_proxy_messages
 {
 public:
 
+
+	static constexpr const char* command_end_marker = ";";
+
+
 	static constexpr const char* command_strings[11] =
 	{
 		"MOVE_PTP",
-		"MOVE_SEQUENCE",
 		"MOVE_CONTACT",
+		"MOVE_HYBRID_SEQUENCE",
 		"FORCE_Z",
+		
 		"OPEN_GRIPPER",
 		"CLOSE_GRIPPER",
 		"GRASPING_GRIPPER",
+		
 		"START_RECORDING",
 		"STOP_RECORDING",
+		
 		"SPEED",
-		"ERRORRECOVERY"
+		
+		"ERROR_RECOVERY"
 	};
 
-	
-	static constexpr const char* command_end_marker = ";";
+
 
 
 	enum command_type
 	{
 		move_ptp,
-		move_sequence,
 		move_contact,
+		move_hybrid_sequence,
 		force_z,
+		
 		open_gripper,
 		close_gripper,
 		grasp_gripper,
+		
 		start_recording,
 		stop_recording,
+		
 		speed,
+		
 		error_recovery,
+		
 		message_type_count
 	};
+
+
 
 
 	enum feedback_type
@@ -71,8 +85,6 @@ public:
 		franka_exception
 	};
 };
-
-
 
 
 } /* namespace franka_proxy */

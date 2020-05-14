@@ -276,11 +276,12 @@ unsigned char franka_control_client::send_command_and_check_response
 }
 
 
-std::pair<std::vector<std::array<double, 7>>, std::vector<std::array<double, 6>>> franka_control_client::send_stop_recording_and_receive_sequence(float timeout_seconds)
+std::pair<std::vector<std::array<double, 7>>, std::vector<std::array<double, 6>>>
+	franka_control_client::send_stop_recording_and_receive_sequence(float timeout_seconds)
 {
 	const string command =
-		(std::string(franka_proxy_messages::command_strings[franka_proxy_messages::stop_recording]) +
-			franka_proxy_messages::command_end_marker).data();
+	(std::string(franka_proxy_messages::command_strings[franka_proxy_messages::stop_recording]) +
+		franka_proxy_messages::command_end_marker).data();
 
 	free_timer t;
 	while (t.seconds_passed() < timeout_seconds)
@@ -288,10 +289,11 @@ std::pair<std::vector<std::array<double, 7>>, std::vector<std::array<double, 6>>
 		try
 		{
 			if (!stream_)
-				stream_.reset(new network_stream
-				 (network_.create_connection
-				  (remote_ip_, remote_port_),
-				  16384, 1000000000, 16384, 1000000000));
+				stream_.reset
+					(new network_stream
+					 (network_.create_connection
+					  (remote_ip_, remote_port_),
+					  16384, 1037741824, 16384, 1037741824));
 
 			// command
 			stream_->send_nonblocking
@@ -339,7 +341,8 @@ std::pair<std::vector<std::array<double, 7>>, std::vector<std::array<double, 6>>
 				}
 
 				std::array<double, 7> joints
-				{{
+				{
+					{
 						strtod(joint_values_list[0].data(), nullptr),
 						strtod(joint_values_list[1].data(), nullptr),
 						strtod(joint_values_list[2].data(), nullptr),
@@ -347,7 +350,8 @@ std::pair<std::vector<std::array<double, 7>>, std::vector<std::array<double, 6>>
 						strtod(joint_values_list[4].data(), nullptr),
 						strtod(joint_values_list[5].data(), nullptr),
 						strtod(joint_values_list[6].data(), nullptr)
-				}};
+					}
+				};
 
 
 				// emplace position
@@ -356,7 +360,7 @@ std::pair<std::vector<std::array<double, 7>>, std::vector<std::array<double, 6>>
 
 			// count
 			while (!stream_->try_receive_nonblocking
-			(reinterpret_cast<unsigned char*>(&count), sizeof(int64), false))
+				(reinterpret_cast<unsigned char*>(&count), sizeof(int64), false))
 				thread_util::sleep_slice();
 			// todo ntoh byteorder
 
@@ -368,7 +372,7 @@ std::pair<std::vector<std::array<double, 7>>, std::vector<std::array<double, 6>>
 				// size
 				int64 size;
 				while (!stream_->try_receive_nonblocking
-				(reinterpret_cast<unsigned char*>(&size), sizeof(int64), false))
+					(reinterpret_cast<unsigned char*>(&size), sizeof(int64), false))
 					thread_util::sleep_slice();
 				// todo ntoh byteorder
 
@@ -377,7 +381,7 @@ std::pair<std::vector<std::array<double, 7>>, std::vector<std::array<double, 6>>
 				network_buffer network_data = network_buffer();
 				network_data.resize(size);
 				while (!stream_->try_receive_nonblocking
-				(network_data.data(), size, false))
+					(network_data.data(), size, false))
 					thread_util::sleep_slice();
 
 
@@ -393,14 +397,16 @@ std::pair<std::vector<std::array<double, 7>>, std::vector<std::array<double, 6>>
 				}
 
 				std::array<double, 6> forces
-				{ {
+				{
+					{
 						strtod(joint_values_list[0].data(), nullptr),
 						strtod(joint_values_list[1].data(), nullptr),
 						strtod(joint_values_list[2].data(), nullptr),
 						strtod(joint_values_list[3].data(), nullptr),
 						strtod(joint_values_list[4].data(), nullptr),
 						strtod(joint_values_list[5].data(), nullptr)
-				} };
+					}
+				};
 
 
 				// emplace position
@@ -416,7 +422,7 @@ std::pair<std::vector<std::array<double, 7>>, std::vector<std::array<double, 6>>
 			LOG_INFO("received: " + count);
 
 
-			return { q_sequence, f_sequence };
+			return {q_sequence, f_sequence};
 		}
 		catch (const network_exception&)
 		{
@@ -429,14 +435,14 @@ std::pair<std::vector<std::array<double, 7>>, std::vector<std::array<double, 6>>
 }
 
 
-void franka_control_client::send_move_sequence(
-	const std::vector<std::array<double, 7>>& q_sequence,
-	const std::vector<std::array<double, 6>>& f_sequence,
-	const std::vector<std::array<double, 6>>& selection_vector_sequence,
+void franka_control_client::send_move_sequence
+	(const std::vector<std::array<double, 7>>& q_sequence,
+	 const std::vector<std::array<double, 6>>& f_sequence,
+	 const std::vector<std::array<double, 6>>& selection_vector_sequence,
 	 float timeout_seconds)
 {
 	string command =
-	(std::string(franka_proxy_messages::command_strings[franka_proxy_messages::move_sequence]) +
+	(std::string(franka_proxy_messages::command_strings[franka_proxy_messages::move_hybrid_sequence]) +
 		franka_proxy_messages::command_end_marker).data();
 
 	free_timer t;
@@ -445,10 +451,11 @@ void franka_control_client::send_move_sequence(
 		try
 		{
 			if (!stream_)
-				stream_.reset(new network_stream
-				 (network_.create_connection
-				  (remote_ip_, remote_port_),
-				  16384, 1000000000, 16384, 1000000000));
+				stream_.reset
+					(new network_stream
+					 (network_.create_connection
+					  (remote_ip_, remote_port_),
+					  16384, 1037741824, 16384, 1037741824));
 
 			// command
 			stream_->send_nonblocking
@@ -505,14 +512,14 @@ void franka_control_client::send_move_sequence(
 				// todo hton byteorder
 				int64 size = message.size();
 				stream_->send_nonblocking
-				(reinterpret_cast<const unsigned char*>(&size), sizeof(int64));
+					(reinterpret_cast<const unsigned char*>(&size), sizeof(int64));
 				stream_->send_nonblocking
-				(reinterpret_cast<const unsigned char*>(message.data()), message.size());
+					(reinterpret_cast<const unsigned char*>(message.data()), message.size());
 
 				if (stream_->pending_send_bytes() > (stream_->buffer_max_size_send * 0.8))
 				{
 					LOG_WARN("Network send buffer is 80 percent used.")
-						std::this_thread::sleep_for(std::chrono::milliseconds(100));
+					std::this_thread::sleep_for(std::chrono::milliseconds(100));
 				}
 			}
 
@@ -532,17 +539,17 @@ void franka_control_client::send_move_sequence(
 				// todo hton byteorder
 				int64 size = message.size();
 				stream_->send_nonblocking
-				(reinterpret_cast<const unsigned char*>(&size), sizeof(int64));
+					(reinterpret_cast<const unsigned char*>(&size), sizeof(int64));
 				stream_->send_nonblocking
-				(reinterpret_cast<const unsigned char*>(message.data()), message.size());
+					(reinterpret_cast<const unsigned char*>(message.data()), message.size());
 
 				if (stream_->pending_send_bytes() > (stream_->buffer_max_size_send * 0.8))
 				{
 					LOG_WARN("Network send buffer is 80 percent used.")
-						std::this_thread::sleep_for(std::chrono::milliseconds(100));
+					std::this_thread::sleep_for(std::chrono::milliseconds(100));
 				}
 			}
-			
+
 			// response	
 			unsigned char return_value;
 			while (!stream_->try_receive_nonblocking

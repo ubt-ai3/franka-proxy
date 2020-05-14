@@ -50,63 +50,22 @@ franka_remote_controller::~franka_remote_controller() noexcept
 }
 
 
-void franka_remote_controller::apply_z_force(double mass, double duration)
-{
-	string msg =
-		(std::string(franka_proxy_messages::command_strings[franka_proxy_messages::force_z]) + ' ' +
-		 std::to_string(mass) + ' ' +
-		 std::to_string(duration) +
-		 franka_proxy_messages::command_end_marker).data();
-
-	check_response
-		(franka_proxy_messages::feedback_type
-			(socket_control_->send_command_and_check_response(msg)));
-}
-
-
-void franka_remote_controller::start_recording()
-{
-	string msg =
-		(std::string(franka_proxy_messages::command_strings[franka_proxy_messages::start_recording]) +
-			franka_proxy_messages::command_end_marker).data();
-
-	check_response
-		(franka_proxy_messages::feedback_type
-			(socket_control_->send_command_and_check_response(msg)));
-}
-
-
-std::pair<std::vector<std::array<double, 7>>, std::vector<std::array<double, 6>>> franka_remote_controller::stop_recording()
-{
-	return socket_control_->send_stop_recording_and_receive_sequence();
-}
-
-
 void franka_remote_controller::move_to(const robot_config_7dof& target)
 {
 	string msg =
-		(std::string(franka_proxy_messages::command_strings[franka_proxy_messages::move_ptp]) + ' ' +
-		 std::to_string(target[0]) + ' ' +
-		 std::to_string(target[1]) + ' ' +
-		 std::to_string(target[2]) + ' ' +
-		 std::to_string(target[3]) + ' ' +
-		 std::to_string(target[4]) + ' ' +
-		 std::to_string(target[5]) + ' ' +
-		 std::to_string(target[6]) +
-		 franka_proxy_messages::command_end_marker).data();
+	(std::string(franka_proxy_messages::command_strings[franka_proxy_messages::move_ptp]) + ' ' +
+		std::to_string(target[0]) + ' ' +
+		std::to_string(target[1]) + ' ' +
+		std::to_string(target[2]) + ' ' +
+		std::to_string(target[3]) + ' ' +
+		std::to_string(target[4]) + ' ' +
+		std::to_string(target[5]) + ' ' +
+		std::to_string(target[6]) +
+		franka_proxy_messages::command_end_marker).data();
 
 	check_response
 		(franka_proxy_messages::feedback_type
-			(socket_control_->send_command_and_check_response(msg)));
-}
-
-
-void franka_remote_controller::move_sequence(
-	const std::vector<robot_config_7dof>& q_sequence,
-	const std::vector<std::array<double, 6>>& f_sequence,
-	const std::vector<std::array<double, 6>>& selection_vector_sequence)
-{	
-	return socket_control_->send_move_sequence(q_sequence, f_sequence, selection_vector_sequence);
+		 (socket_control_->send_command_and_check_response(msg)));
 }
 
 
@@ -114,21 +73,46 @@ bool franka_remote_controller::move_to_until_contact
 	(const robot_config_7dof& target)
 {
 	string msg =
-		(std::string(franka_proxy_messages::command_strings[franka_proxy_messages::move_contact]) + ' ' +
-		 std::to_string(target[0]) + ' ' +
-		 std::to_string(target[1]) + ' ' +
-		 std::to_string(target[2]) + ' ' +
-		 std::to_string(target[3]) + ' ' +
-		 std::to_string(target[4]) + ' ' +
-		 std::to_string(target[5]) + ' ' +
-		 std::to_string(target[6]) +
-		 franka_proxy_messages::command_end_marker).data();
+	(std::string(franka_proxy_messages::command_strings[franka_proxy_messages::move_contact]) + ' ' +
+		std::to_string(target[0]) + ' ' +
+		std::to_string(target[1]) + ' ' +
+		std::to_string(target[2]) + ' ' +
+		std::to_string(target[3]) + ' ' +
+		std::to_string(target[4]) + ' ' +
+		std::to_string(target[5]) + ' ' +
+		std::to_string(target[6]) +
+		franka_proxy_messages::command_end_marker).data();
 
 	const response_type response = check_response
 		(franka_proxy_messages::feedback_type
-			(socket_control_->send_command_and_check_response(msg)));
+		 (socket_control_->send_command_and_check_response(msg)));
 
 	return response != response_type::success_command_failed;
+}
+
+
+void franka_remote_controller::move_sequence
+	(const std::vector<robot_config_7dof>& q_sequence,
+	 const std::vector<std::array<double, 6>>& f_sequence,
+	 const std::vector<std::array<double, 6>>& selection_vector_sequence)
+{
+	return socket_control_->send_move_sequence(q_sequence, f_sequence, selection_vector_sequence);
+}
+
+
+void franka_remote_controller::apply_z_force
+	(double mass,
+	 double duration)
+{
+	string msg =
+	(std::string(franka_proxy_messages::command_strings[franka_proxy_messages::force_z]) + ' ' +
+		std::to_string(mass) + ' ' +
+		std::to_string(duration) +
+		franka_proxy_messages::command_end_marker).data();
+
+	check_response
+		(franka_proxy_messages::feedback_type
+		 (socket_control_->send_command_and_check_response(msg)));
 }
 
 
@@ -136,7 +120,7 @@ void franka_remote_controller::open_gripper()
 {
 	string msg = string
 		(franka_proxy_messages::command_strings[franka_proxy_messages::open_gripper]) +
-		 franka_proxy_messages::command_end_marker;
+		franka_proxy_messages::command_end_marker;
 	unsigned char response =
 		socket_control_->send_command_and_check_response(msg);
 	check_response
@@ -148,24 +132,24 @@ void franka_remote_controller::close_gripper()
 {
 	string msg = string
 		(franka_proxy_messages::command_strings[franka_proxy_messages::close_gripper]) +
-		 franka_proxy_messages::command_end_marker;
+		franka_proxy_messages::command_end_marker;
 
 	check_response
 		(franka_proxy_messages::feedback_type
-			(socket_control_->send_command_and_check_response(msg)));
+		 (socket_control_->send_command_and_check_response(msg)));
 }
 
 
 bool franka_remote_controller::grasp_gripper(double speed, double force)
 {
 	string msg =
-		(std::string(franka_proxy_messages::command_strings[franka_proxy_messages::grasp_gripper]) + ' ' +
-		 std::to_string(speed) + ' ' + std::to_string(force) +
-		 franka_proxy_messages::command_end_marker).data();
-	
+	(std::string(franka_proxy_messages::command_strings[franka_proxy_messages::grasp_gripper]) + ' ' +
+		std::to_string(speed) + ' ' + std::to_string(force) +
+		franka_proxy_messages::command_end_marker).data();
+
 	response_type response = check_response
 		(franka_proxy_messages::feedback_type
-			(socket_control_->send_command_and_check_response(msg)));
+		 (socket_control_->send_command_and_check_response(msg)));
 
 	return response != response_type::success_command_failed;
 }
@@ -173,8 +157,9 @@ bool franka_remote_controller::grasp_gripper(double speed, double force)
 
 void franka_remote_controller::set_speed_factor(double speed_factor)
 {
-	socket_control_->send_command(string
-		(franka_proxy_messages::command_strings[franka_proxy_messages::speed]) +
+	socket_control_->send_command
+		(string
+		 (franka_proxy_messages::command_strings[franka_proxy_messages::speed]) +
 		 " " + static_cast<float>(speed_factor) +
 		 franka_proxy_messages::command_end_marker);
 }
@@ -182,8 +167,9 @@ void franka_remote_controller::set_speed_factor(double speed_factor)
 
 void franka_remote_controller::automatic_error_recovery()
 {
-	socket_control_->send_command(string
-		(franka_proxy_messages::command_strings[franka_proxy_messages::error_recovery]) +
+	socket_control_->send_command
+		(string
+		 (franka_proxy_messages::command_strings[franka_proxy_messages::error_recovery]) +
 		 franka_proxy_messages::command_end_marker);
 }
 
@@ -213,6 +199,25 @@ bool franka_remote_controller::gripper_grasped() const
 {
 	std::lock_guard<std::mutex> state_guard(state_lock_);
 	return gripper_grasped_;
+}
+
+
+void franka_remote_controller::start_recording()
+{
+	string msg =
+	(std::string(franka_proxy_messages::command_strings[franka_proxy_messages::start_recording]) +
+		franka_proxy_messages::command_end_marker).data();
+
+	check_response
+		(franka_proxy_messages::feedback_type
+		 (socket_control_->send_command_and_check_response(msg)));
+}
+
+
+std::pair<std::vector<std::array<double, 7>>, std::vector<std::array<double, 6>>>
+	franka_remote_controller::stop_recording()
+{
+	return socket_control_->send_stop_recording_and_receive_sequence();
 }
 
 
@@ -295,12 +300,10 @@ void franka_remote_controller::initialize_sockets()
 	LOG_INFO("Creating network connections.");
 
 	socket_control_.reset
-	(new franka_control_client
-		(network_, franka_ip_.data(), franka_control_port));
+		(new franka_control_client(network_, franka_ip_.data(), franka_control_port));
 
 	socket_state_.reset
-	(new franka_state_client
-		(network_, franka_ip_.data(), franka_state_port));
+		(new franka_state_client(network_, franka_ip_.data(), franka_state_port));
 }
 
 
@@ -341,8 +344,6 @@ franka_remote_controller::response_type
 			throw remote_exception();
 	}
 }
-
-
 
 
 } /* namespace franka_proxy */

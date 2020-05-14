@@ -1,3 +1,12 @@
+/**
+ *************************************************************************
+ *
+ * @file force_torque_sensor.cpp
+ *
+ * ..., implementation.
+ *
+ ************************************************************************/
+
 #include "force_torque_sensor.hpp"
 
 #include <vector>
@@ -8,10 +17,10 @@
 #include "fore_torque_sensor_JR3PCIIoctls.h"
 
 
-extern "C" 
+extern "C"
 {
 
-
+	
 WORD ReadWord(HANDLE hJr3PciDevice, UCHAR ucChannel, ULONG ulOffset)
 {
 	JR3PCI_READ_WORD_REQUEST_PARAMS ReadWordRequestParams;
@@ -21,15 +30,16 @@ WORD ReadWord(HANDLE hJr3PciDevice, UCHAR ucChannel, ULONG ulOffset)
 	JR3PCI_READ_WORD_RESPONSE_PARAMS ReadWordResponseParams;
 
 	DWORD dwBytesReturned = 0;
-	BOOL success = DeviceIoControl(
-		hJr3PciDevice,								// handle to device
-		IOCTL_JR3PCI_READ_WORD,						// operation
-		&ReadWordRequestParams,						// input data buffer
-		sizeof(JR3PCI_READ_WORD_REQUEST_PARAMS),	// size of input data buffer
-		&ReadWordResponseParams,					// output data buffer
-		sizeof(JR3PCI_READ_WORD_RESPONSE_PARAMS),	// size of output data buffer
-		&dwBytesReturned,							// byte count
-		nullptr);									// overlapped information
+	BOOL success = DeviceIoControl
+		(
+		 hJr3PciDevice, // handle to device
+		 IOCTL_JR3PCI_READ_WORD, // operation
+		 &ReadWordRequestParams, // input data buffer
+		 sizeof(JR3PCI_READ_WORD_REQUEST_PARAMS), // size of input data buffer
+		 &ReadWordResponseParams, // output data buffer
+		 sizeof(JR3PCI_READ_WORD_RESPONSE_PARAMS), // size of output data buffer
+		 &dwBytesReturned, // byte count
+		 nullptr); // overlapped information
 
 	_ASSERTE(success && (dwBytesReturned == sizeof(JR3PCI_READ_WORD_RESPONSE_PARAMS)));
 	_ASSERTE(ReadWordResponseParams.iStatus == JR3PCI_STATUS_OK);
@@ -48,30 +58,28 @@ void WriteWord(HANDLE hJr3PciDevice, UCHAR ucChannel, ULONG ulOffset, USHORT usD
 	JR3PCI_WRITE_WORD_RESPONSE_PARAMS WriteWordResponseParams;
 
 	DWORD dwBytesReturned = 0;
-	BOOL bSuccess = DeviceIoControl(
-		hJr3PciDevice,								// handle to device
-		IOCTL_JR3PCI_WRITE_WORD,					// operation
-		&WriteWordRequestParams,					// input data buffer
-		sizeof(JR3PCI_WRITE_WORD_REQUEST_PARAMS),	// size of input data buffer
-		&WriteWordResponseParams,					// output data buffer
-		sizeof(JR3PCI_WRITE_WORD_RESPONSE_PARAMS),	// size of output data buffer
-		&dwBytesReturned,							// byte count
-		nullptr);									// overlapped information
+	BOOL bSuccess = DeviceIoControl
+		(
+		 hJr3PciDevice, // handle to device
+		 IOCTL_JR3PCI_WRITE_WORD, // operation
+		 &WriteWordRequestParams, // input data buffer
+		 sizeof(JR3PCI_WRITE_WORD_REQUEST_PARAMS), // size of input data buffer
+		 &WriteWordResponseParams, // output data buffer
+		 sizeof(JR3PCI_WRITE_WORD_RESPONSE_PARAMS), // size of output data buffer
+		 &dwBytesReturned, // byte count
+		 nullptr); // overlapped information
 
 	_ASSERTE(bSuccess && (dwBytesReturned == sizeof(JR3PCI_WRITE_WORD_RESPONSE_PARAMS)));
 	_ASSERTE(WriteWordResponseParams.iStatus == JR3PCI_STATUS_OK);
 }
-
-
 } // extern "C"
 
 
 namespace franka_proxy
 {
-
-
 ft_sensor_jr3::ft_sensor_jr3()
-	: device_name_(R"(\\.\JR3PCI1)")
+	:
+	device_name_(R"(\\.\JR3PCI1)")
 {
 	init_jr3();
 	set_offsets_to_zero();
@@ -96,9 +104,10 @@ void ft_sensor_jr3::set_offsets_to_zero()
 	std::array<int, 6> offsets{};
 	for (int i = 0; i < 6; ++i)
 	{
-		offsets[i] = std::accumulate(
-			raw_values[i].begin(),
-			raw_values[i].end(), 0) / static_cast<int>(raw_values[i].size());
+		offsets[i] = std::accumulate
+			(
+			 raw_values[i].begin(),
+			 raw_values[i].end(), 0) / static_cast<int>(raw_values[i].size());
 
 		// add current offset
 		const ULONG offset_f0 = 0x88 + i;
@@ -188,14 +197,15 @@ std::array<int, 6> ft_sensor_jr3::current_raw_values_f4() const
 
 void ft_sensor_jr3::init_jr3()
 {
-	jr3_pci_device_ = CreateFile(
-		device_name_.c_str(),
-		GENERIC_READ | GENERIC_WRITE,
-		0,
-		nullptr,
-		OPEN_EXISTING,
-		0,
-		nullptr);
+	jr3_pci_device_ = CreateFile
+		(
+		 device_name_.c_str(),
+		 GENERIC_READ | GENERIC_WRITE,
+		 0,
+		 nullptr,
+		 OPEN_EXISTING,
+		 0,
+		 nullptr);
 
 	channel = 0;
 

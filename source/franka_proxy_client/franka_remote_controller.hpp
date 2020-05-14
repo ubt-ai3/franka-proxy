@@ -18,7 +18,7 @@
 
 #include <viral_core/network_forward.hpp>
 
-#include "../franka_proxy_share/franka_proxy_messages.hpp"
+#include <franka_proxy_share/franka_proxy_messages.hpp>
 
 #include "franka_network_client.hpp"
 
@@ -42,21 +42,6 @@ public:
 
 
 	/**
-	 * todo docu
-	 */
-	void apply_z_force(double mass, double duration);
-
-	/**
-	 * todo docu
-	 */
-	void start_recording();
-
-	/**
-	 * todo docu
-	 */
-	std::pair<std::vector<std::array<double, 7>>, std::vector<std::array<double, 6>>> stop_recording();
-
-	/**
 	 * Start control-loop to move the robot to given target.
 	 *
 	 * Returns if the movement was completed successfully.
@@ -68,18 +53,6 @@ public:
 	 * @throw viral_core::network_exception if the connection was lost.
 	 */
 	void move_to(const robot_config_7dof& target);
-	
-	/**
-	 * todo docu
-	 * @TODO: Check exceptions.
-	 *
-	 * @throw remote_exception if the movement was unsuccessful.
-	 * @throw viral_core::network_exception if the connection was lost.
-	 */
-	void move_sequence(
-		const std::vector<robot_config_7dof>& q_sequence,
-		const std::vector<std::array<double, 6>>& f_sequence,
-		const std::vector<std::array<double, 6>>& selection_vector_sequence);
 
 
 	/**
@@ -99,6 +72,26 @@ public:
 	bool move_to_until_contact(const robot_config_7dof& target);
 
 
+	/**
+	 * todo docu
+	 * @TODO: Check exceptions.
+	 *
+	 * @throw remote_exception if the movement was unsuccessful.
+	 * @throw viral_core::network_exception if the connection was lost.
+	 */
+	void move_sequence
+		(const std::vector<robot_config_7dof>& q_sequence,
+		 const std::vector<std::array<double, 6>>& f_sequence,
+		 const std::vector<std::array<double, 6>>& selection_vector_sequence);
+
+
+	/**
+	 * todo docu
+	 * todo change to newton
+	 */
+	void apply_z_force(double mass, double duration);
+
+	
 	/**
 	 * Open the gripper by moving it to max_width.
 	 *
@@ -135,6 +128,17 @@ public:
 	bool grasp_gripper(double speed = 0.025, double force = 0.05);
 
 
+	/**
+	 * todo docu
+	 */
+	void start_recording();
+
+	/**
+	 * todo docu
+	 */
+	std::pair<std::vector<std::array<double, 7>>, std::vector<std::array<double, 6>>> stop_recording();
+	
+	
 	/**
 	 * Send new target speed to robot.
 	 *

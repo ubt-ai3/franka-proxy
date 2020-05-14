@@ -100,13 +100,17 @@ public:
 	unsigned char send_command_and_check_response
 		(const viral_core::string& command,
 		 float timeout_seconds = 1.f);
-	std::pair<std::vector<std::array<double, 7>>, std::vector<std::array<double, 6>>> send_stop_recording_and_receive_sequence
-		(float timeout_seconds = 1.f);
-	void send_move_sequence(
-		const std::vector<std::array<double, 7>>& q_sequence,
-		const std::vector<std::array<double, 6>>& f_sequence,
-		const std::vector<std::array<double, 6>>& selection_vector_sequence,
-		float timeout_seconds = 1.f);
+
+
+	// todo split up function
+	std::pair<std::vector<std::array<double, 7>>, std::vector<std::array<double, 6>>>
+		send_stop_recording_and_receive_sequence
+			(float timeout_seconds = 1.f);
+	void send_move_sequence
+		(const std::vector<std::array<double, 7>>& q_sequence,
+		 const std::vector<std::array<double, 6>>& f_sequence,
+		 const std::vector<std::array<double, 6>>& selection_vector_sequence,
+		 float timeout_seconds = 1.f);
 
 private:
 

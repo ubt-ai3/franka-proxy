@@ -1,5 +1,14 @@
-#ifndef INCLUDED__FORCEBACK__FORCE_TORQUE_SENSOR_HPP
-#define INCLUDED__FORCEBACK__FORCE_TORQUE_SENSOR_HPP
+/**
+ *************************************************************************
+ *
+ * @file force_torque_sensor.hpp
+ *
+ * Classes to control a jr3 fts.
+ *
+ ************************************************************************/
+
+#if !defined(INCLUDED__FRANKA_PROXY__FORCE_TORQUE_SENSOR_HPP)
+#define INCLUDED__FRANKA_PROXY__FORCE_TORQUE_SENSOR_HPP
 
 #include <array>
 
@@ -8,6 +17,7 @@ namespace franka_proxy
 {
 
 
+// todo hartwig cleanup
 class ft_sensor_jr3
 {
 public:
@@ -72,4 +82,4 @@ private:
 } // franka_proxy
 
 
-#endif // INCLUDED__FORCEBACK__FORCE_TORQUE_SENSOR_HPP
+#endif /* !defined(INCLUDED__FRANKA_PROXY__FORCE_TORQUE_SENSOR_HPP) */

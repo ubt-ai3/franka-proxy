@@ -17,7 +17,7 @@
 #include <atomic>
 #include <franka/robot.h>
 
-#include <jr3_fts\force_torque_sensor.hpp>
+#include "jr3_fts\force_torque_sensor.hpp"
 
 
 namespace franka_proxy
