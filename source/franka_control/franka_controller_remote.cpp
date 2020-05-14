@@ -13,18 +13,6 @@
 #include <viral_core/log.hpp>
 
 #include "franka_proxy_client/franka_remote_controller.hpp"
-#include <iosfwd>
-#include <vector>
-#include <iosfwd>
-#include <vector>
-#include <iosfwd>
-#include <vector>
-#include <iosfwd>
-#include <vector>
-#include <iosfwd>
-#include <vector>
-#include <iosfwd>
-#include <vector>
 
 
 namespace franka_control
