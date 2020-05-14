@@ -32,7 +32,17 @@ typedef Eigen::Matrix<double, 7, 1> robot_config_7dof;
  *
  * @class franka_controller
  *
- * TODO!
+ * Interface for controlling and monitoring a franka emika panda robot.
+ *
+ * Usage notes:
+ * - To control a robot, clients send commands (e.g. set_speed_factor())
+ *      via the robot_controller.
+ * - To monitor a robot, clients must fetch franka_controller states
+ *		from the actual robot by update().
+ * - Without any update() call, the robot_controller may not change
+ *		its exposed states.
+ * - Clients should regularly call update() to avoid network timeouts.
+ *		A franka_update_task conveniently automates update()s.
  *
  ************************************************************************/
 class franka_controller
@@ -63,6 +73,11 @@ public:
 	virtual int current_gripper_pos() const = 0;
 	virtual int max_gripper_pos() const = 0;
 
+	/**
+	 * Fetch current state from the back-end robot.
+	 * Call regularly to avoid overflow in network buffers,
+	 * e.g. through a robot_controller_task.
+	 */
 	virtual void update() = 0;
 
 	Eigen::Affine3d current_nsa_T_world() const;

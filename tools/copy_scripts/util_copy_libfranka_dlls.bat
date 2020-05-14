@@ -5,33 +5,23 @@
 @cd /d "%~dp0"
 
 @call util_copy_file.bat ^
-	"..\..\external\libfranka\bin\Debug" ^
+	"..\..\..\libfranka\visual_studio_2019\externals\poco\bin\Debug" ^
 	"..\..\build\x64_Debug" ^
 	"PocoFoundationd.dll" ^
 	"..\..\build\temp\x64_Debug"
 @call util_copy_file.bat ^
-	"..\..\external\libfranka\bin\Debug" ^
+	"..\..\..\libfranka\visual_studio_2019\externals\poco\bin\Debug" ^
 	"..\..\build\x64_Debug" ^
 	"PocoNetd.dll" ^
 	"..\..\build\temp\x64_Debug"
-@call util_copy_file.bat ^
-	"..\..\external\libfranka\bin\Debug" ^
-	"..\..\build\x64_Debug" ^
-	"pthreadVC2.dll" ^
-	"..\..\build\temp\x64_Debug"
 	
 @call util_copy_file.bat ^
-	"..\..\external\libfranka\bin\Release" ^
+	"..\..\..\libfranka\visual_studio_2019\externals\poco\bin\Release" ^
 	"..\..\build\x64_Release" ^
 	"PocoFoundation.dll" ^
 	"..\..\build\temp\x64_Release"
 @call util_copy_file.bat ^
-	"..\..\external\libfranka\bin\Release" ^
+	"..\..\..\libfranka\visual_studio_2019\externals\poco\bin\Release" ^
 	"..\..\build\x64_Release" ^
 	"PocoNet.dll" ^
-	"..\..\build\temp\x64_Release"
-@call util_copy_file.bat ^
-	"..\..\external\libfranka\bin\Release" ^
-	"..\..\build\x64_Release" ^
-	"pthreadVC2.dll" ^
 	"..\..\build\temp\x64_Release"

@@ -33,21 +33,25 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "viral", "viral", "{AF7FBD9E
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "external", "external", "{5688014F-3938-48B9-ABD6-E650F121B187}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "viral_core", "..\..\external\viral\tools\visual_studio_2019\projects\viral_core.vcxproj", "{AAE2F80F-754F-4255-AA66-677E4E181D8D}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "viral_core", "..\..\..\viral\tools\visual_studio_2019\projects\viral_core.vcxproj", "{AAE2F80F-754F-4255-AA66-677E4E181D8D}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "expat", "..\..\external\viral\tools\visual_studio_2019\external\expat.vcxproj", "{48B9F5EE-DFF8-4478-B9DA-F73B287E5773}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "expat", "..\..\..\viral\tools\visual_studio_2019\external\expat.vcxproj", "{48B9F5EE-DFF8-4478-B9DA-F73B287E5773}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libjpeg", "..\..\external\viral\tools\visual_studio_2019\external\libjpeg.vcxproj", "{C5F977F4-1FC7-4C98-B1DD-53C1E7D2FE70}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libjpeg", "..\..\..\viral\tools\visual_studio_2019\external\libjpeg.vcxproj", "{C5F977F4-1FC7-4C98-B1DD-53C1E7D2FE70}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libogg", "..\..\external\viral\tools\visual_studio_2019\external\libogg.vcxproj", "{A352F81B-0853-4BF8-A118-2458FEDCA3E4}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libogg", "..\..\..\viral\tools\visual_studio_2019\external\libogg.vcxproj", "{A352F81B-0853-4BF8-A118-2458FEDCA3E4}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libpng", "..\..\external\viral\tools\visual_studio_2019\external\libpng.vcxproj", "{66B067F1-4EB8-44CE-BFA2-32D2B582A75F}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libpng", "..\..\..\viral\tools\visual_studio_2019\external\libpng.vcxproj", "{66B067F1-4EB8-44CE-BFA2-32D2B582A75F}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libvorbis", "..\..\external\viral\tools\visual_studio_2019\external\libvorbis.vcxproj", "{5028BB57-80B6-4ADB-BC16-D27F98ADD82E}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libvorbis", "..\..\..\viral\tools\visual_studio_2019\external\libvorbis.vcxproj", "{5028BB57-80B6-4ADB-BC16-D27F98ADD82E}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "zlib", "..\..\external\viral\tools\visual_studio_2019\external\zlib.vcxproj", "{57EFCBAC-C6DB-4A0A-911B-029DFD676B7B}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "zlib", "..\..\..\viral\tools\visual_studio_2019\external\zlib.vcxproj", "{57EFCBAC-C6DB-4A0A-911B-029DFD676B7B}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "franka_control", "projects\franka_control.vcxproj", "{3125ED9C-58B1-4EA5-9214-9178EF9C8EB7}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libfranka", "..\..\..\libfranka\visual_studio_2019\projects\libfranka.vcxproj", "{E6B1D37A-4D6F-4BE7-9B9F-F07D664AFB0E}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "libfranka", "libfranka", "{84A6D587-E9B9-4CC7-A400-DE87FD29E115}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -99,6 +103,10 @@ Global
 		{3125ED9C-58B1-4EA5-9214-9178EF9C8EB7}.Debug|x64.Build.0 = Debug|x64
 		{3125ED9C-58B1-4EA5-9214-9178EF9C8EB7}.Release|x64.ActiveCfg = Release|x64
 		{3125ED9C-58B1-4EA5-9214-9178EF9C8EB7}.Release|x64.Build.0 = Release|x64
+		{E6B1D37A-4D6F-4BE7-9B9F-F07D664AFB0E}.Debug|x64.ActiveCfg = Debug|x64
+		{E6B1D37A-4D6F-4BE7-9B9F-F07D664AFB0E}.Debug|x64.Build.0 = Debug|x64
+		{E6B1D37A-4D6F-4BE7-9B9F-F07D664AFB0E}.Release|x64.ActiveCfg = Release|x64
+		{E6B1D37A-4D6F-4BE7-9B9F-F07D664AFB0E}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -112,6 +120,7 @@ Global
 		{66B067F1-4EB8-44CE-BFA2-32D2B582A75F} = {5688014F-3938-48B9-ABD6-E650F121B187}
 		{5028BB57-80B6-4ADB-BC16-D27F98ADD82E} = {5688014F-3938-48B9-ABD6-E650F121B187}
 		{57EFCBAC-C6DB-4A0A-911B-029DFD676B7B} = {5688014F-3938-48B9-ABD6-E650F121B187}
+		{E6B1D37A-4D6F-4BE7-9B9F-F07D664AFB0E} = {84A6D587-E9B9-4CC7-A400-DE87FD29E115}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {B373AD49-5CFC-4C5B-93E6-9CFA9D9A3410}

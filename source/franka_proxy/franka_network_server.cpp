@@ -62,7 +62,7 @@ franka_control_server::~franka_control_server() noexcept
 
 void franka_control_server::task_main()
 {
-	while (!join_now())
+	while (!joining_now())
 	{
 		// Possibly accept new connection
 		// and drop preceding connection.
@@ -639,7 +639,7 @@ franka_state_server::~franka_state_server() noexcept
 
 void franka_state_server::task_main()
 {
-	while (!join_now())
+	while (!joining_now())
 	{
 		// Possibly accept new connection
 		// and drop preceding connection.
@@ -710,7 +710,7 @@ void franka_state_server::send_status_message(const string& command)
 		(reinterpret_cast<const unsigned char*>(command.data()), command.size());
 
 	network_buffer_progress progress(network_data);
-	while (!progress.finished() && !join_now())
+	while (!progress.finished() && !joining_now())
 		network_transfer::send_partial_nonblocking
 			(connection_.object(), network_data, progress);
 }
