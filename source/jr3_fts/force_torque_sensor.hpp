@@ -11,6 +11,7 @@
 #define INCLUDED__FRANKA_PROXY__FORCE_TORQUE_SENSOR_HPP
 
 #include <array>
+#include <string>
 
 
 namespace franka_proxy
