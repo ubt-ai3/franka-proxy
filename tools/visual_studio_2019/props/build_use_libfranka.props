@@ -3,7 +3,7 @@
   <ImportGroup Label="PropertySheets" />
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
-    <IncludePath>$(ProjectDir)..\..\..\..\libfranka\include;$(IncludePath)</IncludePath>
+    <IncludePath>$(ProjectDir)..\..\..\..\libfranka\frankaemika\include;$(IncludePath)</IncludePath>
     <LibraryPath>$(ProjectDir)..\..\..\..\libfranka\build\$(Platform)_$(Configuration);$(ProjectDir)..\..\..\..\libfranka\visual_studio_2019\externals\poco\lib\$(Configuration);$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup>
