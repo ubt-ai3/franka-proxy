@@ -52,18 +52,14 @@
     <Import Project="..\props\build_common.props" />
     <Import Project="..\props\build_type_standalone.props" />
     <Import Project="..\props\build_mode_debug.props" />
-    <Import Project="..\props\build_use_libfranka.props" />
-    <Import Project="..\props\build_use_eigen.props" />
-    <Import Project="..\props\use_viral_core.props" />
+    <Import Project="..\props\use_vcpkg.props" />
     <Import Project="..\props\build_copy_assets.props" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
     <Import Project="..\props\build_common.props" />
     <Import Project="..\props\build_type_standalone.props" />
     <Import Project="..\props\build_mode_release.props" />
-    <Import Project="..\props\build_use_libfranka.props" />
-    <Import Project="..\props\build_use_eigen.props" />
-    <Import Project="..\props\use_viral_core.props" />
+    <Import Project="..\props\use_vcpkg.props" />
     <Import Project="..\props\build_copy_assets.props" />
   </ImportGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
