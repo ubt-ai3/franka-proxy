@@ -16,8 +16,6 @@
 #include <string>
 #include <mutex>
 
-#include <viral_core/network_forward.hpp>
-
 #include <franka_proxy_share/franka_proxy_messages.hpp>
 
 #include "franka_network_client.hpp"
@@ -35,8 +33,7 @@ class franka_remote_controller
 public:
 
 	franka_remote_controller
-		(std::string proxy_ip,
-		 viral_core::network_context& network);
+		(std::string proxy_ip);
 
 	~franka_remote_controller() noexcept;
 
@@ -194,8 +191,6 @@ private:
 
 
 	const std::string franka_ip_;
-
-	viral_core::network_context& network_;
 
 	std::unique_ptr<franka_control_client> socket_control_;
 	std::unique_ptr<franka_state_client> socket_state_;

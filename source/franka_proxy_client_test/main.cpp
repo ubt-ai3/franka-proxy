@@ -6,10 +6,6 @@
 
 #include <Eigen/Core>
 
-#include <viral_core/log.hpp>
-#include <viral_core/ms_network.hpp>
-#include <viral_core/thread_util.hpp>
-
 #include "franka_proxy_client/exception.hpp"
 #include "franka_proxy_client/franka_remote_controller.hpp"
 //#include "franka_control/franka_util.hpp"
@@ -46,8 +42,9 @@ void execute_retry(Function&& f, franka_proxy::franka_remote_controller& control
 		}
 		catch (const franka_proxy::command_exception&)
 		{
-			LOG_INFO("Encountered command exception. Probably because of wrong working mode. Waiting before retry.")
-			viral_core::thread_util::sleep_seconds(1);
+			std::cout << ("Encountered command exception. Probably because of wrong working mode. Waiting before retry.");
+			using namespace std::chrono_literals;
+			std::this_thread::sleep_for(1s);
 		}
 	}
 }
@@ -55,9 +52,8 @@ void execute_retry(Function&& f, franka_proxy::franka_remote_controller& control
 
 int main()
 {
-	viral_core::ms_network_context network("network");
-	//franka_proxy::franka_remote_controller controller("127.0.0.1", network);
-	franka_proxy::franka_remote_controller controller("132.180.194.112", network);
+	//franka_proxy::franka_remote_controller controller("127.0.0.1");
+	franka_proxy::franka_remote_controller controller("132.180.194.112");
 
 	// status test
 	std::atomic_bool stop(false);
@@ -72,22 +68,23 @@ int main()
 				if (i++ % 30 == 0)
 					print_status(controller);
 
-				viral_core::thread_util::sleep_seconds(0.016f);
+				using namespace std::chrono_literals;
+				std::this_thread::sleep_for(0.016s);
 			}
 		});
 
 
-	LOG_INFO("Starting Gripper Test.");
+	std::cout << ("Starting Gripper Test.");
 
 	controller.grasp_gripper();
 	controller.open_gripper();
 	controller.close_gripper();
 	controller.open_gripper();
 
-	LOG_INFO("Finished Gripper Test.");
+	std::cout << ("Finished Gripper Test.");
 
 
-	LOG_INFO("Starting PTP-Movement Test.");
+	std::cout << ("Starting PTP-Movement Test.");
 
 	franka_proxy::robot_config_7dof pos1
 		{{2.46732, -1.0536, -0.9351, -1.6704, 0.13675, 1.42062, 0.33471}};
@@ -98,10 +95,10 @@ int main()
 	execute_retry([&] { controller.move_to(pos1); }, controller);
 	execute_retry([&] { controller.move_to(pos2); }, controller);
 
-	LOG_INFO("Finished PTP-Movement Test.");
+	std::cout << ("Finished PTP-Movement Test.");
 
 
-	LOG_INFO("Starting Force Test.");
+	std::cout << ("Starting Force Test.");
 
 	franka_proxy::robot_config_7dof pos_with_scale
 		{{1.09452, 0.475923, 0.206959, -2.33289, -0.289467, 2.7587, 0.830083}};
@@ -116,10 +113,10 @@ int main()
 	controller.apply_z_force(0.0, 5.0);
 	controller.apply_z_force(1.0, 5.0);
 
-	LOG_INFO("Finished Force Test.");
+	std::cout << ("Finished Force Test.");
 
 
-	LOG_INFO("Starting FK/IK Test.");
+	std::cout << ("Starting FK/IK Test.");
 
 	//Eigen::Affine3d pose
 	//	(franka_control::franka_util::fk
@@ -139,29 +136,29 @@ int main()
 	//Eigen::VectorXd::Map(&q[0], 7) = ik_solution;
 	//controller.move_to(q);
 
-	LOG_INFO("Finished FK/IK Test.");
+	std::cout << ("Finished FK/IK Test.");
 
 
-	LOG_INFO("Starting Playback Test.");
+	std::cout << ("Starting Playback Test.");
 
 	franka_proxy::robot_config_7dof q
 		{{1.08615, 0.044619, 0.227112, -2.26678, -0.059792, 2.27532, 0.605723}};
 	controller.move_to(q);
 	
-	LOG_INFO("--- press to start in 3s ---");
+	std::cout << ("--- press to start in 3s ---");
 	std::cin.get();
 	std::this_thread::sleep_for(std::chrono::seconds(3));
 
-	LOG_INFO("--- starting demonstration ---");
+	std::cout << ("--- starting demonstration ---");
 	controller.start_recording();
 	std::this_thread::sleep_for(std::chrono::seconds(10));
 
-	LOG_INFO("--- stopped demonstration ---");
+	std::cout << ("--- stopped demonstration ---");
 	std::pair<std::vector<std::array<double, 7>>, std::vector<std::array<double, 6>>> record
 		(
 		 controller.stop_recording());
 
-	LOG_INFO("--- press to start reproduction in 3s ---");
+	std::cout << ("--- press to start reproduction in 3s ---");
 	std::cin.get();
 	std::this_thread::sleep_for(std::chrono::seconds(3));
 
@@ -172,7 +169,7 @@ int main()
 		 record.second.size(), std::array<double, 6>{1, 1, 1, 1, 1, 1});
 	controller.move_sequence(record.first, record.second, selection_vectors);
 
-	LOG_INFO("Finished Playback Test.");
+	std::cout << ("Finished Playback Test.");
 
 
 	// cleanup status test

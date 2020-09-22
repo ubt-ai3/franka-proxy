@@ -12,12 +12,12 @@
 #define INCLUDED__FRANKA_PROXY_CLIENT__FRANKA_NETWORK_CLIENT_HPP
 
 #include <vector>
+#include <string>
+#include <list>
+#include <memory>
 
-#include <viral_core/auto_pointer.hpp>
-#include <viral_core/list.hpp>
-#include <viral_core/network_forward.hpp>
-#include <viral_core/string.hpp>
-#include <viral_core/thread.hpp>
+#include <asio/ip/tcp.hpp>
+#include <thread>
 
 
 namespace franka_proxy
@@ -37,34 +37,36 @@ class franka_state_client
 public:
 
 	franka_state_client
-		(viral_core::network_context& network,
-		 const viral_core::string& remote_ip,
-		 uint16 remote_port);
+		(std::string remote_ip,
+		 std::uint16_t remote_port);
 
 	~franka_state_client() noexcept;
 
 
 	void update_messages();
-	viral_core::list<viral_core::string> messages() const;
+	std::list<std::string> messages() const;
 
 
 private:
 
 	void update_messages_buffer();
-	viral_core::string fetch_message();
+	std::string fetch_message();
+
+	std::unique_ptr<asio::ip::tcp::socket> connect
+		(const std::string& ip, std::uint16_t port);
 
 
-	static const int64 receive_buffer_size_ = 1024;
+	static const std::size_t receive_buffer_size_ = 1024;
 
-	viral_core::network_context& network_;
+	asio::io_context io_context_;
 
-	const viral_core::string remote_ip_;
-	const uint16 remote_port_;
+	const std::string remote_ip_;
+	const std::uint16_t remote_port_;
 
-	viral_core::auto_pointer<viral_core::network_connection> connection_;
+	std::unique_ptr<asio::ip::tcp::socket> connection_;
 
-	viral_core::string messages_buffer_;
-	viral_core::list<viral_core::string> messages_;
+	std::string messages_buffer_;
+	std::list<std::string> messages_;
 };
 
 
@@ -79,26 +81,21 @@ private:
  *
  ************************************************************************/
 class franka_control_client
-	: viral_core::threaded_task
 {
 public:
 
 	franka_control_client
-		(viral_core::network_context& network,
-		 const viral_core::string& remote_ip,
-		 uint16 remote_port);
+		(const std::string& remote_ip,
+		 std::uint16_t remote_port);
 
 	~franka_control_client() noexcept;
 
 
-	void task_main() override;
-
-
 	void send_command
-		(const viral_core::string& command,
+		(const std::string& command,
 		 float timeout_seconds = 1.f);
 	unsigned char send_command_and_check_response
-		(const viral_core::string& command,
+		(const std::string& command,
 		 float timeout_seconds = 1.f);
 
 
@@ -114,12 +111,16 @@ public:
 
 private:
 
-	viral_core::network_context& network_;
+	std::unique_ptr<asio::ip::tcp::socket> connect
+		(const std::string& ip, std::uint16_t port);
+	
 
-	const viral_core::string remote_ip_;
-	const uint16 remote_port_;
+	asio::io_context io_context_;
 
-	viral_core::auto_pointer<viral_core::network_stream> stream_;
+	const std::string remote_ip_;
+	const std::uint16_t remote_port_;
+
+	std::unique_ptr<asio::ip::tcp::socket> connection_;
 };
 
 
