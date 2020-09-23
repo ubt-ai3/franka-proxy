@@ -11,15 +11,15 @@
 #include "franka_network_server.hpp"
 
 #include <string>
-		 
-#include <franka/robot_state.h>
-#include <franka/gripper_state.h>
-
-#include "franka_proxy_share/franka_proxy_messages.hpp"
 #include <iostream>
 
 #include <asio/read.hpp>
 #include <asio/write.hpp>
+
+#include <franka/robot_state.h>
+#include <franka/gripper_state.h>
+
+#include "franka_proxy_share/franka_proxy_messages.hpp"
 
 
 namespace franka_proxy

@@ -10,8 +10,9 @@
 
 #include "franka_controller_emulated.hpp"
 
-#include "exception.hpp"
 #include <iostream>
+
+#include "exception.hpp"
 
 
 namespace franka_control

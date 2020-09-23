@@ -10,18 +10,18 @@
 
 #include "franka_network_client.hpp"
 
-#include <utility>
-#include <vector>
 #include <array>
-#include "../franka_proxy_share/franka_proxy_messages.hpp"
 #include <string>
 #include <thread>
+#include <utility>
+#include <vector>
+#include <iostream>
 
 #include <asio/connect.hpp>
-#include <asio/write.hpp>
 #include <asio/read.hpp>
+#include <asio/write.hpp>
+
 #include "exception.hpp"
-#include <iostream>
 
 
 namespace franka_proxy

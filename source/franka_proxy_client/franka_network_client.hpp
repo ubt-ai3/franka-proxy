@@ -11,13 +11,13 @@
 #if !defined(INCLUDED__FRANKA_PROXY_CLIENT__FRANKA_NETWORK_CLIENT_HPP)
 #define INCLUDED__FRANKA_PROXY_CLIENT__FRANKA_NETWORK_CLIENT_HPP
 
-#include <vector>
-#include <string>
+
 #include <list>
 #include <memory>
+#include <string>
+#include <vector>
 
 #include <asio/ip/tcp.hpp>
-#include <thread>
 
 
 namespace franka_proxy

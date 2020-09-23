@@ -12,8 +12,6 @@
 #define INCLUDED__FRANKA_PROXY__FRANKA_PROXY_HPP
 
 
-#include <memory>
-
 #include "franka_hardware_controller.hpp"
 #include "franka_network_server.hpp"
 

@@ -10,7 +10,7 @@
 
 #include "franka_controller_remote.hpp"
 
-#include "franka_proxy_client/franka_remote_controller.hpp"
+#include <franka_proxy_client/franka_remote_controller.hpp>
 
 
 namespace franka_control

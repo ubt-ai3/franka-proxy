@@ -12,9 +12,9 @@
 #define INCLUDED__FRANKA_CONTROL__FRANKA_CONTROLLER_REMOTE_HPP
 
 
-#include "franka_controller.hpp"
-
 #include <mutex>
+
+#include "franka_controller.hpp"
 
 
 namespace franka_proxy

@@ -7,12 +7,16 @@
  *
  ************************************************************************/
 
+
 #include "franka_motion_generator.hpp"
-#include <franka/model.h>
+
 #include <utility>
 #include <iostream>
-#include <Eigen/Dense>
 #include <fstream>
+
+#include <Eigen/Dense>
+
+#include <franka/model.h>
 
 
 namespace franka_proxy
@@ -289,9 +293,9 @@ franka::Torques force_motion_generator::callback
 
 	// compute torques according to impedance control law
 	// with assumption mass = 0 (robot state does not provide ddq and own measurement too noisy)
-	for (size_t i = 0; i < 7; i++)
-		tau_J_d[i] = (K_P_[i] * (robot_state.q_d[i] - robot_state.q[i]) + K_D_[i] * (dq_d_[i] - compute_dq_filtered
-			(i)));
+	for (int i = 0; i < 7; i++)
+		tau_J_d[i] = K_P_[i] * (robot_state.q_d[i] - robot_state.q[i]) +
+			K_D_[i] * (dq_d_[i] - compute_dq_filtered(i));
 
 
 	std::array<double, 7> tau_d_array{};
@@ -699,7 +703,7 @@ seq_cart_vel_tau_generator_wo_fts::seq_cart_vel_tau_generator_wo_fts
 seq_cart_vel_tau_generator_wo_fts::~seq_cart_vel_tau_generator_wo_fts()
 {
 	if (log_)
-		;
+		std::cout << "~seq_cart_vel_tau_generator_wo_fts" << std::endl;
 }
 
 

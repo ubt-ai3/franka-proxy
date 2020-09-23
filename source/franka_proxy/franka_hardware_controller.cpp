@@ -38,7 +38,6 @@ franka_hardware_controller::franka_hardware_controller
 	:
 	robot_(controller_ip, franka::RealtimeConfig::kIgnore),
 	parameters_initialized_(false),
-	stop_motion_(),
 	speed_factor_(0.05),
 
 	motion_recorder_(10.0, robot_, robot_state_),

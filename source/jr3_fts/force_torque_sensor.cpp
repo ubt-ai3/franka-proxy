@@ -12,6 +12,7 @@
 #include <vector>
 #include <numeric>
 
+// todo hartwig
 #include <Windows.h>
 
 #include "fore_torque_sensor_JR3PCIIoctls.h"

@@ -14,10 +14,10 @@
 
 #include <atomic>
 #include <string>
+#include <vector>
 
 #include <franka/robot.h>
 #include <franka/gripper.h>
-#include <vector>
 
 #include "franka_motion_recorder.hpp"
 

@@ -12,11 +12,12 @@
 #define INCLUDED__FRANKA_PROXY__FRANKA_NETWORK_SERVER_HPP
 
 
+#include <asio/ip/tcp.hpp>
+
 #include <franka/exception.h>
 
-#include "franka_proxy_share/franka_proxy_messages.hpp"
+#include <franka_proxy_share/franka_proxy_messages.hpp>
 #include "franka_hardware_controller.hpp"
-#include <asio/ip/tcp.hpp>
 
 
 namespace franka_proxy

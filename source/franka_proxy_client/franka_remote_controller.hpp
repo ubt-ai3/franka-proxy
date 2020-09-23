@@ -13,8 +13,8 @@
 
 
 #include <array>
-#include <string>
 #include <mutex>
+#include <string>
 
 #include <franka_proxy_share/franka_proxy_messages.hpp>
 

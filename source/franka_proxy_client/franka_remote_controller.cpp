@@ -10,11 +10,11 @@
 
 #include "franka_remote_controller.hpp"
 
+#include <iostream>
+#include <list>
 #include <utility>
 
 #include "exception.hpp"
-#include <list>
-#include <iostream>
 
 
 namespace franka_proxy
