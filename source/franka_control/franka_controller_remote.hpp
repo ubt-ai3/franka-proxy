@@ -17,12 +17,6 @@
 #include <mutex>
 
 
-namespace viral_core
-{
-class network_context;
-}
-
-
 namespace franka_proxy
 {
 	class franka_remote_controller;
@@ -47,7 +41,7 @@ class franka_controller_remote :
 public:
 
 	franka_controller_remote
-		(const std::string& ip, viral_core::network_context& network);
+		(const std::string& ip);
 	~franka_controller_remote() noexcept override;
 
 

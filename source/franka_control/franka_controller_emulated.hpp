@@ -12,8 +12,6 @@
 #define INCLUDED__FRANKA_CONTROL__FRANKA_CONTROLLER_EMULATED_HPP
 
 
-#include <viral_core/timer.hpp>
-
 #include "franka_controller.hpp"
 
 
@@ -78,7 +76,7 @@ private:
 	static constexpr double max_speed_length_per_sec_ = 3.5; // ~200 deg
 	static constexpr float move_update_rate_ = 0.01f;
 
-	mutable viral_core::mutex controller_mutex_;
+	mutable std::mutex controller_mutex_;
 	double speed_factor_;
 	bool gripper_open_;
 

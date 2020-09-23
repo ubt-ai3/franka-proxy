@@ -10,16 +10,11 @@
 
 #include "franka_controller_remote.hpp"
 
-#include <viral_core/log.hpp>
-
 #include "franka_proxy_client/franka_remote_controller.hpp"
 
 
 namespace franka_control
 {
-
-
-using namespace viral_core;
 
 
 //////////////////////////////////////////////////////////////////////////
@@ -30,9 +25,9 @@ using namespace viral_core;
 
 
 franka_controller_remote::franka_controller_remote
-	(const std::string& ip, network_context& network)
+	(const std::string& ip)
 	:
-	controller_(new franka_proxy::franka_remote_controller(ip, network)),
+	controller_(new franka_proxy::franka_remote_controller(ip)),
 
 	speed_factor_(0.1)
 {
