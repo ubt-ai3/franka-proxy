@@ -96,48 +96,51 @@ void franka_controller_emulated::move_to(const robot_config_7dof& target)
 {
 	robot_config_7dof current_joint_values = current_config();
 
-	step_timer tick_timer(move_update_rate_, 1.f);
-	free_timer timer;
+	auto last_time = std::chrono::steady_clock::now();
 
 	while (!almost_equal(target, current_joint_values))
 	{
-		tick_timer.try_sleep();
-		tick_timer.update();
-		if (!tick_timer.has_next_timestep()) continue;
+		auto next_timepoint =
+			std::chrono::steady_clock::now() +
+			std::chrono::duration_cast<std::chrono::milliseconds>
+				(std::chrono::duration<double>(move_update_rate_));
+		
+		// Determine joint-space length each joint has moved
+		// since the last iteration.
+		auto now = std::chrono::steady_clock::now();
+		double seconds_passed =
+			std::chrono::duration_cast<std::chrono::duration<double>>
+				(now - last_time).count();
+		double move_length =
+			seconds_passed *
+			speed_factor() *
+			max_speed_length_per_sec_;
 
-		while (tick_timer.next_timestep())
+		last_time = now;
+
+		// Move robot joints by given length.
+		double length_to_next =
+			length(target - current_joint_values);
+
+		if (length_to_next < move_length)
 		{
-			// Determine joint-space length each joint has moved
-			// since the last iteration.
-			double move_length =
-				timer.seconds_passed() *
-				speed_factor() *
-				max_speed_length_per_sec_;
-
-			timer.restart();
-
-			// Move robot joints by given length.
-			double length_to_next =
-				length(target - current_joint_values);
-
-			if (length_to_next < move_length)
-			{
-				// If the next waymark is in reach, move there.
-				current_joint_values = target;
-			}
-			else
-			{
-				// Move into the direction of the next waymark,
-				// but don't actually reach it.
-				current_joint_values = current_joint_values +
-					(target - current_joint_values) *
-						(move_length / length_to_next);
-			}
-
-			// Copy from process variables to exposed state.
-			std::lock_guard<std::mutex> lk(controller_mutex_);
-			state_joint_values_ = current_joint_values;
+			// If the next waymark is in reach, move there.
+			current_joint_values = target;
 		}
+		else
+		{
+			// Move into the direction of the next waymark,
+			// but don't actually reach it.
+			current_joint_values = current_joint_values +
+				(target - current_joint_values) *
+					(move_length / length_to_next);
+		}
+
+		// Copy from process variables to exposed state.
+		std::lock_guard<std::mutex> lk(controller_mutex_);
+		state_joint_values_ = current_joint_values;
+
+		std::this_thread::sleep_until(next_timepoint);
 	}
 }
 
@@ -235,41 +238,44 @@ void franka_controller_emulated::move_gripper(int target, double speed_mps)
 {
 	double current_pos = current_gripper_pos();
 
-	step_timer tick_timer(move_update_rate_, 1.f);
-	free_timer timer;
+	auto last_time = std::chrono::steady_clock::now();
 
 	while (abs(current_pos - target) > 0.001)
 	{
-		tick_timer.try_sleep();
-		tick_timer.update();
-		if (!tick_timer.has_next_timestep()) continue;
+		auto next_timepoint =
+			std::chrono::steady_clock::now() +
+			std::chrono::duration_cast<std::chrono::milliseconds>
+				(std::chrono::duration<double>(move_update_rate_));
+		
+		double remaining_distance = target - current_pos;
+		auto now = std::chrono::steady_clock::now();
+		double seconds_passed =
+			std::chrono::duration_cast<std::chrono::duration<double>>
+				(now - last_time).count();
+		double move_length = 
+			seconds_passed * gripper_unit_per_m_ * speed_mps;
 
-		while (tick_timer.next_timestep())
+		last_time = now;
+
+		if (abs(remaining_distance) <= move_length)
 		{
-			double remaining_distance = target - current_pos;
-			double move_length = 
-				timer.seconds_passed() * gripper_unit_per_m_ * speed_mps;
-
-			timer.restart();
-
-			if (abs(remaining_distance) <= move_length)
-			{
-				// If the target is in reach, move there.
-				current_pos = target;
-			}
-			else
-			{
-				// Move into the direction of the target,
-				// but don't actually reach it.
-				if (remaining_distance < 0)
-					current_pos -= move_length;
-				else
-					current_pos += move_length;
-			}
-
-			std::lock_guard<std::mutex> lk(controller_mutex_);
-			state_gripper_pos_ = static_cast<int>(current_pos);
+			// If the target is in reach, move there.
+			current_pos = target;
 		}
+		else
+		{
+			// Move into the direction of the target,
+			// but don't actually reach it.
+			if (remaining_distance < 0)
+				current_pos -= move_length;
+			else
+				current_pos += move_length;
+		}
+
+		std::lock_guard<std::mutex> lk(controller_mutex_);
+		state_gripper_pos_ = static_cast<int>(current_pos);
+
+		std::this_thread::sleep_until(next_timepoint);
 	}
 	
 	std::lock_guard<std::mutex> lk(controller_mutex_);
