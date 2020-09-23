@@ -14,8 +14,6 @@
 
 #include <memory>
 
-#include <viral_core/network.hpp>
-
 #include "franka_hardware_controller.hpp"
 #include "franka_network_server.hpp"
 
@@ -40,8 +38,6 @@ public:
 private:
 
 	franka_hardware_controller controller_;
-
-	std::unique_ptr<viral_core::network_context> network_;
 
 	franka_control_server control_server_;
 	franka_state_server state_server_;

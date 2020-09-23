@@ -12,15 +12,11 @@
 #define INCLUDED__FRANKA_PROXY__FRANKA_NETWORK_SERVER_HPP
 
 
-#include <viral_core/auto_pointer.hpp>
-#include <viral_core/string.hpp>
-#include <viral_core/network_forward.hpp>
-#include <viral_core/thread.hpp>
-
 #include <franka/exception.h>
 
 #include "franka_proxy_share/franka_proxy_messages.hpp"
 #include "franka_hardware_controller.hpp"
+#include <asio/ip/tcp.hpp>
 
 
 namespace franka_proxy
@@ -36,13 +32,11 @@ namespace franka_proxy
  *
  ************************************************************************/
 class franka_control_server
-	: public viral_core::threaded_task
 {
 public:
 
 	franka_control_server
-		(viral_core::network_context& network,
-		 uint16 control_port,
+		(std::uint16_t control_port,
 		 franka_hardware_controller& controller);
 
 	~franka_control_server() noexcept;
@@ -50,10 +44,12 @@ public:
 
 private:
 
-	void task_main() override;
+	void task_main();
+
+	asio::ip::tcp::acceptor create_server(std::uint16_t control_port_);
 
 	void receive_requests();
-	void process_request(const viral_core::string& request);
+	void process_request(const std::string& request);
 
 
 	template <class Function>
@@ -104,11 +100,18 @@ private:
 
 	franka_hardware_controller& controller_;
 
-	const viral_core::auto_pointer<viral_core::network_server> server_;
-	viral_core::auto_pointer<viral_core::network_stream> stream_;
+	asio::io_context io_context_;
+	asio::ip::tcp::acceptor server_;
+	std::unique_ptr<asio::ip::tcp::socket> connection_;
+	
+	std::string messages_buffer_;
+
+	std::thread internal_thread_;
+	std::atomic_bool terminate_internal_thread_;
 
 	static constexpr float sleep_seconds_disconnected_ = 0.033f; // todo 30hz?
 	static constexpr float sleep_seconds_connected_ = 0.002f; // todo <16ms?
+	static constexpr std::size_t receive_buffer_size_ = 1000;
 };
 
 
@@ -123,13 +126,11 @@ private:
  *
  ************************************************************************/
 class franka_state_server
-	: public viral_core::threaded_task
 {
 public:
 
 	franka_state_server
-		(viral_core::network_context& network,
-		 uint16 state_port,
+		(std::uint16_t state_port,
 		 franka_hardware_controller& controller);
 
 	~franka_state_server() noexcept;
@@ -137,17 +138,21 @@ public:
 
 private:
 
-	void task_main() override;
-	void send_status_message(const viral_core::string& command);
+	void task_main();
+
+	asio::ip::tcp::acceptor create_server(std::uint16_t control_port);
 
 
 	franka_hardware_controller& controller_;
 
-	const uint16 state_port_;
+	const std::uint16_t state_port_;
 
-	const viral_core::auto_pointer<viral_core::network_server> server_;
-	viral_core::auto_pointer<viral_core::network_connection> connection_;
+	asio::io_context io_context_;
+	asio::ip::tcp::acceptor server_;
+	std::unique_ptr<asio::ip::tcp::socket> connection_;
 
+	std::thread internal_thread_;
+	std::atomic_bool terminate_internal_thread_;
 
 	static constexpr float sleep_seconds_disconnected_ = 0.033f;
 	static constexpr float sleep_seconds_connected_ = 0.002f;

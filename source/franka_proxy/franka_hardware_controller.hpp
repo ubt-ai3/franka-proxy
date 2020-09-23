@@ -15,8 +15,6 @@
 #include <atomic>
 #include <string>
 
-#include <viral_core/thread_synch.hpp>
-
 #include <franka/robot.h>
 #include <franka/gripper.h>
 #include <vector>
@@ -151,7 +149,11 @@ private:
 	franka::RobotState robot_state_;
 	franka::GripperState gripper_state_;
 
-	viral_core::signal control_loop_running_;
+	void set_control_loop_running(bool running);
+	bool control_loop_running_;
+	std::mutex control_loop_running_mutex_;
+	std::condition_variable control_loop_running_cv_;
+
 	std::atomic_bool terminate_state_thread_;
 	std::thread state_thread_;
 };

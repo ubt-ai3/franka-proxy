@@ -11,23 +11,19 @@
 #include "franka_network_server.hpp"
 
 #include <string>
-
-#include <viral_core/network.hpp>
-#include <viral_core/network_stream.hpp>
-#include <viral_core/network_transfer.hpp>
-#include <viral_core/log.hpp>
 		 
 #include <franka/robot_state.h>
 #include <franka/gripper_state.h>
 
 #include "franka_proxy_share/franka_proxy_messages.hpp"
+#include <iostream>
+
+#include <asio/read.hpp>
+#include <asio/write.hpp>
 
 
 namespace franka_proxy
 {
-
-
-using namespace viral_core;
 
 
 //////////////////////////////////////////////////////////////////////////
@@ -38,89 +34,96 @@ using namespace viral_core;
 
 
 franka_control_server::franka_control_server
-	(network_context& network,
-	 uint16 control_port,
+	(std::uint16_t control_port,
 	 franka_hardware_controller& controller)
 	:
 	controller_(controller),
 
-	server_(network.create_server(control_port))
+	server_(create_server(control_port)),
+
+	terminate_internal_thread_(false)
 {
-	start();
+	internal_thread_ = std::thread([this]{task_main();});
 }
 
 
 franka_control_server::~franka_control_server() noexcept
 {
-	try { join(); }
+	terminate_internal_thread_ = true;
+	try { internal_thread_.join(); }
 	catch (...)
 	{
-		LOG_CRITICAL("Internal thread threw an exception on joining.");
+		std::cerr << "franka_control_server::~franka_control_server(): " <<
+			"Internal thread threw an exception on joining.";
 	}
 }
 
 
 void franka_control_server::task_main()
 {
-	while (!joining_now())
+	while (!terminate_internal_thread_)
 	{
 		// Possibly accept new connection
 		// and drop preceding connection.
-		auto_pointer<network_connection> connection
-			(server_->try_accept_connection());
+		std::error_code error;
+		auto connection =
+			std::make_unique<asio::ip::tcp::socket>(server_.accept(error));
 
-		if (connection)
-			stream_.reset(new network_stream(std::move(connection), 16384, 1000000000, 16384, 1000000000));
+		if(!error)
+			connection_ = std::move(connection);
 
-		if (!stream_)
+		if (!connection_)
 		{
-			thread_util::sleep_seconds
-				(sleep_seconds_disconnected_);
+			std::this_thread::sleep_for
+				(std::chrono::duration<double>(sleep_seconds_disconnected_));
 
 			continue;
 		}
-
 
 		try
 		{
 			// We have an active connection,
 			// so handle incoming and outgoing network.
-			stream_->update();
-
 			receive_requests();
 		}
 		catch (...)
 		{
-			LOG_ERROR("Error while processing requests, dropping stream and stopping robot.");
+			std::cerr << "franka_control_server::task_main(): " <<
+				"Error while processing requests, dropping stream and stopping robot.";
 			controller_.stop_movement();
-			stream_.reset();
+			connection_.reset();
 		}
 
-		thread_util::sleep_seconds
-			(sleep_seconds_connected_);
+		std::this_thread::sleep_for
+			(std::chrono::duration<double>(sleep_seconds_connected_));
 	}
+}
+
+
+asio::ip::tcp::acceptor franka_control_server::create_server
+	(std::uint16_t control_port)
+{
+	asio::ip::tcp::acceptor acceptor(io_context_);
+	asio::ip::tcp::endpoint endpoint(asio::ip::tcp::v4(), control_port);
+	acceptor.open(endpoint.protocol());
+	acceptor.set_option(asio::ip::tcp::acceptor::reuse_address(true));
+	acceptor.non_blocking(true);
+	acceptor.bind(endpoint);
+	acceptor.listen();
+
+	return acceptor;
 }
 
 
 void franka_control_server::receive_requests()
 {
-	// Early out if no input is pending.
-	if (stream_->pending_receive_bytes() == 0)
-		return;
-
-
-	// Peek all pending input into string buffer.
-	string buffer;
-	buffer.resize(stream_->pending_receive_bytes());
-
-	if (!stream_->try_peek_nonblocking
-		(reinterpret_cast<unsigned char*>(buffer.data()),
-		 buffer.size(), 0))
-	{
-		LOG_ERROR("Failed to fetch pending bytes from network stream.");
-		throw assert_failed();
-	}
-
+	// Receive input into string buffer.
+	std::string receive_buffer(receive_buffer_size_, '\0');
+	std::size_t bytes_received =
+		connection_->read_some(asio::buffer(receive_buffer));
+	
+	messages_buffer_ +=
+		std::string(receive_buffer, 0, bytes_received);
 
 	// Recover one completely transmitted request,
 	// and remove it from the network stream.
@@ -128,32 +131,35 @@ void franka_control_server::receive_requests()
 	// Extract full request up to next end marker.
 	// Transferring the request has not yet finished
 	// if there is no (further) end marker.
-	int64 end_index =
-		buffer.seek(franka_proxy_messages::command_end_marker);
+	while(true)
+	{
+		std::size_t end_index =
+			messages_buffer_.find(franka_proxy_messages::command_end_marker);
 
-	if (end_index == string::invalid_index)
-		return;
+		if (end_index == std::string::npos)
+			return;
 
-	string request_string
-		(buffer.left(end_index).trim());
+		std::string request_string
+			(messages_buffer_.substr(0, end_index));
 
-	// Remove request from network stream.
-	stream_->discard_receive
-		(end_index + string::size(franka_proxy_messages::command_end_marker));
+		// Remove request from network stream.
+		messages_buffer_ =
+			messages_buffer_.substr(end_index + 1);
 
 
-	process_request(request_string);
+		process_request(request_string);
+	}
 }
 
 
-void franka_control_server::process_request(const string& request)
+void franka_control_server::process_request(const std::string& request)
 {
-	int64 pos = string::invalid_index;
+	std::size_t pos = std::string::npos;
 	franka_proxy_messages::command_type type = franka_proxy_messages::message_type_count;
 	for (int i = 0; i < franka_proxy_messages::message_type_count; ++i)
 	{
-		pos = request.seek(franka_proxy_messages::command_strings[i]);
-		if (pos != string::invalid_index)
+		pos = request.find(franka_proxy_messages::command_strings[i]);
+		if (pos != std::string::npos)
 		{
 			type = franka_proxy_messages::command_type(i);
 			break;
@@ -162,36 +168,57 @@ void franka_control_server::process_request(const string& request)
 
 	if (type >= franka_proxy_messages::message_type_count)
 	{
-		LOG_WARN("Invalid message: " + request);
+		std::cerr << "franka_control_server::task_main(): " <<
+			"Invalid message: " << request;
 		return;
 	}
 
-	LOG_INFO(request)
+	std::cout << "franka_control_server::task_main(): " << request;
+
+	auto split = [](const std::string& s, const std::string& delim) -> std::vector<std::string>
+	{
+		std::size_t pos_start = 0;
+		std::size_t pos_end;
+		std::size_t delim_len = delim.length();
+
+		std::string token;
+		std::vector<std::string> res;
+
+		while ((pos_end = s.find(delim, pos_start)) != std::string::npos)
+		{
+			token = s.substr (pos_start, pos_end - pos_start);
+			pos_start = pos_end + delim_len;
+			res.push_back (token);
+		}
+
+		res.push_back (s.substr (pos_start));
+		return res;
+	};
 
 	switch (type)
 	{
 		case franka_proxy_messages::move_ptp:
 		{
-			LOG_INFO("Moving")
+			std::cout << "franka_control_server::task_main(): " << "Moving";
 
-			string rest = request.substring
-				(pos + string(franka_proxy_messages::command_strings[type]).size() + 1);
-			list<string> joint_values;
-			rest.split(' ', joint_values);
+			std::string rest = request.substr
+				(pos + std::string(franka_proxy_messages::command_strings[type]).size() + 1);
+			std::vector<std::string> joint_values = split(rest, " ");
 			robot_config_7dof joint_config
 			{
 				{
-					static_cast<double>(joint_values[0].to_float()),
-					static_cast<double>(joint_values[1].to_float()),
-					static_cast<double>(joint_values[2].to_float()),
-					static_cast<double>(joint_values[3].to_float()),
-					static_cast<double>(joint_values[4].to_float()),
-					static_cast<double>(joint_values[5].to_float()),
-					static_cast<double>(joint_values[6].to_float())
+					std::stod(joint_values[0]),
+					std::stod(joint_values[1]),
+					std::stod(joint_values[2]),
+					std::stod(joint_values[3]),
+					std::stod(joint_values[4]),
+					std::stod(joint_values[5]),
+					std::stod(joint_values[6])
 				}
 			};
 
-			unsigned char response =
+			unsigned char response[1];
+			response[0] =
 				execute_exception_to_return_value
 				([&]()
 				{
@@ -199,63 +226,56 @@ void franka_control_server::process_request(const string& request)
 					return franka_proxy_messages::success;
 				});
 
-			LOG_INFO("Sending response: " + static_cast<int>(response));
-			stream_->send_nonblocking(&response, sizeof(unsigned char));
+			std::cout << "franka_control_server::task_main(): " << "Sending response: " << static_cast<int>(response[0]);
+			connection_->send(asio::buffer(response));
 			break;
 		}
 
 		case franka_proxy_messages::move_hybrid_sequence:
 		{
-			LOG_INFO("Moving sequence");
+			std::cout << "franka_control_server::task_main(): " << "Moving sequence";
 
-			int64 count;
-			while (!stream_->try_receive_nonblocking(reinterpret_cast<unsigned char*>(&count), sizeof(int64), false))
-				stream_->update();
-			LOG_INFO(count);
+			std::size_t buff[1];
+			asio::read(*connection_, asio::buffer(buff));
+			std::size_t count = buff[0];
+			std::cout << "franka_control_server::task_main(): " << count;
 
 
 			std::vector<std::array<double, 7>> q_data;
 			q_data.reserve(count);
-			for (int64 i = 0; i < count; ++i)
+			for (std::size_t i = 0; i < count; ++i)
 			{
 				// size
-				int64 size;
-				while (!stream_->try_receive_nonblocking
-					(reinterpret_cast<unsigned char*>(&size), sizeof(int64), false))
-					stream_->update();
+				std::size_t size_buff[1];
+				asio::read(*connection_, asio::buffer(size_buff));
+				std::size_t size = size_buff[0];
 				// todo ntoh byteorder
 
 
 				// data
-				network_buffer network_data = network_buffer();
-				network_data.resize(size);
-				while (!stream_->try_receive_nonblocking
-					(network_data.data(), size, false))
-					stream_->update();
+				std::string data_buff(size, '\0');
+				asio::read(*connection_, asio::buffer(data_buff));
 
 
 				// extract data
-				string tmp(reinterpret_cast<const char*>(network_data.data()), network_data.size());
-				list<string> joint_values_list;
-				tmp.split(',', joint_values_list);
+				std::vector<std::string> joint_values_list = split(data_buff, ",");
 
 				if (joint_values_list.size() != 7)
 				{
-					LOG_WARN("Joint values message does not have 7 joint values");
+					std::cerr << "franka_control_server::task_main(): " <<
+						"Joint values message does not have 7 joint values";
 					continue;
 				}
 
 				std::array<double, 7> joints
 				{
-					{
-						strtod(joint_values_list[0].data(), nullptr),
-						strtod(joint_values_list[1].data(), nullptr),
-						strtod(joint_values_list[2].data(), nullptr),
-						strtod(joint_values_list[3].data(), nullptr),
-						strtod(joint_values_list[4].data(), nullptr),
-						strtod(joint_values_list[5].data(), nullptr),
-						strtod(joint_values_list[6].data(), nullptr)
-					}
+					std::stod(joint_values_list[0]),
+					std::stod(joint_values_list[1]),
+					std::stod(joint_values_list[2]),
+					std::stod(joint_values_list[3]),
+					std::stod(joint_values_list[4]),
+					std::stod(joint_values_list[5]),
+					std::stod(joint_values_list[6])
 				};
 
 
@@ -265,45 +285,38 @@ void franka_control_server::process_request(const string& request)
 
 			std::vector<std::array<double, 6>> f_data;
 			f_data.reserve(count);
-			for (int64 i = 0; i < count; ++i)
+			for (std::size_t i = 0; i < count; ++i)
 			{
 				// size
-				int64 size;
-				while (!stream_->try_receive_nonblocking
-					(reinterpret_cast<unsigned char*>(&size), sizeof(int64), false))
-					stream_->update();
+				std::size_t size_buff[1];
+				asio::read(*connection_, asio::buffer(size_buff));
+				std::size_t size = size_buff[0];
 				// todo ntoh byteorder
 
 
 				// data
-				network_buffer network_data = network_buffer();
-				network_data.resize(size);
-				while (!stream_->try_receive_nonblocking
-					(network_data.data(), size, false))
-					stream_->update();
+				std::string data_buff(size, '\0');
+				asio::read(*connection_, asio::buffer(data_buff));
 
 
 				// extract data
-				string tmp(reinterpret_cast<const char*>(network_data.data()), network_data.size());
-				list<string> joint_values_list;
-				tmp.split(',', joint_values_list);
+				std::vector<std::string> joint_values_list = split(data_buff, ",");
 
-				if (joint_values_list.size() != 6)
+				if (joint_values_list.size() != 7)
 				{
-					LOG_WARN("Force values message does not have 6 values");
+					std::cerr << "franka_control_server::task_main(): " <<
+						"Force values message does not have 7 joint values";
 					continue;
 				}
 
 				std::array<double, 6> joints
 				{
-					{
-						strtod(joint_values_list[0].data(), nullptr),
-						strtod(joint_values_list[1].data(), nullptr),
-						strtod(joint_values_list[2].data(), nullptr),
-						strtod(joint_values_list[3].data(), nullptr),
-						strtod(joint_values_list[4].data(), nullptr),
-						strtod(joint_values_list[5].data(), nullptr)
-					}
+					std::stod(joint_values_list[0]),
+					std::stod(joint_values_list[1]),
+					std::stod(joint_values_list[2]),
+					std::stod(joint_values_list[3]),
+					std::stod(joint_values_list[4]),
+					std::stod(joint_values_list[5])
 				};
 
 
@@ -313,45 +326,38 @@ void franka_control_server::process_request(const string& request)
 
 			std::vector<std::array<double, 6>> s_data;
 			s_data.reserve(count);
-			for (int64 i = 0; i < count; ++i)
+			for (std::size_t i = 0; i < count; ++i)
 			{
 				// size
-				int64 size;
-				while (!stream_->try_receive_nonblocking
-					(reinterpret_cast<unsigned char*>(&size), sizeof(int64), false))
-					stream_->update();
+				std::size_t size_buff[1];
+				asio::read(*connection_, asio::buffer(size_buff));
+				std::size_t size = size_buff[0];
 				// todo ntoh byteorder
 
 
 				// data
-				network_buffer network_data = network_buffer();
-				network_data.resize(size);
-				while (!stream_->try_receive_nonblocking
-					(network_data.data(), size, false))
-					stream_->update();
+				std::string data_buff(size, '\0');
+				asio::read(*connection_, asio::buffer(data_buff));
 
 
 				// extract data
-				string tmp(reinterpret_cast<const char*>(network_data.data()), network_data.size());
-				list<string> joint_values_list;
-				tmp.split(',', joint_values_list);
+				std::vector<std::string> joint_values_list = split(data_buff, ",");
 
-				if (joint_values_list.size() != 6)
+				if (joint_values_list.size() != 7)
 				{
-					LOG_WARN("Selection vector message does not have 6 values.");
+					std::cerr << "franka_control_server::task_main(): " <<
+						"Selection vector message does not have 7 joint values";
 					continue;
 				}
 
 				std::array<double, 6> joints
 				{
-					{
-						strtod(joint_values_list[0].data(), nullptr),
-						strtod(joint_values_list[1].data(), nullptr),
-						strtod(joint_values_list[2].data(), nullptr),
-						strtod(joint_values_list[3].data(), nullptr),
-						strtod(joint_values_list[4].data(), nullptr),
-						strtod(joint_values_list[5].data(), nullptr)
-					}
+					std::stod(joint_values_list[0]),
+					std::stod(joint_values_list[1]),
+					std::stod(joint_values_list[2]),
+					std::stod(joint_values_list[3]),
+					std::stod(joint_values_list[4]),
+					std::stod(joint_values_list[5])
 				};
 
 
@@ -359,9 +365,10 @@ void franka_control_server::process_request(const string& request)
 				s_data.emplace_back(joints);
 			}
 
-			LOG_INFO("receveid data.");
+			std::cout << "franka_control_server::task_main(): " << "Received data.";
 
-			unsigned char response =
+			unsigned char response[1];
+			response[0] =
 				execute_exception_to_return_value
 				([&]()
 				{
@@ -370,35 +377,34 @@ void franka_control_server::process_request(const string& request)
 					return franka_proxy_messages::success;
 				});
 
-
-			LOG_INFO("Sending response: " + static_cast<int>(response));
-			stream_->send_nonblocking(&response, sizeof(unsigned char));
+			std::cout << "franka_control_server::task_main(): " << "Sending response: " << static_cast<int>(response[0]);
+			connection_->send(asio::buffer(response));
 
 			break;
 		}
 
 		case franka_proxy_messages::move_contact:
 		{
-			LOG_INFO("Moving sensitive")
-
-			string rest = request.substring
-				(pos + string(franka_proxy_messages::command_strings[type]).size() + 1);
-			list<string> joint_values;
-			rest.split(' ', joint_values);
+			std::cout << "franka_control_server::task_main(): " << "Moving sensitive";
+			
+			std::string rest = request.substr
+				(pos + std::string(franka_proxy_messages::command_strings[type]).size() + 1);
+			std::vector<std::string> joint_values = split(rest, " ");
 			robot_config_7dof joint_config
 			{
 				{
-					static_cast<double>(joint_values[0].to_float()),
-					static_cast<double>(joint_values[1].to_float()),
-					static_cast<double>(joint_values[2].to_float()),
-					static_cast<double>(joint_values[3].to_float()),
-					static_cast<double>(joint_values[4].to_float()),
-					static_cast<double>(joint_values[5].to_float()),
-					static_cast<double>(joint_values[6].to_float())
+					std::stod(joint_values[0]),
+					std::stod(joint_values[1]),
+					std::stod(joint_values[2]),
+					std::stod(joint_values[3]),
+					std::stod(joint_values[4]),
+					std::stod(joint_values[5]),
+					std::stod(joint_values[6])
 				}
 			};
 
-			unsigned char response =
+			unsigned char response[1];
+			response[0] =
 				execute_exception_to_return_value
 				([&]()
 				{
@@ -407,23 +413,23 @@ void franka_control_server::process_request(const string& request)
 					return franka_proxy_messages::success_command_failed;
 				});
 
-			LOG_INFO("Sending response: " + static_cast<int>(response));
-			stream_->send_nonblocking(&response, sizeof(unsigned char));
+			std::cout << "franka_control_server::task_main(): " << "Sending response: " << static_cast<int>(response[0]);
+			connection_->send(asio::buffer(response));
 			break;
 		}
 
 		case franka_proxy_messages::force_z:
 		{
-			string rest = request.substring
-				(pos + string(franka_proxy_messages::command_strings[type]).size() + 1);
-			list<string> parameter;
-			rest.split(' ', parameter);
-			auto mass = static_cast<double>(parameter[0].to_float());
-			auto duration = static_cast<double>(parameter[1].to_float());
+			std::string rest = request.substr
+				(pos + std::string(franka_proxy_messages::command_strings[type]).size() + 1);
+			std::vector<std::string> parameter = split(rest, " ");
+			auto mass = std::stod(parameter[0]);
+			auto duration = std::stod(parameter[1]);
 
-			LOG_INFO(std::string("force_z " + std::to_string(mass) + " " + std::to_string(duration)).c_str());
+			std::cout << "franka_control_server::task_main(): " << std::string("force_z " + std::to_string(mass) + " " + std::to_string(duration));
 
-			unsigned char response =
+			unsigned char response[1];
+			response[0] =
 				execute_exception_to_return_value
 				([&]()
 				{
@@ -431,16 +437,17 @@ void franka_control_server::process_request(const string& request)
 					return franka_proxy_messages::success;
 				});
 
-			LOG_INFO("Sending response: " + static_cast<int>(response));
-			stream_->send_nonblocking(&response, sizeof(unsigned char));
+			std::cout << "franka_control_server::task_main(): " << "Sending response: " << static_cast<int>(response[0]);
+			connection_->send(asio::buffer(response));
 			break;
 		}
 
 		case franka_proxy_messages::open_gripper:
 		{
-			LOG_INFO("Opening Gripper")
+			std::cout << "franka_control_server::task_main(): " << "Opening Gripper";
 
-			unsigned char response =
+			unsigned char response[1];
+			response[0] =
 				execute_exception_to_return_value
 				([&]()
 				{
@@ -448,15 +455,17 @@ void franka_control_server::process_request(const string& request)
 					return franka_proxy_messages::success;
 				});
 
-			stream_->send_nonblocking(&response, sizeof(unsigned char));
+			std::cout << "franka_control_server::task_main(): " << "Sending response: " << static_cast<int>(response[0]);
+			connection_->send(asio::buffer(response));
 			break;
 		}
 
 		case franka_proxy_messages::close_gripper:
 		{
-			LOG_INFO("Closing Gripper")
+			std::cout << "franka_control_server::task_main(): " << "Closing Gripper";
 
-			unsigned char response =
+			unsigned char response[1];
+			response[0] =
 				execute_exception_to_return_value
 				([&]()
 				{
@@ -464,37 +473,39 @@ void franka_control_server::process_request(const string& request)
 					return franka_proxy_messages::success;
 				});
 
-			stream_->send_nonblocking(&response, sizeof(unsigned char));
+			std::cout << "franka_control_server::task_main(): " << "Sending response: " << static_cast<int>(response[0]);
+			connection_->send(asio::buffer(response));
 			break;
 		}
 
 		case franka_proxy_messages::grasp_gripper:
 		{
-			LOG_INFO("Grasping with Gripper")
-			string rest = request.substring
-				(pos + string(franka_proxy_messages::command_strings[type]).size() + 1);
-			list<string> parameters;
-			rest.split(' ', parameters);
+			std::cout << "franka_control_server::task_main(): " << "Grasping with Gripper";
+			std::string rest = request.substr
+				(pos + std::string(franka_proxy_messages::command_strings[type]).size() + 1);
+			std::vector<std::string> parameters = split(rest, " ");
 
-			unsigned char response =
+			unsigned char response[1];
+			response[0] =
 				execute_exception_to_return_value
 				([&]()
 				{
-					if (controller_.grasp_gripper(parameters[0].to_float(), parameters[1].to_float()))
+					if (controller_.grasp_gripper(std::stod(parameters[0]), std::stod(parameters[1])))
 						return franka_proxy_messages::success;
 					return franka_proxy_messages::success_command_failed;
 				});
 
-			LOG_INFO("Sending response: " + static_cast<int>(response));
-			stream_->send_nonblocking(&response, sizeof(unsigned char));
+			std::cout << "franka_control_server::task_main(): " << "Sending response: " << static_cast<int>(response[0]);
+			connection_->send(asio::buffer(response));
 			break;
 		}
 
 		case franka_proxy_messages::start_recording:
 		{
-			LOG_INFO("Start recording");
+			std::cout << "franka_control_server::task_main(): " << "Start recording";
 
-			unsigned char response =
+			unsigned char response[1];
+			response[0] =
 				execute_exception_to_return_value
 				([&]()
 				{
@@ -502,20 +513,20 @@ void franka_control_server::process_request(const string& request)
 					return franka_proxy_messages::success;
 				});
 
-			LOG_INFO("Sending response: " + static_cast<int>(response));
-			stream_->send_nonblocking(&response, sizeof(unsigned char));
-
+			std::cout << "franka_control_server::task_main(): " << "Sending response: " << static_cast<int>(response[0]);
+			connection_->send(asio::buffer(response));
 			break;
 		}
 
 		case franka_proxy_messages::stop_recording:
 		{
-			LOG_INFO("Stop recording");
+			std::cout << "franka_control_server::task_main(): " << "Stop recording";
 
 			std::vector<std::array<double, 7>> q_sequence;
 			std::vector<std::array<double, 6>> f_sequence;
 
-			unsigned char response =
+			unsigned char response[1];
+			response[0] =
 				execute_exception_to_return_value
 				([&]()
 				{
@@ -525,81 +536,80 @@ void franka_control_server::process_request(const string& request)
 					return franka_proxy_messages::success;
 				});
 
-			int64 count = q_sequence.size();
-			stream_->send_nonblocking(reinterpret_cast<const unsigned char*>(&count), sizeof(int64));
+			std::size_t count[1]; count[0] = q_sequence.size();
+			connection_->send(asio::buffer(count));
 
 			for (const auto& p : q_sequence)
 			{
-				string message("");
-				message += (std::to_string(p[0]) + ",").data();
-				message += (std::to_string(p[1]) + ",").data();
-				message += (std::to_string(p[2]) + ",").data();
-				message += (std::to_string(p[3]) + ",").data();
-				message += (std::to_string(p[4]) + ",").data();
-				message += (std::to_string(p[5]) + ",").data();
-				message += (std::to_string(p[6])).data();
+				std::string message;
+				message += std::to_string(p[0]) + ",";
+				message += std::to_string(p[1]) + ",";
+				message += std::to_string(p[2]) + ",";
+				message += std::to_string(p[3]) + ",";
+				message += std::to_string(p[4]) + ",";
+				message += std::to_string(p[5]) + ",";
+				message += std::to_string(p[6]);
 				message += '\n';
 
 				// send size and message
 				// todo hton byteorder
-				int64 size = message.size();
-				stream_->send_nonblocking(reinterpret_cast<const unsigned char*>(&size), sizeof(int64));
-				stream_->send_nonblocking(reinterpret_cast<const unsigned char*>(message.data()), message.size());
+				std::size_t size[1]; size[0] = message.size();
+				connection_->send(asio::buffer(size));
+				connection_->send(asio::buffer(message));
 
-				if (stream_->pending_send_bytes() > (stream_->buffer_max_size_send * 0.8))
-				{
-					LOG_WARN("Network send buffer is 80 percent used.")
-					std::this_thread::sleep_for(std::chrono::milliseconds(100));
-				}
+				//if (stream_->pending_send_bytes() > (stream_->buffer_max_size_send * 0.8))
+				//{
+				//	LOG_WARN("Network send buffer is 80 percent used.")
+				//	std::this_thread::sleep_for(std::chrono::milliseconds(100));
+				//}
 			}
 
-			count = f_sequence.size();
-			stream_->send_nonblocking(reinterpret_cast<const unsigned char*>(&count), sizeof(int64));
+			count[0] = f_sequence.size();
+			connection_->send(asio::buffer(count));
 
 			for (const auto& f : f_sequence)
 			{
-				string message("");
-				message += (std::to_string(f[0]) + ",").data();
-				message += (std::to_string(f[1]) + ",").data();
-				message += (std::to_string(f[2]) + ",").data();
-				message += (std::to_string(f[3]) + ",").data();
-				message += (std::to_string(f[4]) + ",").data();
-				message += (std::to_string(f[5])).data();
+				std::string message;
+				message += std::to_string(f[0]) + ",";
+				message += std::to_string(f[1]) + ",";
+				message += std::to_string(f[2]) + ",";
+				message += std::to_string(f[3]) + ",";
+				message += std::to_string(f[4]) + ",";
+				message += std::to_string(f[5]);
 				message += '\n';
 
 				// send size and message
 				// todo hton byteorder
-				int64 size = message.size();
-				stream_->send_nonblocking(reinterpret_cast<const unsigned char*>(&size), sizeof(int64));
-				stream_->send_nonblocking(reinterpret_cast<const unsigned char*>(message.data()), message.size());
+				std::size_t size[1]; size[0] = message.size();
+				connection_->send(asio::buffer(size));
+				connection_->send(asio::buffer(message));
 
-				if (stream_->pending_send_bytes() > (stream_->buffer_max_size_send * 0.8))
-				{
-					LOG_WARN("Network send buffer is 80 percent used.")
-					std::this_thread::sleep_for(std::chrono::milliseconds(100));
-				}
+				//if (stream_->pending_send_bytes() > (stream_->buffer_max_size_send * 0.8))
+				//{
+				//	LOG_WARN("Network send buffer is 80 percent used.")
+				//	std::this_thread::sleep_for(std::chrono::milliseconds(100));
+				//}
 			}
 
-			LOG_INFO("Sending response: " + static_cast<int>(response));
-			stream_->send_nonblocking(&response, sizeof(unsigned char));
-
+			std::cout << "franka_control_server::task_main(): " << "Sending response: " << static_cast<int>(response[0]);
+			connection_->send(asio::buffer(response));
 			break;
 		}
 
 		case franka_proxy_messages::speed:
 		{
-			LOG_INFO("Setting speed")
-			string rest = request.substring
-				(pos + string(franka_proxy_messages::command_strings[type]).size());
-			controller_.set_speed_factor(rest.to_float());
+			std::cout << "franka_control_server::task_main(): " << "Setting speed";
+			std::string rest = request.substr
+				(pos + std::string(franka_proxy_messages::command_strings[type]).size());
+			controller_.set_speed_factor(std::stod(rest));
 			break;
 		}
 
 		case franka_proxy_messages::error_recovery:
 		{
-			LOG_INFO("Error recovery")
-			string rest = request.substring
-				(pos + string(franka_proxy_messages::command_strings[type]).size());
+			std::cout << "franka_control_server::task_main(): " << "Error recovery";
+			std::string rest = request.substr
+				(pos + std::string(franka_proxy_messages::command_strings[type]).size());
 			controller_.automatic_error_recovery();
 			break;
 		}
@@ -620,39 +630,49 @@ void franka_control_server::process_request(const string& request)
 
 
 franka_state_server::franka_state_server
-	(network_context& network,
-	 uint16 state_port,
+	(std::uint16_t state_port,
 	 franka_hardware_controller& controller)
 	:
 	controller_(controller),
 
 	state_port_(state_port),
-	server_(network.create_server(state_port_))
-{}
+	server_(create_server(state_port_)),
+
+	terminate_internal_thread_(false)
+{
+	internal_thread_ = std::thread([this]{task_main();});
+}
 
 
 franka_state_server::~franka_state_server() noexcept
 {
-	// Enforce explicit destructor instantiation.
+	terminate_internal_thread_ = true;
+	try { internal_thread_.join(); }
+	catch (...)
+	{
+		std::cerr << "franka_state_server::~franka_state_server(): " <<
+			"Internal thread threw an exception on joining.";
+	}
 }
 
 
 void franka_state_server::task_main()
 {
-	while (!joining_now())
+	while (!terminate_internal_thread_)
 	{
 		// Possibly accept new connection
 		// and drop preceding connection.
-		auto_pointer<network_connection> connection
-			(server_->try_accept_connection());
+		std::error_code error;
+		auto connection =
+			std::make_unique<asio::ip::tcp::socket>(server_.accept(error));
 
-		if (connection)
+		if(!error)
 			connection_ = std::move(connection);
 
 		if (!connection_)
 		{
-			thread_util::sleep_seconds
-				(sleep_seconds_disconnected_);
+			std::this_thread::sleep_for
+				(std::chrono::duration<double>(sleep_seconds_disconnected_));
 
 			continue;
 		}
@@ -665,55 +685,60 @@ void franka_state_server::task_main()
 
 			// Send state.
 			// conf:j1,j2,j3,j4,j5,j6,j7$<gripper-position>$<gripper-max-position>$<gripper-is-grasped>
-			string msg("conf:");
+			std::string msg("conf:");
 
-			msg += (std::to_string(robot_state.q[0]) + ",").data();
-			msg += (std::to_string(robot_state.q[1]) + ",").data();
-			msg += (std::to_string(robot_state.q[2]) + ",").data();
-			msg += (std::to_string(robot_state.q[3]) + ",").data();
-			msg += (std::to_string(robot_state.q[4]) + ",").data();
-			msg += (std::to_string(robot_state.q[5]) + ",").data();
-			msg += (std::to_string(robot_state.q[6])).data();
-
-			msg += '$';
-
-			msg += std::to_string(gripper_state.width).data();
+			msg += std::to_string(robot_state.q[0]) + ",";
+			msg += std::to_string(robot_state.q[1]) + ",";
+			msg += std::to_string(robot_state.q[2]) + ",";
+			msg += std::to_string(robot_state.q[3]) + ",";
+			msg += std::to_string(robot_state.q[4]) + ",";
+			msg += std::to_string(robot_state.q[5]) + ",";
+			msg += std::to_string(robot_state.q[6]);
 
 			msg += '$';
 
-			msg += std::to_string(gripper_state.max_width).data();
+			msg += std::to_string(gripper_state.width);
 
 			msg += '$';
 
-			msg += std::to_string(gripper_state.is_grasped).data();
+			msg += std::to_string(gripper_state.max_width);
+
+			msg += '$';
+
+			msg += std::to_string(gripper_state.is_grasped);
 
 			msg += '\n';
-
-			send_status_message(msg);
+			
+			asio::write(*connection_, asio::buffer(msg));
 		}
 		catch (...)
 		{
-			LOG_ERROR("Error while sending status, dropping stream and stopping robot.");
+			std::cerr << "franka_state_server::task_main(): " <<
+				"Error while sending status, dropping stream and stopping robot.";
 			controller_.stop_movement();
 			connection_.reset();
 		}
 
-		thread_util::sleep_seconds
-			(sleep_seconds_connected_);
+		std::this_thread::sleep_for
+			(std::chrono::duration<double>(sleep_seconds_connected_));
 	}
 }
 
 
-void franka_state_server::send_status_message(const string& command)
+asio::ip::tcp::acceptor franka_state_server::create_server(std::uint16_t control_port)
 {
-	network_buffer network_data
-		(reinterpret_cast<const unsigned char*>(command.data()), command.size());
+	asio::ip::tcp::acceptor acceptor(io_context_);
+	asio::ip::tcp::endpoint endpoint(asio::ip::tcp::v4(), control_port);
+	acceptor.open(endpoint.protocol());
+	acceptor.set_option(asio::ip::tcp::acceptor::reuse_address(true));
+	acceptor.non_blocking(true);
+	acceptor.bind(endpoint);
+	acceptor.listen();
 
-	network_buffer_progress progress(network_data);
-	while (!progress.finished() && !joining_now())
-		network_transfer::send_partial_nonblocking
-			(connection_.object(), network_data, progress);
+	return acceptor;
 }
+
+
 
 
 } /* namespace franka_proxy */
