@@ -20,6 +20,8 @@
 #include <asio/connect.hpp>
 #include <asio/write.hpp>
 #include <asio/read.hpp>
+#include "exception.hpp"
+#include <iostream>
 
 
 namespace franka_proxy
@@ -187,6 +189,8 @@ void franka_control_client::send_command
 	catch (const asio::system_error&)
 	{
 		connection_.reset();
+		std::cerr << "franka_control_client::send_command(): Failed to send.";
+		throw network_exception();
 	}
 }
 
@@ -209,6 +213,8 @@ unsigned char franka_control_client::send_command_and_check_response
 	catch (const asio::system_error&)
 	{
 		connection_.reset();
+		std::cerr << "franka_control_client::send_command_and_check_response(): Failed to send.";
+		throw network_exception();
 	}
 }
 
