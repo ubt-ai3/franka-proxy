@@ -14,7 +14,7 @@
 
 #include <Windows.h>
 
-#include "fore_torque_sensor_JR3PCIIoctls.h"
+#include "force_torque_sensor_JR3PCIIoctls.h"
 
 
 extern "C"

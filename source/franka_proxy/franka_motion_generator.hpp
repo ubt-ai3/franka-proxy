@@ -12,13 +12,15 @@
 #define INCLUDED__FRANKA_PROXY__FRANKA_MOTION_GENERATOR_HPP
 
 #include <atomic>
+#include <mutex>
+#include <vector>
 
 #include <Eigen/Geometry>
 
 #include <franka/robot.h>
 #include <franka/model.h>
-#include <vector>
-#include <jr3_fts\force_torque_sensor.hpp>
+
+#include "jr3_ft_sensor/force_torque_sensor.hpp"
 
 
 namespace franka_proxy

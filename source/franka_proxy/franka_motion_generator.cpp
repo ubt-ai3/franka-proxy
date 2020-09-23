@@ -8,11 +8,14 @@
  ************************************************************************/
 
 #include "franka_motion_generator.hpp"
-#include <franka/model.h>
+
 #include <utility>
-#include <iostream>
-#include <Eigen/Dense>
 #include <fstream>
+#include <iostream>
+
+#include <Eigen/Dense>
+
+#include <franka/model.h>
 
 
 namespace franka_proxy
