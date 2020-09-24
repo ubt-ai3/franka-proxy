@@ -1,27 +1,15 @@
 cmake_minimum_required(VERSION 3.11)
 project(franka_proxy)
 
-include(cmake/CPM.cmake)
+find_package(asio CONFIG REQUIRED)
+if(MSVC)
+	add_compile_definitions(_WIN32_WINNT=0x0501)
+endif()
+find_package(Eigen3 CONFIG REQUIRED)
+find_package(libfranka CONFIG REQUIRED)
+find_package(Threads REQUIRED)
 
-CPMAddPackage(
-    NAME viral
-    GIT_REPOSITORY https://resy-gitlab.inf.uni-bayreuth.de/verbbot/viral.git
-    GIT_TAG 609393cc8a64f53608460aedf2108c13bfaa5bef
-)
 
-CPMAddPackage(
-    NAME franka
-    GIT_REPOSITORY https://resy-gitlab.inf.uni-bayreuth.de/libfranka/libfranka.git
-    GIT_TAG cf58da4152f07a50ff859012f3d94629783c633b
-)
-
-CPMAddPackage(
-    NAME eigen3_wrapper
-    GIT_REPOSITORY https://resy-gitlab.inf.uni-bayreuth.de/verbbot/eigen3_wrapper.git
-    GIT_TAG ed9aa62a6cabfb8a7f1137a7b213eb0f3c538ee2
-)
-
-find_package(Threads)
 
 
 add_library(
@@ -37,15 +25,15 @@ add_library(
 target_link_libraries(
     franka_control
     PUBLIC
-        viral::core
-        eigen3
+        asio::asio
+        Eigen3::Eigen
         franka_proxy_client
 )
 
 target_compile_definitions(
     franka_control
     PUBLIC
-    std_cxx_17
+		std_cxx_17
 )
 
 add_library(
@@ -56,7 +44,7 @@ add_library(
         ${CMAKE_CURRENT_SOURCE_DIR}/source/franka_proxy/franka_motion_recorder.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/source/franka_proxy/franka_network_server.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/source/franka_proxy/franka_proxy.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/source/jr3_fts/force_torque_sensor.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/source/jr3_ft_sensor/force_torque_sensor.cpp
 )
 
 target_include_directories(
@@ -84,9 +72,9 @@ target_include_directories(
 target_link_libraries(
     franka_proxy_client
     PUBLIC
-        viral::core
+        asio::asio
         franka_proxy
-        eigen3
+        Eigen3::Eigen
 )
 
 target_compile_definitions(
@@ -110,17 +98,17 @@ target_include_directories(
 target_link_libraries(
     franka_share
     INTERFACE
-        viral::core
-        franka
+        asio::asio
+        Franka::Franka
         Threads::Threads
 )
 
 target_link_libraries(
     franka_proxy
     PUBLIC
-        viral::core
-        eigen3
-        franka
+        asio::asio
+        Eigen3::Eigen
+        Franka::Franka
         Threads::Threads
         franka_share
 )
@@ -128,5 +116,5 @@ target_link_libraries(
 target_compile_definitions(
     franka_proxy
     PUBLIC
-    std_cxx_17
+		std_cxx_17
 )
