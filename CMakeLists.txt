@@ -8,13 +8,13 @@ if(MSVC)
 endif()
 find_package(Eigen3 CONFIG REQUIRED)
 find_package(Franka CONFIG REQUIRED)
+find_package(Poco CONFIG REQUIRED COMPONENTS Net Foundation)
 find_package(Threads REQUIRED)
 
 
 ## franka_control
 add_library(
-    franka_control
-    STATIC
+    franka_control STATIC
         ${CMAKE_CURRENT_SOURCE_DIR}/source/franka_control/franka_controller.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/source/franka_control/franka_controller_emulated.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/source/franka_control/franka_controller_remote.cpp
@@ -27,6 +27,8 @@ target_link_libraries(
     PUBLIC
         asio::asio
         Eigen3::Eigen
+		Poco::Foundation
+		Poco::Net
         franka_proxy_client
 )
 
@@ -75,8 +77,7 @@ target_compile_definitions(
 
 ## franka_proxy_client
 add_library(
-    franka_proxy_client
-    STATIC
+    franka_proxy_client STATIC
         ${CMAKE_CURRENT_SOURCE_DIR}/source/franka_proxy_client/franka_network_client.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/source/franka_proxy_client/franka_remote_controller.cpp
 )
@@ -111,12 +112,4 @@ target_include_directories(
     franka_share
     INTERFACE
         ${CMAKE_CURRENT_SOURCE_DIR}/source
-)
-
-target_link_libraries(
-    franka_share
-    INTERFACE
-        asio::asio
-        Franka::Franka
-        Threads::Threads
 )
