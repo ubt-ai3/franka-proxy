@@ -12,24 +12,6 @@ find_package(Poco CONFIG REQUIRED COMPONENTS Net Foundation)
 find_package(Threads REQUIRED)
 
 
-## franka_share
-add_library(
-    franka_share
-    INTERFACE
-)
-
-target_include_directories(
-    franka_share
-    INTERFACE
-        ${CMAKE_CURRENT_SOURCE_DIR}/source
-)
-
-target_link_libraries(
-    franka_share
-    INTERFACE
-)
-
-
 ## franka_proxy
 add_executable(
     franka_proxy
@@ -44,9 +26,7 @@ add_executable(
 target_include_directories(
     franka_proxy
     PUBLIC
-        ${CMAKE_CURRENT_SOURCE_DIR}/source
-        ${franka_SOURCE_DIR}/include
-        ${eigen3_SOURCE_DIR}
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/source>
 )
 
 target_link_libraries(
@@ -58,7 +38,6 @@ target_link_libraries(
 		Poco::Net
         Threads::Threads
 		Franka::Franka
-        franka_share
 )
 
 target_compile_definitions(
@@ -78,7 +57,7 @@ add_library(
 target_include_directories(
     franka_proxy_client
     PUBLIC
-        ${CMAKE_CURRENT_SOURCE_DIR}/source
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/source>
 )
 
 target_link_libraries(
@@ -86,7 +65,6 @@ target_link_libraries(
     PUBLIC
         asio::asio
         Eigen3::Eigen
-		franka_share
 )
 
 target_compile_definitions(
@@ -105,8 +83,7 @@ add_executable(
 target_include_directories(
     franka_proxy_client_test
     PUBLIC
-        ${CMAKE_CURRENT_SOURCE_DIR}/source
-        ${eigen3_SOURCE_DIR}
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/source>
 )
 
 target_link_libraries(
@@ -135,6 +112,12 @@ add_library(
         ${CMAKE_CURRENT_SOURCE_DIR}/source/franka_control/ikfast.cpp
 )
 
+target_include_directories(
+    franka_control
+    PUBLIC
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/source>
+)
+
 target_link_libraries(
     franka_control
     PUBLIC
@@ -148,3 +131,30 @@ target_compile_definitions(
     PUBLIC
 		std_cxx_17
 )
+
+
+## install
+file(GLOB franka_proxy_client_headers
+    "${CMAKE_CURRENT_SOURCE_DIR}/source/franka_proxy_client/*.hpp"
+)
+file(GLOB franka_control_headers
+    "${CMAKE_CURRENT_SOURCE_DIR}/source/franka_control/*.hpp"
+)
+
+install(
+	TARGETS franka_control franka_proxy franka_proxy_client
+	EXPORT franka_proxyConfig
+  	LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+	RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+)
+	
+install(
+	FILES ${franka_proxy_client_headers}
+	DESTINATION include/franka_proxy_client
+)
+install(
+	FILES ${franka_control_headers}
+	DESTINATION include/franka_control
+)
+
+install(EXPORT franka_proxyConfig DESTINATION share)
