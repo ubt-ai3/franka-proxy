@@ -11,29 +11,23 @@ find_package(Franka CONFIG REQUIRED)
 find_package(Threads REQUIRED)
 
 
-## franka_control
+## franka_share
 add_library(
-    franka_control
-    STATIC
-        ${CMAKE_CURRENT_SOURCE_DIR}/source/franka_control/franka_controller.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/source/franka_control/franka_controller_emulated.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/source/franka_control/franka_controller_remote.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/source/franka_control/franka_util.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/source/franka_control/ikfast.cpp
+    franka_share
+    INTERFACE
+)
+
+target_include_directories(
+    franka_share
+    INTERFACE
+        ${CMAKE_CURRENT_SOURCE_DIR}/source
 )
 
 target_link_libraries(
-    franka_control
-    PUBLIC
+    franka_share
+    INTERFACE
         asio::asio
-        Eigen3::Eigen
-        franka_proxy_client
-)
-
-target_compile_definitions(
-    franka_control
-    PUBLIC
-		std_cxx_17
+        Threads::Threads
 )
 
 
@@ -92,6 +86,7 @@ target_link_libraries(
     PUBLIC
         asio::asio
         Eigen3::Eigen
+		franka_share
 )
 
 target_compile_definitions(
@@ -101,22 +96,56 @@ target_compile_definitions(
 )
 
 
-## franka_share
-add_library(
-    franka_share
-    INTERFACE
+## franka_proxy_client_test
+add_executable(
+    franka_proxy_client_test
+        ${CMAKE_CURRENT_SOURCE_DIR}/source/franka_proxy_client_test/main.cpp
 )
 
 target_include_directories(
-    franka_share
-    INTERFACE
+    franka_proxy_client_test
+    PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/source
+        ${eigen3_SOURCE_DIR}
 )
 
 target_link_libraries(
-    franka_share
-    INTERFACE
+    franka_proxy_client_test
+    PUBLIC
         asio::asio
-        Franka::Franka
+        Eigen3::Eigen
         Threads::Threads
+		franka_proxy_client
+)
+
+target_compile_definitions(
+    franka_proxy_client_test
+    PUBLIC
+		std_cxx_17
+)
+
+
+## franka_control
+add_library(
+    franka_control
+    STATIC
+        ${CMAKE_CURRENT_SOURCE_DIR}/source/franka_control/franka_controller.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/source/franka_control/franka_controller_emulated.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/source/franka_control/franka_controller_remote.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/source/franka_control/franka_util.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/source/franka_control/ikfast.cpp
+)
+
+target_link_libraries(
+    franka_control
+    PUBLIC
+        asio::asio
+        Eigen3::Eigen
+        franka_proxy_client
+)
+
+target_compile_definitions(
+    franka_control
+    PUBLIC
+		std_cxx_17
 )
