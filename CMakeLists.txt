@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.11)
 project(franka_proxy)
 
+
 find_package(asio CONFIG REQUIRED)
 if(MSVC)
 	add_compile_definitions(_WIN32_WINNT=0x0501)
@@ -10,8 +11,7 @@ find_package(Franka CONFIG REQUIRED)
 find_package(Threads REQUIRED)
 
 
-
-
+## franka_control
 add_library(
     franka_control
     STATIC
@@ -36,9 +36,10 @@ target_compile_definitions(
 		std_cxx_17
 )
 
-add_library(
+
+## franka_proxy
+add_executable(
     franka_proxy
-    STATIC
         ${CMAKE_CURRENT_SOURCE_DIR}/source/franka_proxy/franka_hardware_controller.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/source/franka_proxy/franka_motion_generator.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/source/franka_proxy/franka_motion_recorder.cpp
@@ -55,7 +56,24 @@ target_include_directories(
         ${eigen3_SOURCE_DIR}
 )
 
+target_link_libraries(
+    franka_proxy
+    PUBLIC
+        asio::asio
+        Eigen3::Eigen
+        Franka::Franka
+        Threads::Threads
+        franka_share
+)
 
+target_compile_definitions(
+    franka_proxy
+    PUBLIC
+		std_cxx_17
+)
+
+
+## franka_proxy_client
 add_library(
     franka_proxy_client
     STATIC
@@ -73,7 +91,6 @@ target_link_libraries(
     franka_proxy_client
     PUBLIC
         asio::asio
-        franka_proxy
         Eigen3::Eigen
 )
 
@@ -84,6 +101,7 @@ target_compile_definitions(
 )
 
 
+## franka_share
 add_library(
     franka_share
     INTERFACE
@@ -101,20 +119,4 @@ target_link_libraries(
         asio::asio
         Franka::Franka
         Threads::Threads
-)
-
-target_link_libraries(
-    franka_proxy
-    PUBLIC
-        asio::asio
-        Eigen3::Eigen
-        Franka::Franka
-        Threads::Threads
-        franka_share
-)
-
-target_compile_definitions(
-    franka_proxy
-    PUBLIC
-		std_cxx_17
 )
