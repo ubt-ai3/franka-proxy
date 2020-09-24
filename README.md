@@ -1,9 +1,8 @@
 ## Externals via vcpkg
 
-run bootstrap-vcpkg.bat
+./bootstrap-vcpkg.bat
 
-vcpkg install asio:x64-windows libfranka:x64-windows
-
+vcpkg install asio:x64-windows franka:x64-windows
 
 mkdir build
 cd build
