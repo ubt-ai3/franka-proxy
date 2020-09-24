@@ -6,7 +6,7 @@ if(MSVC)
 	add_compile_definitions(_WIN32_WINNT=0x0501)
 endif()
 find_package(Eigen3 CONFIG REQUIRED)
-find_package(libfranka CONFIG REQUIRED)
+find_package(Franka CONFIG REQUIRED)
 find_package(Threads REQUIRED)
 
 
