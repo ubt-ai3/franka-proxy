@@ -20,7 +20,6 @@
 
 #include "franka_motion_generator.hpp"
 #include "franka_motion_recorder.hpp"
-#include "viral_core/log.hpp"
 
 
 namespace franka_proxy
@@ -39,12 +38,13 @@ franka_hardware_controller::franka_hardware_controller
 	:
 	robot_(controller_ip, franka::RealtimeConfig::kIgnore),
 	parameters_initialized_(false),
-	stop_motion_(),
 	speed_factor_(0.05),
 
 	motion_recorder_(10.0, robot_, robot_state_),
 
 	robot_state_(robot_.readOnce()),
+
+	control_loop_running_(false),
 
 	terminate_state_thread_(false),
 	state_thread_([this]() { state_update_loop(); })
@@ -81,7 +81,7 @@ void franka_hardware_controller::apply_z_force
 	{
 		detail::force_motion_generator fmg(robot_, mass, duration);
 
-		control_loop_running_.set(true);
+		set_control_loop_running(true);
 		{
 			// Lock the current_state_lock_ to wait for state_thread_ to finish.
 			std::lock_guard<std::mutex> state_guard(state_lock_);
@@ -100,11 +100,11 @@ void franka_hardware_controller::apply_z_force
 	}
 	catch (const franka::Exception&)
 	{
-		control_loop_running_.set(false);
+		set_control_loop_running(false);
 		throw;
 	}
 
-	control_loop_running_.set(false);
+	set_control_loop_running(false);
 }
 
 
@@ -119,7 +119,7 @@ void franka_hardware_controller::move_to(const robot_config_7dof& target)
 
 	try
 	{
-		control_loop_running_.set(true);
+		set_control_loop_running(true);
 		{
 			// Lock the current_state_lock_ to wait for state_thread_ to finish.
 			std::lock_guard<std::mutex> state_guard(state_lock_);
@@ -135,11 +135,11 @@ void franka_hardware_controller::move_to(const robot_config_7dof& target)
 	}
 	catch (const franka::Exception&)
 	{
-		control_loop_running_.set(false);
+		set_control_loop_running(false);
 		throw;
 	}
 
-	control_loop_running_.set(false);
+	set_control_loop_running(false);
 }
 
 
@@ -156,7 +156,7 @@ bool franka_hardware_controller::move_to_until_contact
 
 	try
 	{
-		control_loop_running_.set(true);
+		set_control_loop_running(true);
 		{
 			// Lock the current_state_lock_ to wait for state_thread_ to finish.
 			std::lock_guard<std::mutex> state_guard(state_lock_);
@@ -172,17 +172,17 @@ bool franka_hardware_controller::move_to_until_contact
 	}
 	catch (const detail::contact_stop_trigger&)
 	{
-		control_loop_running_.set(false);
+		set_control_loop_running(false);
 		set_default_collision_behaviour();
 		return false;
 	}
 	catch (const franka::Exception&)
 	{
-		control_loop_running_.set(false);
+		set_control_loop_running(false);
 		throw;
 	}
 	
-	control_loop_running_.set(false);
+	set_control_loop_running(false);
 	set_default_collision_behaviour();
 	return true;
 }
@@ -281,7 +281,7 @@ void franka_hardware_controller::automatic_error_recovery()
 
 void franka_hardware_controller::start_recording()
 {
-	control_loop_running_.set(true);
+	set_control_loop_running(true);
 	{
 		// Lock the current_state_lock_ to wait for state_thread_ to finish.
 		std::lock_guard<std::mutex> state_guard(state_lock_);
@@ -294,7 +294,7 @@ void franka_hardware_controller::start_recording()
 std::pair<std::vector<std::array<double, 7>>, std::vector<std::array<double, 6>>> franka_hardware_controller::stop_recording()
 {
 	motion_recorder_.stop();
-	control_loop_running_.set(false);
+	set_control_loop_running(false);
 
 	return { motion_recorder_.latest_record(), motion_recorder_.latest_fts_record() };
 }
@@ -321,7 +321,7 @@ void franka_hardware_controller::move_sequence(const std::vector<std::array<doub
 
 	try
 	{
-		control_loop_running_.set(true);
+		set_control_loop_running(true);
 		{
 			// Lock the current_state_lock_ to wait for state_thread_ to finish.
 			std::lock_guard<std::mutex> state_guard(state_lock_);
@@ -342,11 +342,11 @@ void franka_hardware_controller::move_sequence(const std::vector<std::array<doub
 	}
 	catch (const franka::Exception&)
 	{
-		control_loop_running_.set(false);
+		set_control_loop_running(false);
 		throw;
 	}
 
-	control_loop_running_.set(false);
+	set_control_loop_running(false);
 }
 
 
@@ -381,7 +381,7 @@ void franka_hardware_controller::move_sequence(const std::vector<std::array<doub
 
 	try
 	{
-		control_loop_running_.set(true);
+		set_control_loop_running(true);
 		{
 			// Lock the current_state_lock_ to wait for state_thread_ to finish.
 			std::lock_guard<std::mutex> state_guard(state_lock_);
@@ -414,11 +414,11 @@ void franka_hardware_controller::move_sequence(const std::vector<std::array<doub
 	}
 	catch (const franka::Exception&)
 	{
-		control_loop_running_.set(false);
+		set_control_loop_running(false);
 		throw;
 	}
 
-	control_loop_running_.set(false);
+	set_control_loop_running(false);
 }
 
 
@@ -441,7 +441,7 @@ void franka_hardware_controller::move_sequence(
 
 	try
 	{
-		control_loop_running_.set(true);
+		set_control_loop_running(true);
 		{
 			// Lock the current_state_lock_ to wait for state_thread_ to finish.
 			std::lock_guard<std::mutex> state_guard(state_lock_);
@@ -462,11 +462,11 @@ void franka_hardware_controller::move_sequence(
 	}
 	catch (const franka::Exception&)
 	{
-		control_loop_running_.set(false);
+		set_control_loop_running(false);
 		throw;
 	}
 
-	control_loop_running_.set(false);
+	set_control_loop_running(false);
 }
 
 
@@ -474,9 +474,12 @@ void franka_hardware_controller::state_update_loop()
 {
 	while (!terminate_state_thread_)
 	{
-		control_loop_running_.wait_for(false);
-		if (control_loop_running_.get())
-			continue;
+		{
+			std::unique_lock<std::mutex> lk(control_loop_running_mutex_);
+			control_loop_running_cv_.wait(lk);
+			if (control_loop_running_)
+				continue;
+		}
 
 		try
 		{
@@ -524,6 +527,16 @@ void franka_hardware_controller::set_contact_drive_collision_behaviour()
 		{ {5.0, 5.0, 4.5, 4.5, 4.0, 3.5, 3.0} }, { {5.0, 5.0, 4.5, 4.5, 4.0, 3.5, 3.0} },
 		{ {5.0, 5.0, 5.0, 6.25, 6.25, 6.25} }, { {5.0, 5.0, 5.0, 6.25, 6.25, 6.25} },
 		{ {5.0, 5.0, 5.0, 6.25, 6.25, 6.25} }, { {5.0, 5.0, 5.0, 6.25, 6.25, 6.25} });
+}
+
+
+void franka_hardware_controller::set_control_loop_running(bool running)
+{
+	{
+		std::lock_guard<std::mutex> lk(control_loop_running_mutex_);
+		control_loop_running_ = running;
+	}
+	control_loop_running_cv_.notify_all();
 }
 
 

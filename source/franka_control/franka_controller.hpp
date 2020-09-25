@@ -13,11 +13,11 @@
 
 
 #include <array>
+#include <thread>
 
 #include <Eigen/Geometry>
 
-#include <viral_core/thread.hpp>
-#include "franka_proxy_client/franka_remote_controller.hpp"
+#include <franka_proxy_client/franka_remote_controller.hpp>
 
 
 namespace franka_control
@@ -103,22 +103,24 @@ public:
  * Updates a franka_controller instance in a separate thread.
  *
  ************************************************************************/
-class franka_update_task :
-	private viral_core::threaded_task
+class franka_update_task
 {
 
-	public:
+public:
 
-		franka_update_task(franka_controller& controller);
-		~franka_update_task() noexcept;
+	franka_update_task(franka_controller& controller);
+	~franka_update_task() noexcept;
 
 
-	private:
+private:
 
-		void task_main() override;
+	void task_main();
 
-		static const float update_timestep_secs_;
-		franka_controller& controller_;
+	static const double update_timestep_secs_;
+	franka_controller& controller_;
+
+	std::thread internal_thread_;
+	std::atomic_bool terminate_internal_thread_;
 };
 
 

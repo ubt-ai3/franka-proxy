@@ -76,6 +76,8 @@ public:
 	static Eigen::Vector3d tool_center_of_mass();
 	static Eigen::Matrix3d tool_inertia();
 
+	static constexpr double pi = 3.14159265358979323846;
+
 private:
 	static Eigen::Matrix3d a_tilde(const Eigen::Vector3d& a);
 };

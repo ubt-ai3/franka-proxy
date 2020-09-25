@@ -11,19 +11,13 @@
 #include "franka_controller.hpp"
 
 #include <vector>
-
-#include <viral_core/log.hpp>
-#include <viral_core/timer.hpp>
-#include <viral_core/geo_util.hpp>
+#include <iostream>
 
 #include "franka_util.hpp"
 
 
 namespace franka_control
 {
-
-
-using namespace viral_core;
 
 
 //////////////////////////////////////////////////////////////////////////
@@ -67,7 +61,7 @@ Eigen::Affine3d franka_controller::current_flange_T_world() const
 
 Eigen::Affine3d franka_controller::current_tcp_T_world() const
 {
-	return Eigen::AngleAxisd(-135.0/180.0 * geo_constants::pi, Eigen::Vector3d(0,0,1))
+	return Eigen::AngleAxisd(-135.0/180.0 * franka_util::pi, Eigen::Vector3d(0,0,1))
 		* Eigen::Translation3d(0, 0, -0.1564)
 		* current_flange_T_world();
 }
@@ -83,52 +77,42 @@ Eigen::Affine3d franka_controller::current_tcp_T_world() const
 franka_update_task::franka_update_task
 	(franka_controller& controller)
 	:
-	controller_(controller)
+	controller_(controller),
+	terminate_internal_thread_(false)
 {
-	LOG_INFO("Creating and running robot controller task.");
-	start(); 
+	internal_thread_ = std::thread([this]{task_main();});
 }
 
 
-franka_update_task::~franka_update_task() NOTHROW
+franka_update_task::~franka_update_task() noexcept
 {
-	LOG_INFO("Destroying.");
-	LOG_INFO("Terminating internal thread.");
-
-	try { join(); }
+	terminate_internal_thread_ = true;
+	try { internal_thread_.join(); }
 	catch (...)
 	{
-		LOG_CRITICAL
-			("Internal thread threw an exception on joining.");
+		std::cerr << "franka_state_server::~franka_state_server(): " <<
+			"Internal thread threw an exception on joining.";
 	}
-
-	LOG_INFO("Destroyed.");
 }
 
 
 void franka_update_task::task_main()
 {
-	step_timer timer(update_timestep_secs_, 1.f);
-
-	while (true)
+	auto step_duration = std::chrono::duration_cast<std::chrono::microseconds>
+		(std::chrono::duration<double>(update_timestep_secs_));
+	
+	while (!terminate_internal_thread_)
 	{
-		if (joining_now()) break;
+		auto next_time_point = std::chrono::steady_clock::now() + step_duration;
 
-		timer.try_sleep();
-		timer.update();
-		if (!timer.has_next_timestep()) continue;
+		controller_.update();
 
-
-		// While timesteps are not required for networking,
-		// there are some backends that prefer time-locked
-		// update() calls (e.g. to move a virtual robot).
-		while (timer.next_timestep())
-			controller_.update();
+		std::this_thread::sleep_until(next_time_point);
 	}
 }
 
 
-const float franka_update_task::update_timestep_secs_ = 0.01667f;
+const double franka_update_task::update_timestep_secs_ = 0.01667;
 
 
 

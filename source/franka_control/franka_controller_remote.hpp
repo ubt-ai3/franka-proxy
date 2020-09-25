@@ -12,15 +12,9 @@
 #define INCLUDED__FRANKA_CONTROL__FRANKA_CONTROLLER_REMOTE_HPP
 
 
-#include "franka_controller.hpp"
-
 #include <mutex>
 
-
-namespace viral_core
-{
-class network_context;
-}
+#include "franka_controller.hpp"
 
 
 namespace franka_proxy
@@ -47,7 +41,7 @@ class franka_controller_remote :
 public:
 
 	franka_controller_remote
-		(const std::string& ip, viral_core::network_context& network);
+		(const std::string& ip);
 	~franka_controller_remote() noexcept override;
 
 

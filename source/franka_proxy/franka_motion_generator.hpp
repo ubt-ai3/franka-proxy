@@ -12,13 +12,14 @@
 #define INCLUDED__FRANKA_PROXY__FRANKA_MOTION_GENERATOR_HPP
 
 #include <atomic>
+#include <vector>
 
 #include <Eigen/Geometry>
 
 #include <franka/robot.h>
 #include <franka/model.h>
-#include <vector>
-#include <jr3_fts\force_torque_sensor.hpp>
+
+//#include <jr3_ft_sensor/force_torque_sensor.hpp>
 
 
 namespace franka_proxy
@@ -260,7 +261,7 @@ private:
 	double f_z_error_integral_{0.0};
 	double pre_error_fz_{0.0};
 
-	ft_sensor_jr3 fts_;
+	//ft_sensor_jr3 fts_;
 
 
 	bool log_ = true;

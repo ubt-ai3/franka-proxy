@@ -10,17 +10,15 @@
 
 #include "franka_remote_controller.hpp"
 
+#include <iostream>
+#include <list>
 #include <utility>
-#include <viral_core/log.hpp>
 
 #include "exception.hpp"
 
 
 namespace franka_proxy
 {
-
-
-using namespace viral_core;
 
 
 //////////////////////////////////////////////////////////////////////////
@@ -31,11 +29,9 @@ using namespace viral_core;
 
 
 franka_remote_controller::franka_remote_controller
-	(std::string proxy_ip,
-	 network_context& network)
+	(std::string proxy_ip)
 	:
 	franka_ip_(std::move(proxy_ip)),
-	network_(network),
 	current_config_(),
 	current_gripper_pos_(),
 	max_gripper_pos_()
@@ -52,8 +48,8 @@ franka_remote_controller::~franka_remote_controller() noexcept
 
 void franka_remote_controller::move_to(const robot_config_7dof& target)
 {
-	string msg =
-	(std::string(franka_proxy_messages::command_strings[franka_proxy_messages::move_ptp]) + ' ' +
+	std::string msg =
+	std::string(franka_proxy_messages::command_strings[franka_proxy_messages::move_ptp]) + ' ' +
 		std::to_string(target[0]) + ' ' +
 		std::to_string(target[1]) + ' ' +
 		std::to_string(target[2]) + ' ' +
@@ -61,7 +57,7 @@ void franka_remote_controller::move_to(const robot_config_7dof& target)
 		std::to_string(target[4]) + ' ' +
 		std::to_string(target[5]) + ' ' +
 		std::to_string(target[6]) +
-		franka_proxy_messages::command_end_marker).data();
+		franka_proxy_messages::command_end_marker;
 
 	check_response
 		(franka_proxy_messages::feedback_type
@@ -72,8 +68,8 @@ void franka_remote_controller::move_to(const robot_config_7dof& target)
 bool franka_remote_controller::move_to_until_contact
 	(const robot_config_7dof& target)
 {
-	string msg =
-	(std::string(franka_proxy_messages::command_strings[franka_proxy_messages::move_contact]) + ' ' +
+	std::string msg =
+	std::string(franka_proxy_messages::command_strings[franka_proxy_messages::move_contact]) + ' ' +
 		std::to_string(target[0]) + ' ' +
 		std::to_string(target[1]) + ' ' +
 		std::to_string(target[2]) + ' ' +
@@ -81,7 +77,7 @@ bool franka_remote_controller::move_to_until_contact
 		std::to_string(target[4]) + ' ' +
 		std::to_string(target[5]) + ' ' +
 		std::to_string(target[6]) +
-		franka_proxy_messages::command_end_marker).data();
+		franka_proxy_messages::command_end_marker;
 
 	const response_type response = check_response
 		(franka_proxy_messages::feedback_type
@@ -104,11 +100,11 @@ void franka_remote_controller::apply_z_force
 	(double mass,
 	 double duration)
 {
-	string msg =
-	(std::string(franka_proxy_messages::command_strings[franka_proxy_messages::force_z]) + ' ' +
+	std::string msg =
+	std::string(franka_proxy_messages::command_strings[franka_proxy_messages::force_z]) + ' ' +
 		std::to_string(mass) + ' ' +
 		std::to_string(duration) +
-		franka_proxy_messages::command_end_marker).data();
+		franka_proxy_messages::command_end_marker;
 
 	check_response
 		(franka_proxy_messages::feedback_type
@@ -118,7 +114,7 @@ void franka_remote_controller::apply_z_force
 
 void franka_remote_controller::open_gripper()
 {
-	string msg = string
+	std::string msg = std::string
 		(franka_proxy_messages::command_strings[franka_proxy_messages::open_gripper]) +
 		franka_proxy_messages::command_end_marker;
 	unsigned char response =
@@ -130,7 +126,7 @@ void franka_remote_controller::open_gripper()
 
 void franka_remote_controller::close_gripper()
 {
-	string msg = string
+	std::string msg = std::string
 		(franka_proxy_messages::command_strings[franka_proxy_messages::close_gripper]) +
 		franka_proxy_messages::command_end_marker;
 
@@ -142,7 +138,7 @@ void franka_remote_controller::close_gripper()
 
 bool franka_remote_controller::grasp_gripper(double speed, double force)
 {
-	string msg =
+	std::string msg =
 	(std::string(franka_proxy_messages::command_strings[franka_proxy_messages::grasp_gripper]) + ' ' +
 		std::to_string(speed) + ' ' + std::to_string(force) +
 		franka_proxy_messages::command_end_marker).data();
@@ -158,9 +154,9 @@ bool franka_remote_controller::grasp_gripper(double speed, double force)
 void franka_remote_controller::set_speed_factor(double speed_factor)
 {
 	socket_control_->send_command
-		(string
+		(std::string
 		 (franka_proxy_messages::command_strings[franka_proxy_messages::speed]) +
-		 " " + static_cast<float>(speed_factor) +
+		 " " + std::to_string(speed_factor) +
 		 franka_proxy_messages::command_end_marker);
 }
 
@@ -168,7 +164,7 @@ void franka_remote_controller::set_speed_factor(double speed_factor)
 void franka_remote_controller::automatic_error_recovery()
 {
 	socket_control_->send_command
-		(string
+		(std::string
 		 (franka_proxy_messages::command_strings[franka_proxy_messages::error_recovery]) +
 		 franka_proxy_messages::command_end_marker);
 }
@@ -204,7 +200,7 @@ bool franka_remote_controller::gripper_grasped() const
 
 void franka_remote_controller::start_recording()
 {
-	string msg =
+	std::string msg =
 	(std::string(franka_proxy_messages::command_strings[franka_proxy_messages::start_recording]) +
 		franka_proxy_messages::command_end_marker).data();
 
@@ -223,48 +219,69 @@ std::pair<std::vector<std::array<double, 7>>, std::vector<std::array<double, 6>>
 
 void franka_remote_controller::update()
 {
-	list<string> messages;
+	std::list<std::string> messages;
 	while (messages.empty())
 	{
 		socket_state_->update_messages();
-		messages = list<string>
+		messages = std::list<std::string>
 			(socket_state_->messages());
 	}
 
-	for (list<string>::iterator it(messages.first()); it; ++it)
+	for (const std::string& message : messages)
 	{
 		// Incoming format from TX90:
 		// conf:j1,j2,j3,j4,j5,j6,j7$<gripper-position>$<gripper-max-position>$<gripper-is-grasped>
 
 
 		// Separate state values from message string.
-		int64 colon = it->seek(':');
-		if (colon == string::invalid_index)
+		std::string::size_type colon = message.find(':');
+		if (colon == std::string::npos)
 		{
-			LOG_WARN("State message is missing colon: " + *it);
+			std::cerr << "franka_remote_controller::update(): " <<
+				"State message is missing colon: " << message;
 			continue;
 		}
 
-		string state_str
-			(it->substring(colon + 1));
+		std::string state_str
+			(message.substr(colon + 1));
 
-		list<string> state_list;
-		state_str.split('$', state_list);
+		auto split = [](const std::string& s, const std::string& delim) -> std::vector<std::string>
+		{
+			std::size_t pos_start = 0;
+			std::size_t pos_end;
+			std::size_t delim_len = delim.length();
+
+			std::string token;
+			std::vector<std::string> res;
+
+			while ((pos_end = s.find(delim, pos_start)) != std::string::npos)
+			{
+				token = s.substr (pos_start, pos_end - pos_start);
+				pos_start = pos_end + delim_len;
+				res.push_back (token);
+			}
+
+			res.push_back (s.substr (pos_start));
+			return res;
+		};
+
+		std::vector<std::string> state_list = split(state_str, "$");
 
 		if (state_list.size() != 4)
 		{
-			LOG_WARN("State message has invalid format: " + *it);
+			std::cerr << "franka_remote_controller::update(): " <<
+				"State message has invalid format: " << message;
 			continue;
 		}
 
 
 		// Fetch joint angles.
-		list<string> joint_values_list;
-		state_list[0].split(',', joint_values_list);
+		std::vector<std::string> joint_values_list = split(state_list.front(), ",");
 
 		if (joint_values_list.size() != 7)
 		{
-			LOG_WARN("State message does not have 7 joint values: " + *it);
+			std::cerr << "franka_remote_controller::update(): " <<
+				"State message does not have 7 joint values: " << message;
 			continue;
 		}
 
@@ -285,11 +302,11 @@ void franka_remote_controller::update()
 
 			// Fetch gripper state.
 			current_gripper_pos_ =
-				state_list[1].to_int32();
+				std::stoi(state_list[1]);
 			max_gripper_pos_ =
-				state_list[2].to_int32();
+				std::stoi(state_list[2]);
 			gripper_grasped_ =
-				state_list[3].to_int32() > 0;
+				std::stoi(state_list[3]) > 0;
 		}
 	}
 }
@@ -297,13 +314,14 @@ void franka_remote_controller::update()
 
 void franka_remote_controller::initialize_sockets()
 {
-	LOG_INFO("Creating network connections.");
+	std::cout << "franka_remote_controller::initialize_sockets(): " <<
+				"Creating network connections.";
 
 	socket_control_.reset
-		(new franka_control_client(network_, franka_ip_.data(), franka_control_port));
+		(new franka_control_client(franka_ip_.data(), franka_control_port));
 
 	socket_state_.reset
-		(new franka_state_client(network_, franka_ip_.data(), franka_state_port));
+		(new franka_state_client(franka_ip_.data(), franka_state_port));
 }
 
 

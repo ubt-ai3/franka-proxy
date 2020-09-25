@@ -7,6 +7,7 @@
  *
  ************************************************************************/
 
+
 #include "franka_motion_recorder.hpp"
 
 
@@ -29,8 +30,8 @@ motion_recorder::motion_recorder
 	 franka::RobotState& robot_state)
 	:
 	robot_(robot),
-	robot_state_(robot_state),
-	fts_()
+	robot_state_(robot_state)/*,
+	fts_()*/
 { }
 
 
@@ -40,15 +41,15 @@ void motion_recorder::start()
 	record_.clear();
 	fts_record_.clear();
 
-	fts_.set_offsets_to_zero();
+	//fts_.set_offsets_to_zero();
 
 	t_ = std::thread
 	([this]()
 	{
 		while (!stop_)
 		{
-			fts_.update();
-			fts_record_.emplace_back(fts_.current_values());
+			//fts_.update();
+			//fts_record_.emplace_back(fts_.current_values());
 
 			franka::RobotState current_state(robot_.readOnce());
 			record_.emplace_back(current_state.q);

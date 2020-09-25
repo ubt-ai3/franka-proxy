@@ -12,8 +12,6 @@
 
 #include <iostream>
 
-#include <viral_core/geo_util.hpp>
-
 #include "ikfast.h"
 #include "exception.hpp"
 
@@ -111,41 +109,41 @@ std::vector<Eigen::Affine3d> franka_util::fk
 	frames.push_back(trafo);
 
 	// link 2 (rotation to parent frame)
-	trafo *= Eigen::AngleAxisd(-viral_core::geo_constants::pi / 2., Eigen::Vector3d(1.0f, 0.0f, 0.0f));
+	trafo *= Eigen::AngleAxisd(-pi / 2., Eigen::Vector3d(1.0f, 0.0f, 0.0f));
 	// link rotation
 	trafo *= Eigen::AngleAxisd(configuration[1], Eigen::Vector3d(0.0f, 0.0f, 1.0f));
 	frames.push_back(trafo);
 
 	// link 3 (translation and rotation to parent frame)
 	trafo *= Eigen::Translation3d(0, -0.316f, 0.0f);
-	trafo *= Eigen::AngleAxisd(viral_core::geo_constants::pi / 2., Eigen::Vector3d(1.0f, 0.0f, 0.0f));
+	trafo *= Eigen::AngleAxisd(pi / 2., Eigen::Vector3d(1.0f, 0.0f, 0.0f));
 	// link rotation
 	trafo *= Eigen::AngleAxisd(configuration[2], Eigen::Vector3d(0.0f, 0.0f, 1.0f));
 	frames.push_back(trafo);
 
 	// link 4 (translation and rotation to parent frame)
 	trafo *= Eigen::Translation3d(0.0825f, 0.0f, 0.0f);
-	trafo *= Eigen::AngleAxisd(viral_core::geo_constants::pi / 2., Eigen::Vector3d(1.0f, 0.0f, 0.0f));
+	trafo *= Eigen::AngleAxisd(pi / 2., Eigen::Vector3d(1.0f, 0.0f, 0.0f));
 	// link rotation
 	trafo *= Eigen::AngleAxisd(configuration[3], Eigen::Vector3d(0.0f, 0.0f, 1.0f));
 	frames.push_back(trafo);
 
 	// link 5 (translation and rotation to parent frame)
 	trafo *= Eigen::Translation3d(-0.0825f, 0.384f, 0.0f);
-	trafo *= Eigen::AngleAxisd(-viral_core::geo_constants::pi / 2., Eigen::Vector3d(1.0f, 0.0f, 0.0f));
+	trafo *= Eigen::AngleAxisd(-pi / 2., Eigen::Vector3d(1.0f, 0.0f, 0.0f));
 	// link rotation
 	trafo *= Eigen::AngleAxisd(configuration[4], Eigen::Vector3d(0.0f, 0.0f, 1.0f));
 	frames.push_back(trafo);
 
 	// link 6 (rotation to parent frame)
-	trafo *= Eigen::AngleAxisd(viral_core::geo_constants::pi / 2., Eigen::Vector3d(1.0f, 0.0f, 0.0f));
+	trafo *= Eigen::AngleAxisd(pi / 2., Eigen::Vector3d(1.0f, 0.0f, 0.0f));
 	// link rotation
 	trafo *= Eigen::AngleAxisd(configuration[5], Eigen::Vector3d(0.0f, 0.0f, 1.0f));
 	frames.push_back(trafo);
 
 	// link 7 (rotation to parent frame)
 	trafo *= Eigen::Translation3d(0.088f, 0.0f, 0.0f);
-	trafo *= Eigen::AngleAxisd(viral_core::geo_constants::pi / 2., Eigen::Vector3d(1.0f, 0.0f, 0.0f));
+	trafo *= Eigen::AngleAxisd(pi / 2., Eigen::Vector3d(1.0f, 0.0f, 0.0f));
 	// link rotation
 	trafo *= Eigen::AngleAxisd(configuration[6], Eigen::Vector3d(0.0f, 0.0f, 1.0f));
 	frames.push_back(trafo);
@@ -348,10 +346,10 @@ Eigen::Matrix3d franka_util::tool_inertia()
 
 	inertia_gripper =
 		Eigen::Matrix3d(Eigen::AngleAxisd(
-			135. / 180. * viral_core::geo_constants::pi, Eigen::Vector3d(0, 0, 1))).transpose()
+			135. / 180. * pi, Eigen::Vector3d(0, 0, 1))).transpose()
 		* inertia_gripper
 		* Eigen::Matrix3d(Eigen::AngleAxisd(
-			135. / 180. * viral_core::geo_constants::pi, Eigen::Vector3d(0, 0, 1)));
+			135. / 180. * pi, Eigen::Vector3d(0, 0, 1)));
 	
 	auto a_tilde_gripper = a_tilde(c_gripper - c);
 	const Eigen::Matrix3d inertia_gripper_center_of_mass =
@@ -366,10 +364,10 @@ Eigen::Matrix3d franka_util::tool_inertia()
 
 	inertia_camera =
 		Eigen::Matrix3d(Eigen::AngleAxisd(
-			135. / 180. * viral_core::geo_constants::pi, Eigen::Vector3d(0, 0, 1))).transpose()
+			135. / 180. * pi, Eigen::Vector3d(0, 0, 1))).transpose()
 		* inertia_camera
 		* Eigen::Matrix3d(Eigen::AngleAxisd(
-			135. / 180. * viral_core::geo_constants::pi, Eigen::Vector3d(0, 0, 1)));
+			135. / 180. * pi, Eigen::Vector3d(0, 0, 1)));
 
 	auto a_tilde_camera = a_tilde(c_camera - c);
 	const Eigen::Matrix3d inertia_camera_center_of_mass =
