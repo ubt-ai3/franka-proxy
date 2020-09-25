@@ -13,7 +13,8 @@
 
 
 #include "franka_hardware_controller.hpp"
-#include "franka_network_server.hpp"
+#include "franka_network_control_server.hpp"
+#include "franka_network_state_server.hpp"
 
 
 namespace franka_proxy
