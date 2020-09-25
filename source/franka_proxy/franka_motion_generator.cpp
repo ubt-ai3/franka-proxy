@@ -356,8 +356,8 @@ seq_cart_vel_tau_generator::seq_cart_vel_tau_generator
 	dq_buffer_(dq_filter_size_, eigen_vector7d::Zero()),
 	ft_buffer_(ft_filter_size_, Eigen::Matrix<double, 6, 1>::Zero()),
 	stiffness_(6, 6),
-	damping_(6, 6),
-	fts_()
+	damping_(6, 6)/*,
+	fts_()*/
 {
 	stiffness_.setZero();
 	stiffness_.topLeftCorner(3, 3) =
@@ -512,9 +512,9 @@ franka::Torques seq_cart_vel_tau_generator::step
 	Eigen::Matrix<double, 6, 1> ft_desired(f_d.data());
 
 
-	fts_.update();
-	std::array<double, 6> current_fts_values = fts_.current_values();
-	Eigen::Map<const Eigen::Matrix<double, 6, 1>> ft_existing(current_fts_values.data());
+	//fts_.update();
+	//std::array<double, 6> current_fts_values = fts_.current_values();
+	//Eigen::Map<const Eigen::Matrix<double, 6, 1>> ft_existing(current_fts_values.data());
 
 
 	//tau_existing = tau_measured - gravity;
@@ -526,6 +526,7 @@ franka::Torques seq_cart_vel_tau_generator::step
 	// ff
 	Eigen::Matrix<double, 6, 1> ft_force = ft_desired;
 
+/*
 	// pi controller using fts for neg z-direction
 	if (selection_vector[2] == 0)
 	{
@@ -567,7 +568,7 @@ franka::Torques seq_cart_vel_tau_generator::step
 			ft_force(contact_dim) += 0.2 * (ft_desired(contact_dim) - (-ft_existing(2))) + 5.0 * f_x_error_integral_;
 		}
 	}
-
+*/
 	update_ft_filter(ft_force); // todo use selection vector
 	ft_force = compute_ft_filtered();
 
@@ -602,7 +603,7 @@ franka::Torques seq_cart_vel_tau_generator::step
 		pose_d_log_.emplace_back(transform_d);
 		error_log_.emplace_back(error);
 		ft_log_.emplace_back(ft_force);
-		ft_existing_log_.emplace_back(ft_existing);
+		//ft_existing_log_.emplace_back(ft_existing);
 	}
 
 

@@ -19,7 +19,7 @@
 
 #include <franka/robot.h>
 
-#include <jr3_ft_sensor/force_torque_sensor.hpp>
+//#include <jr3_ft_sensor/force_torque_sensor.hpp>
 
 
 namespace franka_proxy
@@ -61,7 +61,7 @@ private:
 	std::atomic_bool stop_{false};
 	franka::Robot& robot_;
 	franka::RobotState& robot_state_;
-	ft_sensor_jr3 fts_;
+	//ft_sensor_jr3 fts_;
 };
 
 

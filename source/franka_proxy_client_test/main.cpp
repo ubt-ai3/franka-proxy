@@ -1,6 +1,7 @@
-#include <iostream>
 #include <atomic>
 #include <fstream>
+#include <iostream>
+#include <thread>
 
 #include <franka_proxy_client/exception.hpp>
 #include <franka_proxy_client/franka_remote_controller.hpp>

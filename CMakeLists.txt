@@ -12,6 +12,11 @@ find_package(Poco CONFIG REQUIRED COMPONENTS Net Foundation)
 find_package(Threads REQUIRED)
 
 
+## TODO convert to modern cmake
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED True)
+
+
 ## franka_proxy
 add_executable(
     franka_proxy
@@ -20,7 +25,7 @@ add_executable(
         ${CMAKE_CURRENT_SOURCE_DIR}/source/franka_proxy/franka_motion_recorder.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/source/franka_proxy/franka_network_server.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/source/franka_proxy/franka_proxy.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/source/jr3_ft_sensor/force_torque_sensor.cpp
+        #${CMAKE_CURRENT_SOURCE_DIR}/source/jr3_ft_sensor/force_torque_sensor.cpp
 )
 
 target_include_directories(
@@ -91,6 +96,7 @@ target_link_libraries(
     PUBLIC
         asio::asio
         Eigen3::Eigen
+        Threads::Threads
 		franka_proxy_client
 )
 

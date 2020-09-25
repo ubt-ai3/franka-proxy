@@ -13,6 +13,7 @@
 
 
 #include <array>
+#include <thread>
 
 #include <Eigen/Geometry>
 

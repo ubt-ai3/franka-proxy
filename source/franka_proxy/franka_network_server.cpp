@@ -10,6 +10,7 @@
 
 #include "franka_network_server.hpp"
 
+#include <exception>
 #include <string>
 #include <iostream>
 
@@ -615,7 +616,7 @@ void franka_control_server::process_request(const std::string& request)
 		}
 
 		case franka_proxy_messages::message_type_count:
-		default: throw std::exception("unhandled message type");
+		default: throw std::exception();
 	}
 }
 
