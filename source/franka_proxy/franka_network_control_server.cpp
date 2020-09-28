@@ -190,19 +190,10 @@ void franka_control_server::process_request(const std::string& request)
 	{
 		case franka_proxy_messages::move_ptp:
 		{
-			std::cout << "franka_control_server::task_main(): " << "Moving";
+			std::cout << "franka_control_server::process_request(): " << "Moving";
 
-			std::vector<std::string> joint_values = split_string(parameters, " ");
-			robot_config_7dof joint_config
-			{
-				std::stod(joint_values[0]),
-				std::stod(joint_values[1]),
-				std::stod(joint_values[2]),
-				std::stod(joint_values[3]),
-				std::stod(joint_values[4]),
-				std::stod(joint_values[5]),
-				std::stod(joint_values[6])
-			};
+			robot_config_7dof joint_config =
+				string_to_robot_config(parameters, " ");
 
 			unsigned char response = execute_exception_to_return_value
 				([&]()
@@ -216,12 +207,12 @@ void franka_control_server::process_request(const std::string& request)
 
 		case franka_proxy_messages::move_hybrid_sequence:
 		{
-			std::cout << "franka_control_server::task_main(): " << "Moving sequence";
+			std::cout << "franka_control_server::process_request(): " << "Moving sequence";
 
 			std::size_t buff[1];
 			asio::read(*connection_, asio::buffer(buff));
 			std::size_t count = buff[0];
-			std::cout << "franka_control_server::task_main(): " << count;
+			std::cout << "franka_control_server::process_request(): " << count;
 
 
 			std::vector<std::array<double, 7>> q_data;
@@ -234,36 +225,13 @@ void franka_control_server::process_request(const std::string& request)
 				std::size_t size = size_buff[0];
 				// todo ntoh byteorder
 
-
 				// data
 				std::string data_buff(size, '\0');
 				asio::read(*connection_, asio::buffer(data_buff));
 
-
 				// extract data
-				std::vector<std::string> joint_values_list = split_string(data_buff, ",");
-
-				if (joint_values_list.size() != 7)
-				{
-					std::cerr << "franka_control_server::task_main(): " <<
-						"Joint values message does not have 7 joint values";
-					continue;
-				}
-
-				std::array<double, 7> joints
-				{
-					std::stod(joint_values_list[0]),
-					std::stod(joint_values_list[1]),
-					std::stod(joint_values_list[2]),
-					std::stod(joint_values_list[3]),
-					std::stod(joint_values_list[4]),
-					std::stod(joint_values_list[5]),
-					std::stod(joint_values_list[6])
-				};
-
-
-				// emplace position
-				q_data.emplace_back(joints);
+				q_data.emplace_back
+					(string_to_robot_config(data_buff, ","));
 			}
 
 			std::vector<std::array<double, 6>> f_data;
@@ -276,35 +244,13 @@ void franka_control_server::process_request(const std::string& request)
 				std::size_t size = size_buff[0];
 				// todo ntoh byteorder
 
-
 				// data
 				std::string data_buff(size, '\0');
 				asio::read(*connection_, asio::buffer(data_buff));
 
-
 				// extract data
-				std::vector<std::string> joint_values_list = split_string(data_buff, ",");
-
-				if (joint_values_list.size() != 7)
-				{
-					std::cerr << "franka_control_server::task_main(): " <<
-						"Force values message does not have 7 joint values";
-					continue;
-				}
-
-				std::array<double, 6> joints
-				{
-					std::stod(joint_values_list[0]),
-					std::stod(joint_values_list[1]),
-					std::stod(joint_values_list[2]),
-					std::stod(joint_values_list[3]),
-					std::stod(joint_values_list[4]),
-					std::stod(joint_values_list[5])
-				};
-
-
-				// emplace position
-				f_data.emplace_back(joints);
+				f_data.emplace_back
+					(string_to_6_elements(data_buff, ","));
 			}
 
 			std::vector<std::array<double, 6>> s_data;
@@ -317,38 +263,16 @@ void franka_control_server::process_request(const std::string& request)
 				std::size_t size = size_buff[0];
 				// todo ntoh byteorder
 
-
 				// data
 				std::string data_buff(size, '\0');
 				asio::read(*connection_, asio::buffer(data_buff));
 
-
 				// extract data
-				std::vector<std::string> joint_values_list = split_string(data_buff, ",");
-
-				if (joint_values_list.size() != 7)
-				{
-					std::cerr << "franka_control_server::task_main(): " <<
-						"Selection vector message does not have 7 joint values";
-					continue;
-				}
-
-				std::array<double, 6> joints
-				{
-					std::stod(joint_values_list[0]),
-					std::stod(joint_values_list[1]),
-					std::stod(joint_values_list[2]),
-					std::stod(joint_values_list[3]),
-					std::stod(joint_values_list[4]),
-					std::stod(joint_values_list[5])
-				};
-
-
-				// emplace position
-				s_data.emplace_back(joints);
+				s_data.emplace_back
+					(string_to_6_elements(data_buff, ","));
 			}
 
-			std::cout << "franka_control_server::task_main(): " << "Received data.";
+			std::cout << "franka_control_server::process_request(): " << "Received data.";
 
 			unsigned char response = execute_exception_to_return_value
 				([&]()
@@ -364,23 +288,10 @@ void franka_control_server::process_request(const std::string& request)
 
 		case franka_proxy_messages::move_contact:
 		{
-			std::cout << "franka_control_server::task_main(): " << "Moving sensitive";
-			
-			std::string rest = request.substr
-				(pos + std::string(franka_proxy_messages::command_strings[type]).size() + 1);
-			std::vector<std::string> joint_values = split_string(rest, " ");
-			robot_config_7dof joint_config
-			{
-				{
-					std::stod(joint_values[0]),
-					std::stod(joint_values[1]),
-					std::stod(joint_values[2]),
-					std::stod(joint_values[3]),
-					std::stod(joint_values[4]),
-					std::stod(joint_values[5]),
-					std::stod(joint_values[6])
-				}
-			};
+			std::cout << "franka_control_server::process_request(): " << "Moving sensitive";
+
+			robot_config_7dof joint_config =
+				string_to_robot_config(parameters, " ");
 
 			unsigned char response = execute_exception_to_return_value
 				([&]()
@@ -396,13 +307,12 @@ void franka_control_server::process_request(const std::string& request)
 
 		case franka_proxy_messages::force_z:
 		{
-			std::string rest = request.substr
-				(pos + std::string(franka_proxy_messages::command_strings[type]).size() + 1);
-			std::vector<std::string> parameter = split_string(rest, " ");
-			auto mass = std::stod(parameter[0]);
-			auto duration = std::stod(parameter[1]);
+			std::vector<std::string> parameters_split =
+				split_string(parameters, " ");
+			auto mass = std::stod(parameters_split[0]);
+			auto duration = std::stod(parameters_split[1]);
 
-			std::cout << "franka_control_server::task_main(): " << std::string("force_z " + std::to_string(mass) + " " + std::to_string(duration));
+			std::cout << "franka_control_server::process_request(): " << std::string("force_z " + std::to_string(mass) + " " + std::to_string(duration));
 			
 			unsigned char response = execute_exception_to_return_value
 				([&]()
@@ -417,7 +327,7 @@ void franka_control_server::process_request(const std::string& request)
 
 		case franka_proxy_messages::open_gripper:
 		{
-			std::cout << "franka_control_server::task_main(): " << "Opening Gripper";
+			std::cout << "franka_control_server::process_request(): " << "Opening Gripper";
 			
 			unsigned char response = execute_exception_to_return_value
 				([&]()
@@ -432,7 +342,7 @@ void franka_control_server::process_request(const std::string& request)
 
 		case franka_proxy_messages::close_gripper:
 		{
-			std::cout << "franka_control_server::task_main(): " << "Closing Gripper";
+			std::cout << "franka_control_server::process_request(): " << "Closing Gripper";
 			
 			unsigned char response = execute_exception_to_return_value
 				([&]()
@@ -447,14 +357,17 @@ void franka_control_server::process_request(const std::string& request)
 
 		case franka_proxy_messages::grasp_gripper:
 		{
-			std::cout << "franka_control_server::task_main(): " << "Grasping with Gripper";
+			std::cout << "franka_control_server::process_request(): Grasping with Gripper";
 			
-			std::vector<std::string> parameters_split = split_string(parameters, " ");
+			std::vector<std::string> parameters_split =
+				split_string(parameters, " ");
+			auto speed = std::stod(parameters_split[0]);
+			auto force = std::stod(parameters_split[1]);
 			
 			unsigned char response = execute_exception_to_return_value
 				([&]()
 					{
-						if (controller_.grasp_gripper(std::stod(parameters_split[0]), std::stod(parameters_split[1])))
+						if (controller_.grasp_gripper(speed, force))
 							return franka_proxy_messages::success;
 						return franka_proxy_messages::success_command_failed;
 					});
@@ -465,7 +378,7 @@ void franka_control_server::process_request(const std::string& request)
 
 		case franka_proxy_messages::start_recording:
 		{
-			std::cout << "franka_control_server::task_main(): " << "Start recording";
+			std::cout << "franka_control_server::process_request(): Start recording";
 			
 			unsigned char response = execute_exception_to_return_value
 				([&]()
@@ -480,7 +393,7 @@ void franka_control_server::process_request(const std::string& request)
 
 		case franka_proxy_messages::stop_recording:
 		{
-			std::cout << "franka_control_server::task_main(): " << "Stop recording";
+			std::cout << "franka_control_server::process_request(): Stop recording";
 
 			std::vector<std::array<double, 7>> q_sequence;
 			std::vector<std::array<double, 6>> f_sequence;
@@ -488,9 +401,8 @@ void franka_control_server::process_request(const std::string& request)
 			unsigned char response = execute_exception_to_return_value
 				([&]()
 					{
-						auto tmp = controller_.stop_recording();
-						q_sequence = std::move(tmp.first);
-						f_sequence = std::move(tmp.second);
+						std::tie(q_sequence, f_sequence) =
+							controller_.stop_recording();
 						return franka_proxy_messages::success;
 					});
 
@@ -555,14 +467,14 @@ void franka_control_server::process_request(const std::string& request)
 
 		case franka_proxy_messages::speed:
 		{
-			std::cout << "franka_control_server::process_request(): " << "Setting speed";
+			std::cout << "franka_control_server::process_request(): Setting speed";
 			controller_.set_speed_factor(std::stod(parameters));
 			break;
 		}
 
 		case franka_proxy_messages::error_recovery:
 		{
-			std::cout << "franka_control_server::process_request(): " << "Error recovery";
+			std::cout << "franka_control_server::process_request(): Error recovery";
 			controller_.automatic_error_recovery();
 			break;
 		}
@@ -593,6 +505,57 @@ std::vector<std::string> franka_control_server::split_string
 	res.push_back(s.substr(pos_start));
 	return res;
 }
+
+
+robot_config_7dof franka_control_server::string_to_robot_config
+	(const std::string& s, const std::string& delim)
+{
+		std::vector<std::string> joint_values = split_string(s, delim);
+
+		if (joint_values.size() != 7)
+		{
+			std::cerr << "franka_control_server::process_request(): " <<
+				"Joint values message does not have 7 joint values.";
+			throw std::out_of_range
+				("Joint values message does not have 7 joint values.");
+		}
+
+		return robot_config_7dof
+		{
+			std::stod(joint_values[0]),
+			std::stod(joint_values[1]),
+			std::stod(joint_values[2]),
+			std::stod(joint_values[3]),
+			std::stod(joint_values[4]),
+			std::stod(joint_values[5]),
+			std::stod(joint_values[6])
+		};
+};
+
+
+std::array<double, 6> franka_control_server::string_to_6_elements
+	(const std::string& s, const std::string& delim)
+{
+		std::vector<std::string> joint_values = split_string(s, delim);
+
+		if (joint_values.size() < 6)
+		{
+			std::cerr << "franka_control_server::process_request(): " <<
+				"Force message does not have at least 6 elements.";
+			throw std::out_of_range
+				("Message does not have at least 6 elements.");
+		}
+
+		return std::array<double, 6>
+		{
+			std::stod(joint_values[0]),
+			std::stod(joint_values[1]),
+			std::stod(joint_values[2]),
+			std::stod(joint_values[3]),
+			std::stod(joint_values[4]),
+			std::stod(joint_values[5])
+		};
+};
 
 
 

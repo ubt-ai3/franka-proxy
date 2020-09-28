@@ -27,7 +27,9 @@ namespace franka_proxy
 {
 
 
-typedef std::array<double, 7> robot_config_7dof;
+using robot_config_7dof = std::array<double, 7>;
+using robot_force_config = std::array<double, 6>;
+using robot_force_selection = std::array<double, 6>;
 
 
 /**
@@ -90,22 +92,22 @@ public:
 	 * Starts/Stops the recording callback.
 	 */
 	void start_recording();
-	std::pair<std::vector<std::array<double, 7>>, std::vector<std::array<double, 6>>> stop_recording();
+	std::pair<std::vector<robot_config_7dof>, std::vector<robot_force_config>> stop_recording();
 	
 	/**
 	 * Moves the Panda robot along a given sequence.
 	 */
 	void move_sequence(
-		const std::vector<std::array<double, 7>>& q_sequence);
+		const std::vector<robot_config_7dof>& q_sequence);
 
 	void move_sequence(
-		const std::vector<std::array<double, 7>>& q_sequence,
+		const std::vector<robot_config_7dof>& q_sequence,
 		double f_z);
 
 	void move_sequence(
-		const std::vector<std::array<double, 7>>& q_sequence,
-		const std::vector<std::array<double, 6>>& f_sequence,
-		const std::vector<std::array<double, 6>>& selection_vector);
+		const std::vector<robot_config_7dof>& q_sequence,
+		const std::vector<robot_force_config>& f_sequence,
+		const std::vector<robot_force_selection>& selection_vector);
 
 
 private:

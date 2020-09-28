@@ -54,6 +54,12 @@ private:
 
 	static std::vector<std::string> split_string
 		(const std::string& s, const std::string& delim);
+	
+	static robot_config_7dof string_to_robot_config
+		(const std::string& s, const std::string& delim);
+	
+	static std::array<double, 6> string_to_6_elements
+		(const std::string& s, const std::string& delim);
 
 
 	template <class Function>
