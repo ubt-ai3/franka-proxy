@@ -290,13 +290,13 @@ void franka_remote_controller::update()
 
 			current_config_ =
 			{
-				strtod(joint_values_list[0].data(), nullptr),
-				strtod(joint_values_list[1].data(), nullptr),
-				strtod(joint_values_list[2].data(), nullptr),
-				strtod(joint_values_list[3].data(), nullptr),
-				strtod(joint_values_list[4].data(), nullptr),
-				strtod(joint_values_list[5].data(), nullptr),
-				strtod(joint_values_list[6].data(), nullptr)
+				stod(joint_values_list[0]),
+				stod(joint_values_list[1]),
+				stod(joint_values_list[2]),
+				stod(joint_values_list[3]),
+				stod(joint_values_list[4]),
+				stod(joint_values_list[5]),
+				stod(joint_values_list[6])
 			};
 
 
