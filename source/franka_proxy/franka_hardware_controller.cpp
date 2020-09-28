@@ -291,7 +291,8 @@ void franka_hardware_controller::start_recording()
 }
 
 
-std::pair<std::vector<std::array<double, 7>>, std::vector<std::array<double, 6>>> franka_hardware_controller::stop_recording()
+std::pair<std::vector<robot_config_7dof>, std::vector<robot_force_config>>
+	franka_hardware_controller::stop_recording()
 {
 	motion_recorder_.stop();
 	set_control_loop_running(false);
@@ -300,16 +301,11 @@ std::pair<std::vector<std::array<double, 7>>, std::vector<std::array<double, 6>>
 }
 
 
-void franka_hardware_controller::move_sequence(const std::vector<std::array<double, 7>>& q_sequence)
+void franka_hardware_controller::move_sequence
+	(const std::vector<std::array<double, 7>>& q_sequence)
 {
-	robot_.setJointImpedance({ {3000, 3000, 3000, 2500, 2500, 2000, 2000} });
-	robot_.setCartesianImpedance({ {3000, 3000, 3000, 300, 300, 300} });
-	robot_.setCollisionBehavior(
-		{ {20.0, 20.0, 18.0, 18.0, 16.0, 14.0, 12.0} }, { {40.0, 40.0, 38.0, 38.0, 36.0, 34.0, 32.0} },
-		{ {20.0, 20.0, 18.0, 18.0, 16.0, 14.0, 12.0} }, { {40.0, 40.0, 38.0, 38.0, 36.0, 34.0, 32.0} },
-		{ {20.0, 20.0, 20.0, 25.0, 25.0, 25.0} }, { {40.0, 40.0, 40.0, 45.0, 45.0, 45.0} },
-		{ {20.0, 20.0, 20.0, 25.0, 25.0, 25.0} }, { {40.0, 40.0, 40.0, 45.0, 45.0, 45.0} });
-
+	initialize_parameters();
+	set_default_collision_behaviour();
 
 	std::vector<std::array<double, 6>> f_sequence(q_sequence.size(), {0,0,0,0,0,0});
 	std::vector<std::array<double, 6>> selection_vector_sequence(q_sequence.size(), { 1,1,1,1,1,1 });
@@ -350,15 +346,11 @@ void franka_hardware_controller::move_sequence(const std::vector<std::array<doub
 }
 
 
-void franka_hardware_controller::move_sequence(const std::vector<std::array<double, 7>>& q_sequence, double f_z)
+void franka_hardware_controller::move_sequence
+	(const std::vector<std::array<double, 7>>& q_sequence, double f_z)
 {
-	robot_.setJointImpedance({ {3000, 3000, 3000, 2500, 2500, 2000, 2000} });
-	robot_.setCartesianImpedance({ {3000, 3000, 3000, 300, 300, 300} });
-	robot_.setCollisionBehavior(
-		{ {20.0, 20.0, 18.0, 18.0, 16.0, 14.0, 12.0} }, { {40.0, 40.0, 38.0, 38.0, 36.0, 34.0, 32.0} },
-		{ {20.0, 20.0, 18.0, 18.0, 16.0, 14.0, 12.0} }, { {40.0, 40.0, 38.0, 38.0, 36.0, 34.0, 32.0} },
-		{ {20.0, 20.0, 20.0, 25.0, 25.0, 25.0} }, { {40.0, 40.0, 40.0, 45.0, 45.0, 45.0} },
-		{ {20.0, 20.0, 20.0, 25.0, 25.0, 25.0} }, { {40.0, 40.0, 40.0, 45.0, 45.0, 45.0} });
+	initialize_parameters();
+	set_default_collision_behaviour();
 
 	// wrong implementation
 	//detail::force_motion_generator force_motion_generator(robot_, 0.5, 10.0);
@@ -422,19 +414,13 @@ void franka_hardware_controller::move_sequence(const std::vector<std::array<doub
 }
 
 
-void franka_hardware_controller::move_sequence(
-	const std::vector<std::array<double, 7>>& q_sequence,
-	const std::vector<std::array<double, 6>>& f_sequence, 
-	const std::vector<std::array<double, 6>>& selection_vector)
+void franka_hardware_controller::move_sequence
+	(const std::vector<std::array<double, 7>>& q_sequence,
+	 const std::vector<std::array<double, 6>>& f_sequence,
+	 const std::vector<std::array<double, 6>>& selection_vector)
 {
-	robot_.setJointImpedance({ {3000, 3000, 3000, 2500, 2500, 2000, 2000} });
-	robot_.setCartesianImpedance({ {3000, 3000, 3000, 300, 300, 300} });
-	robot_.setCollisionBehavior(
-		{ {20.0, 20.0, 18.0, 18.0, 16.0, 14.0, 12.0} }, { {40.0, 40.0, 38.0, 38.0, 36.0, 34.0, 32.0} },
-		{ {20.0, 20.0, 18.0, 18.0, 16.0, 14.0, 12.0} }, { {40.0, 40.0, 38.0, 38.0, 36.0, 34.0, 32.0} },
-		{ {20.0, 20.0, 20.0, 25.0, 25.0, 25.0} }, { {40.0, 40.0, 40.0, 45.0, 45.0, 45.0} },
-		{ {20.0, 20.0, 20.0, 25.0, 25.0, 25.0} }, { {40.0, 40.0, 40.0, 45.0, 45.0, 45.0} });
-
+	initialize_parameters();
+	set_default_collision_behaviour();
 
 	stop_motion_ = false;
 	detail::seq_cart_vel_tau_generator motion_generator(state_lock_, robot_state_, robot_, stop_motion_, q_sequence, f_sequence, selection_vector);
