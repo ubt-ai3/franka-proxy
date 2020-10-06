@@ -138,8 +138,10 @@ void franka_controller_emulated::move_to(const robot_config_7dof& target)
 		}
 
 		// Copy from process variables to exposed state.
-		std::lock_guard<std::mutex> lk(controller_mutex_);
-		state_joint_values_ = current_joint_values;
+		{
+			std::lock_guard<std::mutex> lk(controller_mutex_);
+			state_joint_values_ = current_joint_values;
+		}
 
 		std::this_thread::sleep_until(next_timepoint);
 	}
