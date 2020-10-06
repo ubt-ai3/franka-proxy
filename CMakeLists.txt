@@ -146,6 +146,9 @@ file(GLOB franka_proxy_client_headers
 file(GLOB franka_control_headers
     "${CMAKE_CURRENT_SOURCE_DIR}/source/franka_control/*.hpp"
 )
+file(GLOB franka_proxy_share_headers
+    "${CMAKE_CURRENT_SOURCE_DIR}/source/franka_proxy_share/*.hpp"
+)
 
 install(
 	TARGETS franka_control franka_proxy franka_proxy_client
@@ -161,6 +164,10 @@ install(
 install(
 	FILES ${franka_control_headers}
 	DESTINATION include/franka_control
+)
+install(
+	FILES ${franka_proxy_share_headers}
+	DESTINATION include/franka_proxy_share
 )
 
 install(EXPORT franka_proxyConfig DESTINATION share)
