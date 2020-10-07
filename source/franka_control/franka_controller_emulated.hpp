@@ -12,6 +12,8 @@
 #define INCLUDED__FRANKA_CONTROL__FRANKA_CONTROLLER_EMULATED_HPP
 
 
+#include <mutex>
+
 #include "franka_controller.hpp"
 
 

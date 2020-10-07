@@ -14,10 +14,9 @@
 
 #include <array>
 #include <thread>
+#include <vector>
 
 #include <Eigen/Geometry>
-
-#include <franka_proxy_client/franka_remote_controller.hpp>
 
 
 namespace franka_control

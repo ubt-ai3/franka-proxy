@@ -17,7 +17,9 @@
 #include <string>
 #include <vector>
 
+#pragma warning(disable : 4242)
 #include <asio/ip/tcp.hpp>
+#pragma warning(pop)
 
 
 namespace franka_proxy
