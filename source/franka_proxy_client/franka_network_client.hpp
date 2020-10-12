@@ -17,9 +17,7 @@
 #include <string>
 #include <vector>
 
-#pragma warning(disable : 4242)
-#include <asio/ip/tcp.hpp>
-#pragma warning(pop)
+#include "franka_proxy_share/asio_forward.hpp"
 
 
 namespace franka_proxy
@@ -54,18 +52,18 @@ private:
 	void update_messages_buffer();
 	std::string fetch_message();
 
-	std::unique_ptr<asio::ip::tcp::socket> connect
+	std::unique_ptr<asio_tsp_socket> connect
 		(const std::string& ip, std::uint16_t port);
 
 
 	static const std::size_t receive_buffer_size_ = 1024;
 
-	asio::io_context io_context_;
+	std::unique_ptr<asio::io_context> io_context_;
 
 	const std::string remote_ip_;
 	const std::uint16_t remote_port_;
 
-	std::unique_ptr<asio::ip::tcp::socket> connection_;
+	std::unique_ptr<asio_tsp_socket> connection_;
 
 	std::string messages_buffer_;
 	std::list<std::string> messages_;
@@ -113,16 +111,16 @@ public:
 
 private:
 
-	std::unique_ptr<asio::ip::tcp::socket> connect
+	std::unique_ptr<asio_tsp_socket> connect
 		(const std::string& ip, std::uint16_t port);
 	
 
-	asio::io_context io_context_;
+	std::unique_ptr<asio::io_context> io_context_;
 
 	const std::string remote_ip_;
 	const std::uint16_t remote_port_;
 
-	std::unique_ptr<asio::ip::tcp::socket> connection_;
+	std::unique_ptr<asio_tsp_socket> connection_;
 };
 
 

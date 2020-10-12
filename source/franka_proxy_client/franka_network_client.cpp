@@ -20,6 +20,8 @@
 #include <asio/connect.hpp>
 #include <asio/read.hpp>
 #include <asio/write.hpp>
+#include <asio/ip/tcp.hpp>
+
 
 #include "exception.hpp"
 
@@ -39,6 +41,8 @@ franka_state_client::franka_state_client
 	(std::string remote_ip,
 	 std::uint16_t remote_port)
 	:
+	io_context_(new asio::io_context),
+
 	remote_ip_(std::move(remote_ip)),
 	remote_port_(remote_port),
 	connection_(connect(remote_ip_, remote_port_))
@@ -142,11 +146,11 @@ std::string franka_state_client::fetch_message()
 std::unique_ptr<asio::ip::tcp::socket> franka_state_client::connect
 	(const std::string& ip, std::uint16_t port)
 {
-	asio::ip::tcp::resolver resolver(io_context_);
+	asio::ip::tcp::resolver resolver(*io_context_);
 	asio::ip::tcp::resolver::results_type endpoints =
 		resolver.resolve(ip, std::to_string(port));
 
-	auto s = std::make_unique<asio::ip::tcp::socket>(io_context_);
+	auto s = std::make_unique<asio::ip::tcp::socket>(*io_context_);
 	asio::connect(*s, endpoints);
 
 	return s;
@@ -164,6 +168,8 @@ franka_control_client::franka_control_client
 	(const std::string& remote_ip,
 	 std::uint16_t remote_port)
 	:
+	io_context_(new asio::io_context),
+
 	remote_ip_(remote_ip),
 	remote_port_(remote_port),
 	connection_(connect(remote_ip_, remote_port_))
@@ -517,11 +523,11 @@ void franka_control_client::send_move_sequence
 std::unique_ptr<asio::ip::tcp::socket> franka_control_client::connect
 	(const std::string& ip, std::uint16_t port)
 {
-	asio::ip::tcp::resolver resolver(io_context_);
+	asio::ip::tcp::resolver resolver(*io_context_);
 	asio::ip::tcp::resolver::results_type endpoints =
 		resolver.resolve(ip, std::to_string(port));
 
-	auto s = std::make_unique<asio::ip::tcp::socket>(io_context_);
+	auto s = std::make_unique<asio::ip::tcp::socket>(*io_context_);
 	asio::connect(*s, endpoints);
 
 	return s;
