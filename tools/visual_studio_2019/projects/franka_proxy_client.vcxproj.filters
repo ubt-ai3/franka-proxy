@@ -37,5 +37,8 @@
     <ClInclude Include="..\..\..\source\franka_proxy_share\asio_forward.hpp">
       <Filter>Headers</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\source\franka_proxy_client\forward.hpp">
+      <Filter>Headers</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

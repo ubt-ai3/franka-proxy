@@ -49,5 +49,8 @@
     <ClInclude Include="..\..\..\source\franka_control\exception.hpp">
       <Filter>Headers</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\source\franka_control\forward.hpp">
+      <Filter>Headers</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

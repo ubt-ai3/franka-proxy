@@ -19,6 +19,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\source\franka_control\exception.hpp" />
+    <ClInclude Include="..\..\..\source\franka_control\forward.hpp" />
     <ClInclude Include="..\..\..\source\franka_control\franka_controller.hpp" />
     <ClInclude Include="..\..\..\source\franka_control\franka_controller_emulated.hpp" />
     <ClInclude Include="..\..\..\source\franka_control\franka_controller_remote.hpp" />
