@@ -52,7 +52,7 @@ private:
 	void update_messages_buffer();
 	std::string fetch_message();
 
-	std::unique_ptr<asio_tsp_socket> connect
+	std::unique_ptr<asio_tcp_socket> connect
 		(const std::string& ip, std::uint16_t port);
 
 
@@ -63,7 +63,7 @@ private:
 	const std::string remote_ip_;
 	const std::uint16_t remote_port_;
 
-	std::unique_ptr<asio_tsp_socket> connection_;
+	std::unique_ptr<asio_tcp_socket> connection_;
 
 	std::string messages_buffer_;
 	std::list<std::string> messages_;
@@ -111,7 +111,7 @@ public:
 
 private:
 
-	std::unique_ptr<asio_tsp_socket> connect
+	std::unique_ptr<asio_tcp_socket> connect
 		(const std::string& ip, std::uint16_t port);
 	
 
@@ -120,7 +120,7 @@ private:
 	const std::string remote_ip_;
 	const std::uint16_t remote_port_;
 
-	std::unique_ptr<asio_tsp_socket> connection_;
+	std::unique_ptr<asio_tcp_socket> connection_;
 };
 
 

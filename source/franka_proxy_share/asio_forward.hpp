@@ -35,7 +35,7 @@ namespace franka_proxy
 {
 
 
-using asio_tsp_socket = asio::basic_stream_socket<asio::ip::tcp>;
+using asio_tcp_socket = asio::basic_stream_socket<asio::ip::tcp>;
 
 
 } /* namespace franka_proxy */
