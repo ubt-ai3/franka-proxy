@@ -13,6 +13,7 @@
 
 
 #include <array>
+#include <atomic>
 #include <thread>
 #include <vector>
 
