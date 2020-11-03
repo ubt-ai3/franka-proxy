@@ -12,8 +12,14 @@
 #define INCLUDED__FRANKA_PROXY_CLIENT__FORWARD_HPP
 
 
+#include <array>
+
+
 namespace franka_proxy
 {
+
+
+using robot_config_7dof = std::array<double, 7>;
 
 
 class franka_state_client;
