@@ -2,14 +2,15 @@ cmake_minimum_required(VERSION 3.11)
 project(franka_proxy)
 
 
-find_package(asio CONFIG REQUIRED)
-if(MSVC)
-	add_compile_definitions(_WIN32_WINNT=0x0601)
-	add_compile_definitions(NOMINMAX)
+option(BUILD_SERVER "Build franka_proxy executable" ON)
+
+if(BUILD_SERVER)
+	find_package(Franka CONFIG REQUIRED)
+	find_package(Poco CONFIG REQUIRED COMPONENTS Net Foundation)
 endif()
+
+find_package(asio CONFIG REQUIRED)
 find_package(Eigen3 CONFIG REQUIRED)
-find_package(Franka CONFIG REQUIRED)
-find_package(Poco CONFIG REQUIRED COMPONENTS Net Foundation)
 find_package(Threads REQUIRED)
 
 
@@ -17,8 +18,14 @@ find_package(Threads REQUIRED)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
+if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+	add_compile_definitions(_WIN32_WINNT=0x0601)
+	add_compile_definitions(NOMINMAX)
+endif()
+
 
 ## franka_proxy
+if(BUILD_SERVER)
 add_executable(
     franka_proxy
         ${CMAKE_CURRENT_SOURCE_DIR}/source/franka_proxy/franka_hardware_controller.cpp
@@ -52,6 +59,7 @@ target_compile_definitions(
     PUBLIC
 		std_cxx_17
 )
+endif()
 
 
 ## franka_proxy_client
@@ -152,12 +160,22 @@ file(GLOB franka_proxy_share_headers
     "${CMAKE_CURRENT_SOURCE_DIR}/source/franka_proxy_share/*.hpp"
 )
 
-install(
-	TARGETS franka_control franka_proxy franka_proxy_client
-	EXPORT franka_proxyConfig
-  	LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-	RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-)
+
+if(BUILD_SERVER)
+	install(
+		TARGETS franka_control franka_proxy franka_proxy_client
+		EXPORT franka_proxyConfig
+		LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+		RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+	)
+else()
+	install(
+		TARGETS franka_control franka_proxy_client
+		EXPORT franka_proxyConfig
+		LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+		RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+	)
+endif()
 	
 install(
 	FILES ${franka_proxy_client_headers}
