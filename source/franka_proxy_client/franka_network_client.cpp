@@ -219,7 +219,7 @@ unsigned char franka_control_client::send_command_and_check_response
 	catch (const asio::system_error&)
 	{
 		connection_.reset();
-		std::cerr << "franka_control_client::send_command_and_check_response(): Failed to send.";
+		std::cerr << "franka_control_client::send_command_and_check_response(): Failed to send." << std::endl;
 		throw network_exception();
 	}
 }

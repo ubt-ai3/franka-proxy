@@ -12,6 +12,7 @@
 
 #include <exception>
 #include <string>
+#include <string_view>
 #include <iostream>
 
 #include <asio/read.hpp>
@@ -87,10 +88,34 @@ void franka_control_server::task_main()
 			// so handle incoming and outgoing network.
 			receive_requests();
 		}
+		catch (const asio::system_error& exc)
+		{
+			std::cout << "franka_control_server::task_main(): ";
+			if (exc.code() == asio::error::connection_reset)
+				std::cout << " The connection was reset by the client. Dropping stream and stopping robot." << std::endl;
+			else if (exc.code() == asio::error::connection_aborted)
+				std::cout << " The connection was aborted. Dropping stream and stopping robot." << std::endl;
+			else if (exc.code() == asio::error::timed_out)
+				std::cout << " The connection timed out. Dropping stream and stopping robot." << std::endl;
+			else
+				std::cout << "Unknown connection error. Dropping stream and stopping robot." << std::endl;
+
+			controller_.stop_movement();
+			connection_.reset();
+		}
+		catch (const std::exception& exc)
+		{
+			std::cerr << "franka_control_server::task_main(): " <<
+				"An exception occurred while processing requests, dropping stream and stopping robot. " <<
+				std::endl << "Exception message: " << exc.what() << std::endl;
+
+			controller_.stop_movement();
+			connection_.reset();
+		} 
 		catch (...)
 		{
 			std::cerr << "franka_control_server::task_main(): " <<
-				"Error while processing requests, dropping stream and stopping robot.";
+				"An unknown error occured while processing requests, dropping stream and stopping robot." << std::endl;
 			controller_.stop_movement();
 			connection_.reset();
 		}
@@ -141,12 +166,11 @@ void franka_control_server::receive_requests()
 			return;
 
 		std::string request_string
-			(messages_buffer_.substr(0, end_index));
+		(messages_buffer_.substr(0, end_index));
 
 		// Remove request from network stream.
 		messages_buffer_ =
 			messages_buffer_.substr(end_index + 1);
-
 
 		process_request(request_string);
 	}
@@ -170,19 +194,23 @@ void franka_control_server::process_request(const std::string& request)
 	if (type >= franka_proxy_messages::message_type_count)
 	{
 		std::cerr << "franka_control_server::process_request(): " <<
-			"Invalid message: " << request;
+			"Invalid message: " << request << std::endl;
 		return;
 	}
+	
+	std::cout << "franka_control_server::process_request(): " << request << std::endl;
 
-	std::cout << "franka_control_server::process_request(): " << request;
-
-	std::string parameters = request.substr
-		(pos + std::string(franka_proxy_messages::command_strings[type]).size() + 1);
-
+	std::string parameters;
+	const std::size_t command_string_size =
+		std::strlen(franka_proxy_messages::command_strings[type]);
+	if (request.size() > pos + command_string_size + 1)
+		parameters = request.substr(pos + command_string_size + 1);
+	
 	auto send_response = [this](unsigned char response)
 	{
 		unsigned char msg[1]; msg[0] = response;
-		std::cout << "franka_control_server::process_request(): Sending response: " << static_cast<int>(msg[0]);
+		std::cout << "franka_control_server::process_request(): Sending response: " <<
+			static_cast<int>(msg[0]) << std::endl;
 		connection_->send(asio::buffer(msg));
 	};
 
@@ -327,7 +355,7 @@ void franka_control_server::process_request(const std::string& request)
 
 		case franka_proxy_messages::open_gripper:
 		{
-			std::cout << "franka_control_server::process_request(): " << "Opening Gripper";
+			std::cout << "franka_control_server::process_request(): " << "Opening Gripper" << std::endl;
 			
 			unsigned char response = execute_exception_to_return_value
 				([&]()
@@ -342,7 +370,7 @@ void franka_control_server::process_request(const std::string& request)
 
 		case franka_proxy_messages::close_gripper:
 		{
-			std::cout << "franka_control_server::process_request(): " << "Closing Gripper";
+			std::cout << "franka_control_server::process_request(): " << "Closing Gripper" << std::endl;
 			
 			unsigned char response = execute_exception_to_return_value
 				([&]()
@@ -357,7 +385,7 @@ void franka_control_server::process_request(const std::string& request)
 
 		case franka_proxy_messages::grasp_gripper:
 		{
-			std::cout << "franka_control_server::process_request(): Grasping with Gripper";
+			std::cout << "franka_control_server::process_request(): Grasping with Gripper" << std::endl;
 			
 			std::vector<std::string> parameters_split =
 				split_string(parameters, " ");
@@ -378,7 +406,7 @@ void franka_control_server::process_request(const std::string& request)
 
 		case franka_proxy_messages::start_recording:
 		{
-			std::cout << "franka_control_server::process_request(): Start recording";
+			std::cout << "franka_control_server::process_request(): Start recording" << std::endl;
 			
 			unsigned char response = execute_exception_to_return_value
 				([&]()
@@ -393,7 +421,7 @@ void franka_control_server::process_request(const std::string& request)
 
 		case franka_proxy_messages::stop_recording:
 		{
-			std::cout << "franka_control_server::process_request(): Stop recording";
+			std::cout << "franka_control_server::process_request(): Stop recording" << std::endl;
 
 			std::vector<std::array<double, 7>> q_sequence;
 			std::vector<std::array<double, 6>> f_sequence;
@@ -467,14 +495,14 @@ void franka_control_server::process_request(const std::string& request)
 
 		case franka_proxy_messages::speed:
 		{
-			std::cout << "franka_control_server::process_request(): Setting speed";
+			std::cout << "franka_control_server::process_request(): Setting speed" << std::endl;
 			controller_.set_speed_factor(std::stod(parameters));
 			break;
 		}
 
 		case franka_proxy_messages::error_recovery:
 		{
-			std::cout << "franka_control_server::process_request(): Error recovery";
+			std::cout << "franka_control_server::process_request(): Error recovery" << std::endl;
 			controller_.automatic_error_recovery();
 			break;
 		}
@@ -515,7 +543,7 @@ robot_config_7dof franka_control_server::string_to_robot_config
 		if (joint_values.size() != 7)
 		{
 			std::cerr << "franka_control_server::process_request(): " <<
-				"Joint values message does not have 7 joint values.";
+				"Joint values message does not have 7 joint values." << std::endl;
 			throw std::out_of_range
 				("Joint values message does not have 7 joint values.");
 		}
@@ -541,7 +569,7 @@ std::array<double, 6> franka_control_server::string_to_6_elements
 		if (joint_values.size() < 6)
 		{
 			std::cerr << "franka_control_server::process_request(): " <<
-				"Force message does not have at least 6 elements.";
+				"Force message does not have at least 6 elements." << std::endl;
 			throw std::out_of_range
 				("Message does not have at least 6 elements.");
 		}
