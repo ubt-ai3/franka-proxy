@@ -88,7 +88,8 @@ void franka_control_server::task_main()
 			// so handle incoming and outgoing network.
 			receive_requests();
 		}
-		catch (const asio::system_error& exc) {
+		catch (const asio::system_error& exc)
+		{
 			std::cout << "franka_control_server::task_main(): ";
 			if (exc.code() == asio::error::connection_reset)
 				std::cout << " The connection was reset by the client. Dropping stream and stopping robot." << std::endl;
@@ -104,20 +105,17 @@ void franka_control_server::task_main()
 		}
 		catch (const std::exception& exc)
 		{
-			std::cerr << "franka_control_server::task_main(): "
-						<< "An exception occurred while processing requests, dropping stream and stopping robot. " << std::endl
-						<< "Exception message: " << exc.what()
-						<< std::endl;
+			std::cerr << "franka_control_server::task_main(): " <<
+				"An exception occurred while processing requests, dropping stream and stopping robot. " <<
+				std::endl << "Exception message: " << exc.what() << std::endl;
 
 			controller_.stop_movement();
 			connection_.reset();
 		} 
 		catch (...)
 		{
-			std::cerr << "franka_control_server::task_main(): "
-				<< "An unknown error occured while processing requests, dropping stream and stopping robot."
-				<< std::endl;
-
+			std::cerr << "franka_control_server::task_main(): " <<
+				"An unknown error occured while processing requests, dropping stream and stopping robot." << std::endl;
 			controller_.stop_movement();
 			connection_.reset();
 		}
@@ -203,14 +201,16 @@ void franka_control_server::process_request(const std::string& request)
 	std::cout << "franka_control_server::process_request(): " << request << std::endl;
 
 	std::string parameters;
-	const std::size_t command_string_size = std::strlen(franka_proxy_messages::command_strings[type]);
+	const std::size_t command_string_size =
+		std::strlen(franka_proxy_messages::command_strings[type]);
 	if (request.size() > pos + command_string_size + 1)
 		parameters = request.substr(pos + command_string_size + 1);
 	
 	auto send_response = [this](unsigned char response)
 	{
 		unsigned char msg[1]; msg[0] = response;
-		std::cout << "franka_control_server::process_request(): Sending response: " << static_cast<int>(msg[0]) << std::endl;
+		std::cout << "franka_control_server::process_request(): Sending response: " <<
+			static_cast<int>(msg[0]) << std::endl;
 		connection_->send(asio::buffer(msg));
 	};
 

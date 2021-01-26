@@ -46,9 +46,7 @@ franka_state_client::franka_state_client
 	remote_ip_(std::move(remote_ip)),
 	remote_port_(remote_port),
 	connection_(connect(remote_ip_, remote_port_))
-{
-	
-}
+{}
 
 
 franka_state_client::~franka_state_client() noexcept
@@ -218,13 +216,12 @@ unsigned char franka_control_client::send_command_and_check_response
 
 		return return_value[0];
 	}
-	catch (const asio::system_error& exc)
+	catch (const asio::system_error&)
 	{
 		connection_.reset();
 		std::cerr << "franka_control_client::send_command_and_check_response(): Failed to send." << std::endl;
 		throw network_exception();
 	}
-
 }
 
 
