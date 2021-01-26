@@ -18,8 +18,10 @@
 #include <franka/exception.h>
 #include <franka/model.h>
 
-#include "franka_motion_generator.hpp"
 #include "franka_motion_recorder.hpp"
+#include "motion_generator_force.hpp"
+#include "motion_generator_joint_max_accel.hpp"
+#include "motion_generator_seq_cart_vel_tau.hpp"
 
 
 namespace franka_proxy
@@ -95,9 +97,6 @@ void franka_hardware_controller::apply_z_force
 				return fmg.callback(robot_state, period);
 			}, true, 10.0);
 	}
-	catch (const detail::stop_motion_trigger&)
-	{
-	}
 	catch (const franka::Exception&)
 	{
 		set_control_loop_running(false);
@@ -130,7 +129,7 @@ void franka_hardware_controller::move_to(const robot_config_7dof& target)
 			 franka::ControllerMode::kJointImpedance,
 			 true, 20.);
 	}
-	catch (const detail::stop_motion_trigger&)
+	catch (const detail::franka_joint_motion_generator::stop_motion_trigger&)
 	{
 	}
 	catch (const franka::Exception&)
@@ -167,10 +166,10 @@ bool franka_hardware_controller::move_to_until_contact
 			 franka::ControllerMode::kJointImpedance,
 			 true, 20.);
 	}
-	catch (const detail::stop_motion_trigger&)
+	catch (const detail::franka_joint_motion_generator::stop_motion_trigger&)
 	{
 	}
-	catch (const detail::contact_stop_trigger&)
+	catch (const detail::franka_joint_motion_generator::contact_stop_trigger&)
 	{
 		set_control_loop_running(false);
 		set_default_collision_behaviour();
@@ -333,7 +332,7 @@ void franka_hardware_controller::move_sequence
 			1000.);
 
 	}
-	catch (const detail::stop_motion_trigger&)
+	catch (const detail::seq_cart_vel_tau_generator::stop_motion_trigger&)
 	{
 	}
 	catch (const franka::Exception&)
@@ -401,7 +400,7 @@ void franka_hardware_controller::move_sequence
 			1000.);
 
 	}
-	catch (const detail::stop_motion_trigger&)
+	catch (const detail::seq_cart_vel_tau_generator::stop_motion_trigger&)
 	{
 	}
 	catch (const franka::Exception&)
@@ -443,7 +442,7 @@ void franka_hardware_controller::move_sequence
 			1000.);
 
 	}
-	catch (const detail::stop_motion_trigger&)
+	catch (const detail::seq_cart_vel_tau_generator::stop_motion_trigger&)
 	{
 	}
 	catch (const franka::Exception&)
