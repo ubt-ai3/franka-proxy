@@ -49,8 +49,8 @@ void execute_retry(Function&& f, franka_proxy::franka_remote_controller& control
 
 int main()
 {
-	//franka_proxy::franka_remote_controller controller("127.0.0.1");
-	franka_proxy::franka_remote_controller controller("132.180.194.112");
+	franka_proxy::franka_remote_controller controller("127.0.0.1");
+	//franka_proxy::franka_remote_controller controller("132.180.194.112");
 
 	// status test
 	std::atomic_bool stop(false);
@@ -96,7 +96,7 @@ int main()
 
 
 	std::cout << ("Starting Force Test.");
-
+	/*
 	franka_proxy::robot_config_7dof pos_with_scale
 		{{1.09452, 0.475923, 0.206959, -2.33289, -0.289467, 2.7587, 0.830083}};
 	franka_proxy::robot_config_7dof pos_above_table
@@ -109,6 +109,7 @@ int main()
 
 	controller.apply_z_force(0.0, 5.0);
 	controller.apply_z_force(1.0, 5.0);
+	*/
 
 	std::cout << ("Finished Force Test.");
 
