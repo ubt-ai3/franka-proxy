@@ -462,9 +462,12 @@ void franka_hardware_controller::state_update_loop()
 	{
 		{
 			std::unique_lock<std::mutex> lk(control_loop_running_mutex_);
-			control_loop_running_cv_.wait(lk);
 			if (control_loop_running_)
-				continue;
+			{
+				control_loop_running_cv_.wait(lk);
+				if (control_loop_running_)
+					continue;
+			}
 		}
 
 		try
