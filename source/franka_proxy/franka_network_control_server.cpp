@@ -20,6 +20,8 @@
 #include <franka/robot_state.h>
 #include <franka/gripper_state.h>
 
+#include <nlohmann/json.hpp>
+
 #include "franka_proxy_share/franka_proxy_messages.hpp"
 
 
@@ -39,11 +41,22 @@ franka_control_server::franka_control_server
 	 franka_hardware_controller& controller)
 	:
 	controller_(controller),
-
 	server_(create_server(control_port)),
-
 	terminate_internal_thread_(false)
 {
+    // Register message handlers.
+    handles_message<message_move_ptp>();
+    handles_message<message_move_contact>();
+    handles_message<message_move_hybrid_sequence>();
+    handles_message<message_force_z>();
+    handles_message<message_open_gripper>();
+    handles_message<message_close_gripper>();
+    handles_message<message_grasping_gripper>();
+    handles_message<message_start_recording>();
+    handles_message<message_stop_recording>();
+    handles_message<message_speed>();
+    handles_message<message_error_recovery>();
+
 	internal_thread_ = std::thread([this]{task_main();});
 }
 
@@ -59,6 +72,110 @@ franka_control_server::~franka_control_server() noexcept
 	}
 }
 
+message_result franka_control_server::process_message(const message_move_ptp& msg)
+{
+    std::cout << "franka_control_server::process_message(): "
+                << "Moving"
+                << std::endl;
+
+    controller_.move_to(msg.config);  
+    return message_result::success;
+}
+
+message_result franka_control_server::process_message(const message_move_hybrid_sequence& msg) 
+{
+    std::cout << "franka_control_server::process_message(): "
+                << "Moving sequence"
+                << std::endl;
+
+    // TODO!
+
+    return message_result::success;
+} 
+
+message_result franka_control_server::process_message(const message_move_contact& msg)
+{
+    std::cout << "franka_control_server::process_message(): "
+                << "Moving sensitive"
+                << std::endl;
+
+    return controller_.move_to_until_contact(msg.config)
+            ? message_result::success
+            : message_result::success_command_failed;
+}
+
+message_result franka_control_server::process_message(const message_force_z& msg) 
+{
+    controller_.apply_z_force(msg.mass, msg.duration);
+    return message_result::success;
+}
+
+message_result franka_control_server::process_message(const message_open_gripper& gripper)
+{
+    std::cout << "franka_control_server::process_message(): " 
+                << "Opening Gripper"
+                << std::endl;
+
+    controller_.open_gripper();
+    return message_result::success;
+}
+
+message_result franka_control_server::process_message(const message_close_gripper& gripper)
+{
+    std::cout << "franka_control_server::process_message(): "
+                << "Closing Gripper"
+                << std::endl;
+
+    controller_.close_gripper();
+    return message_result::success;
+}
+
+message_result franka_control_server::process_message(const message_grasping_gripper& msg)
+{
+    std::cout << "franka_control_server::process_message(): Grasping with Gripper" << std::endl;
+
+    return controller_.grasp_gripper(msg.speed, msg.force)
+        ? message_result::success
+        : message_result::success_command_failed;
+}
+
+message_result franka_control_server::process_message(const message_start_recording& msg)
+{
+    std::cout << "franka_control_server::process_message(): Start recording" << std::endl;
+
+    controller_.start_recording();
+    return message_result::success;
+}
+
+message_result franka_control_server::process_message(const message_stop_recording& msg)
+{
+    std::cout << "franka_control_server::process_request(): Stop recording" << std::endl;
+
+    std::vector<std::array<double, 7>> q_sequence;
+    std::vector<std::array<double, 6>> f_sequence;
+    
+    std::tie(q_sequence, f_sequence) = controller_.stop_recording();
+     
+    // TODO: Serialize recording.
+
+    controller_.stop_recording();
+    return message_result::success;
+}
+
+message_result franka_control_server::process_message(const message_speed& msg) 
+{
+    std::cout << "franka_control_server::process_request(): Setting speed" << std::endl;
+    controller_.set_speed_factor(msg.speed);
+    // TODO: Bounds checking?
+    return message_result::success;
+}
+
+message_result franka_control_server::process_message(const message_error_recovery& msg)
+{
+    std::cout << "franka_control_server::process_request(): Error recovery" << std::endl;
+    controller_.automatic_error_recovery();
+    return message_result::success;
+}
 
 void franka_control_server::task_main()
 {
@@ -118,38 +235,45 @@ asio::ip::tcp::acceptor franka_control_server::create_server
 
 void franka_control_server::receive_requests()
 {
-	// Receive input into string buffer.
-	std::string receive_buffer(receive_buffer_size_, '\0');
-	std::size_t bytes_received =
-		connection_->read_some(asio::buffer(receive_buffer));
-	
-	messages_buffer_ +=
-		std::string(receive_buffer, 0, bytes_received);
+    while(true) {
+        std::uint64_t content_length;
+        std::size_t bytes_read = asio::read(
+            *connection_, 
+            asio::buffer(&content_length, sizeof(std::uint64_t))
+        );
 
-	// Recover one completely transmitted request,
-	// and remove it from the network stream.
+        std::string content{};
+        content.resize(content_length);
+        bytes_read = asio::read(*connection_, asio::buffer(content));
 
-	// Extract full request up to next end marker.
-	// Transferring the request has not yet finished
-	// if there is no (further) end marker.
-	while(true)
-	{
-		std::size_t end_index =
-			messages_buffer_.find(franka_proxy_messages::command_end_marker);
+        // TODO: Check if read `content_length` bytes!
 
-		if (end_index == std::string::npos)
-			return;
+        const auto send_response = [this](message_result response) {
+            std::cout << "franka_control_server::process_request(): Sending response: " 
+                        << static_cast<int>(response) 
+                        << std::endl;
+            connection_->send(asio::buffer(&response, sizeof(unsigned char)));
+        };
 
-		std::string request_string
-			(messages_buffer_.substr(0, end_index));
-
-		// Remove request from network stream.
-		messages_buffer_ =
-			messages_buffer_.substr(end_index + 1);
+        try {
+            auto message = nlohmann::json::parse(content); 
+            const auto fit = _handlers.find(message["type"]);
+            if(fit == _handlers.end())
+                ; // TODO: Handle unsupported action!
 
 
-		process_request(request_string);
-	}
+            const auto& [type, handler] = *fit;
+            const message_result result = handler(this, message);
+
+			std::cout << "franka_control_server::receive_requests(): Sending result: "
+						<< static_cast<int>(result)
+						<< std::endl;
+
+			connection_->send(asio::buffer(&result, sizeof(message_result)));
+        } catch(...) {
+			// TODO: Handle exceptions!
+        }
+    }
 }
 
 

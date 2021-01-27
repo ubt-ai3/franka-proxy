@@ -17,8 +17,10 @@
 #include <string>
 #include <vector>
 
-#include "franka_proxy_share/asio_forward.hpp"
+#include <franka_proxy_share/asio_forward.hpp>
+#include <franka_proxy_share/franka_proxy_messages.hpp>
 
+#include <nlohmann/json.hpp>
 
 namespace franka_proxy
 {
@@ -97,6 +99,11 @@ public:
 	unsigned char send_command_and_check_response
 		(const std::string& command,
 		 float timeout_seconds = 1.f);
+
+    message_result send_command(
+        const nlohmann::json& json,
+        float timeout_seconds = 1.f
+    );
 
 
 	// todo split up function

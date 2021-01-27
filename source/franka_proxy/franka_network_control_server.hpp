@@ -19,6 +19,12 @@
 #include <franka_proxy_share/franka_proxy_messages.hpp>
 #include "franka_hardware_controller.hpp"
 
+#include <map>
+#include <unordered_map>
+#include <string_view>
+
+#include <nlohmann/json_fwd.hpp>
+
 
 namespace franka_proxy
 {
@@ -44,6 +50,34 @@ public:
 
 
 private:
+    message_result process_message(const message_move_ptp&);
+    message_result process_message(const message_move_hybrid_sequence&);
+    message_result process_message(const message_move_contact&);
+    message_result process_message(const message_force_z&);
+    message_result process_message(const message_open_gripper&);
+    message_result process_message(const message_close_gripper&);
+    message_result process_message(const message_grasping_gripper&);
+    message_result process_message(const message_start_recording&);
+    message_result process_message(const message_stop_recording&);
+    message_result process_message(const message_speed&);
+    message_result process_message(const message_error_recovery&);
+
+    template<class MessageType>
+    static message_result process_message_stub(franka_control_server* self, const nlohmann::json& json) {
+        const MessageType& msg = json.get<MessageType>();
+        return self->process_message(msg);
+        // return self->process_message(*static_cast<MessageType*>(msg));
+    } 
+
+    template<class MessageType>
+    void handles_message() {
+        std::string_view view{MessageType::type};
+        _handlers[view] = &process_message_stub<MessageType>;
+    }
+
+    using message_handler = message_result(*)(franka_control_server* self, const nlohmann::json&);
+    std::map<std::string_view, message_handler> _handlers; 
+
 
 	void task_main();
 

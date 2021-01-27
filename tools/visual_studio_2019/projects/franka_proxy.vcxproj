@@ -30,6 +30,11 @@
     <ClCompile Include="..\..\..\source\franka_proxy\franka_proxy.cpp" />
     <ClCompile Include="..\..\..\source\jr3_ft_sensor\force_torque_sensor.cpp" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="franka_share.vcxproj">
+      <Project>{f5061af3-9def-408e-8135-292e6f6f7c06}</Project>
+    </ProjectReference>
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{68BC76EE-6A3E-4109-B187-BD78D5EEF8F9}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>

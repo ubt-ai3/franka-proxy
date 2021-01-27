@@ -48,6 +48,7 @@ franka_remote_controller::~franka_remote_controller() noexcept
 
 void franka_remote_controller::move_to(const robot_config_7dof& target)
 {
+/*
 	std::string msg =
 	std::string(franka_proxy_messages::command_strings[franka_proxy_messages::move_ptp]) + ' ' +
 		std::to_string(target[0]) + ' ' +
@@ -62,12 +63,19 @@ void franka_remote_controller::move_to(const robot_config_7dof& target)
 	check_response
 		(franka_proxy_messages::feedback_type
 		 (socket_control_->send_command_and_check_response(msg)));
+*/
+
+    message_move_ptp msg{}; 
+    msg.config = target;
+
+    socket_control_->send_command(msg);
 }
 
 
 bool franka_remote_controller::move_to_until_contact
 	(const robot_config_7dof& target)
 {
+	/*
 	std::string msg =
 	std::string(franka_proxy_messages::command_strings[franka_proxy_messages::move_contact]) + ' ' +
 		std::to_string(target[0]) + ' ' +
@@ -84,6 +92,13 @@ bool franka_remote_controller::move_to_until_contact
 		 (socket_control_->send_command_and_check_response(msg)));
 
 	return response != response_type::success_command_failed;
+	*/
+
+	message_move_contact msg{};
+	msg.config = target;
+
+	message_result result = socket_control_->send_command(msg);
+	return result != message_result::success_command_failed;
 }
 
 
@@ -92,7 +107,8 @@ void franka_remote_controller::move_sequence
 	 const std::vector<std::array<double, 6>>& f_sequence,
 	 const std::vector<std::array<double, 6>>& selection_vector_sequence)
 {
-	return socket_control_->send_move_sequence(q_sequence, f_sequence, selection_vector_sequence);
+	// TODO!
+	// return socket_control_->send_move_sequence(q_sequence, f_sequence, selection_vector_sequence);
 }
 
 
@@ -100,6 +116,7 @@ void franka_remote_controller::apply_z_force
 	(double mass,
 	 double duration)
 {
+	/*
 	std::string msg =
 	std::string(franka_proxy_messages::command_strings[franka_proxy_messages::force_z]) + ' ' +
 		std::to_string(mass) + ' ' +
@@ -109,11 +126,19 @@ void franka_remote_controller::apply_z_force
 	check_response
 		(franka_proxy_messages::feedback_type
 		 (socket_control_->send_command_and_check_response(msg)));
+		*/
+
+	message_force_z msg{};
+	msg.mass = mass;
+	msg.duration = duration;
+	
+	socket_control_->send_command(msg);
 }
 
 
 void franka_remote_controller::open_gripper()
 {
+	/*
 	std::string msg = std::string
 		(franka_proxy_messages::command_strings[franka_proxy_messages::open_gripper]) +
 		franka_proxy_messages::command_end_marker;
@@ -121,11 +146,16 @@ void franka_remote_controller::open_gripper()
 		socket_control_->send_command_and_check_response(msg);
 	check_response
 		(franka_proxy_messages::feedback_type(response));
+	*/
+
+	message_open_gripper msg{};
+	socket_control_->send_command(msg);
 }
 
 
 void franka_remote_controller::close_gripper()
 {
+	/*
 	std::string msg = std::string
 		(franka_proxy_messages::command_strings[franka_proxy_messages::close_gripper]) +
 		franka_proxy_messages::command_end_marker;
@@ -133,11 +163,16 @@ void franka_remote_controller::close_gripper()
 	check_response
 		(franka_proxy_messages::feedback_type
 		 (socket_control_->send_command_and_check_response(msg)));
+		*/
+
+	message_close_gripper msg{};
+	socket_control_->send_command(msg);
 }
 
 
 bool franka_remote_controller::grasp_gripper(double speed, double force)
 {
+	/*
 	std::string msg =
 	(std::string(franka_proxy_messages::command_strings[franka_proxy_messages::grasp_gripper]) + ' ' +
 		std::to_string(speed) + ' ' + std::to_string(force) +
@@ -148,25 +183,44 @@ bool franka_remote_controller::grasp_gripper(double speed, double force)
 		 (socket_control_->send_command_and_check_response(msg)));
 
 	return response != response_type::success_command_failed;
+	*/
+
+	message_grasping_gripper msg{};
+	msg.speed = speed;
+	msg.force = force;
+
+	const message_result result = socket_control_->send_command(msg);
+	return result != message_result::success_command_failed;
 }
 
 
 void franka_remote_controller::set_speed_factor(double speed_factor)
 {
+	/*
 	socket_control_->send_command
 		(std::string
 		 (franka_proxy_messages::command_strings[franka_proxy_messages::speed]) +
 		 " " + std::to_string(speed_factor) +
 		 franka_proxy_messages::command_end_marker);
+		*/
+
+	message_speed msg{};
+	msg.speed = speed_factor;
+	socket_control_->send_command(msg);
 }
 
 
 void franka_remote_controller::automatic_error_recovery()
 {
+	/*
 	socket_control_->send_command
 		(std::string
 		 (franka_proxy_messages::command_strings[franka_proxy_messages::error_recovery]) +
 		 franka_proxy_messages::command_end_marker);
+		 */
+
+	message_error_recovery msg{};
+	socket_control_->send_command(msg);
 }
 
 

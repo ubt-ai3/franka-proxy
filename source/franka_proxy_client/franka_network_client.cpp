@@ -200,6 +200,41 @@ void franka_control_client::send_command
 	}
 }
 
+message_result franka_control_client::send_command(
+    const nlohmann::json& json,
+    float timeout_seconds
+) {
+    try 
+    {
+        if(!connection_)
+            connection_ = connect(remote_ip_, remote_port_);     
+
+        std::string message = json.dump();
+        const std::uint64_t content_length = message.size();
+        asio::write(
+            *connection_, 
+            asio::buffer(
+                &content_length, 
+                sizeof(std::uint64_t)
+            )
+        );
+    
+        asio::write(
+            *connection_,
+            asio::buffer(message)
+		);
+
+		message_result result;
+		asio::read(*connection_, asio::buffer(&result, sizeof(message_result)));
+    
+		return result;
+    } catch(const asio::system_error&)
+    {
+        connection_.reset();
+        std::cerr << "franka_control_client::send_command(): Failed to send.";
+        throw network_exception();
+    }
+}
 
 unsigned char franka_control_client::send_command_and_check_response
 	(const std::string& command, float timeout_seconds)
