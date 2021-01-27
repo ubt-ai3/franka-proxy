@@ -17,6 +17,39 @@
 #include "exception.hpp"
 
 
+namespace 
+{
+	using namespace franka_proxy;
+
+	message_result check_result(message_result res)
+	{
+		switch (res) {
+			case message_result::success:
+			case message_result::success_command_failed:
+				return res;
+			case message_result::model_exception:
+				throw model_exception{};
+			case message_result::network_exception:
+				throw network_exception{};
+			case message_result::protocol_exception:
+				throw protocol_exception{};
+			case message_result::incompatible_version:
+				throw incompatible_version_exception{};
+			case message_result::control_exception:
+				throw control_exception{};
+			case message_result::command_exception:
+				throw command_exception{};
+			case message_result::realtime_exception:
+				throw realtime_exception{};
+			case message_result::invalid_operation:
+				throw invalid_operation_exception{};
+			default:
+				throw remote_exception{};
+		}
+	}
+
+}
+
 namespace franka_proxy
 {
 
@@ -48,57 +81,22 @@ franka_remote_controller::~franka_remote_controller() noexcept
 
 void franka_remote_controller::move_to(const robot_config_7dof& target)
 {
-/*
-	std::string msg =
-	std::string(franka_proxy_messages::command_strings[franka_proxy_messages::move_ptp]) + ' ' +
-		std::to_string(target[0]) + ' ' +
-		std::to_string(target[1]) + ' ' +
-		std::to_string(target[2]) + ' ' +
-		std::to_string(target[3]) + ' ' +
-		std::to_string(target[4]) + ' ' +
-		std::to_string(target[5]) + ' ' +
-		std::to_string(target[6]) +
-		franka_proxy_messages::command_end_marker;
-
-	check_response
-		(franka_proxy_messages::feedback_type
-		 (socket_control_->send_command_and_check_response(msg)));
-*/
-
     message_move_ptp msg{}; 
     msg.config = target;
 
-    socket_control_->send_command(msg);
+    const auto res = socket_control_->send_command(msg);
+	check_result(res);
 }
 
 
 bool franka_remote_controller::move_to_until_contact
 	(const robot_config_7dof& target)
 {
-	/*
-	std::string msg =
-	std::string(franka_proxy_messages::command_strings[franka_proxy_messages::move_contact]) + ' ' +
-		std::to_string(target[0]) + ' ' +
-		std::to_string(target[1]) + ' ' +
-		std::to_string(target[2]) + ' ' +
-		std::to_string(target[3]) + ' ' +
-		std::to_string(target[4]) + ' ' +
-		std::to_string(target[5]) + ' ' +
-		std::to_string(target[6]) +
-		franka_proxy_messages::command_end_marker;
-
-	const response_type response = check_response
-		(franka_proxy_messages::feedback_type
-		 (socket_control_->send_command_and_check_response(msg)));
-
-	return response != response_type::success_command_failed;
-	*/
-
 	message_move_contact msg{};
 	msg.config = target;
 
-	message_result result = socket_control_->send_command(msg);
-	return result != message_result::success_command_failed;
+	const auto res = socket_control_->send_command(msg);
+	return check_result(res) != message_result::success_command_failed;
 }
 
 
@@ -116,111 +114,56 @@ void franka_remote_controller::apply_z_force
 	(double mass,
 	 double duration)
 {
-	/*
-	std::string msg =
-	std::string(franka_proxy_messages::command_strings[franka_proxy_messages::force_z]) + ' ' +
-		std::to_string(mass) + ' ' +
-		std::to_string(duration) +
-		franka_proxy_messages::command_end_marker;
-
-	check_response
-		(franka_proxy_messages::feedback_type
-		 (socket_control_->send_command_and_check_response(msg)));
-		*/
-
 	message_force_z msg{};
 	msg.mass = mass;
 	msg.duration = duration;
 	
-	socket_control_->send_command(msg);
+	const auto res = socket_control_->send_command(msg);
+	check_result(res);
 }
 
 
 void franka_remote_controller::open_gripper()
 {
-	/*
-	std::string msg = std::string
-		(franka_proxy_messages::command_strings[franka_proxy_messages::open_gripper]) +
-		franka_proxy_messages::command_end_marker;
-	unsigned char response =
-		socket_control_->send_command_and_check_response(msg);
-	check_response
-		(franka_proxy_messages::feedback_type(response));
-	*/
-
 	message_open_gripper msg{};
-	socket_control_->send_command(msg);
+	const auto res = socket_control_->send_command(msg);
+	check_result(res);
 }
 
 
 void franka_remote_controller::close_gripper()
 {
-	/*
-	std::string msg = std::string
-		(franka_proxy_messages::command_strings[franka_proxy_messages::close_gripper]) +
-		franka_proxy_messages::command_end_marker;
-
-	check_response
-		(franka_proxy_messages::feedback_type
-		 (socket_control_->send_command_and_check_response(msg)));
-		*/
-
 	message_close_gripper msg{};
-	socket_control_->send_command(msg);
+	const auto res = socket_control_->send_command(msg);
+	check_result(res);
 }
 
 
 bool franka_remote_controller::grasp_gripper(double speed, double force)
 {
-	/*
-	std::string msg =
-	(std::string(franka_proxy_messages::command_strings[franka_proxy_messages::grasp_gripper]) + ' ' +
-		std::to_string(speed) + ' ' + std::to_string(force) +
-		franka_proxy_messages::command_end_marker).data();
-
-	response_type response = check_response
-		(franka_proxy_messages::feedback_type
-		 (socket_control_->send_command_and_check_response(msg)));
-
-	return response != response_type::success_command_failed;
-	*/
-
 	message_grasping_gripper msg{};
 	msg.speed = speed;
 	msg.force = force;
 
-	const message_result result = socket_control_->send_command(msg);
-	return result != message_result::success_command_failed;
+	const auto res = socket_control_->send_command(msg);
+	return check_result(res) != message_result::success_command_failed;
 }
 
 
 void franka_remote_controller::set_speed_factor(double speed_factor)
 {
-	/*
-	socket_control_->send_command
-		(std::string
-		 (franka_proxy_messages::command_strings[franka_proxy_messages::speed]) +
-		 " " + std::to_string(speed_factor) +
-		 franka_proxy_messages::command_end_marker);
-		*/
-
 	message_speed msg{};
 	msg.speed = speed_factor;
-	socket_control_->send_command(msg);
+	const auto res = socket_control_->send_command(msg);
+	check_result(res);
 }
 
 
 void franka_remote_controller::automatic_error_recovery()
 {
-	/*
-	socket_control_->send_command
-		(std::string
-		 (franka_proxy_messages::command_strings[franka_proxy_messages::error_recovery]) +
-		 franka_proxy_messages::command_end_marker);
-		 */
-
 	message_error_recovery msg{};
-	socket_control_->send_command(msg);
+	const auto res = socket_control_->send_command(msg);
+	check_result(res);
 }
 
 
@@ -254,20 +197,17 @@ bool franka_remote_controller::gripper_grasped() const
 
 void franka_remote_controller::start_recording()
 {
-	std::string msg =
-	(std::string(franka_proxy_messages::command_strings[franka_proxy_messages::start_recording]) +
-		franka_proxy_messages::command_end_marker).data();
-
-	check_response
-		(franka_proxy_messages::feedback_type
-		 (socket_control_->send_command_and_check_response(msg)));
+	message_start_recording msg{};
+	const auto res = socket_control_->send_command(msg);
+	check_result(res);
 }
 
 
 std::pair<std::vector<std::array<double, 7>>, std::vector<std::array<double, 6>>>
 	franka_remote_controller::stop_recording()
 {
-	return socket_control_->send_stop_recording_and_receive_sequence();
+	// return socket_control_->send_stop_recording_and_receive_sequence();
+	return {};
 }
 
 
@@ -384,38 +324,5 @@ void franka_remote_controller::shutdown_sockets() noexcept
 	socket_control_.reset();
 	socket_state_.reset();
 }
-
-
-franka_remote_controller::response_type
-	franka_remote_controller::check_response
-		(franka_proxy_messages::feedback_type response)
-{
-	switch (response)
-	{
-		case franka_proxy_messages::success:
-			return response_type::success;
-		case franka_proxy_messages::success_command_failed:
-			return response_type::success_command_failed;
-		case franka_proxy_messages::model_exception:
-			throw model_exception();
-		case franka_proxy_messages::network_exception:
-			throw network_exception();
-		case franka_proxy_messages::protocol_exception:
-			throw protocol_exception();
-		case franka_proxy_messages::incompatible_version:
-			throw incompatible_version_exception();
-		case franka_proxy_messages::control_exception:
-			throw control_exception();
-		case franka_proxy_messages::command_exception:
-			throw command_exception();
-		case franka_proxy_messages::realtime_exception:
-			throw realtime_exception();
-		case franka_proxy_messages::invalid_operation:
-			throw invalid_operation_exception();
-		default:
-			throw remote_exception();
-	}
-}
-
 
 } /* namespace franka_proxy */

@@ -183,13 +183,6 @@ private:
 	void initialize_sockets();
 	void shutdown_sockets() noexcept;
 
-	enum class response_type
-		{ success, success_command_failed };
-
-	response_type check_response
-		(franka_proxy_messages::feedback_type response);
-
-
 	const std::string franka_ip_;
 
 	std::unique_ptr<franka_control_client> socket_control_;

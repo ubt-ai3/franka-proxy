@@ -13,6 +13,11 @@
   <ItemGroup>
     <ClCompile Include="..\..\..\source\franka_proxy_client_test\main.cpp" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="franka_proxy_client.vcxproj">
+      <Project>{fb19427b-a02e-4386-98a9-64ed8e1deb71}</Project>
+    </ProjectReference>
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{CA9F7D3E-0D62-4877-88C6-3DCD4CE482AC}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>

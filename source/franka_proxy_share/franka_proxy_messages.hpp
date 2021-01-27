@@ -13,7 +13,7 @@
 
 #include <array>
 #include <cstdint>
-#include <string_view>
+#include <vector>
 
 #include <nlohmann/json_fwd.hpp>
 
@@ -41,6 +41,11 @@ void from_json(const nlohmann::json& j, message_move_contact&);
 struct message_move_hybrid_sequence
 {
     static constexpr char type[] = "move-sequence";
+
+	std::vector<std::array<double, 7>> q_data;
+	std::vector<std::array<double, 6>> f_data;
+	std::vector<std::array<double, 6>> s_data;
+	
 };
 
 void to_json(nlohmann::json& j, const message_move_hybrid_sequence&);

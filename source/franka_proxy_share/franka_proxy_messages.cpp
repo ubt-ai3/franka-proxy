@@ -37,10 +37,17 @@ void from_json(const nlohmann::json& j, message_move_contact& msg)
 void to_json(nlohmann::json& j, const message_move_hybrid_sequence& msg) 
 {
     j["type"] = message_move_hybrid_sequence::type;
+    j["q_data"] = msg.q_data;
+    j["f_data"] = msg.f_data;
+    j["s_data"] = msg.s_data;
 }
 
 void from_json(const nlohmann::json& j, message_move_hybrid_sequence& msg) 
-{}
+{
+    j.at("q_data").get_to(msg.q_data);
+    j.at("f_data").get_to(msg.f_data);
+    j.at("s_data").get_to(msg.s_data);
+}
 
 // ---------------------------- MESSAGE FORCE Z --------------------------------
 

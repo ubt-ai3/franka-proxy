@@ -22,6 +22,11 @@
     <ClInclude Include="..\..\..\source\franka_proxy_share\asio_forward.hpp" />
     <ClInclude Include="..\..\..\source\franka_proxy_share\franka_proxy_messages.hpp" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="franka_share.vcxproj">
+      <Project>{f5061af3-9def-408e-8135-292e6f6f7c06}</Project>
+    </ProjectReference>
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{FB19427B-A02E-4386-98A9-64ED8E1DEB71}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>

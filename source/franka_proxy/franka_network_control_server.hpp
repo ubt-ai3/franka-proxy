@@ -97,7 +97,7 @@ private:
 
 
 	template <class Function>
-	static unsigned char execute_exception_to_return_value(Function&& f)
+	static auto execute_exception_to_return_value(Function&& f)
 	{
 		try
 		{
