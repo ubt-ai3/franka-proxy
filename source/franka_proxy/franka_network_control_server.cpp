@@ -12,6 +12,7 @@
 
 #include <exception>
 #include <string>
+#include <string_view>
 #include <iostream>
 
 #include <asio/read.hpp>
@@ -207,20 +208,33 @@ void franka_control_server::task_main()
 			// so handle incoming and outgoing network.
 			receive_requests();
 		}
-		catch (const std::exception& exc)
+		catch (const asio::system_error& exc)
 		{
-			std::cerr << "franka_control_server::task_main(): "
-						<< "Caught exception while processing requests, dropping stream and stopping robot." << std::endl
-						<< "Reason: " << exc.what()
-						<< std::endl;
-
+			std::cout << "franka_control_server::task_main(): ";
+			if (exc.code() == asio::error::connection_reset)
+				std::cout << " The connection was reset by the client. Dropping stream and stopping robot." << std::endl;
+			else if (exc.code() == asio::error::connection_aborted)
+				std::cout << " The connection was aborted. Dropping stream and stopping robot." << std::endl;
+			else if (exc.code() == asio::error::timed_out)
+				std::cout << " The connection timed out. Dropping stream and stopping robot." << std::endl;
+			else
+				std::cout << "Unknown connection error. Dropping stream and stopping robot." << std::endl;
 			controller_.stop_movement();
 			connection_.reset();
 		}
+		catch (const std::exception& exc)
+		{
+			std::cerr << "franka_control_server::task_main(): " <<
+				"An exception occurred while processing requests, dropping stream and stopping robot. " <<
+				std::endl << "Exception message: " << exc.what() << std::endl;
+
+			controller_.stop_movement();
+			connection_.reset();
+		} 
 		catch (...)
 		{
 			std::cerr << "franka_control_server::task_main(): " <<
-				"Error while processing requests, dropping stream and stopping robot.";
+				"An unknown error occured while processing requests, dropping stream and stopping robot." << std::endl;
 			controller_.stop_movement();
 			connection_.reset();
 		}

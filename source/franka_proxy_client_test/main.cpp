@@ -93,9 +93,9 @@ int main()
 	execute_retry([&] { controller.move_to(pos2); }, controller);
 
 	std::cout << "Finished PTP-Movement Test." << std::endl;
-
-
 	std::cout << "Starting Force Test." << std::endl;
+
+	/*
 
 	franka_proxy::robot_config_7dof pos_with_scale
 		{{1.09452, 0.475923, 0.206959, -2.33289, -0.289467, 2.7587, 0.830083}};
@@ -109,6 +109,7 @@ int main()
 
 	controller.apply_z_force(0.0, 5.0);
 	controller.apply_z_force(1.0, 5.0);
+	*/
 
 	std::cout << "Finished Force Test." << std::endl;
 

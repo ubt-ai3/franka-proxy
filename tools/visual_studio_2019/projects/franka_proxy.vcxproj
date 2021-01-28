@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
@@ -73,4 +74,80 @@
     <ClCompile />
     <Link />
   </ItemDefinitionGroup>
+=======
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\..\source\franka_proxy\franka_hardware_controller.hpp" />
+    <ClInclude Include="..\..\..\source\franka_proxy\franka_motion_recorder.hpp" />
+    <ClInclude Include="..\..\..\source\franka_proxy\franka_network_control_server.hpp" />
+    <ClInclude Include="..\..\..\source\franka_proxy\franka_network_state_server.hpp" />
+    <ClInclude Include="..\..\..\source\franka_proxy\franka_proxy.hpp" />
+    <ClInclude Include="..\..\..\source\franka_proxy\motion_generator_force.hpp" />
+    <ClInclude Include="..\..\..\source\franka_proxy\motion_generator_joint_max_accel.hpp" />
+    <ClInclude Include="..\..\..\source\franka_proxy\motion_generator_seq_cart_vel_tau.hpp" />
+    <ClInclude Include="..\..\..\source\franka_proxy_share\franka_proxy_messages.hpp" />
+    <ClInclude Include="..\..\..\source\jr3_ft_sensor\force_torque_sensor.hpp" />
+    <ClInclude Include="..\..\..\source\jr3_ft_sensor\force_torque_sensor_JR3PCIIoctls.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\..\source\franka_proxy\franka_hardware_controller.cpp" />
+    <ClCompile Include="..\..\..\source\franka_proxy\franka_motion_recorder.cpp" />
+    <ClCompile Include="..\..\..\source\franka_proxy\franka_network_control_server.cpp" />
+    <ClCompile Include="..\..\..\source\franka_proxy\franka_network_state_server.cpp" />
+    <ClCompile Include="..\..\..\source\franka_proxy\franka_proxy.cpp" />
+    <ClCompile Include="..\..\..\source\franka_proxy\motion_generator_force.cpp" />
+    <ClCompile Include="..\..\..\source\franka_proxy\motion_generator_joint_max_accel.cpp" />
+    <ClCompile Include="..\..\..\source\franka_proxy\motion_generator_seq_cart_vel_tau.cpp" />
+    <ClCompile Include="..\..\..\source\jr3_ft_sensor\force_torque_sensor.cpp" />
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{68BC76EE-6A3E-4109-B187-BD78D5EEF8F9}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>franka_proxy</RootNamespace>
+    <ProjectName>franka_proxy</ProjectName>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v142</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <PlatformToolset>v142</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
+    <Import Project="..\props\build_common.props" />
+    <Import Project="..\props\build_type_standalone.props" />
+    <Import Project="..\props\build_mode_debug.props" />
+    <Import Project="..\props\use_vcpkg.props" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
+    <Import Project="..\props\build_common.props" />
+    <Import Project="..\props\build_type_standalone.props" />
+    <Import Project="..\props\build_mode_release.props" />
+    <Import Project="..\props\use_vcpkg.props" />
+  </ImportGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <!-- Required for VS properties dialog to work. -->
+  <ItemDefinitionGroup>
+    <ClCompile />
+    <Link />
+  </ItemDefinitionGroup>
+>>>>>>> master
 </Project>
