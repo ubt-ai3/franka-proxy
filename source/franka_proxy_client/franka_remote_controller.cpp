@@ -232,6 +232,8 @@ void franka_remote_controller::update()
 		max_gripper_pos_ = static_cast<int>(state.max_width);
 		gripper_grasped_ = state.is_grasped;
 	}
+
+	socket_state_->clear_states();
 }
 
 

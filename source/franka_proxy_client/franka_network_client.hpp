@@ -46,7 +46,9 @@ public:
 
 
 	void update_messages();
+
 	const std::list<message_robot_state>& states() const noexcept;
+	void clear_states() noexcept;
 
 
 private:

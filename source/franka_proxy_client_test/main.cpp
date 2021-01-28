@@ -39,7 +39,7 @@ void execute_retry(Function&& f, franka_proxy::franka_remote_controller& control
 		}
 		catch (const franka_proxy::command_exception&)
 		{
-			std::cout << ("Encountered command exception. Probably because of wrong working mode. Waiting before retry.");
+			std::cout << "Encountered command exception. Probably because of wrong working mode. Waiting before retry." << std::endl;
 			using namespace std::chrono_literals;
 			std::this_thread::sleep_for(1s);
 		}
@@ -57,7 +57,6 @@ int main()
 	std::thread t
 		([&stop, &controller]()
 		{
-				std::cout << "Here!" << std::endl;
  			int i = 0;
 			while (!stop)
 			{
@@ -72,17 +71,17 @@ int main()
 		});
 
 
-	std::cout << ("Starting Gripper Test.");
+	std::cout << "Starting Gripper Test." << std::endl;
 
 	controller.grasp_gripper();
 	controller.open_gripper();
 	controller.close_gripper();
 	controller.open_gripper();
 
-	std::cout << ("Finished Gripper Test.");
+	std::cout << "Finished Gripper Test." << std::endl;
 
 
-	std::cout << ("Starting PTP-Movement Test.");
+	std::cout << "Starting PTP-Movement Test." << std::endl;
 
 	franka_proxy::robot_config_7dof pos1
 		{{2.46732, -1.0536, -0.9351, -1.6704, 0.13675, 1.42062, 0.33471}};
@@ -93,10 +92,10 @@ int main()
 	execute_retry([&] { controller.move_to(pos1); }, controller);
 	execute_retry([&] { controller.move_to(pos2); }, controller);
 
-	std::cout << ("Finished PTP-Movement Test.");
+	std::cout << "Finished PTP-Movement Test." << std::endl;
 
 
-	std::cout << ("Starting Force Test.");
+	std::cout << "Starting Force Test." << std::endl;
 
 	franka_proxy::robot_config_7dof pos_with_scale
 		{{1.09452, 0.475923, 0.206959, -2.33289, -0.289467, 2.7587, 0.830083}};
@@ -111,10 +110,10 @@ int main()
 	controller.apply_z_force(0.0, 5.0);
 	controller.apply_z_force(1.0, 5.0);
 
-	std::cout << ("Finished Force Test.");
+	std::cout << "Finished Force Test." << std::endl;
 
 
-	std::cout << ("Starting FK/IK Test.");
+	std::cout << "Starting FK/IK Test." << std::endl;
 
 	//Eigen::Affine3d pose
 	//	(franka_control::franka_util::fk

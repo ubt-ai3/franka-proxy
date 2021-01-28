@@ -58,6 +58,7 @@ franka_state_client::~franka_state_client() noexcept
 
 void franka_state_client::update_messages()
 {
+	std::cout << "Called update messages" << std::endl;
 	// Restore connection after any network error.
 	if (!connection_)
 		connection_ = connect(remote_ip_, remote_port_);
@@ -83,8 +84,12 @@ const std::list<message_robot_state>& franka_state_client::states() const noexce
 	return states_;
 }
 
+void franka_state_client::clear_states() noexcept {
+	states_.clear();
+}
+
 void franka_state_client::update_messages_buffer()
-{
+{;
 	std::uint64_t content_length;
 	asio::read(*connection_, asio::buffer(&content_length, sizeof(std::uint64_t)));
 
