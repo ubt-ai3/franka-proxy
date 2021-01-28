@@ -220,8 +220,9 @@ std::pair<std::vector<std::array<double, 7>>, std::vector<std::array<double, 6>>
 
 void franka_remote_controller::update()
 {
-	while (socket_state_->states().empty())
+	while (socket_state_->states().empty()) {
 		socket_state_->update_messages();
+	}
 
 	for (const auto& state : socket_state_->states())
 	{

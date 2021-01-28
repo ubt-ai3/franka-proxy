@@ -96,8 +96,8 @@ void franka_state_server::task_main()
             std::string dump = nlohmann::json(msg).dump(); 
             const std::uint64_t content_length = dump.size();
 
-            asio::write(*connection, asio::buffer(&content_length, sizeof(std::uint64_t)));
-            asio::write(*connection, asio::buffer(dump));
+            asio::write(*connection_, asio::buffer(&content_length, sizeof(std::uint64_t)));
+            asio::write(*connection_, asio::buffer(dump));
 		}
 		catch (...)
 		{

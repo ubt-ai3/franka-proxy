@@ -69,15 +69,13 @@ void franka_state_client::update_messages()
 	// on any network exception.
 	try
 	{
+		states_.clear();
 		update_messages_buffer();
 	}
 	catch (const asio::system_error&)
 	{
 		connection_.reset();
 	}
-
-	states_.clear();
-
 }
 
 const std::list<message_robot_state>& franka_state_client::states() const noexcept
@@ -87,7 +85,6 @@ const std::list<message_robot_state>& franka_state_client::states() const noexce
 
 void franka_state_client::update_messages_buffer()
 {
-
 	std::uint64_t content_length;
 	asio::read(*connection_, asio::buffer(&content_length, sizeof(std::uint64_t)));
 
