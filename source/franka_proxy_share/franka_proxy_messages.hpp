@@ -149,6 +149,10 @@ struct message_generic_response
 	static constexpr char type[] = "generic-response";
 	std::uint8_t status_code;
 
+    message_generic_response() noexcept
+    : status_code{ 0 }
+    {}
+
 	message_generic_response(message_result result) noexcept
 	: status_code{ static_cast<std::uint8_t>(result) }
 	{}

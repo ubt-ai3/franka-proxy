@@ -79,7 +79,7 @@ nlohmann::json franka_control_server::process_message(const message_move_ptp& ms
                 << std::endl;
 
     controller_.move_to(msg.config);  
-    return message_result::success;
+	return message_generic_response{ message_result::success };
 }
 
 nlohmann::json franka_control_server::process_message(const message_move_hybrid_sequence& msg)
@@ -89,7 +89,7 @@ nlohmann::json franka_control_server::process_message(const message_move_hybrid_
                 << std::endl;
 
 	controller_.move_sequence(msg.q_data, msg.f_data, msg.s_data);
-    return message_result::success;
+	return message_generic_response{ message_result::success };
 } 
 
 nlohmann::json franka_control_server::process_message(const message_move_contact& msg)
@@ -98,15 +98,17 @@ nlohmann::json franka_control_server::process_message(const message_move_contact
                 << "Moving sensitive"
                 << std::endl;
 
-    return controller_.move_to_until_contact(msg.config)
+    const message_result res =  controller_.move_to_until_contact(msg.config)
             ? message_result::success
             : message_result::success_command_failed;
+
+	return message_generic_response{ res };
 }
 
 nlohmann::json franka_control_server::process_message(const message_force_z& msg)
 {
     controller_.apply_z_force(msg.mass, msg.duration);
-    return message_result::success;
+	return message_generic_response{ message_result::success };
 }
 
 nlohmann::json franka_control_server::process_message(const message_open_gripper& gripper)
@@ -116,7 +118,7 @@ nlohmann::json franka_control_server::process_message(const message_open_gripper
                 << std::endl;
 
     controller_.open_gripper();
-    return message_result::success;
+	return message_generic_response{ message_result::success };
 }
 
 nlohmann::json franka_control_server::process_message(const message_close_gripper& gripper)
@@ -126,16 +128,18 @@ nlohmann::json franka_control_server::process_message(const message_close_grippe
                 << std::endl;
 
     controller_.close_gripper();
-    return message_result::success;
+	return message_generic_response{ message_result::success };
 }
 
 nlohmann::json franka_control_server::process_message(const message_grasping_gripper& msg)
 {
     std::cout << "franka_control_server::process_message(): Grasping with Gripper" << std::endl;
 
-    return controller_.grasp_gripper(msg.speed, msg.force)
-        ? message_result::success
-        : message_result::success_command_failed;
+	const message_result result = controller_.grasp_gripper(msg.speed, msg.force)
+		? message_result::success
+		: message_result::success_command_failed;
+
+	return message_generic_response{ result };
 }
 
 nlohmann::json franka_control_server::process_message(const message_start_recording& msg)
@@ -143,7 +147,7 @@ nlohmann::json franka_control_server::process_message(const message_start_record
     std::cout << "franka_control_server::process_message(): Start recording" << std::endl;
 
     controller_.start_recording();
-    return message_result::success;
+	return message_generic_response{ message_result::success };
 }
 
 nlohmann::json franka_control_server::process_message(const message_stop_recording& msg)
@@ -166,14 +170,14 @@ nlohmann::json franka_control_server::process_message(const message_speed& msg)
     std::cout << "franka_control_server::process_request(): Setting speed" << std::endl;
     controller_.set_speed_factor(msg.speed);
     // TODO: Bounds checking?
-    return message_result::success;
+	return message_generic_response{ message_result::success };
 }
 
 nlohmann::json franka_control_server::process_message(const message_error_recovery& msg)
 {
     std::cout << "franka_control_server::process_request(): Error recovery" << std::endl;
     controller_.automatic_error_recovery();
-    return message_result::success;
+	return message_generic_response{ message_result::success };
 }
 
 void franka_control_server::task_main()
@@ -202,6 +206,16 @@ void franka_control_server::task_main()
 			// We have an active connection,
 			// so handle incoming and outgoing network.
 			receive_requests();
+		}
+		catch (const std::exception& exc)
+		{
+			std::cerr << "franka_control_server::task_main(): "
+						<< "Caught exception while processing requests, dropping stream and stopping robot." << std::endl
+						<< "Reason: " << exc.what()
+						<< std::endl;
+
+			controller_.stop_movement();
+			connection_.reset();
 		}
 		catch (...)
 		{

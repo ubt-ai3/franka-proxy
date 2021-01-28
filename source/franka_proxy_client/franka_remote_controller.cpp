@@ -21,12 +21,12 @@ namespace
 {
 	using namespace franka_proxy;
 
-	message_result check_result(message_result res)
+	message_result check_result(message_generic_response res)
 	{
-		switch (res) {
+		switch (static_cast<message_result>(res.status_code)) {
 			case message_result::success:
 			case message_result::success_command_failed:
-				return res;
+				return static_cast<message_result>(res.status_code);
 			case message_result::model_exception:
 				throw model_exception{};
 			case message_result::network_exception:
@@ -84,7 +84,7 @@ void franka_remote_controller::move_to(const robot_config_7dof& target)
     message_move_ptp msg{}; 
     msg.config = target;
 
-    const auto res = socket_control_->send_command(msg);
+    const auto res = socket_control_->send_command<message_generic_response>(msg);
 	check_result(res);
 }
 
@@ -95,7 +95,7 @@ bool franka_remote_controller::move_to_until_contact
 	message_move_contact msg{};
 	msg.config = target;
 
-	const auto res = socket_control_->send_command(msg);
+	const auto res = socket_control_->send_command<message_generic_response>(msg);
 	return check_result(res) != message_result::success_command_failed;
 }
 
@@ -105,8 +105,13 @@ void franka_remote_controller::move_sequence
 	 const std::vector<std::array<double, 6>>& f_sequence,
 	 const std::vector<std::array<double, 6>>& selection_vector_sequence)
 {
-	// TODO!
-	// return socket_control_->send_move_sequence(q_sequence, f_sequence, selection_vector_sequence);
+	message_move_hybrid_sequence msg{};
+	msg.q_data = q_sequence;
+	msg.f_data = f_sequence;
+	msg.s_data = selection_vector_sequence;
+
+	const auto res = socket_control_->send_command<message_generic_response>(msg);
+	check_result(res);
 }
 
 
@@ -118,7 +123,7 @@ void franka_remote_controller::apply_z_force
 	msg.mass = mass;
 	msg.duration = duration;
 	
-	const auto res = socket_control_->send_command(msg);
+	const auto res = socket_control_->send_command<message_generic_response>(msg);
 	check_result(res);
 }
 
@@ -126,7 +131,7 @@ void franka_remote_controller::apply_z_force
 void franka_remote_controller::open_gripper()
 {
 	message_open_gripper msg{};
-	const auto res = socket_control_->send_command(msg);
+	const auto res = socket_control_->send_command<message_generic_response>(msg);
 	check_result(res);
 }
 
@@ -134,7 +139,7 @@ void franka_remote_controller::open_gripper()
 void franka_remote_controller::close_gripper()
 {
 	message_close_gripper msg{};
-	const auto res = socket_control_->send_command(msg);
+	const auto res = socket_control_->send_command<message_generic_response>(msg);
 	check_result(res);
 }
 
@@ -145,7 +150,7 @@ bool franka_remote_controller::grasp_gripper(double speed, double force)
 	msg.speed = speed;
 	msg.force = force;
 
-	const auto res = socket_control_->send_command(msg);
+	const auto res = socket_control_->send_command<message_generic_response>(msg);
 	return check_result(res) != message_result::success_command_failed;
 }
 
@@ -154,7 +159,7 @@ void franka_remote_controller::set_speed_factor(double speed_factor)
 {
 	message_speed msg{};
 	msg.speed = speed_factor;
-	const auto res = socket_control_->send_command(msg);
+	const auto res = socket_control_->send_command<message_generic_response>(msg);
 	check_result(res);
 }
 
@@ -162,7 +167,7 @@ void franka_remote_controller::set_speed_factor(double speed_factor)
 void franka_remote_controller::automatic_error_recovery()
 {
 	message_error_recovery msg{};
-	const auto res = socket_control_->send_command(msg);
+	const auto res = socket_control_->send_command<message_generic_response>(msg);
 	check_result(res);
 }
 
