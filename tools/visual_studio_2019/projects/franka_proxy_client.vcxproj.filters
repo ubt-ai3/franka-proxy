@@ -25,9 +25,6 @@
     <ClInclude Include="..\..\..\source\franka_proxy_client\franka_remote_controller.hpp">
       <Filter>Headers</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\source\franka_proxy_share\franka_proxy_messages.hpp">
-      <Filter>Headers</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\source\franka_proxy_client\franka_network_client.hpp">
       <Filter>Headers</Filter>
     </ClInclude>

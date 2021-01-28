@@ -220,95 +220,16 @@ std::pair<std::vector<std::array<double, 7>>, std::vector<std::array<double, 6>>
 
 void franka_remote_controller::update()
 {
-	std::list<std::string> messages;
-	while (messages.empty())
-	{
+	while (socket_state_->states().empty())
 		socket_state_->update_messages();
-		messages = std::list<std::string>
-			(socket_state_->messages());
-	}
 
-	for (const std::string& message : messages)
+	for (const auto& state : socket_state_->states())
 	{
-		// Incoming format from TX90:
-		// conf:j1,j2,j3,j4,j5,j6,j7$<gripper-position>$<gripper-max-position>$<gripper-is-grasped>
-
-
-		// Separate state values from message string.
-		std::string::size_type colon = message.find(':');
-		if (colon == std::string::npos)
-		{
-			std::cerr << "franka_remote_controller::update(): " <<
-				"State message is missing colon: " << message;
-			continue;
-		}
-
-		std::string state_str
-			(message.substr(colon + 1));
-
-		auto split = [](const std::string& s, const std::string& delim) -> std::vector<std::string>
-		{
-			std::size_t pos_start = 0;
-			std::size_t pos_end;
-			std::size_t delim_len = delim.length();
-
-			std::string token;
-			std::vector<std::string> res;
-
-			while ((pos_end = s.find(delim, pos_start)) != std::string::npos)
-			{
-				token = s.substr (pos_start, pos_end - pos_start);
-				pos_start = pos_end + delim_len;
-				res.push_back (token);
-			}
-
-			res.push_back (s.substr (pos_start));
-			return res;
-		};
-
-		std::vector<std::string> state_list = split(state_str, "$");
-
-		if (state_list.size() != 4)
-		{
-			std::cerr << "franka_remote_controller::update(): " <<
-				"State message has invalid format: " << message;
-			continue;
-		}
-
-
-		// Fetch joint angles.
-		std::vector<std::string> joint_values_list = split(state_list.front(), ",");
-
-		if (joint_values_list.size() != 7)
-		{
-			std::cerr << "franka_remote_controller::update(): " <<
-				"State message does not have 7 joint values: " << message;
-			continue;
-		}
-
-		{
-			std::lock_guard<std::mutex> state_guard(state_lock_);
-
-			current_config_ =
-			{
-				stod(joint_values_list[0]),
-				stod(joint_values_list[1]),
-				stod(joint_values_list[2]),
-				stod(joint_values_list[3]),
-				stod(joint_values_list[4]),
-				stod(joint_values_list[5]),
-				stod(joint_values_list[6])
-			};
-
-
-			// Fetch gripper state.
-			current_gripper_pos_ =
-				std::stoi(state_list[1]);
-			max_gripper_pos_ =
-				std::stoi(state_list[2]);
-			gripper_grasped_ =
-				std::stoi(state_list[3]) > 0;
-		}
+		std::lock_guard lck(state_lock_);
+		current_config_ = state.q;
+		current_gripper_pos_ = static_cast<int>(state.width);
+		max_gripper_pos_ = static_cast<int>(state.max_width);
+		gripper_grasped_ = state.is_grasped;
 	}
 }
 

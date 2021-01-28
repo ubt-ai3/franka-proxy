@@ -9,6 +9,7 @@
 
 
 #include "franka_network_state_server.hpp"
+#include <franka_proxy_share/franka_proxy_messages.hpp>
 
 #include <string>
 #include <iostream>
@@ -17,6 +18,8 @@
 
 #include <franka/robot_state.h>
 #include <franka/gripper_state.h>
+
+#include <nlohmann/json.hpp>
 
 
 namespace franka_proxy
@@ -84,33 +87,17 @@ void franka_state_server::task_main()
 			franka::RobotState robot_state = controller_.robot_state();
 			franka::GripperState gripper_state = controller_.gripper_state();
 
-			// Send state.
-			// conf:j1,j2,j3,j4,j5,j6,j7$<gripper-position>$<gripper-max-position>$<gripper-is-grasped>
-			std::string msg("conf:");
-
-			msg += std::to_string(robot_state.q[0]) + ",";
-			msg += std::to_string(robot_state.q[1]) + ",";
-			msg += std::to_string(robot_state.q[2]) + ",";
-			msg += std::to_string(robot_state.q[3]) + ",";
-			msg += std::to_string(robot_state.q[4]) + ",";
-			msg += std::to_string(robot_state.q[5]) + ",";
-			msg += std::to_string(robot_state.q[6]);
-
-			msg += '$';
-
-			msg += std::to_string(gripper_state.width);
-
-			msg += '$';
-
-			msg += std::to_string(gripper_state.max_width);
-
-			msg += '$';
-
-			msg += std::to_string(gripper_state.is_grasped);
-
-			msg += '\n';
+            message_robot_state msg;
+            msg.q = robot_state.q;
+            msg.width = gripper_state.width;
+            msg.max_width = gripper_state.max_width;
+            msg.is_grasped = gripper_state.is_grasped;
 			
-			asio::write(*connection_, asio::buffer(msg));
+            std::string dump = nlohmann::json(msg).dump(); 
+            const std::uint64_t content_length = dump.size();
+
+            asio::write(*connection, asio::buffer(&content_length, sizeof(std::uint64_t)));
+            asio::write(*connection, asio::buffer(dump));
 		}
 		catch (...)
 		{

@@ -76,73 +76,36 @@ void franka_state_client::update_messages()
 		connection_.reset();
 	}
 
+	states_.clear();
 
-	// Extract any finished messages from message buffer
-	// and store all those messages in message list.
-	messages_.clear();
-
-	while (true)
-	{
-		std::string message(fetch_message());
-		if (message.empty()) break;
-
-		messages_.push_back(message);
-	}
 }
 
-
-std::list<std::string> franka_state_client::messages() const
+const std::list<message_robot_state>& franka_state_client::states() const noexcept
 {
-	return messages_;
+	return states_;
 }
-
 
 void franka_state_client::update_messages_buffer()
 {
-	/**
-	 * Fetch pending bytes from network
-	 * and accumulate in message buffer.
-	 */
 
-	std::string receive_buffer(receive_buffer_size_, '\0');
+	std::uint64_t content_length;
+	asio::read(*connection_, asio::buffer(&content_length, sizeof(std::uint64_t)));
 
-	std::size_t bytes_received =
-		connection_->read_some(asio::buffer(receive_buffer));
+	std::string buffer;
+	buffer.resize(content_length);
 
-	messages_buffer_ +=
-		std::string(receive_buffer, 0, bytes_received);
+	asio::read(*connection_, asio::buffer(buffer));
+
+	try {
+		const auto state = nlohmann::json::parse(buffer).get<message_robot_state>();
+		states_.push_back(state);
+	}
+	catch (...) {
+		std::cerr << "franka_state_client::update_messages_buffer(): " 
+			<< "State message discarted due to bad JSON." 
+			<< std::endl;
+	}
 }
-
-
-std::string franka_state_client::fetch_message()
-{
-	/**
-	 * Return a single \n-delimited state message
-	 * as read by a preceding update_messages_buffer()
-	 * and remove the message from the buffer string.
-	 * Multiple subsequent calls may return multiple
-	 * state messages (up to an empty() string).
-	 */
-
-	messages_buffer_.erase
-		(std::remove(messages_buffer_.begin(), messages_buffer_.end(), '\r'),
-		 messages_buffer_.end());
-
-	std::size_t first_newline =
-		messages_buffer_.find('\n');
-
-	if (first_newline == std::string::npos)
-		return std::string();
-
-	std::string result
-		(messages_buffer_.substr(0, first_newline));
-
-	messages_buffer_ =
-		messages_buffer_.substr(first_newline + 1);
-
-	return result;
-}
-
 
 std::unique_ptr<asio::ip::tcp::socket> franka_state_client::connect
 	(const std::string& ip, std::uint16_t port)

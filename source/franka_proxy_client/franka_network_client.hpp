@@ -46,13 +46,12 @@ public:
 
 
 	void update_messages();
-	std::list<std::string> messages() const;
+	const std::list<message_robot_state>& states() const noexcept;
 
 
 private:
 
 	void update_messages_buffer();
-	std::string fetch_message();
 
 	std::unique_ptr<asio_tcp_socket> connect
 		(const std::string& ip, std::uint16_t port);
@@ -69,6 +68,7 @@ private:
 
 	std::string messages_buffer_;
 	std::list<std::string> messages_;
+	std::list<message_robot_state> states_;
 };
 
 

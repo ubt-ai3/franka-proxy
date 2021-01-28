@@ -118,6 +118,8 @@ void to_json(nlohmann::json& j, const message_stop_recording& msg)
 void from_json(const nlohmann::json& j, message_stop_recording& msg)
 {}
 
+// -------------------- MESSAGE STOP RECORDING RESPONSE ------------------------
+
 void to_json(nlohmann::json& j, const message_stop_recording_response& msg)
 {
     j["type"] = message_stop_recording_response::type;
@@ -155,6 +157,8 @@ void from_json(const nlohmann::json& j, message_error_recovery& msg)
 {
 }
 
+// ------------------------ MESSAGE GENERIC RESPONSE ---------------------------
+
 void to_json(nlohmann::json& j, const message_generic_response& msg)
 {
     j["type"] = message_generic_response::type;
@@ -164,6 +168,25 @@ void to_json(nlohmann::json& j, const message_generic_response& msg)
 void from_json(const nlohmann::json& j, message_generic_response& msg)
 {
     j.at("status_code").get_to(msg.status_code);
+}
+
+// -------------------------- MESSAGE ROBOT STATE ------------------------------
+
+void to_json(nlohmann::json& j, const message_robot_state& msg) 
+{
+    j["type"] = message_robot_state::type;
+    j["q"] = msg.q;
+    j["width"] = msg.width;
+    j["max_width"] = msg.max_width;
+    j["is_grasped"] = msg.is_grasped;
+}
+
+void from_json(const nlohmann::json& j, message_robot_state& msg)
+{
+    j.at("q").get_to(msg.q);
+    j.at("width").get_to(msg.width);
+    j.at("max_width").get_to(msg.max_width);
+    j.at("is_grasped").get_to(msg.is_grasped);
 }
 
 }
