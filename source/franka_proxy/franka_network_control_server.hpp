@@ -50,23 +50,22 @@ public:
 
 
 private:
-    message_result process_message(const message_move_ptp&);
-    message_result process_message(const message_move_hybrid_sequence&);
-    message_result process_message(const message_move_contact&);
-    message_result process_message(const message_force_z&);
-    message_result process_message(const message_open_gripper&);
-    message_result process_message(const message_close_gripper&);
-    message_result process_message(const message_grasping_gripper&);
-    message_result process_message(const message_start_recording&);
-    message_result process_message(const message_stop_recording&);
-    message_result process_message(const message_speed&);
-    message_result process_message(const message_error_recovery&);
+    nlohmann::json process_message(const message_move_ptp&);
+    nlohmann::json process_message(const message_move_hybrid_sequence&);
+    nlohmann::json process_message(const message_move_contact&);
+    nlohmann::json process_message(const message_force_z&);
+    nlohmann::json process_message(const message_open_gripper&);
+    nlohmann::json process_message(const message_close_gripper&);
+    nlohmann::json process_message(const message_grasping_gripper&);
+    nlohmann::json process_message(const message_start_recording&);
+    nlohmann::json process_message(const message_stop_recording&);
+    nlohmann::json process_message(const message_speed&);
+    nlohmann::json process_message(const message_error_recovery&);
 
     template<class MessageType>
-    static message_result process_message_stub(franka_control_server* self, const nlohmann::json& json) {
+    static nlohmann::json process_message_stub(franka_control_server* self, const nlohmann::json& json) {
         const MessageType& msg = json.get<MessageType>();
         return self->process_message(msg);
-        // return self->process_message(*static_cast<MessageType*>(msg));
     } 
 
     template<class MessageType>
@@ -75,7 +74,7 @@ private:
         _handlers[view] = &process_message_stub<MessageType>;
     }
 
-    using message_handler = message_result(*)(franka_control_server* self, const nlohmann::json&);
+    using message_handler = nlohmann::json(*)(franka_control_server* self, const nlohmann::json&);
     std::map<std::string_view, message_handler> _handlers; 
 
 
@@ -84,63 +83,6 @@ private:
 	asio::ip::tcp::acceptor create_server(std::uint16_t control_port_);
 
 	void receive_requests();
-	void process_request(const std::string& request);
-
-	static std::vector<std::string> split_string
-		(const std::string& s, const std::string& delim);
-	
-	static robot_config_7dof string_to_robot_config
-		(const std::string& s, const std::string& delim);
-	
-	static std::array<double, 6> string_to_6_elements
-		(const std::string& s, const std::string& delim);
-
-
-	template <class Function>
-	static auto execute_exception_to_return_value(Function&& f)
-	{
-		try
-		{
-			return f();
-		}
-		catch (const franka::ControlException&)
-		{
-			return franka_proxy_messages::feedback_type::control_exception;
-		}
-		catch (const franka::CommandException&)
-		{
-			return franka_proxy_messages::feedback_type::command_exception;
-		}
-		catch (const franka::NetworkException&)
-		{
-			return franka_proxy_messages::feedback_type::network_exception;
-		}
-		catch (const franka::InvalidOperationException&)
-		{
-			return franka_proxy_messages::feedback_type::invalid_operation;
-		}
-		catch (const franka::RealtimeException&)
-		{
-			return franka_proxy_messages::feedback_type::realtime_exception;
-		}
-		catch (const franka::ModelException&)
-		{
-			return franka_proxy_messages::feedback_type::model_exception;
-		}
-		catch (const franka::ProtocolException&)
-		{
-			return franka_proxy_messages::feedback_type::protocol_exception;
-		}
-		catch (const franka::IncompatibleVersionException&)
-		{
-			return franka_proxy_messages::feedback_type::incompatible_version;
-		}
-		catch (const franka::Exception&)
-		{
-			return franka_proxy_messages::feedback_type::franka_exception;
-		}
-	}
-
 
 	franka_hardware_controller& controller_;
 

@@ -16,7 +16,7 @@ void to_json(nlohmann::json& j, const message_move_ptp& msg)
 
 void from_json(const nlohmann::json& j, message_move_ptp& msg) 
 {
-    msg.config = j["config"].get<decltype(msg.config)>(); 
+    j.at("config").get_to(msg.config);
 }
 
 // -------------------------- MESSAGE MOVE CONTACT -----------------------------
@@ -29,7 +29,7 @@ void to_json(nlohmann::json& j, const message_move_contact& msg)
 
 void from_json(const nlohmann::json& j, message_move_contact& msg) 
 {
-    msg.config = j["config"].get<decltype(msg.config)>();
+    j.at("config").get_to(msg.config);
 }
 
 // ------------------------- MESSAGE MOVE SEQUENCE -----------------------------
@@ -60,8 +60,8 @@ void to_json(nlohmann::json& j, const message_force_z& msg)
 
 void from_json(const nlohmann::json& j, message_force_z& msg)
 {
-    msg.mass = j["mass"].get<decltype(msg.mass)>();
-    msg.duration = j["duration"].get<decltype(msg.duration)>();
+    j.at("mass").get_to(msg.mass);
+    j.at("duration").get_to(msg.duration);
 }
 
 // -------------------------- MESSAGE OPEN GRIPPER -----------------------------
@@ -95,8 +95,8 @@ void to_json(nlohmann::json& j, const message_grasping_gripper& msg)
 
 void from_json(const nlohmann::json& j, message_grasping_gripper& msg) 
 {
-    msg.speed = j["speed"].get<decltype(msg.speed)>();
-    msg.force = j["force"].get<decltype(msg.force)>();
+    j.at("speed").get_to(msg.speed);
+    j.at("force").get_to(msg.force);
 }
 
 // ------------------------ MESSAGE START RECORDING ----------------------------
@@ -119,6 +119,19 @@ void to_json(nlohmann::json& j, const message_stop_recording& msg)
 void from_json(const nlohmann::json& j, message_stop_recording& msg)
 {}
 
+void to_json(nlohmann::json& j, const message_stop_recording_response& msg)
+{
+    j["type"] = message_stop_recording_response::type;
+    j["q_sequence"] = msg.q_sequence;
+    j["f_sequence"] = msg.f_sequence;
+}
+
+void from_json(const nlohmann::json& j, message_stop_recording_response& msg)
+{
+    j.at("q_sequence").get_to(msg.q_sequence);
+    j.at("f_sequence").get_to(msg.f_sequence);
+}
+
 // ----------------------------- MESSAGE SPEED ---------------------------------
 
 void to_json(nlohmann::json& j, const message_speed& msg)
@@ -129,7 +142,7 @@ void to_json(nlohmann::json& j, const message_speed& msg)
 
 void from_json(const nlohmann::json& j, message_speed& msg)
 {
-    msg.speed = j["speed"].get<decltype(msg.speed)>();
+    j.at("speed").get_to(msg.speed);
 }
 
 // ------------------------- MESSAGE ERROR RECOVERY ----------------------------
@@ -141,6 +154,17 @@ void to_json(nlohmann::json& j, const message_error_recovery& msg)
 
 void from_json(const nlohmann::json& j, message_error_recovery& msg)
 {
+}
+
+void to_json(nlohmann::json& j, const message_generic_response& msg)
+{
+    j["type"] = message_generic_response::type;
+    j["status_code"] = msg.status_code;
+}
+
+void from_json(const nlohmann::json& j, message_generic_response& msg)
+{
+    j.at("status_code").get_to(msg.status_code);
 }
 
 }

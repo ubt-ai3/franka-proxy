@@ -92,29 +92,15 @@ public:
 
 	~franka_control_client() noexcept;
 
-
-	void send_command
-		(const std::string& command,
-		 float timeout_seconds = 1.f);
-	unsigned char send_command_and_check_response
-		(const std::string& command,
-		 float timeout_seconds = 1.f);
-
-    message_result send_command(
+    nlohmann::json send_command(
         const nlohmann::json& json,
         float timeout_seconds = 1.f
     );
 
-
-	// todo split up function
-	std::pair<std::vector<std::array<double, 7>>, std::vector<std::array<double, 6>>>
-		send_stop_recording_and_receive_sequence
-			(float timeout_seconds = 1.f);
-	void send_move_sequence
-		(const std::vector<std::array<double, 7>>& q_sequence,
-		 const std::vector<std::array<double, 6>>& f_sequence,
-		 const std::vector<std::array<double, 6>>& selection_vector_sequence,
-		 float timeout_seconds = 1.f);
+	template<typename ResponseType>
+	ResponseType send_command(const nlohmann::json& json, float timeout_seconds = 1.f) {
+		return send_command(json, timeout_seconds).get<ResponseType>();
+	}
 
 private:
 

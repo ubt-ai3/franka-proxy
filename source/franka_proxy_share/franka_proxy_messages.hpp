@@ -101,6 +101,16 @@ struct message_stop_recording
 void to_json(nlohmann::json& j, const message_stop_recording&);
 void from_json(const nlohmann::json& j, message_stop_recording&);
 
+struct message_stop_recording_response
+{
+	static constexpr char type[] = "stop-recording-response";
+	std::vector<std::array<double, 7>> q_sequence;
+	std::vector<std::array<double, 6>> f_sequence;
+};
+
+void to_json(nlohmann::json& j, const message_stop_recording_response&);
+void from_json(const nlohmann::json& j, message_stop_recording_response&);
+
 struct message_speed{
     static constexpr char type[] = "speed"; 
 
@@ -118,7 +128,8 @@ struct message_error_recovery
 void to_json(nlohmann::json& j, const message_error_recovery&);
 void from_json(const nlohmann::json& j, message_error_recovery&);
 
-enum class message_result: std::uint8_t {
+enum class message_result: std::uint8_t 
+{
     success,
     success_command_failed,
     model_exception,
@@ -130,79 +141,21 @@ enum class message_result: std::uint8_t {
     realtime_exception,
     invalid_operation,
     franka_exception,
+	unknown_operation,
 };
 
-
-class franka_proxy_messages
+struct message_generic_response 
 {
-public:
+	static constexpr char type[] = "generic-response";
+	std::uint8_t status_code;
 
-
-	static constexpr const char* command_end_marker = ";";
-
-
-	static constexpr const char* command_strings[11] =
-	{
-		"MOVE_PTP",
-		"MOVE_CONTACT",
-		"MOVE_HYBRID_SEQUENCE",
-		"FORCE_Z",
-		
-		"OPEN_GRIPPER",
-		"CLOSE_GRIPPER",
-		"GRASPING_GRIPPER",
-		
-		"START_RECORDING",
-		"STOP_RECORDING",
-		
-		"SPEED",
-		
-		"ERROR_RECOVERY"
-	};
-
-
-
-
-	enum command_type
-	{
-		move_ptp,
-		move_contact,
-		move_hybrid_sequence,
-		force_z,
-		
-		open_gripper,
-		close_gripper,
-		grasp_gripper,
-		
-		start_recording,
-		stop_recording,
-		
-		speed,
-		
-		error_recovery,
-		
-		message_type_count
-	};
-
-
-
-
-	enum feedback_type
-	{
-		success,
-		success_command_failed,
-		model_exception,
-		network_exception,
-		protocol_exception,
-		incompatible_version,
-		control_exception,
-		command_exception,
-		realtime_exception,
-		invalid_operation,
-		franka_exception
-	};
+	message_generic_response(message_result result) noexcept
+	: status_code{ static_cast<std::uint8_t>(result) }
+	{}
 };
 
+void to_json(nlohmann::json& j, const message_generic_response& msg);
+void from_json(const nlohmann::json& j, message_generic_response& msg);
 
 } /* namespace franka_proxy */
 
