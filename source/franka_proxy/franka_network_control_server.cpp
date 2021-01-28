@@ -8,7 +8,8 @@
  ************************************************************************/
 
 
-#include "franka_network_control_server.hpp"
+#include <franka_proxy/franka_network_control_server.hpp>
+#include <franka_proxy_share/franka_proxy_messages.hpp>
 
 #include <exception>
 #include <string>
@@ -22,8 +23,6 @@
 #include <franka/gripper_state.h>
 
 #include <nlohmann/json.hpp>
-
-#include "franka_proxy_share/franka_proxy_messages.hpp"
 
 
 namespace franka_proxy

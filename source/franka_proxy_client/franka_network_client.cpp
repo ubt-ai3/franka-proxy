@@ -8,7 +8,8 @@
  ************************************************************************/
 
 
-#include "franka_network_client.hpp"
+#include <franka_proxy_client/franka_network_client.hpp>
+#include <franka_proxy_client/exception.hpp>
 
 #include <array>
 #include <string>
@@ -23,8 +24,6 @@
 #include <asio/ip/tcp.hpp>
 
 #include <nlohmann/json.hpp>
-
-#include "exception.hpp"
 
 
 namespace franka_proxy
@@ -58,7 +57,6 @@ franka_state_client::~franka_state_client() noexcept
 
 void franka_state_client::update_messages()
 {
-	std::cout << "Called update messages" << std::endl;
 	// Restore connection after any network error.
 	if (!connection_)
 		connection_ = connect(remote_ip_, remote_port_);

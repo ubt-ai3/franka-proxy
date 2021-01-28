@@ -8,7 +8,7 @@
  ************************************************************************/
 
 
-#include "motion_generator_force.hpp"
+#include <franka_proxy/motion_generator_force.hpp>
 
 #include <utility>
 #include <iostream>

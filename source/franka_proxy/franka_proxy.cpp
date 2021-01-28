@@ -8,7 +8,7 @@
  ************************************************************************/
 
 
-#include "franka_proxy.hpp"
+#include <franka_proxy/franka_proxy.hpp>
 
 #include <iostream>
 

@@ -8,14 +8,12 @@
  ************************************************************************/
 
 
-#include "franka_remote_controller.hpp"
+#include <franka_proxy_client/franka_remote_controller.hpp>
+#include <franka_proxy_client/exception.hpp>
 
 #include <iostream>
 #include <list>
 #include <utility>
-
-#include "exception.hpp"
-
 
 namespace 
 {

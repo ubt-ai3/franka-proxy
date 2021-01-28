@@ -11,20 +11,18 @@
 #if !defined(INCLUDED__FRANKA_PROXY__FRANKA_NETWORK_CONTROL_SERVER_HPP)
 #define INCLUDED__FRANKA_PROXY__FRANKA_NETWORK_CONTROL_SERVER_HPP
 
-
-#include <asio/ip/tcp.hpp>
-
-#include <franka/exception.h>
-
+#include <franka_proxy/franka_hardware_controller.hpp>
 #include <franka_proxy_share/franka_proxy_messages.hpp>
-#include "franka_hardware_controller.hpp"
 
 #include <map>
 #include <unordered_map>
 #include <string_view>
 
-#include <nlohmann/json_fwd.hpp>
+#include <asio/ip/tcp.hpp>
 
+#include <franka/exception.h>
+
+#include <nlohmann/json_fwd.hpp>
 
 namespace franka_proxy
 {

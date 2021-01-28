@@ -14,7 +14,7 @@
 
 #include <asio/ip/tcp.hpp>
 
-#include "franka_hardware_controller.hpp"
+#include <franka_proxy/franka_hardware_controller.hpp>
 
 
 namespace franka_proxy
