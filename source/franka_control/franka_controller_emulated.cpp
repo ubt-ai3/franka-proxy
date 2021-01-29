@@ -45,7 +45,7 @@ bool almost_equal(const robot_config_7dof& xes, const robot_config_7dof& array)
 {
 	for (int i = 0; i < 7; ++i)
 	{
-		if (abs(xes[i] - array[i]) >= 0.1)
+		if (abs(xes[i] - array[i]) >= 0.001)
 			return false;
 	}
 
