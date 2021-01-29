@@ -33,16 +33,17 @@ franka_controller::franka_controller() = default;
 franka_controller::~franka_controller() noexcept = default;
 
 
-void franka_controller::move_to(const Eigen::Affine3d& target)
+void franka_controller::move_to(const Eigen::Affine3d& target_world_T_nsa)
 {
-	move_to(franka_util::ik_fast_closest(target, current_config()));
+	move_to(franka_util::ik_fast_closest(target_world_T_nsa, current_config()));
 }
 
 
-bool franka_controller::move_to_until_contact(const Eigen::Affine3d& target)
+bool franka_controller::move_to_until_contact
+	(const Eigen::Affine3d& target_world_T_nsa)
 {
 	return move_to_until_contact
-		(franka_util::ik_fast_closest(target, current_config()));
+		(franka_util::ik_fast_closest(target_world_T_nsa, current_config()));
 }
 
 

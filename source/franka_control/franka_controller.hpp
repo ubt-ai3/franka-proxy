@@ -55,9 +55,9 @@ public:
 
 	
 	virtual void move_to(const robot_config_7dof& target) = 0;
-	void move_to(const Eigen::Affine3d& target);
+	void move_to(const Eigen::Affine3d& target_world_T_nsa);
 	virtual bool move_to_until_contact(const robot_config_7dof& target) = 0;
-	bool move_to_until_contact(const Eigen::Affine3d& target);
+	bool move_to_until_contact(const Eigen::Affine3d& target_world_T_nsa);
 
 	virtual void open_gripper() = 0;
 	virtual void close_gripper() = 0;
