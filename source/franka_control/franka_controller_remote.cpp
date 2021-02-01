@@ -38,7 +38,7 @@ franka_controller_remote::franka_controller_remote
 franka_controller_remote::~franka_controller_remote() noexcept = default;
 
 
-void franka_controller_remote::move_to(const robot_config_7dof& target)
+void franka_controller_remote::move(const robot_config_7dof& target)
 {
 	controller_->move_to
 		(franka_proxy::robot_config_7dof
@@ -47,7 +47,7 @@ void franka_controller_remote::move_to(const robot_config_7dof& target)
 }
 
 
-bool franka_controller_remote::move_to_until_contact
+bool franka_controller_remote::move_until_contact
 	(const robot_config_7dof& target)
 {
 	return controller_->move_to_until_contact

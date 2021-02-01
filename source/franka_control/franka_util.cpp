@@ -153,13 +153,13 @@ std::vector<Eigen::Affine3d> franka_util::fk
 
 
 std::vector<robot_config_7dof> franka_util::ik_fast
-	(const Eigen::Affine3d& world_T_nsa, double joint_4_value)
+	(const Eigen::Affine3d& world_T_j6, double joint_4_value)
 {
 	const Eigen::Affine3d last_segment_T_tcp
 		(Eigen::Translation3d(0.f, 0.f, 0.107f));
 
 	Eigen::Affine3d target
-		(world_T_nsa * last_segment_T_tcp);
+		(world_T_j6 * last_segment_T_tcp);
 
 	std::vector<robot_config_7dof> result;
 
@@ -206,13 +206,13 @@ std::vector<robot_config_7dof> franka_util::ik_fast
 
 
 std::vector<robot_config_7dof> franka_util::ik_fast_robust
-	(const Eigen::Affine3d& world_T_nsa, double step_size)
+	(const Eigen::Affine3d& world_T_j6, double step_size)
 {
-	std::vector<robot_config_7dof> solutions = ik_fast(world_T_nsa);
+	std::vector<robot_config_7dof> solutions = ik_fast(world_T_j6);
 	double joint_4 = joint_limits_[4].min;
 	while (solutions.empty() && joint_4 < joint_limits_[4].max)
 	{
-		solutions = ik_fast(world_T_nsa, joint_4);
+		solutions = ik_fast(world_T_j6, joint_4);
 		joint_4 += step_size;
 	}
 	return solutions;
@@ -220,7 +220,7 @@ std::vector<robot_config_7dof> franka_util::ik_fast_robust
 
 
 robot_config_7dof franka_util::ik_fast_closest
-	(const Eigen::Affine3d& target_world_T_nsa,
+	(const Eigen::Affine3d& target_world_T_j6,
 	 const robot_config_7dof& current_configuration,
 	 double step_size)
 {
@@ -229,7 +229,7 @@ robot_config_7dof franka_util::ik_fast_closest
 	for (double joint_4 = joint_limits_[4].min; joint_4 < joint_limits_[4].max; joint_4 += step_size)
 	{
 		std::vector<robot_config_7dof> new_solutions =
-			ik_fast(target_world_T_nsa, joint_4);
+			ik_fast(target_world_T_j6, joint_4);
 		for (const robot_config_7dof& solution : new_solutions)
 			solutions.push_back(solution);
 	}

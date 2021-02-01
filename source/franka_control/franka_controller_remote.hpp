@@ -45,8 +45,8 @@ public:
 	~franka_controller_remote() noexcept override;
 
 
-	void move_to(const robot_config_7dof& target) override;
-	bool move_to_until_contact(const robot_config_7dof& target) override;
+	void move(const robot_config_7dof& target) override;
+	bool move_until_contact(const robot_config_7dof& target) override;
 
 	void open_gripper() override;
 	void close_gripper() override;

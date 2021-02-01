@@ -93,7 +93,7 @@ robot_config_7dof operator*(const robot_config_7dof& xes, double rhs)
 }
 
 
-void franka_controller_emulated::move_to(const robot_config_7dof& target)
+void franka_controller_emulated::move(const robot_config_7dof& target)
 {
 	robot_config_7dof current_joint_values = current_config();
 
@@ -148,10 +148,10 @@ void franka_controller_emulated::move_to(const robot_config_7dof& target)
 }
 
 
-bool franka_controller_emulated::move_to_until_contact
+bool franka_controller_emulated::move_until_contact
 	(const robot_config_7dof& target)
 {
-	move_to(target);
+	move(target);
 	return true;
 }
 
