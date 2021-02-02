@@ -29,9 +29,10 @@ namespace franka_control
 
 franka_controller::franka_controller()
 	:
-	tcp_T_j6(build_tcp_T_j6()),
+	j6_T_flange(build_j6_T_flange()),
+	flange_T_tcp(build_flange_T_tcp()),
 	j6_T_tcp(build_j6_T_tcp()),
-	j6_T_flange(build_j6_T_flange())
+	tcp_T_j6(build_tcp_T_j6())
 {}
 
 
