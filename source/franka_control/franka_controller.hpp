@@ -121,16 +121,18 @@ public:
 			{ return current_world_T_tcp().inverse(); }
 
 
-	const Eigen::Affine3d tcp_T_j6;
-	const Eigen::Affine3d j6_T_tcp;
 	const Eigen::Affine3d j6_T_flange;
+	const Eigen::Affine3d flange_T_tcp;
+	const Eigen::Affine3d j6_T_tcp;
+	const Eigen::Affine3d tcp_T_j6;
 
 
 private:
 
-	Eigen::Affine3d build_tcp_T_j6();
-	Eigen::Affine3d build_j6_T_tcp();
-	Eigen::Affine3d build_j6_T_flange();
+	Eigen::Affine3d build_j6_T_flange() const;
+	Eigen::Affine3d build_flange_T_tcp() const;
+	Eigen::Affine3d build_j6_T_tcp() const;
+	Eigen::Affine3d build_tcp_T_j6() const;
 };
 
 

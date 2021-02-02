@@ -66,22 +66,31 @@ Eigen::Affine3d franka_controller::current_world_T_flange() const
 	{ return current_world_T_j6() * j6_T_flange; }
 
 
-Eigen::Affine3d franka_controller::build_tcp_T_j6()
-{
-	return Eigen::AngleAxisd(-135.0/180.0 * franka_util::pi, Eigen::Vector3d(0,0,1))
-		* Eigen::Translation3d(0, 0, -0.1564) * build_j6_T_flange().inverse();
-}
-
-
-Eigen::Affine3d franka_controller::build_j6_T_tcp()
-{
-	return build_tcp_T_j6().inverse();
-}
-
-
-Eigen::Affine3d franka_controller::build_j6_T_flange()
+Eigen::Affine3d franka_controller::build_j6_T_flange() const
 {
 	return Eigen::Affine3d(Eigen::Translation3d(0, 0, 0.107));
+}
+
+
+Eigen::Affine3d franka_controller::build_flange_T_tcp() const
+{
+	Eigen::Matrix4d m = Eigen::Matrix4d::Identity();
+	m(0,0) = 0.707; m(0,1) = 0.707;
+	m(1,0) = -0.707; m(1,1) = 0.707;
+	m(2,3) = 0.1034;
+	return Eigen::Affine3d(m);
+}
+
+
+Eigen::Affine3d franka_controller::build_j6_T_tcp() const
+{
+	return build_j6_T_flange() * build_flange_T_tcp();
+}
+
+
+Eigen::Affine3d franka_controller::build_tcp_T_j6() const
+{
+	return build_j6_T_tcp().inverse();
 }
 
 
