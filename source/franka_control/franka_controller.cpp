@@ -75,11 +75,10 @@ Eigen::Affine3d franka_controller::build_j6_T_flange() const
 
 Eigen::Affine3d franka_controller::build_flange_T_tcp() const
 {
-	Eigen::Matrix4d m = Eigen::Matrix4d::Identity();
-	m(0,0) = 0.707; m(0,1) = 0.707;
-	m(1,0) = -0.707; m(1,1) = 0.707;
-	m(2,3) = 0.1034;
-	return Eigen::Affine3d(m);
+	Eigen::Affine3d flange_T_tcp(Eigen::AngleAxisd
+		(-45. * franka_util::deg_to_rad, Eigen::Vector3d::UnitZ()));
+	flange_T_tcp.translate(Eigen::Vector3d(0, 0, 0.1034));
+	return flange_T_tcp;
 }
 
 
