@@ -275,8 +275,11 @@ void franka_controller_emulated::move_gripper(int target, double speed_mps)
 				current_pos += move_length;
 		}
 
-		std::lock_guard<std::mutex> lk(controller_mutex_);
-		state_gripper_pos_ = static_cast<int>(current_pos);
+		// Copy from process variables to exposed state.
+		{
+			std::lock_guard<std::mutex> lk(controller_mutex_);
+			state_gripper_pos_ = static_cast<int>(current_pos);
+		}
 
 		std::this_thread::sleep_until(next_timepoint);
 	}
