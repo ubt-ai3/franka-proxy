@@ -49,8 +49,8 @@ void execute_retry(Function&& f, franka_proxy::franka_remote_controller& control
 
 int main()
 {
-	franka_proxy::franka_remote_controller controller("127.0.0.1");
-	//franka_proxy::franka_remote_controller controller("132.180.194.112");
+	//franka_proxy::franka_remote_controller controller("127.0.0.1");
+	franka_proxy::franka_remote_controller controller("132.180.194.112");
 
 	// status test
 	std::atomic_bool stop(false);

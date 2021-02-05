@@ -11,10 +11,12 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\..\source\franka_proxy_share\franka_proxy_commands.cpp" />
     <ClCompile Include="..\..\..\source\franka_proxy_share\franka_proxy_messages.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\source\franka_proxy_share\asio_forward.hpp" />
+    <ClInclude Include="..\..\..\source\franka_proxy_share\franka_proxy_commands.hpp" />
     <ClInclude Include="..\..\..\source\franka_proxy_share\franka_proxy_messages.hpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
