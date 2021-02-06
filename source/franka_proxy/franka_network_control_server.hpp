@@ -13,6 +13,7 @@
 
 #include <franka_proxy/franka_hardware_controller.hpp>
 #include <franka_proxy_share/franka_proxy_messages.hpp>
+#include <franka_proxy_share/franka_proxy_commands.hpp>
 
 #include <map>
 #include <unordered_map>
@@ -48,33 +49,42 @@ public:
 
 
 private:
-    nlohmann::json process_message(const message_move_ptp&);
-    nlohmann::json process_message(const message_move_hybrid_sequence&);
-    nlohmann::json process_message(const message_move_contact&);
-    nlohmann::json process_message(const message_force_z&);
-    nlohmann::json process_message(const message_open_gripper&);
-    nlohmann::json process_message(const message_close_gripper&);
-    nlohmann::json process_message(const message_grasping_gripper&);
-    nlohmann::json process_message(const message_start_recording&);
-    nlohmann::json process_message(const message_stop_recording&);
-    nlohmann::json process_message(const message_speed&);
-    nlohmann::json process_message(const message_error_recovery&);
+    command_generic_response process_command(const command_move_to_config&);
+    command_generic_response process_command(const command_move_hybrid_sequence&);
+    command_generic_response process_command(const command_move_until_contact&);
+    command_generic_response process_command(const command_force_z&);
+    command_generic_response process_command(const command_open_gripper&);
+    command_generic_response process_command(const command_close_gripper&);
+    command_generic_response process_command(const command_grasp_gripper&);
+    command_generic_response process_command(const command_start_recording&);
+    command_stop_recording_response process_command(const command_stop_recording&);
+    command_generic_response process_command(const command_set_speed&);
+    command_generic_response process_command(const command_recover_from_errors&);
 
-    template<class MessageType>
-    static nlohmann::json process_message_stub(franka_control_server* self, const nlohmann::json& json) {
-        const MessageType& msg = json.get<MessageType>();
-        return self->process_message(msg);
-    } 
-
-    template<class MessageType>
-    void handles_message() {
-        std::string_view view{MessageType::type};
-        _handlers[view] = &process_message_stub<MessageType>;
+    using command_handler = nlohmann::json(*)(franka_control_server* self, const nlohmann::json&);
+	
+    template<class TCommandType>
+	void register_command_handler()
+    {
+        std::string_view type{ TCommandType::type };
+        command_handler handler = [](franka_control_server* self, const nlohmann::json& json) -> nlohmann::json
+        {
+            static_assert(
+                std::is_same_v<
+					decltype(self->process_command(std::declval<TCommandType>())), 
+					typename TCommandType::response_type
+                >,
+                "A command handler's return type must match the response type associated with the command."
+            );
+        	
+            return self->process_command(json.get<TCommandType>());
+        };
+    	
+        _command_handlers[TCommandType::type] = handler;
     }
 
-    using message_handler = nlohmann::json(*)(franka_control_server* self, const nlohmann::json&);
-    std::map<std::string_view, message_handler> _handlers; 
 
+    std::map<std::string_view, command_handler> _command_handlers;
 
 	void task_main();
 

@@ -248,7 +248,7 @@ void from_json(const nlohmann::json& json, command_recover_from_errors& object)
 //
 //////////////////////////////////////////////////////////////////////////
 
-	
+
 void to_json(nlohmann::json& json, const command_generic_response& object)
 {
 	json["type"] = command_generic_response::type;
@@ -257,10 +257,54 @@ void to_json(nlohmann::json& json, const command_generic_response& object)
 }
 	
 
-void from_json(nlohmann::json& json, command_generic_response& object)
+void from_json(const nlohmann::json& json, command_generic_response& object)
 {
 	json.at("result").get_to(object.result);
 	json.at("reason").get_to(object.reason);
+}
+
+
+//////////////////////////////////////////////////////////////////////////
+//
+// command_get_config
+//
+//////////////////////////////////////////////////////////////////////////
+
+
+void to_json(nlohmann::json& json, const command_get_config& object)
+{
+	json["type"] = command_get_config::type;
+}
+
+
+void from_json(const nlohmann::json& json, command_get_config& object)
+{
+}
+
+
+//////////////////////////////////////////////////////////////////////////
+//
+// command_get_config_response
+//
+//////////////////////////////////////////////////////////////////////////
+
+	
+void to_json(nlohmann::json& json, const command_get_config_response& object)
+{
+	json["type"] = command_get_config_response::type;
+	json["joint_configuration"] = object.joint_configuration;
+	json["width"] = object.width;
+	json["max_width"] = object.max_width;
+	json["is_grasped"] = object.is_grasped;
+}
+
+	
+void from_json(const nlohmann::json& json, command_get_config_response& object)
+{
+	json.at("joint_configuration").get_to(object.joint_configuration);
+	json.at("width").get_to(object.width);
+	json.at("max_width").get_to(object.max_width);
+	json.at("is_grasped").get_to(object.is_grasped);
 }
 
 

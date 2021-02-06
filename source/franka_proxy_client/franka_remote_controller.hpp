@@ -17,7 +17,7 @@
 #include <string>
 
 #include <franka_proxy_client/franka_network_client.hpp>
-#include <franka_proxy_share/franka_proxy_messages.hpp>
+#include <franka_proxy_share/franka_proxy_commands.hpp>
 
 namespace franka_proxy
 {
@@ -177,7 +177,39 @@ public:
 
 
 private:
+	
 
+	template<typename TCommandType>
+	using TResponseType = std::conditional_t<
+		std::is_same_v<typename TCommandType::response_type, command_generic_response>,
+		command_result,
+		typename TCommandType::response_type
+	>;
+
+	
+	/**
+	 * Constructs an command in-place with given arguments, and checks the response code,
+	 * if the response if of type `command_generic_response`.
+	 */
+	template<typename TCommandType, typename... TArgs, typename TReturnType = TResponseType<TCommandType>>
+	TReturnType send_command(TArgs&&... args)
+	{
+		const TCommandType cmd{ std::forward<TArgs>(args)... };
+		auto response = socket_control_->send_command(cmd);
+
+		if constexpr (std::is_same_v<typename TCommandType::response_type, command_generic_response>)
+			return check_result(response.result);
+		else
+			return response;
+	}
+
+	/**
+	 * Checks whether the response indicates that the command was processed successfully.
+	 * Otherwise throws an exception indicated by the result code.
+	 */
+	static command_result check_result(command_result result);
+	
+	
 	void initialize_sockets();
 	void shutdown_sockets() noexcept;
 

@@ -94,18 +94,19 @@ public:
 
 	~franka_control_client() noexcept;
 
-    nlohmann::json send_command(
-        const nlohmann::json& json,
-        float timeout_seconds = 1.f
-    );
-
-	template<typename ResponseType>
-	ResponseType send_command(const nlohmann::json& json, float timeout_seconds = 1.f) {
-		return send_command(json, timeout_seconds).get<ResponseType>();
+	template<typename TCommandType>
+	typename TCommandType::response_type send_command(const TCommandType& command, float timeout_seconds = 1.f)
+	{
+		return send_json(command, timeout_seconds).get<typename TCommandType::response_type>();
 	}
 
 private:
 
+	nlohmann::json send_json(
+		const nlohmann::json& json,
+		float timeout_seconds = 1.f
+	);
+	
 	std::unique_ptr<asio_tcp_socket> connect
 		(const std::string& ip, std::uint16_t port);
 	

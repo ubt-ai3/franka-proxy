@@ -20,9 +20,16 @@
 namespace franka_proxy
 {
 
-enum class command_result : std::uint8_t;
+	
+struct command_stop_recording_response;
+	
 struct command_generic_response;
+enum class command_result : std::uint8_t;
 
+struct command_get_config_response;
+
+
+	
 	
 /**
  *************************************************************************
@@ -208,9 +215,7 @@ void from_json(const nlohmann::json& json, command_start_recording& object);
  * Commands the server to stop recording the robot's state and to 
  * reply with the recorded data.
  *
- ************************************************************************/
-struct command_stop_recording_response;
-	
+ ************************************************************************/	
 struct command_stop_recording
 {
 	using response_type = command_stop_recording_response;
@@ -258,6 +263,7 @@ struct command_set_speed
 {
 	using response_type = command_generic_response;
 	static constexpr char type[] = "set.speed";
+	
 	double speed;
 };
 
@@ -325,14 +331,71 @@ struct command_generic_response
 	static constexpr char type[] = "response.generic";
 	command_result result;
 	std::string reason;
+
+	command_generic_response() noexcept
+	: result{command_result::success}
+	, reason{}
+	{}
+
+	command_generic_response(command_result result) noexcept
+	: result{result}
+	, reason{}
+	{}
+
+	
 };
 
+
 void to_json(nlohmann::json& json, const command_generic_response& object);
-void from_json(nlohmann::json& json, command_generic_response& object);
+void from_json(const nlohmann::json& json, command_generic_response& object);
 
 
 
 
+/**
+ *************************************************************************
+ *
+ * @class command_get_config
+ *
+ * Requests the current state of robot.
+ *
+ ************************************************************************/
+struct command_get_config
+{
+	using response_type = command_get_config_response;
+	static constexpr char type[] = "get.config";
+};
+
+void to_json(nlohmann::json& json, const command_get_config& object);
+void from_json(const nlohmann::json& json, command_get_config& object);
+
+
+
+	
+/**
+ *************************************************************************
+ *
+ * @class command_get_config_response
+ *
+ * Response send by the server after requesting the current configuration.
+ *
+ ************************************************************************/
+struct command_get_config_response
+{
+	static constexpr char type[] = "response.config";
+
+	std::array<double, 7> joint_configuration;
+	double width;
+	double max_width;
+	bool is_grasped;
+};
+
+void to_json(nlohmann::json& json, const command_get_config_response& object);
+void from_json(const nlohmann::json& json, command_get_config_response& object);
+
+
+
+	
 }
 
 #endif	// INCLUDED__FRANKA_PROXY_SHARE__FRANKA_PROXY_MESSAGES_HPP

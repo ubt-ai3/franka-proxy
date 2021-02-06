@@ -145,7 +145,7 @@ franka_control_client::~franka_control_client() noexcept
 	// Enforce explicit destructor instantiation.
 }
 
-nlohmann::json franka_control_client::send_command(
+nlohmann::json franka_control_client::send_json(
     const nlohmann::json& json,
     float timeout_seconds
 ) {
@@ -180,7 +180,7 @@ nlohmann::json franka_control_client::send_command(
 	catch(const asio::system_error&)
     {
         connection_.reset();
-        std::cerr << "franka_control_client::send_command(): Failed to send.";
+        std::cerr << "franka_control_client::send_json(): Failed to send.";
         throw network_exception();
     }
 }
