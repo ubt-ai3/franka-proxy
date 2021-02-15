@@ -10,6 +10,7 @@ endif()
 
 find_package(asio CONFIG REQUIRED)
 find_package(Eigen3 CONFIG REQUIRED)
+find_package(Threads REQUIRED)
 
 
 ## TODO convert to modern cmake
