@@ -6,12 +6,12 @@ option(BUILD_SERVER "Build franka_proxy executable" ON)
 
 if(BUILD_SERVER)
 	find_package(Franka CONFIG REQUIRED)
-	find_package(Poco CONFIG REQUIRED COMPONENTS Net Foundation)
+	#find_package(Poco CONFIG REQUIRED COMPONENTS Net Foundation)
 endif()
 
 find_package(asio CONFIG REQUIRED)
 find_package(Eigen3 CONFIG REQUIRED)
-find_package(Threads REQUIRED)
+#find_package(Threads REQUIRED)
 
 
 ## TODO convert to modern cmake
@@ -192,4 +192,4 @@ install(
 	DESTINATION include/franka_proxy_share
 )
 
-install(EXPORT franka-proxyConfig DESTINATION share)
+install(EXPORT franka-proxyConfig DESTINATION share FILE franka-proxyTargets.cmake)
