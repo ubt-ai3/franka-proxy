@@ -54,24 +54,34 @@ public:
 	virtual ~franka_controller() noexcept;
 
 	
-	virtual void move_to(const robot_config_7dof& target) = 0;
-	void move_to(const Eigen::Affine3d& target);
-	virtual bool move_to_until_contact(const robot_config_7dof& target) = 0;
-	bool move_to_until_contact(const Eigen::Affine3d& target);
+	virtual void move(const robot_config_7dof& target) = 0;
+	void move(const Eigen::Affine3d& target_world_T_tcp);
+
+	virtual bool move_until_contact(const robot_config_7dof& target) = 0;
+	bool move_until_contact(const Eigen::Affine3d& target_world_T_tcp);
+
 
 	virtual void open_gripper() = 0;
 	virtual void close_gripper() = 0;
 	virtual void grasp_gripper(double speed = 0.025, double force = 0.05) = 0;
 	virtual bool gripper_grasped() const = 0;
 
+
 	virtual double speed_factor() const = 0;
 	virtual void set_speed_factor(double speed_factor) = 0;
 
+
 	virtual void automatic_error_recovery() = 0;
+
 
 	virtual robot_config_7dof current_config() const = 0;
 	virtual int current_gripper_pos() const = 0;
 	virtual int max_gripper_pos() const = 0;
+
+	Eigen::Affine3d current_world_T_tcp() const;
+	Eigen::Affine3d current_world_T_j6() const;
+	Eigen::Affine3d current_world_T_flange() const;
+
 
 	/**
 	 * Fetch current state from the back-end robot.
@@ -79,10 +89,6 @@ public:
 	 * e.g. through a robot_controller_task.
 	 */
 	virtual void update() = 0;
-
-	Eigen::Affine3d current_nsa_T_world() const;
-	Eigen::Affine3d current_flange_T_world() const;
-	Eigen::Affine3d current_tcp_T_world() const;
 	
 	virtual void start_recording() = 0;
 	virtual std::pair<std::vector<std::array<double, 7>>, std::vector<std::array<double, 6>>> stop_recording() = 0;
@@ -90,6 +96,43 @@ public:
 		std::vector<std::array<double, 7>> q_sequence,
 		std::vector<std::array<double, 6>> f_sequence, 
 		std::vector<std::array<double, 6>> selection_vector_sequence) = 0;
+
+
+	// Legacy functions
+	[[deprecated("Use new move() function.")]]
+		virtual void move_to(const robot_config_7dof& target) { move(target); }
+	[[deprecated("Use new move() function with changed target.")]]
+		void move_to(const Eigen::Affine3d& target_world_T_nsa)
+			{ move(target_world_T_nsa * j6_T_tcp); }
+	[[deprecated("Use new move() function.")]]
+		virtual bool move_to_until_contact(const robot_config_7dof& target) { return move_until_contact(target); }
+	[[deprecated("Use new move() function with changed target.")]]
+		bool move_to_until_contact(const Eigen::Affine3d& target_world_T_nsa)
+			{ return move_until_contact(target_world_T_nsa * j6_T_tcp); }
+
+	[[deprecated("Use new version with inverse transform.")]]
+		Eigen::Affine3d current_nsa_T_world() const
+			{ return current_world_T_j6().inverse(); }
+	[[deprecated("Use new version with inverse transform.")]]
+		Eigen::Affine3d current_flange_T_world() const
+			{ return current_world_T_flange().inverse(); }
+	[[deprecated("Use new version with inverse transform.")]]
+		Eigen::Affine3d current_tcp_T_world() const
+			{ return current_world_T_tcp().inverse(); }
+
+
+	const Eigen::Affine3d j6_T_flange;
+	const Eigen::Affine3d flange_T_tcp;
+	const Eigen::Affine3d j6_T_tcp;
+	const Eigen::Affine3d tcp_T_j6;
+
+
+private:
+
+	Eigen::Affine3d build_j6_T_flange() const;
+	Eigen::Affine3d build_flange_T_tcp() const;
+	Eigen::Affine3d build_j6_T_tcp() const;
+	Eigen::Affine3d build_tcp_T_j6() const;
 };
 
 
