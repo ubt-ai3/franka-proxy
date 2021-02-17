@@ -94,6 +94,16 @@ public:
 
 	~franka_control_client() noexcept;
 
+	/**
+	 * Sends a command to the server and awaits its reply.
+	 *
+	 * Commands are simple record types that are convertible to json using a custom 'to_json' function.
+	 * Each command must specify a response type as `response_type` alias declaration. This type must be
+	 * default constructable and json convertible with a 'from_json' function.
+	 *
+	 * Throws network_exception if the transmission fails.
+	 * Throws command_exception if the response could not be parsed.
+	 */
 	template<typename TCommandType>
 	typename TCommandType::response_type send_command(const TCommandType& command, float timeout_seconds = 1.f)
 	{

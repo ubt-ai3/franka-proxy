@@ -3,7 +3,7 @@
  *
  * @file franka_proxy_commands.hpp
  *
- * Commands/Replies that are sent to/received by the proxy server.
+ * Commands/Responses that are sent to/received by the proxy server.
  *
  ************************************************************************/
 

@@ -37,14 +37,46 @@ namespace
 		{
 			return functor(std::forward<TArgs>(args)...);
 		}
-		catch (const franka::ControlException&) { return command_generic_response{ command_result::control_exception }; }
-		catch (const franka::CommandException&) { return command_generic_response{ command_result::command_exception }; }
-		catch (const franka::NetworkException&) { return command_generic_response{ command_result::network_exception }; }
-		catch (const franka::RealtimeException&) { return command_generic_response{ command_result::realtime_exception }; }
-		catch (const franka::ModelException&) { return command_generic_response{ command_result::model_exception }; }
-		catch (const franka::ProtocolException&) { return command_generic_response{ command_result::protocol_exception }; }
-		catch (const franka::IncompatibleVersionException&) { return command_generic_response{ command_result::incompatible_version }; }
-		catch (const franka::Exception&) { return command_generic_response{ command_result::franka_exception };  }
+		catch (const franka::ControlException&)
+		{
+			std::cout << "franka_control_server::receive_requests(): " << "Encountered control exception." << std::endl;
+			return command_generic_response{ command_result::control_exception };
+		}
+		catch (const franka::CommandException&)
+		{
+			std::cout << "franka_control_server::receive_requests(): " << "Encountered command exception." << std::endl;
+			return command_generic_response{ command_result::command_exception };
+		}
+		catch (const franka::NetworkException&)
+		{
+			std::cout << "franka_control_server::receive_requests(): " << "Encountered command exception." << std::endl;
+			return command_generic_response{ command_result::network_exception };
+		}
+		catch (const franka::RealtimeException&)
+		{
+			std::cout << "franka_control_server::receive_requests(): " << "Encountered realtime exception." << std::endl;
+			return command_generic_response{ command_result::realtime_exception };
+		}
+		catch (const franka::ModelException&)
+		{
+			std::cout << "franka_control_server::receive_requests(): " << "Encountered model exception." << std::endl;
+			return command_generic_response{ command_result::model_exception };
+		}
+		catch (const franka::ProtocolException&)
+		{
+			std::cout << "franka_control_server::receive_requests(): " << "Encountered protocol exception." << std::endl;
+			return command_generic_response{ command_result::protocol_exception };
+		}
+		catch (const franka::IncompatibleVersionException&)
+		{
+			std::cout << "franka_control_server::receive_requests(): " << "Encountered incompatible version exception." << std::endl;
+			return command_generic_response{ command_result::incompatible_version };
+		}
+		catch (const franka::Exception&)
+		{
+			std::cout << "franka_control_server::receive_requests(): " << "Encountered generic franka exception." << std::endl;
+			return command_generic_response{ command_result::franka_exception };
+		}
 	}
 
 	
@@ -271,6 +303,9 @@ void franka_control_server::receive_requests()
 	const auto message = nlohmann::json::parse(content);
 	const auto fit = _command_handlers.find(message.value("type", ""));
 	if (fit == _command_handlers.end()) {
+		std::cout << "franka_control_server::receive_requests(): "
+				<< "Received unknown command of type: " << message.value("type", "") << std::endl;
+		
 		command_generic_response response{ command_result::unknown_command };
 		send_response(response);
 		return;

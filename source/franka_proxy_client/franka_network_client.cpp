@@ -183,6 +183,12 @@ nlohmann::json franka_control_client::send_json(
         std::cerr << "franka_control_client::send_json(): Failed to send.";
         throw network_exception();
     }
+	catch(const nlohmann::json::exception&)
+	{
+		connection_.reset();
+		std::cerr << "franka_control_clinet::send_json(): Failed to parse response.";
+		throw command_exception();
+	}
 }
 
 std::unique_ptr<asio::ip::tcp::socket> franka_control_client::connect
