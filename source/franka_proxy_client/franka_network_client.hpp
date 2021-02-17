@@ -18,7 +18,7 @@
 #include <vector>
 
 #include <franka_proxy_share/asio_forward.hpp>
-#include <franka_proxy_share/franka_proxy_messages.hpp>
+#include <franka_proxy_share/franka_proxy_commands.hpp>
 
 #include <nlohmann/json.hpp>
 
@@ -47,7 +47,7 @@ public:
 
 	void update_messages();
 
-	const std::list<message_robot_state>& states() const noexcept;
+	const std::list<command_get_config_response>& states() const noexcept;
 	void clear_states() noexcept;
 
 
@@ -70,7 +70,7 @@ private:
 
 	std::string messages_buffer_;
 	std::list<std::string> messages_;
-	std::list<message_robot_state> states_;
+	std::list<command_get_config_response> states_;
 };
 
 

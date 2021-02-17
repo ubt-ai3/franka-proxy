@@ -363,6 +363,8 @@ void from_json(const nlohmann::json& json, command_generic_response& object);
  *
  * Requests the current state of robot.
  *
+ * Note: Currently not used.
+ *
  ************************************************************************/
 struct command_get_config
 {

@@ -12,7 +12,6 @@
 #define INCLUDED__FRANKA_PROXY__FRANKA_NETWORK_CONTROL_SERVER_HPP
 
 #include <franka_proxy/franka_hardware_controller.hpp>
-#include <franka_proxy_share/franka_proxy_messages.hpp>
 #include <franka_proxy_share/franka_proxy_commands.hpp>
 
 #include <map>

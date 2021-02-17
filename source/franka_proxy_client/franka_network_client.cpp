@@ -77,7 +77,7 @@ void franka_state_client::update_messages()
 	}
 }
 
-const std::list<message_robot_state>& franka_state_client::states() const noexcept
+const std::list<command_get_config_response>& franka_state_client::states() const noexcept
 {
 	return states_;
 }
@@ -97,7 +97,7 @@ void franka_state_client::update_messages_buffer()
 	asio::read(*connection_, asio::buffer(buffer));
 
 	try {
-		const auto state = nlohmann::json::parse(buffer).get<message_robot_state>();
+		const auto state = nlohmann::json::parse(buffer).get<command_get_config_response>();
 		states_.push_back(state);
 	}
 	catch (...) {

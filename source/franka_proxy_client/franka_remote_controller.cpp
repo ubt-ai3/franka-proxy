@@ -156,7 +156,7 @@ void franka_remote_controller::update()
 	for (const auto& state : socket_state_->states())
 	{
 		std::lock_guard lck(state_lock_);
-		current_config_ = state.q;
+		current_config_ = state.joint_configuration;
 		current_gripper_pos_ = static_cast<int>(state.width);
 		max_gripper_pos_ = static_cast<int>(state.max_width);
 		gripper_grasped_ = state.is_grasped;
