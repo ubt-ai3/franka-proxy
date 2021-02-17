@@ -94,18 +94,22 @@ public:
 	~franka_control_client() noexcept;
 
 	/**
-	 * Sends a command to the server and awaits its reply.
+	 * Sends a command to the server and awaits its response.
 	 *
-	 * Commands are simple record types that are convertible to json using a custom 'to_json' function.
-	 * Each command must specify a response type as `response_type` alias declaration. This type must be
-	 * default constructable and json convertible with a 'from_json' function.
+	 * Commands are simple record types that are JSON convertible by providing a simple "to_json" function.
+	 * See "franka_proxy_commands.hpp" on details.
 	 *
-	 * Throws network_exception if the transmission fails.
-	 * Throws command_exception if the response could not be parsed.
+	 * Each command has a response type associated by declaring a "response_type" alias, which is then used
+	 * to decode the response to.
+	 *
+	 * Throws network_exception if the command transmission failed.
+	 * Throws bad_response_exception if the response failed to parse.
+	 *
+	 * 
 	 */
 	template<typename TCommandType>
 	typename TCommandType::response_type send_command(const TCommandType& command, float timeout_seconds = 1.f)
-	{
+	{		
 		return send_json(command, timeout_seconds).get<typename TCommandType::response_type>();
 	}
 
@@ -118,7 +122,6 @@ private:
 	
 	std::unique_ptr<asio_tcp_socket> connect
 		(const std::string& ip, std::uint16_t port);
-	
 
 	std::unique_ptr<asio::io_context> io_context_;
 

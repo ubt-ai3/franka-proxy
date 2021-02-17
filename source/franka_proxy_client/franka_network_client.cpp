@@ -181,13 +181,13 @@ nlohmann::json franka_control_client::send_json(
     {
         connection_.reset();
         std::cerr << "franka_control_client::send_json(): Failed to send.";
-        throw network_exception();
+        throw network_exception("Failed to send command.");
     }
 	catch(const nlohmann::json::exception&)
 	{
 		connection_.reset();
 		std::cerr << "franka_control_clinet::send_json(): Failed to parse response.";
-		throw command_exception();
+		throw command_exception("Failed to parse response from server.");
 	}
 }
 

@@ -186,10 +186,21 @@ private:
 		typename TCommandType::response_type
 	>;
 
-	
 	/**
 	 * Constructs an command in-place with given arguments, and checks the response code,
-	 * if the response if of type `command_generic_response`.
+	 * if the response is of type `command_generic_response`.
+	 *
+	 * If the response type is 'command_generic_response', then the following exceptions are thrown in addition:
+	 *
+	 * Throws model_exception, if the response indicates an error of this type.
+	 * Throws network_exception, if the response indicates an error of this type.
+	 * Throws protocol_exception, if the response indicates an error of this type.
+	 * Throws incompatible_version, if the response indicates an error of this type.
+	 * Throws control_exception, if the response indicates an error of this type.
+	 * Throws command_exception, if the response indicates an error of this type.
+	 * Throws realtime_exception, if the response indicates an error of this type.
+	 * Throws invalid_operation, if the response indicates an error of this type.
+	 * Throws unknown_command, if the response indicates an error of this type.
 	 */
 	template<typename TCommandType, typename... TArgs, typename TReturnType = TResponseType<TCommandType>>
 	TReturnType send_command(TArgs&&... args)
@@ -198,7 +209,7 @@ private:
 		auto response = socket_control_->send_command(cmd);
 
 		if constexpr (std::is_same_v<typename TCommandType::response_type, command_generic_response>)
-			return check_result(response.result);
+			return check_response(response);
 		else
 			return response;
 	}
@@ -207,7 +218,7 @@ private:
 	 * Checks whether the response indicates that the command was processed successfully.
 	 * Otherwise throws an exception indicated by the result code.
 	 */
-	static command_result check_result(command_result result);
+	static command_result check_response(command_generic_response& response);
 	
 	
 	void initialize_sockets();
