@@ -136,6 +136,8 @@ struct command_open_gripper
 {
 	using response_type = command_generic_response;
 	static constexpr char type[] = "gripper.open";
+
+	double speed;
 };
 
 void to_json(nlohmann::json& json, const command_open_gripper& object);
@@ -156,6 +158,8 @@ struct command_close_gripper
 {
 	using response_type = command_generic_response;
 	static constexpr char type[] = "gripper.close";
+
+	double speed;
 };
 
 void to_json(nlohmann::json& json, const command_close_gripper& object);

@@ -101,11 +101,14 @@ void from_json(const nlohmann::json& json, command_force_z& object)
 void to_json(nlohmann::json& json, const command_open_gripper& object)
 {
 	json["type"] = command_open_gripper::type;
+	json["speed"] = object.speed;
 }
 
 
 void from_json(const nlohmann::json& json, command_open_gripper& object)
-{}
+{
+	json.at("speed").get_to(object.speed);
+}
 
 
 //////////////////////////////////////////////////////////////////////////
@@ -118,11 +121,14 @@ void from_json(const nlohmann::json& json, command_open_gripper& object)
 void to_json(nlohmann::json& json, const command_close_gripper& object)
 {
 	json["type"] = command_close_gripper::type;
+	json["speed"] = object.speed;
 }
 
 	
 void from_json(const nlohmann::json& json, command_close_gripper& object)
-{}
+{
+	json.at("speed").get_to(object.speed);
+}
 
 
 //////////////////////////////////////////////////////////////////////////
