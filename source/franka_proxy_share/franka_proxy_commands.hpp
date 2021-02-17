@@ -346,6 +346,10 @@ struct command_generic_response
 	, reason{}
 	{}
 
+	command_generic_response(command_result result, std::string reason)
+	: result{result}
+	, reason{std::move(reason)}
+	{}
 	
 };
 

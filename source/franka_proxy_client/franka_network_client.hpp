@@ -15,7 +15,6 @@
 #include <list>
 #include <memory>
 #include <string>
-#include <vector>
 
 #include <franka_proxy_share/asio_forward.hpp>
 #include <franka_proxy_share/franka_proxy_commands.hpp>

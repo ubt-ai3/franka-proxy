@@ -37,45 +37,45 @@ namespace
 		{
 			return functor(std::forward<TArgs>(args)...);
 		}
-		catch (const franka::ControlException&)
+		catch (const franka::ControlException& exc)
 		{
 			std::cout << "franka_control_server::receive_requests(): " << "Encountered control exception." << std::endl;
-			return command_generic_response{ command_result::control_exception };
+			return command_generic_response{ command_result::control_exception, exc.what() };
 		}
-		catch (const franka::CommandException&)
+		catch (const franka::CommandException& exc)
 		{
 			std::cout << "franka_control_server::receive_requests(): " << "Encountered command exception." << std::endl;
-			return command_generic_response{ command_result::command_exception };
+			return command_generic_response{ command_result::command_exception, exc.what() };
 		}
-		catch (const franka::NetworkException&)
+		catch (const franka::NetworkException& exc)
 		{
 			std::cout << "franka_control_server::receive_requests(): " << "Encountered command exception." << std::endl;
-			return command_generic_response{ command_result::network_exception };
+			return command_generic_response{ command_result::network_exception, exc.what()};
 		}
-		catch (const franka::RealtimeException&)
+		catch (const franka::RealtimeException& exc)
 		{
 			std::cout << "franka_control_server::receive_requests(): " << "Encountered realtime exception." << std::endl;
-			return command_generic_response{ command_result::realtime_exception };
+			return command_generic_response{ command_result::realtime_exception, exc.what() };
 		}
-		catch (const franka::ModelException&)
+		catch (const franka::ModelException& exc)
 		{
 			std::cout << "franka_control_server::receive_requests(): " << "Encountered model exception." << std::endl;
-			return command_generic_response{ command_result::model_exception };
+			return command_generic_response{ command_result::model_exception, exc.what() };
 		}
-		catch (const franka::ProtocolException&)
+		catch (const franka::ProtocolException& exc)
 		{
 			std::cout << "franka_control_server::receive_requests(): " << "Encountered protocol exception." << std::endl;
-			return command_generic_response{ command_result::protocol_exception };
+			return command_generic_response{ command_result::protocol_exception, exc.what() };
 		}
-		catch (const franka::IncompatibleVersionException&)
+		catch (const franka::IncompatibleVersionException& exc)
 		{
 			std::cout << "franka_control_server::receive_requests(): " << "Encountered incompatible version exception." << std::endl;
-			return command_generic_response{ command_result::incompatible_version };
+			return command_generic_response{ command_result::incompatible_version, exc.what() };
 		}
-		catch (const franka::Exception&)
+		catch (const franka::Exception& exc)
 		{
 			std::cout << "franka_control_server::receive_requests(): " << "Encountered generic franka exception." << std::endl;
-			return command_generic_response{ command_result::franka_exception };
+			return command_generic_response{ command_result::franka_exception, exc.what() };
 		}
 	}
 
@@ -156,15 +156,15 @@ command_generic_response franka_control_server::process_command(const command_fo
 	return command_result::success;
 }
 
-command_generic_response franka_control_server::process_command(const command_open_gripper&)
+command_generic_response franka_control_server::process_command(const command_open_gripper& cmd)
 {
-	controller_.open_gripper();
+	controller_.open_gripper(cmd.speed ? cmd.speed : franka_hardware_controller::gripper_speed);
 	return command_result::success;
 }
 
-command_generic_response franka_control_server::process_command(const command_close_gripper&)
+command_generic_response franka_control_server::process_command(const command_close_gripper& cmd)
 {
-	controller_.close_gripper();
+	controller_.close_gripper(cmd.speed ? cmd.speed : franka_hardware_controller::gripper_speed);
 	return command_result::success;
 }
 
