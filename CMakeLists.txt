@@ -161,7 +161,7 @@ add_library(
 target_sources(
 	franka_proxy_share
 	PRIVATE
-		${CMAKE_CURRENT_SOURCE_DIR}/source/franka_proxy_share/franka_proxy_messages.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/source/franka_proxy_share/franka_proxy_commands.cpp
 )
 
 target_include_directories(
