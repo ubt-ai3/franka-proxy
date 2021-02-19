@@ -7,8 +7,10 @@
  *
  ************************************************************************/
 
+
 #if !defined(INCLUDED__FRANKA_PROXY_SHARE__FRANKA_PROXY_COMMANDS_HPP)
 #define INCLUDED__FRANKA_PROXY_SHARE__FRANKA_PROXY_COMMANDS_HPP
+
 
 #include <array>
 #include <cstdint>
@@ -17,20 +19,21 @@
 
 #include <nlohmann/json_fwd.hpp>
 
+
 namespace franka_proxy
 {
 
-	
+
 struct command_stop_recording_response;
-	
+
 struct command_generic_response;
 enum class command_result : std::uint8_t;
 
 struct command_get_config_response;
 
 
-	
-	
+
+
 /**
  *************************************************************************
  *
@@ -296,7 +299,7 @@ void from_json(const nlohmann::json& json, command_recover_from_errors& object);
 
 
 
-	
+
 /**
  *************************************************************************
  *
@@ -320,7 +323,9 @@ enum class command_result: std::uint8_t
 	franka_exception,
 	unknown_command
 };
-	
+
+
+
 
 /**
  *************************************************************************
@@ -405,7 +410,8 @@ void from_json(const nlohmann::json& json, command_get_config_response& object);
 
 
 
-	
+
 }
+
 
 #endif	// INCLUDED__FRANKA_PROXY_SHARE__FRANKA_PROXY_MESSAGES_HPP

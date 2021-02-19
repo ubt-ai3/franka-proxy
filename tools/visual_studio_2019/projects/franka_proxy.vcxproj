@@ -12,7 +12,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\source\franka_proxy\franka_hardware_controller.hpp" />
-    <ClInclude Include="..\..\..\source\franka_proxy\franka_motion_generator.hpp" />
     <ClInclude Include="..\..\..\source\franka_proxy\franka_motion_recorder.hpp" />
     <ClInclude Include="..\..\..\source\franka_proxy\franka_network_control_server.hpp" />
     <ClInclude Include="..\..\..\source\franka_proxy\franka_network_state_server.hpp" />
@@ -20,7 +19,6 @@
     <ClInclude Include="..\..\..\source\franka_proxy\motion_generator_force.hpp" />
     <ClInclude Include="..\..\..\source\franka_proxy\motion_generator_joint_max_accel.hpp" />
     <ClInclude Include="..\..\..\source\franka_proxy\motion_generator_seq_cart_vel_tau.hpp" />
-    <ClInclude Include="..\..\..\source\franka_proxy_share\franka_proxy_messages.hpp" />
     <ClInclude Include="..\..\..\source\jr3_ft_sensor\force_torque_sensor.hpp" />
     <ClInclude Include="..\..\..\source\jr3_ft_sensor\force_torque_sensor_JR3PCIIoctls.h" />
   </ItemGroup>

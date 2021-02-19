@@ -46,9 +46,7 @@ franka_remote_controller::~franka_remote_controller() noexcept
 
 
 void franka_remote_controller::move_to(const robot_config_7dof& target)
-{
-	send_command<command_move_to_config>(target);
-}
+	{ send_command<command_move_to_config>(target); }
 
 
 bool franka_remote_controller::move_to_until_contact
@@ -63,28 +61,19 @@ void franka_remote_controller::move_sequence
 	 const std::vector<std::array<double, 6>>& f_sequence,
 	 const std::vector<std::array<double, 6>>& selection_vector_sequence)
 {
-	send_command<command_move_hybrid_sequence>(q_sequence, f_sequence, selection_vector_sequence);
+	send_command<command_move_hybrid_sequence>
+		(q_sequence, f_sequence, selection_vector_sequence);
 }
 
 
-void franka_remote_controller::apply_z_force
-	(double mass,
-	 double duration)
-{
-	send_command<command_force_z>(mass, duration);
-}
-
+void franka_remote_controller::apply_z_force(double mass, double duration)
+	{ send_command<command_force_z>(mass, duration); }
 
 void franka_remote_controller::open_gripper()
-{
-	send_command<command_open_gripper>();
-}
-
+	{ send_command<command_open_gripper>(); }
 
 void franka_remote_controller::close_gripper()
-{
-	send_command<command_close_gripper>();
-}
+	{ send_command<command_close_gripper>(); }
 
 
 bool franka_remote_controller::grasp_gripper(double speed, double force)
@@ -94,15 +83,10 @@ bool franka_remote_controller::grasp_gripper(double speed, double force)
 
 
 void franka_remote_controller::set_speed_factor(double speed_factor)
-{
-	send_command<command_set_speed>(speed_factor);
-}
-
+	{ send_command<command_set_speed>(speed_factor); }
 
 void franka_remote_controller::automatic_error_recovery()
-{
-	send_command<command_recover_from_errors>();
-}
+	{ send_command<command_recover_from_errors>(); }
 
 
 robot_config_7dof franka_remote_controller::current_config() const
@@ -134,24 +118,21 @@ bool franka_remote_controller::gripper_grasped() const
 
 
 void franka_remote_controller::start_recording()
-{
-	send_command<command_start_recording>();
-}
+	{ send_command<command_start_recording>(); }
 
 
 std::pair<std::vector<std::array<double, 7>>, std::vector<std::array<double, 6>>>
 	franka_remote_controller::stop_recording()
 {
-	const auto&[q_sequence, f_sequence] = send_command<command_stop_recording>();	
+	auto[q_sequence, f_sequence] = send_command<command_stop_recording>();
 	return {q_sequence, f_sequence};
 }
 
 
 void franka_remote_controller::update()
 {
-	while (socket_state_->states().empty()) {
+	while (socket_state_->states().empty())
 		socket_state_->update_messages();
-	}
 
 	for (const auto& state : socket_state_->states())
 	{
@@ -214,5 +195,8 @@ void franka_remote_controller::shutdown_sockets() noexcept
 	socket_control_.reset();
 	socket_state_.reset();
 }
+
+
+
 
 } /* namespace franka_proxy */

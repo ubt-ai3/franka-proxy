@@ -83,7 +83,7 @@ void franka_state_server::task_main()
 		}
 
 		try
-		{			
+		{
 			// Copy status
 			const franka::RobotState robot_state = controller_.robot_state();
 			const franka::GripperState gripper_state = controller_.gripper_state();
@@ -98,7 +98,7 @@ void franka_state_server::task_main()
 			const std::uint64_t content_length = content.size();
 
 			asio::write(*connection_, asio::buffer(&content_length, sizeof(std::uint64_t)));
-			asio::write(*connection_, asio::buffer(content));			
+			asio::write(*connection_, asio::buffer(content));
 		}
 
 		catch (const asio::system_error& exc)

@@ -77,17 +77,20 @@ void franka_state_client::update_messages()
 	}
 }
 
+
 const std::list<command_get_config_response>& franka_state_client::states() const noexcept
 {
 	return states_;
 }
 
+
 void franka_state_client::clear_states() noexcept {
 	states_.clear();
 }
 
+
 void franka_state_client::update_messages_buffer()
-{;
+{
 	std::uint64_t content_length;
 	asio::read(*connection_, asio::buffer(&content_length, sizeof(std::uint64_t)));
 
@@ -96,16 +99,19 @@ void franka_state_client::update_messages_buffer()
 
 	asio::read(*connection_, asio::buffer(buffer));
 
-	try {
+	try
+	{
 		const auto state = nlohmann::json::parse(buffer).get<command_get_config_response>();
 		states_.push_back(state);
 	}
-	catch (...) {
+	catch (...)
+	{
 		std::cerr << "franka_state_client::update_messages_buffer(): " 
 			<< "State message discarted due to bad JSON." 
 			<< std::endl;
 	}
 }
+
 
 std::unique_ptr<asio::ip::tcp::socket> franka_state_client::connect
 	(const std::string& ip, std::uint16_t port)
@@ -145,44 +151,38 @@ franka_control_client::~franka_control_client() noexcept
 	// Enforce explicit destructor instantiation.
 }
 
-nlohmann::json franka_control_client::send_json(
-    const nlohmann::json& json,
-    float timeout_seconds
-) {
-    try 
-    {
-        if(!connection_)
-            connection_ = connect(remote_ip_, remote_port_);     
 
-        std::string message = json.dump();
-        std::uint64_t content_length = message.size();
-        asio::write(
-            *connection_, 
-            asio::buffer(
-                &content_length, 
-                sizeof(std::uint64_t)
-            )
-        );
-    
-        asio::write(
-            *connection_,
-            asio::buffer(message)
-		);
+nlohmann::json franka_control_client::send_json
+	(const nlohmann::json& json, float timeout_seconds)
+{
+	try
+	{
+		if(!connection_)
+			connection_ = connect(remote_ip_, remote_port_);
 
-		asio::read(*connection_, asio::buffer(&content_length, sizeof(std::uint64_t)));
+		std::string message = json.dump();
+		std::uint64_t content_length = message.size();
+		asio::write
+			(*connection_,
+			 asio::buffer(&content_length, sizeof(std::uint64_t)));
+
+		asio::write(*connection_, asio::buffer(message));
+
+		asio::read
+			(*connection_, asio::buffer(&content_length, sizeof(std::uint64_t)));
 
 		std::string response{};
 		response.resize(content_length);
 		asio::read(*connection_, asio::buffer(response));
 
 		return nlohmann::json::parse(response);
-    } 
+	}
 	catch(const asio::system_error&)
-    {
-        connection_.reset();
-        std::cerr << "franka_control_client::send_json(): Failed to send.";
-        throw network_exception("Failed to send command.");
-    }
+	{
+		connection_.reset();
+		std::cerr << "franka_control_client::send_json(): Failed to send.";
+		throw network_exception("Failed to send command.");
+	}
 	catch(const nlohmann::json::exception&)
 	{
 		connection_.reset();
@@ -190,6 +190,7 @@ nlohmann::json franka_control_client::send_json(
 		throw command_exception("Failed to parse response from server.");
 	}
 }
+
 
 std::unique_ptr<asio::ip::tcp::socket> franka_control_client::connect
 	(const std::string& ip, std::uint16_t port)

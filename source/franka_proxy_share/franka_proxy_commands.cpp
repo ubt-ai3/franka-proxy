@@ -1,8 +1,21 @@
+/**
+ *************************************************************************
+ *
+ * @file franka_proxy_commands.cpp
+ *
+ * Commands/Responses that are sent to/received by the proxy server,
+ * implementation.
+ *
+ ************************************************************************/
+
+
 #include "franka_proxy_commands.hpp"
 
 #include <nlohmann/json.hpp>
 
-namespace franka_proxy {
+
+namespace franka_proxy
+{
 
 
 //////////////////////////////////////////////////////////////////////////
@@ -20,9 +33,7 @@ void to_json(nlohmann::json& json, const command_move_to_config& object)
 
 
 void from_json(const nlohmann::json& json, command_move_to_config& object)
-{
-	json.at("target").get_to(object.target_joint_config);
-}
+	{ json.at("target").get_to(object.target_joint_config); }
 
 
 //////////////////////////////////////////////////////////////////////////
@@ -31,27 +42,27 @@ void from_json(const nlohmann::json& json, command_move_to_config& object)
 //
 //////////////////////////////////////////////////////////////////////////
 
-	
+
 void to_json(nlohmann::json& json, const command_move_until_contact& object)
 {
 	json["type"] = command_move_to_config::type;
 	json["target"] = object.target_joint_config;
 }
 
-	
-void from_json(const nlohmann::json& json, command_move_until_contact& object)
-{
-	json.at("target").get_to(object.target_joint_config);
-}
 
-	
+void from_json(const nlohmann::json& json, command_move_until_contact& object)
+	{ json.at("target").get_to(object.target_joint_config); }
+
+
+
+
 //////////////////////////////////////////////////////////////////////////
 //
 // command_move_hybrid_sequence
 //
 //////////////////////////////////////////////////////////////////////////
 
-	
+
 void to_json(nlohmann::json& json, const command_move_hybrid_sequence& object)
 {
 	json["type"] = command_move_hybrid_sequence::type;
@@ -59,7 +70,7 @@ void to_json(nlohmann::json& json, const command_move_hybrid_sequence& object)
 	json["force_sequence"] = object.force_sequence;
 	json["selection_sequence"] = object.selection_sequence;
 }
-	
+
 
 void from_json(const nlohmann::json& json, command_move_hybrid_sequence& object)
 {
@@ -68,14 +79,16 @@ void from_json(const nlohmann::json& json, command_move_hybrid_sequence& object)
 	json.at("selection_sequence").get_to(object.selection_sequence);
 }
 
-	
+
+
+
 //////////////////////////////////////////////////////////////////////////
 //
 // command_force_z
 //
 //////////////////////////////////////////////////////////////////////////
 
-	
+
 void to_json(nlohmann::json& json, const command_force_z& object)
 {
 	json["type"] = command_force_z::type;
@@ -91,13 +104,15 @@ void from_json(const nlohmann::json& json, command_force_z& object)
 }
 
 
+
+
 //////////////////////////////////////////////////////////////////////////
 //
 // command_open_gripper
 //
 //////////////////////////////////////////////////////////////////////////
 
-	
+
 void to_json(nlohmann::json& json, const command_open_gripper& object)
 {
 	json["type"] = command_open_gripper::type;
@@ -106,9 +121,9 @@ void to_json(nlohmann::json& json, const command_open_gripper& object)
 
 
 void from_json(const nlohmann::json& json, command_open_gripper& object)
-{
-	json.at("speed").get_to(object.speed);
-}
+	{ json.at("speed").get_to(object.speed); }
+
+
 
 
 //////////////////////////////////////////////////////////////////////////
@@ -126,9 +141,9 @@ void to_json(nlohmann::json& json, const command_close_gripper& object)
 
 	
 void from_json(const nlohmann::json& json, command_close_gripper& object)
-{
-	json.at("speed").get_to(object.speed);
-}
+	{ json.at("speed").get_to(object.speed); }
+
+
 
 
 //////////////////////////////////////////////////////////////////////////
@@ -153,23 +168,24 @@ void from_json(const nlohmann::json& json, command_grasp_gripper& object)
 }
 
 
+
+
 //////////////////////////////////////////////////////////////////////////
 //
 // command_start_recording
 //
 //////////////////////////////////////////////////////////////////////////
 
-	
+
 void to_json(nlohmann::json& json, const command_start_recording& object)
-{
-	json["type"] = command_start_recording::type;
-}
+	{ json["type"] = command_start_recording::type; }
 
 
 void from_json(const nlohmann::json& json, command_start_recording& object)
-{
-}
-	
+	{}
+
+
+
 
 //////////////////////////////////////////////////////////////////////////
 //
@@ -179,14 +195,13 @@ void from_json(const nlohmann::json& json, command_start_recording& object)
 
 	
 void to_json(nlohmann::json& json, const command_stop_recording& object)
-{
-	json["type"] = command_stop_recording::type;
-}
+	{ json["type"] = command_stop_recording::type; }
 
 
 void from_json(const nlohmann::json& json, command_stop_recording& object)
-{
-}
+	{}
+
+
 
 
 //////////////////////////////////////////////////////////////////////////
@@ -209,7 +224,9 @@ void from_json(const nlohmann::json& json, command_stop_recording_response& obje
 	json.at("force_sequence").get_to(object.force_sequence);
 }
 
-	
+
+
+
 //////////////////////////////////////////////////////////////////////////
 //
 // command_set_speed
@@ -225,9 +242,9 @@ void to_json(nlohmann::json& json, const command_set_speed& object)
 
 	
 void from_json(const nlohmann::json& json, command_set_speed& object)
-{
-	json.at("speed").get_to(object.speed);
-}
+	{ json.at("speed").get_to(object.speed); }
+
+
 
 
 //////////////////////////////////////////////////////////////////////////
@@ -238,16 +255,15 @@ void from_json(const nlohmann::json& json, command_set_speed& object)
 
 	
 void to_json(nlohmann::json& json, const command_recover_from_errors& object)
-{
-	json["type"] = command_recover_from_errors::type;
-}
+	{ json["type"] = command_recover_from_errors::type; }
 
 
 void from_json(const nlohmann::json& json, command_recover_from_errors& object)
-{
-}
+{}
 
-	
+
+
+
 //////////////////////////////////////////////////////////////////////////
 //
 // command_generic_response
@@ -270,6 +286,8 @@ void from_json(const nlohmann::json& json, command_generic_response& object)
 }
 
 
+
+
 //////////////////////////////////////////////////////////////////////////
 //
 // command_get_config
@@ -278,14 +296,12 @@ void from_json(const nlohmann::json& json, command_generic_response& object)
 
 
 void to_json(nlohmann::json& json, const command_get_config& object)
-{
-	json["type"] = command_get_config::type;
-}
+	{ json["type"] = command_get_config::type; }
 
 
-void from_json(const nlohmann::json& json, command_get_config& object)
-{
-}
+void from_json(const nlohmann::json& json, command_get_config& object) {}
+
+
 
 
 //////////////////////////////////////////////////////////////////////////
@@ -312,6 +328,8 @@ void from_json(const nlohmann::json& json, command_get_config_response& object)
 	json.at("max_width").get_to(object.max_width);
 	json.at("is_grasped").get_to(object.is_grasped);
 }
+
+
 
 
 } /* namespace franka_proxy */

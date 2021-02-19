@@ -48,48 +48,45 @@ public:
 
 
 private:
-    command_generic_response process_command(const command_move_to_config&);
-    command_generic_response process_command(const command_move_hybrid_sequence&);
-    command_generic_response process_command(const command_move_until_contact&);
-    command_generic_response process_command(const command_force_z&);
-    command_generic_response process_command(const command_open_gripper&);
-    command_generic_response process_command(const command_close_gripper&);
-    command_generic_response process_command(const command_grasp_gripper&);
-    command_generic_response process_command(const command_start_recording&);
-    command_stop_recording_response process_command(const command_stop_recording&);
-    command_generic_response process_command(const command_set_speed&);
-    command_generic_response process_command(const command_recover_from_errors&);
 
-    using command_handler = nlohmann::json(*)(franka_control_server* self, const nlohmann::json&);
-	
-    template<class TCommandType>
-	void register_command_handler()
-    {
-        std::string_view type{ TCommandType::type };
-        command_handler handler = [](franka_control_server* self, const nlohmann::json& json) -> nlohmann::json
-        {
-            static_assert(
-                std::is_same_v<
-					decltype(self->process_command(std::declval<TCommandType>())), 
-					typename TCommandType::response_type
-                >,
-                "A command handler's return type must match the response type associated with the command."
-            );
-        	
-            return self->process_command(json.get<TCommandType>());
-        };
-    	
-        _command_handlers[TCommandType::type] = handler;
-    }
+	using command_handler = nlohmann::json(*)(franka_control_server* self, const nlohmann::json&);
 
+	template<class TCommandType>
+		void register_command_handler()
+	{
+		std::string_view type{ TCommandType::type };
+		command_handler handler =
+			[](franka_control_server* self, const nlohmann::json& json) -> nlohmann::json
+		{
+			static_assert
+				(std::is_same_v
+					<decltype(self->process_command(std::declval<TCommandType>())),
+					 typename TCommandType::response_type>,
+				 "A command handler's return type must match the response type associated with the command.");
 
-    std::map<std::string_view, command_handler> _command_handlers;
+			return self->process_command(json.get<TCommandType>());
+		};
+
+		command_handlers_[TCommandType::type] = handler;
+	}
 
 	void task_main();
 
 	asio::ip::tcp::acceptor create_server(std::uint16_t control_port_);
 
 	void receive_requests();
+
+	command_generic_response process_command(const command_move_to_config&);
+	command_generic_response process_command(const command_move_hybrid_sequence&);
+	command_generic_response process_command(const command_move_until_contact&);
+	command_generic_response process_command(const command_force_z&);
+	command_generic_response process_command(const command_open_gripper&);
+	command_generic_response process_command(const command_close_gripper&);
+	command_generic_response process_command(const command_grasp_gripper&);
+	command_generic_response process_command(const command_start_recording&);
+	command_stop_recording_response process_command(const command_stop_recording&);
+	command_generic_response process_command(const command_set_speed&);
+	command_generic_response process_command(const command_recover_from_errors&);
 
 	franka_hardware_controller& controller_;
 
@@ -101,6 +98,8 @@ private:
 
 	std::thread internal_thread_;
 	std::atomic_bool terminate_internal_thread_;
+
+	std::map<std::string_view, command_handler> command_handlers_;
 
 	static constexpr float sleep_seconds_disconnected_ = 0.033f; // todo 30hz?
 	static constexpr float sleep_seconds_connected_ = 0.002f; // todo <16ms?

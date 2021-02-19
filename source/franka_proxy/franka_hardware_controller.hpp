@@ -43,7 +43,6 @@ using robot_force_selection = std::array<double, 6>;
 class franka_hardware_controller
 {
 public:
-	static constexpr double gripper_speed = 0.025;
 
 	franka_hardware_controller
 		(const std::string& controller_ip);
@@ -72,9 +71,9 @@ public:
 
 
 	/** Move the gripper to gripper::max_width. */
-	void open_gripper(double speed = gripper_speed);
+	void open_gripper(double speed = default_gripper_speed);
 	/** Move the gripper to gripper::min_grasp_width. */
-	void close_gripper(double speed = gripper_speed);
+	void close_gripper(double speed = default_gripper_speed);
 	/** Grasp. */
 	bool grasp_gripper(double speed, double force);
 
@@ -109,6 +108,9 @@ public:
 		const std::vector<robot_config_7dof>& q_sequence,
 		const std::vector<robot_force_config>& f_sequence,
 		const std::vector<robot_force_selection>& selection_vector);
+
+
+	static constexpr double default_gripper_speed = 0.025;
 
 
 private:
