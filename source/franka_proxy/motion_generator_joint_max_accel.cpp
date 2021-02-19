@@ -9,10 +9,7 @@
  ************************************************************************/
 
 
-#include <franka_proxy/motion_generator_joint_max_accel.hpp>
-
-#include <utility>
-#include <iostream>
+#include "motion_generator_joint_max_accel.hpp"
 
 #include <Eigen/Dense>
 

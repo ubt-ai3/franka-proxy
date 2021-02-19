@@ -8,15 +8,13 @@
  ************************************************************************/
 
 
-#include <franka_proxy_client/franka_network_client.hpp>
-#include <franka_proxy_client/exception.hpp>
+#include "franka_network_client.hpp"
 
 #include <array>
+#include <iostream>
 #include <string>
 #include <thread>
 #include <utility>
-#include <vector>
-#include <iostream>
 
 #include <asio/connect.hpp>
 #include <asio/read.hpp>
@@ -24,6 +22,8 @@
 #include <asio/ip/tcp.hpp>
 
 #include <nlohmann/json.hpp>
+
+#include "exception.hpp"
 
 
 namespace franka_proxy

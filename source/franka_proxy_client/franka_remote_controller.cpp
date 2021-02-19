@@ -7,14 +7,17 @@
  *
  ************************************************************************/
 
-#include <franka_proxy_share/franka_proxy_commands.hpp>
 
-#include <franka_proxy_client/franka_remote_controller.hpp>
-#include <franka_proxy_client/exception.hpp>
+#include "franka_remote_controller.hpp"
 
 #include <iostream>
 #include <list>
 #include <utility>
+
+#include <franka_proxy_share/franka_proxy_commands.hpp>
+
+#include "exception.hpp"
+
 
 namespace franka_proxy
 {

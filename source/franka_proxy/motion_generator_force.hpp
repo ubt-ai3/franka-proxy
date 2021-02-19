@@ -11,7 +11,7 @@
 #if !defined(INCLUDED__FRANKA_PROXY__FRANKA_MOTION_GENERATOR_HPP)
 #define INCLUDED__FRANKA_PROXY__FRANKA_MOTION_GENERATOR_HPP
 
-#include <atomic>
+
 #include <vector>
 
 #include <Eigen/Geometry>

@@ -16,8 +16,10 @@
 #include <mutex>
 #include <string>
 
-#include <franka_proxy_client/franka_network_client.hpp>
 #include <franka_proxy_share/franka_proxy_commands.hpp>
+
+#include "franka_network_client.hpp"
+
 
 namespace franka_proxy
 {

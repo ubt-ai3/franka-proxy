@@ -12,9 +12,9 @@
 #define INCLUDED__FRANKA_PROXY__FRANKA_PROXY_HPP
 
 
-#include <franka_proxy/franka_hardware_controller.hpp>
-#include <franka_proxy/franka_network_control_server.hpp>
-#include <franka_proxy/franka_network_state_server.hpp>
+#include "franka_hardware_controller.hpp"
+#include "franka_network_control_server.hpp"
+#include "franka_network_state_server.hpp"
 
 
 namespace franka_proxy

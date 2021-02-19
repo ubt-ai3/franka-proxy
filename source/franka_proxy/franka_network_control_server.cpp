@@ -8,7 +8,7 @@
  ************************************************************************/
 
 
-#include <franka_proxy/franka_network_control_server.hpp>
+#include "franka_network_control_server.hpp"
 
 #include <exception>
 #include <string>
@@ -16,10 +16,9 @@
 #include <iostream>
 
 #include <asio/read.hpp>
-#include <asio/write.hpp>
 
+#include <franka/exception.h>
 #include <franka/robot_state.h>
-#include <franka/gripper_state.h>
 
 #include <nlohmann/json.hpp>
 

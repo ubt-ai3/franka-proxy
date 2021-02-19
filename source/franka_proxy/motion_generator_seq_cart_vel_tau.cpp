@@ -8,7 +8,7 @@
  ************************************************************************/
 
 
-#include <franka_proxy/motion_generator_seq_cart_vel_tau.hpp>
+#include "motion_generator_seq_cart_vel_tau.hpp"
 
 #include <utility>
 #include <iostream>

@@ -9,18 +9,18 @@
 
 
 #include "franka_network_state_server.hpp"
-#include <franka_proxy_share/franka_proxy_commands.hpp>
 
 #include <string>
 #include <iostream>
 
 #include <asio/write.hpp>
-#include <asio/read.hpp>
 
 #include <franka/robot_state.h>
 #include <franka/gripper_state.h>
 
 #include <nlohmann/json.hpp>
+
+#include <franka_proxy_share/franka_proxy_commands.hpp>
 
 
 namespace franka_proxy

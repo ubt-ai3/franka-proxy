@@ -20,7 +20,7 @@
 #include <franka/robot.h>
 #include <franka/gripper.h>
 
-#include <franka_proxy/franka_motion_recorder.hpp>
+#include "franka_motion_recorder.hpp"
 
 
 namespace franka_proxy
