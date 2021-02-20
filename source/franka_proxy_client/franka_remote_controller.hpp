@@ -100,13 +100,13 @@ public:
 	 * @throw remote_exception if the movement was unsuccessful.
 	 * @throw viral_core::network_exception if the connection was lost.
 	 */
-	void open_gripper();
+	void open_gripper(double speed = 0);
 	
 	
 	/**
 	 * todo
 	 */
-	void close_gripper();
+	void close_gripper(double speed = 0);
 
 
 	/**

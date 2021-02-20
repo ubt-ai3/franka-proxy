@@ -72,11 +72,11 @@ void franka_remote_controller::move_sequence
 void franka_remote_controller::apply_z_force(double mass, double duration)
 	{ send_command<command_force_z>(mass, duration); }
 
-void franka_remote_controller::open_gripper()
-	{ send_command<command_open_gripper>(); }
+void franka_remote_controller::open_gripper(double speed)
+	{ send_command<command_open_gripper>(speed); }
 
-void franka_remote_controller::close_gripper()
-	{ send_command<command_close_gripper>(); }
+void franka_remote_controller::close_gripper(double speed)
+	{ send_command<command_close_gripper>(speed); }
 
 
 bool franka_remote_controller::grasp_gripper(double speed, double force)
