@@ -16,12 +16,73 @@
 #include <iostream>
 
 #include <asio/read.hpp>
-#include <asio/write.hpp>
 
+#include <franka/exception.h>
 #include <franka/robot_state.h>
-#include <franka/gripper_state.h>
 
-#include "franka_proxy_share/franka_proxy_messages.hpp"
+#include <nlohmann/json.hpp>
+
+
+namespace
+{
+	using namespace franka_proxy;
+
+	/**
+	 * Executes a given functor with given arguments and decays exceptions to meaningful responses.
+	 */
+	template<typename TFunctor, typename... TArgs>
+	nlohmann::json execute_safe(TFunctor functor, TArgs... args)
+	{
+		try
+		{
+			return functor(std::forward<TArgs>(args)...);
+		}
+		catch (const franka::ControlException& exc)
+		{
+			std::cout << "franka_control_server::receive_requests(): " << "Encountered control exception." << std::endl;
+			return command_generic_response{ command_result::control_exception, exc.what() };
+		}
+		catch (const franka::CommandException& exc)
+		{
+			std::cout << "franka_control_server::receive_requests(): " << "Encountered command exception." << std::endl;
+			return command_generic_response{ command_result::command_exception, exc.what() };
+		}
+		catch (const franka::NetworkException& exc)
+		{
+			std::cout << "franka_control_server::receive_requests(): " << "Encountered command exception." << std::endl;
+			return command_generic_response{ command_result::network_exception, exc.what()};
+		}
+		catch (const franka::RealtimeException& exc)
+		{
+			std::cout << "franka_control_server::receive_requests(): " << "Encountered realtime exception." << std::endl;
+			return command_generic_response{ command_result::realtime_exception, exc.what() };
+		}
+		catch (const franka::ModelException& exc)
+		{
+			std::cout << "franka_control_server::receive_requests(): " << "Encountered model exception." << std::endl;
+			return command_generic_response{ command_result::model_exception, exc.what() };
+		}
+		catch (const franka::ProtocolException& exc)
+		{
+			std::cout << "franka_control_server::receive_requests(): " << "Encountered protocol exception." << std::endl;
+			return command_generic_response{ command_result::protocol_exception, exc.what() };
+		}
+		catch (const franka::IncompatibleVersionException& exc)
+		{
+			std::cout << "franka_control_server::receive_requests(): " << "Encountered incompatible version exception." << std::endl;
+			return command_generic_response{ command_result::incompatible_version, exc.what() };
+		}
+		catch (const franka::Exception& exc)
+		{
+			std::cout << "franka_control_server::receive_requests(): " << "Encountered generic franka exception." << std::endl;
+			return command_generic_response{ command_result::franka_exception, exc.what() };
+		}
+	}
+
+	
+}
+
+
 
 
 namespace franka_proxy
@@ -40,11 +101,22 @@ franka_control_server::franka_control_server
 	 franka_hardware_controller& controller)
 	:
 	controller_(controller),
-
 	server_(create_server(control_port)),
-
 	terminate_internal_thread_(false)
 {
+	// Register command handlers.
+	register_command_handler<command_move_to_config>();
+	register_command_handler<command_move_hybrid_sequence>();
+	register_command_handler<command_move_until_contact>();
+	register_command_handler<command_force_z>();
+	register_command_handler<command_open_gripper>();
+	register_command_handler<command_close_gripper>();
+	register_command_handler<command_grasp_gripper>();
+	register_command_handler<command_start_recording>();
+	register_command_handler<command_stop_recording>();
+	register_command_handler<command_set_speed>();
+	register_command_handler<command_recover_from_errors>();
+
 	internal_thread_ = std::thread([this]{task_main();});
 }
 
@@ -99,7 +171,6 @@ void franka_control_server::task_main()
 				std::cout << " The connection timed out. Dropping stream and stopping robot." << std::endl;
 			else
 				std::cout << "Unknown connection error. Dropping stream and stopping robot." << std::endl;
-
 			controller_.stop_movement();
 			connection_.reset();
 		}
@@ -143,447 +214,133 @@ asio::ip::tcp::acceptor franka_control_server::create_server
 
 void franka_control_server::receive_requests()
 {
-	// Receive input into string buffer.
-	std::string receive_buffer(receive_buffer_size_, '\0');
-	std::size_t bytes_received =
-		connection_->read_some(asio::buffer(receive_buffer));
-	
-	messages_buffer_ +=
-		std::string(receive_buffer, 0, bytes_received);
+	std::uint64_t content_length;
+	asio::read
+		(*connection_, asio::buffer(&content_length, sizeof(std::uint64_t)));
 
-	// Recover one completely transmitted request,
-	// and remove it from the network stream.
+	std::string content{};
+	content.resize(content_length);
+	asio::read(*connection_, asio::buffer(content));
 
-	// Extract full request up to next end marker.
-	// Transferring the request has not yet finished
-	// if there is no (further) end marker.
-	while(true)
+	const auto send_response =
+		[&](const nlohmann::json& response)
 	{
-		std::size_t end_index =
-			messages_buffer_.find(franka_proxy_messages::command_end_marker);
+		const std::string dump = response.dump();
+		const std::uint64_t content_length = dump.size();
 
-		if (end_index == std::string::npos)
-			return;
-
-		std::string request_string
-		(messages_buffer_.substr(0, end_index));
-
-		// Remove request from network stream.
-		messages_buffer_ =
-			messages_buffer_.substr(end_index + 1);
-
-		process_request(request_string);
-	}
-}
-
-
-void franka_control_server::process_request(const std::string& request)
-{
-	std::size_t pos = std::string::npos;
-	franka_proxy_messages::command_type type = franka_proxy_messages::message_type_count;
-	for (int i = 0; i < franka_proxy_messages::message_type_count; ++i)
-	{
-		pos = request.find(franka_proxy_messages::command_strings[i]);
-		if (pos != std::string::npos)
-		{
-			type = franka_proxy_messages::command_type(i);
-			break;
-		}
-	}
-
-	if (type >= franka_proxy_messages::message_type_count)
-	{
-		std::cerr << "franka_control_server::process_request(): " <<
-			"Invalid message: " << request << std::endl;
-		return;
-	}
-	
-	std::cout << "franka_control_server::process_request(): " << request << std::endl;
-
-	std::string parameters;
-	const std::size_t command_string_size =
-		std::strlen(franka_proxy_messages::command_strings[type]);
-	if (request.size() > pos + command_string_size + 1)
-		parameters = request.substr(pos + command_string_size + 1);
-	
-	auto send_response = [this](unsigned char response)
-	{
-		unsigned char msg[1]; msg[0] = response;
-		std::cout << "franka_control_server::process_request(): Sending response: " <<
-			static_cast<int>(msg[0]) << std::endl;
-		connection_->send(asio::buffer(msg));
+		connection_->send(asio::buffer(&content_length, sizeof(std::uint64_t)));
+		connection_->send(asio::buffer(dump));
 	};
 
-	switch (type)
-	{
-		case franka_proxy_messages::move_ptp:
-		{
-			std::cout << "franka_control_server::process_request(): " << "Moving";
-
-			robot_config_7dof joint_config =
-				string_to_robot_config(parameters, " ");
-
-			unsigned char response = execute_exception_to_return_value
-				([&]()
-					{
-						controller_.move_to(joint_config);
-						return franka_proxy_messages::success;
-					});
-			send_response(response);
-			break;
-		}
-
-		case franka_proxy_messages::move_hybrid_sequence:
-		{
-			std::cout << "franka_control_server::process_request(): " << "Moving sequence";
-
-			std::size_t buff[1];
-			asio::read(*connection_, asio::buffer(buff));
-			std::size_t count = buff[0];
-			std::cout << "franka_control_server::process_request(): " << count;
-
-
-			std::vector<std::array<double, 7>> q_data;
-			q_data.reserve(count);
-			for (std::size_t i = 0; i < count; ++i)
-			{
-				// size
-				std::size_t size_buff[1];
-				asio::read(*connection_, asio::buffer(size_buff));
-				std::size_t size = size_buff[0];
-				// todo ntoh byteorder
-
-				// data
-				std::string data_buff(size, '\0');
-				asio::read(*connection_, asio::buffer(data_buff));
-
-				// extract data
-				q_data.emplace_back
-					(string_to_robot_config(data_buff, ","));
-			}
-
-			std::vector<std::array<double, 6>> f_data;
-			f_data.reserve(count);
-			for (std::size_t i = 0; i < count; ++i)
-			{
-				// size
-				std::size_t size_buff[1];
-				asio::read(*connection_, asio::buffer(size_buff));
-				std::size_t size = size_buff[0];
-				// todo ntoh byteorder
-
-				// data
-				std::string data_buff(size, '\0');
-				asio::read(*connection_, asio::buffer(data_buff));
-
-				// extract data
-				f_data.emplace_back
-					(string_to_6_elements(data_buff, ","));
-			}
-
-			std::vector<std::array<double, 6>> s_data;
-			s_data.reserve(count);
-			for (std::size_t i = 0; i < count; ++i)
-			{
-				// size
-				std::size_t size_buff[1];
-				asio::read(*connection_, asio::buffer(size_buff));
-				std::size_t size = size_buff[0];
-				// todo ntoh byteorder
-
-				// data
-				std::string data_buff(size, '\0');
-				asio::read(*connection_, asio::buffer(data_buff));
-
-				// extract data
-				s_data.emplace_back
-					(string_to_6_elements(data_buff, ","));
-			}
-
-			std::cout << "franka_control_server::process_request(): " << "Received data.";
-
-			unsigned char response = execute_exception_to_return_value
-				([&]()
-					{
-						controller_.move_sequence(q_data, f_data, s_data);
-						//controller_.move_hybrid_sequence(data, -5.0);
-						return franka_proxy_messages::success;
-					});
-			send_response(response);
-
-			break;
-		}
-
-		case franka_proxy_messages::move_contact:
-		{
-			std::cout << "franka_control_server::process_request(): " << "Moving sensitive";
-
-			robot_config_7dof joint_config =
-				string_to_robot_config(parameters, " ");
-
-			unsigned char response = execute_exception_to_return_value
-				([&]()
-					{
-						if (controller_.move_to_until_contact(joint_config))
-							return franka_proxy_messages::success;
-						return franka_proxy_messages::success_command_failed;
-					});
-			send_response(response);
-			
-			break;
-		}
-
-		case franka_proxy_messages::force_z:
-		{
-			std::vector<std::string> parameters_split =
-				split_string(parameters, " ");
-			auto mass = std::stod(parameters_split[0]);
-			auto duration = std::stod(parameters_split[1]);
-
-			std::cout << "franka_control_server::process_request(): " << std::string("force_z " + std::to_string(mass) + " " + std::to_string(duration));
-			
-			unsigned char response = execute_exception_to_return_value
-				([&]()
-					{
-						controller_.apply_z_force(mass, duration);
-						return franka_proxy_messages::success;
-					});
-			send_response(response);
-			
-			break;
-		}
-
-		case franka_proxy_messages::open_gripper:
-		{
-			std::cout << "franka_control_server::process_request(): " << "Opening Gripper" << std::endl;
-			
-			unsigned char response = execute_exception_to_return_value
-				([&]()
-					{
-						controller_.open_gripper();
-						return franka_proxy_messages::success;
-					});
-			send_response(response);
-			
-			break;
-		}
-
-		case franka_proxy_messages::close_gripper:
-		{
-			std::cout << "franka_control_server::process_request(): " << "Closing Gripper" << std::endl;
-			
-			unsigned char response = execute_exception_to_return_value
-				([&]()
-					{
-						controller_.close_gripper();
-						return franka_proxy_messages::success;
-					});
-			send_response(response);
-			
-			break;
-		}
-
-		case franka_proxy_messages::grasp_gripper:
-		{
-			std::cout << "franka_control_server::process_request(): Grasping with Gripper" << std::endl;
-			
-			std::vector<std::string> parameters_split =
-				split_string(parameters, " ");
-			auto speed = std::stod(parameters_split[0]);
-			auto force = std::stod(parameters_split[1]);
-			
-			unsigned char response = execute_exception_to_return_value
-				([&]()
-					{
-						if (controller_.grasp_gripper(speed, force))
-							return franka_proxy_messages::success;
-						return franka_proxy_messages::success_command_failed;
-					});
-			send_response(response);
-			
-			break;
-		}
-
-		case franka_proxy_messages::start_recording:
-		{
-			std::cout << "franka_control_server::process_request(): Start recording" << std::endl;
-			
-			unsigned char response = execute_exception_to_return_value
-				([&]()
-					{
-						controller_.start_recording();
-						return franka_proxy_messages::success;
-					});
-			send_response(response);
-			
-			break;
-		}
-
-		case franka_proxy_messages::stop_recording:
-		{
-			std::cout << "franka_control_server::process_request(): Stop recording" << std::endl;
-
-			std::vector<std::array<double, 7>> q_sequence;
-			std::vector<std::array<double, 6>> f_sequence;
-			
-			unsigned char response = execute_exception_to_return_value
-				([&]()
-					{
-						std::tie(q_sequence, f_sequence) =
-							controller_.stop_recording();
-						return franka_proxy_messages::success;
-					});
-
-			std::size_t count[1]; count[0] = q_sequence.size();
-			connection_->send(asio::buffer(count));
-
-			for (const auto& p : q_sequence)
-			{
-				std::string message;
-				message += std::to_string(p[0]) + ",";
-				message += std::to_string(p[1]) + ",";
-				message += std::to_string(p[2]) + ",";
-				message += std::to_string(p[3]) + ",";
-				message += std::to_string(p[4]) + ",";
-				message += std::to_string(p[5]) + ",";
-				message += std::to_string(p[6]);
-				message += '\n';
-
-				// send size and message
-				// todo hton byteorder
-				std::size_t size[1]; size[0] = message.size();
-				connection_->send(asio::buffer(size));
-				connection_->send(asio::buffer(message));
-
-				//if (stream_->pending_send_bytes() > (stream_->buffer_max_size_send * 0.8))
-				//{
-				//	LOG_WARN("Network send buffer is 80 percent used.")
-				//	std::this_thread::sleep_for(std::chrono::milliseconds(100));
-				//}
-			}
-
-			count[0] = f_sequence.size();
-			connection_->send(asio::buffer(count));
-
-			for (const auto& f : f_sequence)
-			{
-				std::string message;
-				message += std::to_string(f[0]) + ",";
-				message += std::to_string(f[1]) + ",";
-				message += std::to_string(f[2]) + ",";
-				message += std::to_string(f[3]) + ",";
-				message += std::to_string(f[4]) + ",";
-				message += std::to_string(f[5]);
-				message += '\n';
-
-				// send size and message
-				// todo hton byteorder
-				std::size_t size[1]; size[0] = message.size();
-				connection_->send(asio::buffer(size));
-				connection_->send(asio::buffer(message));
-
-				//if (stream_->pending_send_bytes() > (stream_->buffer_max_size_send * 0.8))
-				//{
-				//	LOG_WARN("Network send buffer is 80 percent used.")
-				//	std::this_thread::sleep_for(std::chrono::milliseconds(100));
-				//}
-			}
-			send_response(response);
-			
-			break;
-		}
-
-		case franka_proxy_messages::speed:
-		{
-			std::cout << "franka_control_server::process_request(): Setting speed" << std::endl;
-			controller_.set_speed_factor(std::stod(parameters));
-			break;
-		}
-
-		case franka_proxy_messages::error_recovery:
-		{
-			std::cout << "franka_control_server::process_request(): Error recovery" << std::endl;
-			controller_.automatic_error_recovery();
-			break;
-		}
-
-		case franka_proxy_messages::message_type_count:
-		default: throw std::exception();
+	const auto message = nlohmann::json::parse(content);
+	const auto fit = command_handlers_.find(message.value("type", ""));
+	if (fit == command_handlers_.end()) {
+		std::cerr <<
+			"franka_control_server::receive_requests(): " <<
+			"Received unknown command of type: " <<
+			message.value("type", "") << std::endl;
+		
+		command_generic_response response{ command_result::unknown_command };
+		send_response(response);
+		return;
 	}
+
+	const auto response = execute_safe(fit->second, this, message);
+	send_response(response);
 }
 
 
-std::vector<std::string> franka_control_server::split_string
-	(const std::string& s, const std::string& delim)
+command_generic_response franka_control_server::process_command
+	(const command_move_to_config& cmd)
 {
-	std::size_t pos_start = 0;
-	std::size_t pos_end;
-	std::size_t delim_len = delim.length();
-
-	std::string token;
-	std::vector<std::string> res;
-
-	while ((pos_end = s.find(delim, pos_start)) != std::string::npos)
-	{
-		token = s.substr(pos_start, pos_end - pos_start);
-		pos_start = pos_end + delim_len;
-		res.push_back(token);
-	}
-
-	res.push_back(s.substr(pos_start));
-	return res;
+	controller_.move_to(cmd.target_joint_config);
+	return command_result::success;
 }
 
 
-robot_config_7dof franka_control_server::string_to_robot_config
-	(const std::string& s, const std::string& delim)
+command_generic_response franka_control_server::process_command
+	(const command_move_hybrid_sequence& cmd)
 {
-		std::vector<std::string> joint_values = split_string(s, delim);
-
-		if (joint_values.size() != 7)
-		{
-			std::cerr << "franka_control_server::process_request(): " <<
-				"Joint values message does not have 7 joint values." << std::endl;
-			throw std::out_of_range
-				("Joint values message does not have 7 joint values.");
-		}
-
-		return robot_config_7dof
-		{
-			std::stod(joint_values[0]),
-			std::stod(joint_values[1]),
-			std::stod(joint_values[2]),
-			std::stod(joint_values[3]),
-			std::stod(joint_values[4]),
-			std::stod(joint_values[5]),
-			std::stod(joint_values[6])
-		};
-};
+	controller_.move_sequence
+		(cmd.joint_config_sequence, cmd.force_sequence, cmd.selection_sequence);
+	return command_result::success;
+}
 
 
-std::array<double, 6> franka_control_server::string_to_6_elements
-	(const std::string& s, const std::string& delim)
+command_generic_response franka_control_server::process_command
+	(const command_move_until_contact& cmd)
 {
-		std::vector<std::string> joint_values = split_string(s, delim);
+	return controller_.move_to_until_contact(cmd.target_joint_config)
+		? command_result::success
+		: command_result::success_command_failed;
+}
 
-		if (joint_values.size() < 6)
-		{
-			std::cerr << "franka_control_server::process_request(): " <<
-				"Force message does not have at least 6 elements." << std::endl;
-			throw std::out_of_range
-				("Message does not have at least 6 elements.");
-		}
 
-		return std::array<double, 6>
-		{
-			std::stod(joint_values[0]),
-			std::stod(joint_values[1]),
-			std::stod(joint_values[2]),
-			std::stod(joint_values[3]),
-			std::stod(joint_values[4]),
-			std::stod(joint_values[5])
-		};
-};
+command_generic_response franka_control_server::process_command
+	(const command_force_z& cmd)
+{
+	controller_.apply_z_force(cmd.mass, cmd.duration);
+	return command_result::success;
+}
+
+
+command_generic_response franka_control_server::process_command
+	(const command_open_gripper& cmd)
+{
+	controller_.open_gripper
+		(cmd.speed ? cmd.speed : franka_hardware_controller::default_gripper_speed);
+	return command_result::success;
+}
+
+
+command_generic_response franka_control_server::process_command
+	(const command_close_gripper& cmd)
+{
+	controller_.close_gripper
+		(cmd.speed ? cmd.speed : franka_hardware_controller::default_gripper_speed);
+	return command_result::success;
+}
+
+
+command_generic_response franka_control_server::process_command
+	(const command_grasp_gripper& cmd)
+{
+	return controller_.grasp_gripper(cmd.speed, cmd.force)
+		? command_result::success
+		: command_result::success_command_failed;
+}
+
+
+command_generic_response franka_control_server::process_command
+	(const command_start_recording&)
+{
+	controller_.start_recording();
+	return command_result::success;
+}
+
+
+command_stop_recording_response franka_control_server::process_command
+	(const command_stop_recording&)
+{
+	const auto&[q_seq, f_seq] = controller_.stop_recording();
+	return { q_seq, f_seq };
+}
+
+
+command_generic_response franka_control_server::process_command
+	(const command_set_speed& cmd)
+{
+	controller_.set_speed_factor(cmd.speed);
+	return command_result::success;
+}
+
+
+command_generic_response franka_control_server::process_command
+	(const command_recover_from_errors&)
+{
+	controller_.automatic_error_recovery();
+	return command_result::success;
+}
 
 
 

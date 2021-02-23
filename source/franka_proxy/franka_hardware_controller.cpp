@@ -215,12 +215,12 @@ franka::RobotState franka_hardware_controller::robot_state() const
 }
 
 
-void franka_hardware_controller::open_gripper()
+void franka_hardware_controller::open_gripper(double speed)
 {
 	if (!gripper_)
 		return; // todo throw something usefull
 
-	if (!gripper_->move(max_width_, gripper_speed))
+	if (!gripper_->move(max_width_, speed))
 	{
 		std::cerr << "Gripper opening failed." << std::endl;
 	}
@@ -232,12 +232,12 @@ void franka_hardware_controller::open_gripper()
 }
 
 
-void franka_hardware_controller::close_gripper()
+void franka_hardware_controller::close_gripper(double speed)
 {
 	if (!gripper_)
 		return; // todo throw something usefull
 
-	if (!gripper_->move(min_grasp_width, gripper_speed))
+	if (!gripper_->move(min_grasp_width, speed))
 	{
 		std::cerr << "Gripper closing failed." << std::endl;
 	}

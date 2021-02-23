@@ -18,6 +18,10 @@
 #include <franka/robot_state.h>
 #include <franka/gripper_state.h>
 
+#include <nlohmann/json.hpp>
+
+#include <franka_proxy_share/franka_proxy_commands.hpp>
+
 
 namespace franka_proxy
 {
@@ -81,36 +85,20 @@ void franka_state_server::task_main()
 		try
 		{
 			// Copy status
-			franka::RobotState robot_state = controller_.robot_state();
-			franka::GripperState gripper_state = controller_.gripper_state();
+			const franka::RobotState robot_state = controller_.robot_state();
+			const franka::GripperState gripper_state = controller_.gripper_state();
 
-			// Send state.
-			// conf:j1,j2,j3,j4,j5,j6,j7$<gripper-position>$<gripper-max-position>$<gripper-is-grasped>
-			std::string msg("conf:");
+			command_get_config_response response{};
+			response.joint_configuration = robot_state.q;
+			response.width = gripper_state.width;
+			response.max_width = gripper_state.max_width;
+			response.is_grasped = gripper_state.is_grasped;
 
-			msg += std::to_string(robot_state.q[0]) + ",";
-			msg += std::to_string(robot_state.q[1]) + ",";
-			msg += std::to_string(robot_state.q[2]) + ",";
-			msg += std::to_string(robot_state.q[3]) + ",";
-			msg += std::to_string(robot_state.q[4]) + ",";
-			msg += std::to_string(robot_state.q[5]) + ",";
-			msg += std::to_string(robot_state.q[6]);
+			std::string content = nlohmann::json(response).dump();
+			const std::uint64_t content_length = content.size();
 
-			msg += '$';
-
-			msg += std::to_string(gripper_state.width);
-
-			msg += '$';
-
-			msg += std::to_string(gripper_state.max_width);
-
-			msg += '$';
-
-			msg += std::to_string(gripper_state.is_grasped);
-
-			msg += '\n';
-			
-			asio::write(*connection_, asio::buffer(msg));
+			asio::write(*connection_, asio::buffer(&content_length, sizeof(std::uint64_t)));
+			asio::write(*connection_, asio::buffer(content));
 		}
 
 		catch (const asio::system_error& exc)

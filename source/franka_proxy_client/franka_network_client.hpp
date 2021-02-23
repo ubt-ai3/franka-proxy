@@ -15,9 +15,11 @@
 #include <list>
 #include <memory>
 #include <string>
-#include <vector>
 
-#include "franka_proxy_share/asio_forward.hpp"
+#include <franka_proxy_share/asio_forward.hpp>
+#include <franka_proxy_share/franka_proxy_commands.hpp>
+
+#include <nlohmann/json.hpp>
 
 
 namespace franka_proxy
@@ -44,13 +46,14 @@ public:
 
 
 	void update_messages();
-	std::list<std::string> messages() const;
+
+	const std::list<command_get_config_response>& states() const noexcept;
+	void clear_states() noexcept;
 
 
 private:
 
 	void update_messages_buffer();
-	std::string fetch_message();
 
 	std::unique_ptr<asio_tcp_socket> connect
 		(const std::string& ip, std::uint16_t port);
@@ -67,6 +70,7 @@ private:
 
 	std::string messages_buffer_;
 	std::list<std::string> messages_;
+	std::list<command_get_config_response> states_;
 };
 
 
@@ -90,30 +94,35 @@ public:
 
 	~franka_control_client() noexcept;
 
-
-	void send_command
-		(const std::string& command,
-		 float timeout_seconds = 1.f);
-	unsigned char send_command_and_check_response
-		(const std::string& command,
-		 float timeout_seconds = 1.f);
-
-
-	// todo split up function
-	std::pair<std::vector<std::array<double, 7>>, std::vector<std::array<double, 6>>>
-		send_stop_recording_and_receive_sequence
-			(float timeout_seconds = 1.f);
-	void send_move_sequence
-		(const std::vector<std::array<double, 7>>& q_sequence,
-		 const std::vector<std::array<double, 6>>& f_sequence,
-		 const std::vector<std::array<double, 6>>& selection_vector_sequence,
-		 float timeout_seconds = 1.f);
+	/**
+	 * Sends a command to the server and awaits its response.
+	 *
+	 * Commands are simple record types that are JSON convertible by providing a simple "to_json" function.
+	 * See "franka_proxy_commands.hpp" on details.
+	 *
+	 * Each command has a response type associated by declaring a "response_type" alias, which is then used
+	 * to decode the response to.
+	 *
+	 * Throws network_exception if the command transmission failed.
+	 * Throws bad_response_exception if the response failed to parse.
+	 *
+	 * 
+	 */
+	template<typename TCommandType>
+	typename TCommandType::response_type send_command(const TCommandType& command, float timeout_seconds = 1.f)
+	{		
+		return send_json(command, timeout_seconds).get<typename TCommandType::response_type>();
+	}
 
 private:
 
+	nlohmann::json send_json(
+		const nlohmann::json& json,
+		float timeout_seconds = 1.f
+	);
+	
 	std::unique_ptr<asio_tcp_socket> connect
 		(const std::string& ip, std::uint16_t port);
-	
 
 	std::unique_ptr<asio::io_context> io_context_;
 

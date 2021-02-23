@@ -11,9 +11,6 @@
 
 #include "motion_generator_joint_max_accel.hpp"
 
-#include <utility>
-#include <iostream>
-
 #include <Eigen/Dense>
 
 #include <franka/model.h>

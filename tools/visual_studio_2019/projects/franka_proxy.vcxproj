@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|x64">
@@ -19,7 +19,6 @@
     <ClInclude Include="..\..\..\source\franka_proxy\motion_generator_force.hpp" />
     <ClInclude Include="..\..\..\source\franka_proxy\motion_generator_joint_max_accel.hpp" />
     <ClInclude Include="..\..\..\source\franka_proxy\motion_generator_seq_cart_vel_tau.hpp" />
-    <ClInclude Include="..\..\..\source\franka_proxy_share\franka_proxy_messages.hpp" />
     <ClInclude Include="..\..\..\source\jr3_ft_sensor\force_torque_sensor.hpp" />
     <ClInclude Include="..\..\..\source\jr3_ft_sensor\force_torque_sensor_JR3PCIIoctls.h" />
   </ItemGroup>
@@ -33,6 +32,11 @@
     <ClCompile Include="..\..\..\source\franka_proxy\motion_generator_joint_max_accel.cpp" />
     <ClCompile Include="..\..\..\source\franka_proxy\motion_generator_seq_cart_vel_tau.cpp" />
     <ClCompile Include="..\..\..\source\jr3_ft_sensor\force_torque_sensor.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="franka_share.vcxproj">
+      <Project>{f5061af3-9def-408e-8135-292e6f6f7c06}</Project>
+    </ProjectReference>
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{68BC76EE-6A3E-4109-B187-BD78D5EEF8F9}</ProjectGuid>

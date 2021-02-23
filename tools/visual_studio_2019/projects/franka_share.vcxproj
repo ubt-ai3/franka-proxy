@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|x64">
@@ -11,28 +11,27 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\source\franka_proxy_client_test\main.cpp" />
+    <ClCompile Include="..\..\..\source\franka_proxy_share\franka_proxy_commands.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="franka_proxy_client.vcxproj">
-      <Project>{fb19427b-a02e-4386-98a9-64ed8e1deb71}</Project>
-    </ProjectReference>
+    <ClInclude Include="..\..\..\source\franka_proxy_share\asio_forward.hpp" />
+    <ClInclude Include="..\..\..\source\franka_proxy_share\franka_proxy_commands.hpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{CA9F7D3E-0D62-4877-88C6-3DCD4CE482AC}</ProjectGuid>
+    <ProjectGuid>{f5061af3-9def-408e-8135-292e6f6f7c06}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
-    <RootNamespace>franka_proxy_client_test</RootNamespace>
-    <ProjectName>franka_proxy_client_test</ProjectName>
+    <RootNamespace>franka_share</RootNamespace>
+    <ProjectName>franka_share</ProjectName>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
+    <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v142</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
+    <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <PlatformToolset>v142</PlatformToolset>
@@ -40,23 +39,20 @@
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
     <Import Project="..\props\build_common.props" />
-    <Import Project="..\props\build_type_app.props" />
+    <Import Project="..\props\build_type_library.props" />
     <Import Project="..\props\build_mode_debug.props" />
     <Import Project="..\props\use_vcpkg.props" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
     <Import Project="..\props\build_common.props" />
-    <Import Project="..\props\build_type_app.props" />
+    <Import Project="..\props\build_type_library.props" />
     <Import Project="..\props\build_mode_release.props" />
     <Import Project="..\props\use_vcpkg.props" />
   </ImportGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <!-- Required for VS properties dialog to work. -->
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+  <ItemDefinitionGroup>
     <ClCompile />
     <Link />
-    <Link>
-      <AdditionalDependencies>franka_proxy_client.lib;%(AdditionalDependencies)</AdditionalDependencies>
-    </Link>
   </ItemDefinitionGroup>
 </Project>

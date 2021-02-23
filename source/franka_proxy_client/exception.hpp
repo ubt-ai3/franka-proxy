@@ -61,10 +61,20 @@ public:
 class remote_exception : public exception
 {
 public:
+	
+	explicit remote_exception(const std::string& reason) noexcept
+		: reason_(reason)
+		{}
+
+	
 	const char* what() const noexcept override
 	{
-		return "Exception thrown on remote side.";
+		return reason_.what();
 	}
+
+private:
+	
+	std::runtime_error reason_;
 };
 
 
@@ -77,10 +87,11 @@ public:
 class model_exception : public remote_exception
 {
 public:
-	const char* what() const noexcept override
-	{
-		return "Error while loading the model library.";
-	}
+	
+	explicit model_exception(const std::string& reason) noexcept
+		: remote_exception{reason}
+		{}
+		
 };
 
 
@@ -94,10 +105,10 @@ public:
 class network_exception : public remote_exception
 {
 public:
-	const char* what() const noexcept override
-	{
-		return "Connection to the robot cannot be established, or timeout occured.";
-	}
+	
+	explicit network_exception(const std::string& reason) noexcept
+		: remote_exception{reason}
+		{}
 };
 
 
@@ -110,10 +121,10 @@ public:
 class protocol_exception : public remote_exception
 {
 public:
-	const char* what() const noexcept override
-	{
-		return "Incorrect message returned by robot.";
-	}
+	
+	explicit protocol_exception(const std::string& reason) noexcept
+		: remote_exception{reason}
+		{}
 };
 
 
@@ -126,10 +137,10 @@ public:
 class incompatible_version_exception : public remote_exception
 {
 public:
-	const char* what() const noexcept override
-	{
-		return "Incompatible version of libfranka used on remote side.";
-	}
+	
+	explicit incompatible_version_exception(const std::string& reason) noexcept
+		: remote_exception{reason}
+		{}
 };
 
 
@@ -142,10 +153,10 @@ public:
 class control_exception : public remote_exception
 {
 public:
-	const char* what() const noexcept override
-	{
-		return "An error occured during motion generation or torque control.";
-	}
+	
+	explicit control_exception(const std::string& reason) noexcept
+		: remote_exception{reason}
+		{}
 };
 
 
@@ -158,10 +169,10 @@ public:
 class command_exception : public remote_exception
 {
 public:
-	const char* what() const noexcept override
-	{
-		return "An error occured during command execution.";
-	}
+	
+	explicit command_exception(const std::string& reason) noexcept
+		: remote_exception{reason}
+		{}
 };
 
 
@@ -174,10 +185,10 @@ public:
 class realtime_exception : public remote_exception
 {
 public:
-	const char* what() const noexcept override
-	{
-		return "Realtime priority cannot be set.";
-	}
+	
+	explicit realtime_exception(const std::string& reason) noexcept
+		: remote_exception{reason}
+		{}
 };
 
 
@@ -190,11 +201,46 @@ public:
 class invalid_operation_exception : public remote_exception
 {
 public:
+	
+	explicit invalid_operation_exception(const std::string& reason) noexcept
+		: remote_exception{reason}
+		{}
+};
+
+
+
+	
+/**
+ *************************************************************************
+ * Thrown if a command is unknown to the server.
+ ************************************************************************/
+class unknown_command_exception: public remote_exception
+{
+public:
+
+	explicit unknown_command_exception(const std::string& reason) noexcept
+		: remote_exception{reason}
+	{}
+};
+
+
+
+
+/**
+ *************************************************************************
+ * Thrown if the response received was bad.
+ ************************************************************************/
+class bad_response_exception: public exception
+{
+public:
+	
 	const char* what() const noexcept override
 	{
-		return "An operation cannot be performed.";
+		return "Bad response sent by the server.";
 	}
 };
+
+
 
 
 } /* namespace franka_proxy */

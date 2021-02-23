@@ -12,9 +12,9 @@
 #if !defined(INCLUDED__FRANKA_PROXY__MOTION_GENERATOR_JOINT_MAX_ACCEL_HPP)
 #define INCLUDED__FRANKA_PROXY__MOTION_GENERATOR_JOINT_MAX_ACCEL_HPP
 
+
 #include <atomic>
 #include <mutex>
-#include <vector>
 
 #include <Eigen/Geometry>
 

@@ -4,6 +4,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 VisualStudioVersion = 16.0.29326.143
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "franka_proxy", "projects\franka_proxy.vcxproj", "{68BC76EE-6A3E-4109-B187-BD78D5EEF8F9}"
+	ProjectSection(ProjectDependencies) = postProject
+		{F5061AF3-9DEF-408E-8135-292E6F6F7C06} = {F5061AF3-9DEF-408E-8135-292E6F6F7C06}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "franka_proxy_client", "projects\franka_proxy_client.vcxproj", "{FB19427B-A02E-4386-98A9-64ED8E1DEB71}"
 EndProject
@@ -16,6 +19,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "franka_control", "projects\
 	ProjectSection(ProjectDependencies) = postProject
 		{FB19427B-A02E-4386-98A9-64ED8E1DEB71} = {FB19427B-A02E-4386-98A9-64ED8E1DEB71}
 	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "franka_share", "projects\franka_share.vcxproj", "{F5061AF3-9DEF-408E-8135-292E6F6F7C06}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -39,6 +44,10 @@ Global
 		{3125ED9C-58B1-4EA5-9214-9178EF9C8EB7}.Debug|x64.Build.0 = Debug|x64
 		{3125ED9C-58B1-4EA5-9214-9178EF9C8EB7}.Release|x64.ActiveCfg = Release|x64
 		{3125ED9C-58B1-4EA5-9214-9178EF9C8EB7}.Release|x64.Build.0 = Release|x64
+		{F5061AF3-9DEF-408E-8135-292E6F6F7C06}.Debug|x64.ActiveCfg = Debug|x64
+		{F5061AF3-9DEF-408E-8135-292E6F6F7C06}.Debug|x64.Build.0 = Debug|x64
+		{F5061AF3-9DEF-408E-8135-292E6F6F7C06}.Release|x64.ActiveCfg = Release|x64
+		{F5061AF3-9DEF-408E-8135-292E6F6F7C06}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

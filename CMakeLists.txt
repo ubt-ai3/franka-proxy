@@ -10,6 +10,7 @@ endif()
 
 find_package(asio CONFIG REQUIRED)
 find_package(Eigen3 CONFIG REQUIRED)
+find_package(nlohmann_json REQUIRED)
 find_package(Threads REQUIRED)
 
 
@@ -53,6 +54,7 @@ target_link_libraries(
 		Poco::Net
         Threads::Threads
 		Franka::Franka
+		franka_proxy_share
 )
 
 target_compile_definitions(
@@ -81,6 +83,7 @@ target_link_libraries(
     PUBLIC
         asio::asio
         Eigen3::Eigen
+        franka_proxy_share
 )
 
 target_compile_definitions(
@@ -149,6 +152,29 @@ target_compile_definitions(
 		std_cxx_17
 )
 
+add_library(
+	franka_proxy_share
+	STATIC
+	""
+)
+
+target_sources(
+	franka_proxy_share
+	PRIVATE
+		${CMAKE_CURRENT_SOURCE_DIR}/source/franka_proxy_share/franka_proxy_commands.cpp
+)
+
+target_include_directories(
+	franka_proxy_share
+	PUBLIC
+		$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/source>
+)
+
+target_link_libraries(
+	franka_proxy_share
+	PUBLIC
+		nlohmann_json::nlohmann_json
+)
 
 ## install
 file(GLOB franka_proxy_client_headers
