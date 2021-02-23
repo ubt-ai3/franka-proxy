@@ -121,7 +121,17 @@ std::unique_ptr<asio::ip::tcp::socket> franka_state_client::connect
 		resolver.resolve(ip, std::to_string(port));
 
 	auto s = std::make_unique<asio::ip::tcp::socket>(*io_context_);
-	asio::connect(*s, endpoints);
+
+	try
+	{
+		asio::connect(*s, endpoints);
+	}
+	catch(const std::system_error& e)
+	{
+		std::cerr << "franka_control_client::connect(): Failed to connect: "
+			<< e.what() << std::endl;
+		throw network_exception("");
+	}
 
 	return s;
 }
@@ -186,7 +196,7 @@ nlohmann::json franka_control_client::send_json
 	catch(const nlohmann::json::exception&)
 	{
 		connection_.reset();
-		std::cerr << "franka_control_clinet::send_json(): Failed to parse response.";
+		std::cerr << "franka_control_client::send_json(): Failed to parse response.";
 		throw command_exception("Failed to parse response from server.");
 	}
 }
@@ -200,7 +210,17 @@ std::unique_ptr<asio::ip::tcp::socket> franka_control_client::connect
 		resolver.resolve(ip, std::to_string(port));
 
 	auto s = std::make_unique<asio::ip::tcp::socket>(*io_context_);
-	asio::connect(*s, endpoints);
+
+	try
+	{
+		asio::connect(*s, endpoints);
+	}
+	catch(const std::system_error& e)
+	{
+		std::cerr << "franka_control_client::connect(): Failed to connect: "
+			<< e.what() << std::endl;
+		throw network_exception("");
+	}
 
 	return s;
 }
