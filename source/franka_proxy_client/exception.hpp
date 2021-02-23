@@ -62,18 +62,19 @@ class remote_exception : public exception
 {
 public:
 	
-	explicit remote_exception(std::string reason) noexcept
-		: reason_(std::move(reason))
+	explicit remote_exception(const std::string& reason) noexcept
+		: reason_(reason)
 		{}
 
 	
 	const char* what() const noexcept override
 	{
-		return reason_.c_str();
+		return reason_.what();
 	}
 
 private:
-	std::string reason_;
+	
+	std::runtime_error reason_;
 };
 
 
@@ -87,8 +88,8 @@ class model_exception : public remote_exception
 {
 public:
 	
-	explicit model_exception(std::string reason) noexcept
-		: remote_exception{std::move(reason)}
+	explicit model_exception(const std::string& reason) noexcept
+		: remote_exception{reason}
 		{}
 		
 };
@@ -105,8 +106,8 @@ class network_exception : public remote_exception
 {
 public:
 	
-	explicit network_exception(std::string reason) noexcept
-		: remote_exception{std::move(reason)}
+	explicit network_exception(const std::string& reason) noexcept
+		: remote_exception{reason}
 		{}
 };
 
@@ -121,8 +122,8 @@ class protocol_exception : public remote_exception
 {
 public:
 	
-	explicit protocol_exception(std::string reason) noexcept
-		: remote_exception{std::move(reason)}
+	explicit protocol_exception(const std::string& reason) noexcept
+		: remote_exception{reason}
 		{}
 };
 
@@ -137,8 +138,8 @@ class incompatible_version_exception : public remote_exception
 {
 public:
 	
-	explicit incompatible_version_exception(std::string reason) noexcept
-		: remote_exception{std::move(reason)}
+	explicit incompatible_version_exception(const std::string& reason) noexcept
+		: remote_exception{reason}
 		{}
 };
 
@@ -153,8 +154,8 @@ class control_exception : public remote_exception
 {
 public:
 	
-	explicit control_exception(std::string reason) noexcept
-		: remote_exception{std::move(reason)}
+	explicit control_exception(const std::string& reason) noexcept
+		: remote_exception{reason}
 		{}
 };
 
@@ -169,8 +170,8 @@ class command_exception : public remote_exception
 {
 public:
 	
-	explicit command_exception(std::string reason) noexcept
-		: remote_exception{ std::move(reason) }
+	explicit command_exception(const std::string& reason) noexcept
+		: remote_exception{reason}
 		{}
 };
 
@@ -185,8 +186,8 @@ class realtime_exception : public remote_exception
 {
 public:
 	
-	explicit realtime_exception(std::string reason) noexcept
-		: remote_exception{ std::move(reason) }
+	explicit realtime_exception(const std::string& reason) noexcept
+		: remote_exception{reason}
 		{}
 };
 
@@ -201,8 +202,8 @@ class invalid_operation_exception : public remote_exception
 {
 public:
 	
-	explicit invalid_operation_exception(std::string reason) noexcept
-		: remote_exception{ std::move(reason) }
+	explicit invalid_operation_exception(const std::string& reason) noexcept
+		: remote_exception{reason}
 		{}
 };
 
@@ -217,18 +218,18 @@ class unknown_command_exception: public remote_exception
 {
 public:
 
-	explicit unknown_command_exception(std::string reason) noexcept
-		: remote_exception{ std::move(reason) }
+	explicit unknown_command_exception(const std::string& reason) noexcept
+		: remote_exception{reason}
 	{}
 };
 
 
-	
-	
+
+
 /**
-*************************************************************************
-* Thrown if the response received was bad.
-************************************************************************/
+ *************************************************************************
+ * Thrown if the response received was bad.
+ ************************************************************************/
 class bad_response_exception: public exception
 {
 public:
@@ -238,6 +239,8 @@ public:
 		return "Bad response sent by the server.";
 	}
 };
+
+
 
 
 } /* namespace franka_proxy */
