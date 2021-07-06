@@ -60,8 +60,21 @@ franka_hardware_controller::franka_hardware_controller
 	catch (...)
 	{
 		// todo
+		//debug
+		std::cout << "failed initalizing jaw gripper\n";
 	}
 
+	try
+	{
+		vacuum_gripper_ = std::make_unique<franka::VacuumGripper>(controller_ip);
+		vacuum_gripper_state_ = vacuum_gripper_->readOnce();
+	}
+	catch (...)
+	{
+		// todo
+		//debug
+		std::cout << "failed initalizing vacuum gripper\n";
+	}
 	// todo JHa
 	//robot_.setGuidingMode({ {true, true, true, false, false, true} }, false);
 }
@@ -218,7 +231,7 @@ franka::RobotState franka_hardware_controller::robot_state() const
 void franka_hardware_controller::open_gripper(double speed)
 {
 	if (!gripper_)
-		return; // todo throw something usefull
+		throw std::runtime_error("Tried to use non existent gripper, make sure you use the jaw gripper");
 
 	if (!gripper_->move(max_width_, speed))
 	{
@@ -235,7 +248,7 @@ void franka_hardware_controller::open_gripper(double speed)
 void franka_hardware_controller::close_gripper(double speed)
 {
 	if (!gripper_)
-		return; // todo throw something usefull
+		throw std::runtime_error("Tried to use non existent gripper, make sure you use the jaw gripper");
 
 	if (!gripper_->move(min_grasp_width, speed))
 	{
@@ -252,7 +265,7 @@ void franka_hardware_controller::close_gripper(double speed)
 bool franka_hardware_controller::grasp_gripper(double speed, double force)
 {
 	if (!gripper_)
-		return false; // todo throw something usefull
+		throw std::runtime_error("Tried to use non existent gripper, make sure you use the jaw gripper");
 
 	bool grasped = gripper_->grasp(min_grasp_width, speed, force, 0, 1);
 
@@ -271,6 +284,62 @@ franka::GripperState franka_hardware_controller::gripper_state() const
 	return gripper_state_;
 }
 
+bool franka_hardware_controller::vacuum_gripper_drop(std::chrono::milliseconds timeout)
+{
+	if(!vacuum_gripper_)
+		throw std::runtime_error("Tried to use non existent gripper, make sure you use the vacuum gripper");
+
+	bool success = vacuum_gripper_->dropOff(drop_timeout);
+	{
+		std::scoped_lock<std::mutex> state_guard(state_lock_);
+		vacuum_gripper_state_ = vacuum_gripper_->readOnce();
+	}
+	std::cout << "dropping \n";
+
+	return success;
+}
+
+bool franka_hardware_controller::vacuum_gripper_vacuum(std::uint8_t vacuum_strength, std::chrono::milliseconds timeout)
+{
+	if (!vacuum_gripper_)
+		throw std::runtime_error("Tried to use non existent gripper, make sure you use the vacuum gripper");
+
+	std::cout << "vacuum with strength :"<<(int)vacuum_strength<<" and timeout: "<<timeout.count()<<"ms\n" ;
+	bool success = false;
+	try {
+		success = vacuum_gripper_->vacuum(vacuum_strength, vacuum_timeout);
+	}
+	catch (const franka::CommandException& e)
+	{
+		std::cout << "couldn't establish vacuum\n";
+	}
+	{
+		std::scoped_lock<std::mutex> state_guard(state_lock_);
+		vacuum_gripper_state_ = vacuum_gripper_->readOnce();
+	}
+	std::cout << "vacuum success\n";
+	return success;
+}
+
+bool franka_hardware_controller::vacuum_gripper_stop()
+{
+		if (!vacuum_gripper_)
+			throw std::runtime_error("Tried to use non existent gripper, make sure you use the vacuum gripper");
+		bool success = vacuum_gripper_->stop();
+		{
+			std::scoped_lock<std::mutex> state_guard(state_lock_);
+			vacuum_gripper_state_ = vacuum_gripper_->readOnce();
+		}
+		std::cout << "Stopping\n";
+		return success;
+}
+
+
+franka::VacuumGripperState franka_hardware_controller::vacuum_gripper_state() const
+{
+	std::scoped_lock guard(state_lock_);
+	return vacuum_gripper_state_;
+}
 
 void franka_hardware_controller::automatic_error_recovery()
 {
@@ -475,6 +544,8 @@ void franka_hardware_controller::state_update_loop()
 			robot_state_ = robot_.readOnce();
 			if (gripper_) 
 				gripper_state_ = gripper_->readOnce();
+			if (vacuum_gripper_)
+				vacuum_gripper_state_ = vacuum_gripper_->readOnce();
 		}
 		catch (...) {} // Don't propagate ugly error on robot shutdown...
 

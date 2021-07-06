@@ -87,6 +87,7 @@ void franka_state_server::task_main()
 			// Copy status
 			const franka::RobotState robot_state = controller_.robot_state();
 			const franka::GripperState gripper_state = controller_.gripper_state();
+			const franka::VacuumGripperState vacuum_gripper_state_ = controller_.vacuum_gripper_state();
 
 			command_get_config_response response{};
 			response.joint_configuration = robot_state.q;

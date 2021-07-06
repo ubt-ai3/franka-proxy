@@ -84,6 +84,21 @@ bool franka_remote_controller::grasp_gripper(double speed, double force)
 	return send_command<command_grasp_gripper>(speed, force) == command_result::success;
 }
 
+bool franka_remote_controller::vacuum_gripper_drop(std::chrono::milliseconds timeout)
+{
+	return send_command<command_vacuum_gripper_drop>(timeout)==command_result::success;
+}
+
+bool franka_remote_controller::vacuum_gripper_vacuum(std::uint8_t vacuum_strength, std::chrono::milliseconds timeout)
+{
+	return send_command<command_vacuum_gripper_vacuum>(vacuum_strength,timeout) == command_result::success;
+}
+
+bool franka_remote_controller::vacuum_gripper_stop()
+{
+	return send_command<command_vacuum_gripper_stop>() == command_result::success;
+}
+
 
 void franka_remote_controller::set_speed_factor(double speed_factor)
 	{ send_command<command_set_speed>(speed_factor); }

@@ -167,6 +167,44 @@ void from_json(const nlohmann::json& json, command_grasp_gripper& object)
 	json.at("force").get_to(object.force);
 }
 
+void to_json(nlohmann::json& json, const command_vacuum_gripper_drop& object)
+{
+	json["type"] = command_vacuum_gripper_drop::type;
+	json["timeout"] = object.timeout.count();
+}
+
+void from_json(const nlohmann::json& json, command_vacuum_gripper_drop& object)
+{
+	long long tick_count{};
+	json.at("timeout").get_to(tick_count);
+	object.timeout = std::chrono::milliseconds(tick_count);
+}
+
+void to_json(nlohmann::json& json, const command_vacuum_gripper_vacuum& object)
+{
+	json["type"] = command_vacuum_gripper_vacuum::type;
+	json["timeout"] = object.timeout.count();
+	json["vacuum"] = object.vacuum_strength;
+}
+
+void from_json(const nlohmann::json& json, command_vacuum_gripper_vacuum& object)
+{
+	long long tick_count{};
+	json.at("timeout").get_to(tick_count);
+	json.at("vacuum").get_to(object.vacuum_strength);
+	object.timeout = std::chrono::milliseconds(tick_count);
+}
+
+void to_json(nlohmann::json& json, const command_vacuum_gripper_stop& object)
+{
+	json["type"] = command_vacuum_gripper_stop::type;
+}
+
+void from_json(const nlohmann::json& json, command_vacuum_gripper_stop& object)
+{
+	//do nothing
+}
+
 
 
 

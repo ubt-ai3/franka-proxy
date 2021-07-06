@@ -27,12 +27,11 @@ namespace franka_proxy
 
 using robot_config_7dof = std::array<double, 7>;
 
-
 class franka_remote_controller
 {
 public:
 
-	franka_remote_controller
+	explicit franka_remote_controller
 		(std::string proxy_ip);
 
 	~franka_remote_controller() noexcept;
@@ -123,6 +122,58 @@ public:
 	 * @throw viral_core::network_exception if the connection was lost.
 	 */
 	bool grasp_gripper(double speed = 0.025, double force = 0.05);
+
+	/**
+	 * Drops objects by stopping then vacuum.
+	 * Remote function for franka::VacuumGripper::drop
+	 * 
+	 * Returns if the movement was completed successfully.
+	 * Throws some remote_exception on failure.
+	 * 
+	 * @TODO: Check exceptions.
+	 *
+	 * @throw remote_exception if the movement was unsuccessful.
+	 * @throw viral_core::network_exception if the connection was lost.
+	 */
+	bool vacuum_gripper_drop(std::chrono::milliseconds timeout = std::chrono::milliseconds(100));
+
+	/**
+ * Creates a vacuum with the vacuum gripper in order to grip objects.
+ * Remote function for franka::VacuumGripper::vacuum.
+
+ *	returns if the vacuum was created successful
+ *
+ * @TODO: Check exceptions.
+ *
+ * @throw remote_exception if the movement was unsuccessful.
+ * @throw viral_core::network_exception if the connection was lost.
+ */
+	bool vacuum_gripper_vacuum(std::uint8_t vacuum_strength, std::chrono::milliseconds timeout = std::chrono::milliseconds(100));
+
+	/**
+* Stops the current vaccum gripper command
+*
+*	remote function for franka::VacuumGripper::stop
+*
+* @TODO: Check exceptions.
+*
+* @throw remote_exception if the movement was unsuccessful.
+* @throw viral_core::network_exception if the connection was lost.
+*/
+
+	bool vacuum_gripper_stop();
+	/**
+ * Drops objects by stopping then vacuum
+ *
+ * Returns if the movement was completed successfully.
+ * Throws some remote_exception on failure.
+ *
+ * @TODO: Check exceptions.
+ *
+ * @throw remote_exception if the movement was unsuccessful.
+ * @throw viral_core::network_exception if the connection was lost.
+ */
+
 
 
 	/**

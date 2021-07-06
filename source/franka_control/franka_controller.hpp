@@ -66,7 +66,6 @@ public:
 	virtual void grasp_gripper(double speed = 0.025, double force = 0.05) = 0;
 	virtual bool gripper_grasped() const = 0;
 
-
 	virtual double speed_factor() const = 0;
 	virtual void set_speed_factor(double speed_factor) = 0;
 
@@ -146,6 +145,7 @@ private:
  * Updates a franka_controller instance in a separate thread.
  *
  ************************************************************************/
+
 class franka_update_task
 {
 

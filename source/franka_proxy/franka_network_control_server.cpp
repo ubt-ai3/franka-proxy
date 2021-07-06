@@ -49,7 +49,7 @@ namespace
 		}
 		catch (const franka::NetworkException& exc)
 		{
-			std::cout << "franka_control_server::receive_requests(): " << "Encountered command exception." << std::endl;
+			std::cout << "franka_control_server::receive_requests(): " << "Encountered network exception." << std::endl;
 			return command_generic_response{ command_result::network_exception, exc.what()};
 		}
 		catch (const franka::RealtimeException& exc)
@@ -116,6 +116,9 @@ franka_control_server::franka_control_server
 	register_command_handler<command_stop_recording>();
 	register_command_handler<command_set_speed>();
 	register_command_handler<command_recover_from_errors>();
+	register_command_handler<command_vacuum_gripper_drop>();
+	register_command_handler<command_vacuum_gripper_stop>();
+	register_command_handler<command_vacuum_gripper_vacuum>();
 
 	internal_thread_ = std::thread([this]{task_main();});
 }
@@ -244,7 +247,7 @@ void franka_control_server::receive_requests()
 		send_response(response);
 		return;
 	}
-
+	
 	const auto response = execute_safe(fit->second, this, message);
 	send_response(response);
 }
@@ -310,6 +313,30 @@ command_generic_response franka_control_server::process_command
 		: command_result::success_command_failed;
 }
 
+command_generic_response franka_control_server::process_command
+	(const command_vacuum_gripper_drop& cmd)
+{
+	return controller_.vacuum_gripper_drop(cmd.timeout)
+		? command_result::success
+		: command_result::success_command_failed;
+}
+
+//TODO debug return correct response
+command_generic_response franka_control_server::process_command
+(const command_vacuum_gripper_vacuum& cmd)
+{
+	return controller_.vacuum_gripper_vacuum(cmd.vacuum_strength, cmd.timeout) ?
+		command_result::success
+		: command_result::success_command_failed;
+}
+
+command_generic_response franka_control_server::process_command
+(const command_vacuum_gripper_stop&)
+{
+	return controller_.vacuum_gripper_stop()
+		? command_result::success
+		: command_result::success_command_failed;
+}
 
 command_generic_response franka_control_server::process_command
 	(const command_start_recording&)

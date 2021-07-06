@@ -5,7 +5,7 @@
 
 #include <franka_proxy_client/exception.hpp>
 #include <franka_proxy_client/franka_remote_controller.hpp>
-//#include "franka_control/franka_util.hpp"
+#include "franka_control/franka_util.hpp"
 
 
 void print_status(const franka_proxy::franka_remote_controller& controller)
@@ -46,7 +46,10 @@ void execute_retry(Function&& f, franka_proxy::franka_remote_controller& control
 	}
 }
 
-
+int test()
+{
+	//franka_control::franka_util::ik_fast()
+}
 int main()
 {
 	franka_proxy::franka_remote_controller controller("127.0.0.1");
@@ -73,13 +76,29 @@ int main()
 
 	std::cout << "Starting Gripper Test." << std::endl;
 
-	controller.grasp_gripper(0.1);
-	controller.open_gripper(0.1);
+	//controller.grasp_gripper(0.1);
+	/*controller.open_gripper(0.1);
 	controller.close_gripper(1);
 	controller.open_gripper(1);
+	controller.close_gripper(1);
+	controller.open_gripper(1);*/
+	//controller.vacuum_gripper_vacuum(1000);
+	//controller.vacuum_gripper_stop();
+//	_sleep(1000);
+	//controller.vacuum_gripper_drop();
+	
+	
+	//controller.vacuum_gripper_stop();
+	execute_retry([&] { controller.vacuum_gripper_stop(); }, controller);
+	_sleep(10000);
+	execute_retry([&] { controller.vacuum_gripper_vacuum(100, std::chrono::milliseconds(1000)); }, controller);
+	std::cout << "pause\n";
+	_sleep(10000);
+	execute_retry([&] { controller.vacuum_gripper_stop(); }, controller);
 
+	//_sleep(10000);
 	std::cout << "Finished Gripper Test." << std::endl;
-
+	return 0;
 
 	std::cout << "Starting PTP-Movement Test." << std::endl;
 
@@ -106,12 +125,11 @@ int main()
 	controller.set_speed_factor(0.2);
 	controller.move_to(pos_with_scale);
 	controller.move_to_until_contact(pos_above_table);
-
+	
 	//controller.apply_z_force(0.0, 5.0);
 	//controller.apply_z_force(1.0, 5.0);
-	
 	std::cout << "Finished Force Test." << std::endl;
-
+	
 
 	std::cout << "Starting FK/IK Test." << std::endl;
 

@@ -19,6 +19,7 @@
 
 #include <franka/robot.h>
 #include <franka/gripper.h>
+#include <franka/vacuum_gripper.h>
 
 #include "franka_motion_recorder.hpp"
 
@@ -69,7 +70,7 @@ public:
 
 	franka::RobotState robot_state() const;
 
-
+	//jaw gripper methods
 	/** Move the gripper to gripper::max_width. */
 	void open_gripper(double speed = default_gripper_speed);
 	/** Move the gripper to gripper::min_grasp_width. */
@@ -79,7 +80,12 @@ public:
 
 	franka::GripperState gripper_state() const;
 
+	//vacuum gripper methods
+	bool vacuum_gripper_drop(std::chrono::milliseconds timeout = drop_timeout);
+	bool vacuum_gripper_vacuum(std::uint8_t vacuum_strength, std::chrono::milliseconds timeout = vacuum_timeout);
+	bool vacuum_gripper_stop();
 
+	franka::VacuumGripperState vacuum_gripper_state()const;
 	void automatic_error_recovery();
 
 
@@ -143,8 +149,16 @@ private:
 	detail::motion_recorder motion_recorder_;
 
 	// Gripper
+	enum class effector
+	{
+		VACUUM_GRIPPER,
+		GRIPPER
+	};
 	mutable std::unique_ptr<franka::Gripper> gripper_;
 	double max_width_;
+	mutable std::unique_ptr<franka::VacuumGripper> vacuum_gripper_;
+	static constexpr std::chrono::milliseconds drop_timeout = std::chrono::milliseconds(100);
+	static constexpr std::chrono::milliseconds vacuum_timeout = std::chrono::milliseconds(100);
 
 	
 	static constexpr double open_epsilon = 0.1;
@@ -153,7 +167,9 @@ private:
 
 	mutable std::mutex state_lock_;
 	franka::RobotState robot_state_;
+
 	franka::GripperState gripper_state_;
+	franka::VacuumGripperState vacuum_gripper_state_;
 
 	void set_control_loop_running(bool running);
 	bool control_loop_running_;
