@@ -38,6 +38,13 @@ franka_proxy::franka_proxy()
 
 int main()
 {
-	franka_proxy::franka_proxy proxy;
-	return std::cin.get();
+	try {
+		franka_proxy::franka_proxy proxy;
+		return std::cin.get();
+	}
+	catch (const std::exception& e)
+	{
+		std::cout << e.what() << std::endl;
+		return -1;
+	}
 }

@@ -61,7 +61,7 @@ franka_hardware_controller::franka_hardware_controller
 	{
 		// todo
 		//debug
-		std::cout << "failed initalizing jaw gripper\n";
+		std::cout << "No jaw gripper detected\n";
 	}
 
 	try
@@ -73,7 +73,7 @@ franka_hardware_controller::franka_hardware_controller
 	{
 		// todo
 		//debug
-		std::cout << "failed initalizing vacuum gripper\n";
+		std::cout << "No vacuum gripper detected\n";
 	}
 	// todo JHa
 	//robot_.setGuidingMode({ {true, true, true, false, false, true} }, false);
@@ -302,22 +302,34 @@ bool franka_hardware_controller::vacuum_gripper_drop(std::chrono::milliseconds t
 bool franka_hardware_controller::vacuum_gripper_vacuum(std::uint8_t vacuum_strength, std::chrono::milliseconds timeout)
 {
 	if (!vacuum_gripper_)
-		throw std::runtime_error("Tried to use non existent gripper, make sure you use the vacuum gripper");
+		throw std::runtime_error("Tried to use non existent gripper, make sure you mounted the vacuum gripper");
 
 	std::cout << "vacuum with strength :"<<(int)vacuum_strength<<" and timeout: "<<timeout.count()<<"ms\n" ;
 	bool success = false;
 	try {
 		success = vacuum_gripper_->vacuum(vacuum_strength, vacuum_timeout);
+		if (success)
+			std::cout << "established vacuum\n";
+		else
+			std::cout << "no vacuum established\n";
 	}
 	catch (const franka::CommandException& e)
 	{
-		std::cout << "couldn't establish vacuum\n";
+		std::cout << e.what()<<"\n";
+		std::cout << "error establishing vacuum\n";
 	}
 	{
 		std::scoped_lock<std::mutex> state_guard(state_lock_);
 		vacuum_gripper_state_ = vacuum_gripper_->readOnce();
 	}
-	std::cout << "vacuum success\n";
+
+	if (vacuum_gripper_state_.in_control_range)
+		std::cout << "in control range\n";
+	if (vacuum_gripper_state_.part_detached)
+		std::cout << "part detached\n";
+	if (vacuum_gripper_state_.part_present)
+		std::cout << "part present\n";
+	std::cout << "vacuum level: " << vacuum_gripper_state_.vacuum << "\n\n";
 	return success;
 }
 
