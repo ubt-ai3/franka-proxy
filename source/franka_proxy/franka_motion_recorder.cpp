@@ -50,6 +50,7 @@ void motion_recorder::start()
 		{
 			//fts_.update();
 			//fts_record_.emplace_back(fts_.current_values());
+			fts_record_.emplace_back(std::array<double, 6>{0, 0, 0, 0, 0, 0});
 
 			franka::RobotState current_state(robot_.readOnce());
 			record_.emplace_back(current_state.q);
