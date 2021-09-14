@@ -190,14 +190,14 @@ file(GLOB franka_proxy_share_headers
 
 if(BUILD_SERVER)
 	install(
-		TARGETS franka_control franka_proxy franka_proxy_client
+		TARGETS franka_control franka_proxy franka_proxy_client franka_proxy_share
 		EXPORT franka-proxyConfig
 		LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
 		RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
 	)
 else()
 	install(
-		TARGETS franka_control franka_proxy_client
+		TARGETS franka_control franka_proxy_client franka_proxy_share
 		EXPORT franka-proxyConfig
 		LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
 		RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
