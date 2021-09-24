@@ -95,6 +95,12 @@ void franka_state_server::task_main()
 			response.max_width = gripper_state.max_width;
 			response.is_grasped = gripper_state.is_grasped;
 
+			response.actual_power = vacuum_gripper_state_.actual_power;
+			response.part_detached = vacuum_gripper_state_.part_detached;
+			response.part_present = vacuum_gripper_state_.part_present;
+			response.vacuum = vacuum_gripper_state_.vacuum;
+			response.in_control_range = vacuum_gripper_state_.in_control_range;
+
 			std::string content = nlohmann::json(response).dump();
 			const std::uint64_t content_length = content.size();
 

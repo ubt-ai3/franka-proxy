@@ -130,10 +130,15 @@ int franka_remote_controller::max_gripper_pos() const
 
 bool franka_remote_controller::gripper_grasped() const
 {
-	std::lock_guard<std::mutex> state_guard(state_lock_);
+	
 	return gripper_grasped_;
 }
 
+vacuum_gripper_state franka_remote_controller::get_vacuum_gripper_state()
+{
+	std::lock_guard<std::mutex> state_guard(state_lock_);
+	return vacuum_gripper_state();
+}
 
 void franka_remote_controller::start_recording()
 	{ send_command<command_start_recording>(); }
@@ -156,9 +161,18 @@ void franka_remote_controller::update()
 	{
 		std::lock_guard lck(state_lock_);
 		current_config_ = state.joint_configuration;
+
+		//jaw gripper
 		current_gripper_pos_ = static_cast<int>(state.width);
 		max_gripper_pos_ = static_cast<int>(state.max_width);
 		gripper_grasped_ = state.is_grasped;
+
+		//vacuum gripper
+		vacuum_gripper_state_.actual_power_ = state.actual_power;
+		vacuum_gripper_state_.vacuum_level = state.vacuum;
+		vacuum_gripper_state_.part_detached_ = state.part_detached;
+		vacuum_gripper_state_.part_present_ = state.part_present;
+		vacuum_gripper_state_.in_control_range_ = state.in_control_range;
 	}
 
 	socket_state_->clear_states();

@@ -450,10 +450,19 @@ struct command_get_config_response
 	static constexpr char type[] = "response.config";
 
 	std::array<double, 7> joint_configuration;
+
+	//jaw gripper
 	double width;
 	double max_width;
 	bool is_grasped;
-};
+
+	//vacuum gripper
+	uint8_t actual_power;
+	uint8_t vacuum;
+	bool part_detached;
+	bool part_present;
+	bool in_control_range;
+};	
 
 void to_json(nlohmann::json& json, const command_get_config_response& object);
 void from_json(const nlohmann::json& json, command_get_config_response& object);
