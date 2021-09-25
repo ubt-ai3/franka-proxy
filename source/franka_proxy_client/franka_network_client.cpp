@@ -107,7 +107,7 @@ void franka_state_client::update_messages_buffer()
 	catch (...)
 	{
 		std::cerr << "franka_state_client::update_messages_buffer(): " 
-			<< "State message discarted due to bad JSON." 
+			<< "State message discarded due to bad JSON." 
 			<< std::endl;
 	}
 }
