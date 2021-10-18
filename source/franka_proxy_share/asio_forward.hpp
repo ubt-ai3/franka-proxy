@@ -58,14 +58,7 @@ template <int I> struct never_t;
 }
 
 
-typedef execution::any_executor
-	<execution::context_as_t<execution_context&>,
-	 execution::detail::blocking::never_t<0>,
-	 execution::prefer_only<execution::detail::blocking::possibly_t<0>>,
-	 execution::prefer_only<execution::detail::outstanding_work::tracked_t<0>>,
-	 execution::prefer_only<execution::detail::outstanding_work::untracked_t<0>>,
-	 execution::prefer_only<execution::detail::relationship::fork_t<0>>,
-	 execution::prefer_only<execution::detail::relationship::continuation_t<0>>> any_io_executor;
+class any_io_executor;
 
 
 template <typename Protocol, typename Executor>
