@@ -288,8 +288,10 @@ bool franka_hardware_controller::vacuum_gripper_drop(std::chrono::milliseconds t
 {
 	if(!vacuum_gripper_)
 		throw std::runtime_error("Tried to use non existent gripper, make sure you use the vacuum gripper");
+	bool success = false;
 
-	bool success = vacuum_gripper_->dropOff(drop_timeout);
+	success = vacuum_gripper_->dropOff(drop_timeout);
+
 	{
 		std::scoped_lock<std::mutex> state_guard(state_lock_);
 		vacuum_gripper_state_ = vacuum_gripper_->readOnce();
