@@ -6,6 +6,7 @@ option(BUILD_SERVER "Build franka_proxy executable" ON)
 
 if(BUILD_SERVER)
 	find_package(Franka CONFIG REQUIRED)
+    find_package(Poco REQUIRED COMPONENTS Net Foundation)
 endif()
 
 find_package(asio CONFIG REQUIRED)
