@@ -73,7 +73,7 @@ int main()
 
 	std::cout << "Starting Gripper Test." << std::endl;
 
-	controller.grasp_gripper(0.1);
+	controller.grasp_gripper(0.1);  //Warum diese vier Funktionen nicht auch mit execute_retry?
 	controller.open_gripper(0.1);
 	controller.close_gripper(1);
 	controller.open_gripper(1);
@@ -113,7 +113,7 @@ int main()
 	std::cout << "Finished Force Test." << std::endl;
 
 
-	std::cout << "Starting FK/IK Test." << std::endl;
+	//std::cout << "Starting FK/IK Test." << std::endl;
 
 	//Eigen::Affine3d pose
 	//	(franka_control::franka_util::fk
@@ -133,7 +133,7 @@ int main()
 	//Eigen::VectorXd::Map(&q[0], 7) = ik_solution;
 	//controller.move_to(q);
 
-	std::cout << ("Finished FK/IK Test.");
+	//std::cout << ("Finished FK/IK Test.");
 
 
 	std::cout << ("Starting Playback Test.");
