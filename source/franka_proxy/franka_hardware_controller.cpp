@@ -111,7 +111,8 @@ void franka_hardware_controller::move_to(const robot_config_7dof& target)
 {
 	initialize_parameters();
 
-	detail::franka_joint_motion_generator motion_generator
+	//-----------------motion-generator befindet sich in motion_generator_joint_max_accel.cpp------------------
+	detail::franka_joint_motion_generator motion_generator //motion_gemerator ist ein functor, ein object, dass wie eien Funktion behandelt werden kann
 		(speed_factor_, target, state_lock_, robot_state_, stop_motion_, false);
 
 	stop_motion_ = false;

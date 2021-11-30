@@ -89,6 +89,10 @@ void test_measured_z_force(franka_proxy::franka_hardware_controller& robot) {
 	}
 }
 
+void test_force_control_z(franka_proxy::franka_hardware_controller& h_controller) {
+
+}
+
 
 int main() {
 	
@@ -108,7 +112,7 @@ int main() {
 
 	//std::this_thread::sleep_for(std::chrono::seconds(3));
 
-	//h_controller.apply_z_force(0.1, 5);
+	h_controller.apply_z_force(0.1, 5);
 
 	//std::this_thread::sleep_for(std::chrono::seconds(3));
 	
