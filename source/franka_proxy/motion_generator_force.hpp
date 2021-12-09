@@ -47,6 +47,9 @@ public:
 		(const franka::RobotState& robot_state,
 		 franka::Duration period);
 
+	std::vector<double> give_forces();
+	std::vector<double> give_desired_mass();
+
 private:
 
 	void update_dq_filter(const franka::RobotState& robot_state);
@@ -81,6 +84,7 @@ private:
 	franka::RobotState initial_state_;
 
 	std::vector<double> forces_z{}; // debug purpose
+	std::vector<double> des_mass{}; //debug purpose
 };
 
 

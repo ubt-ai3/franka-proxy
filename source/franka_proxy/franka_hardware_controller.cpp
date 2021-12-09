@@ -96,6 +96,7 @@ void franka_hardware_controller::apply_z_force
 			{
 				return fmg.callback(robot_state, period);
 			}, true, 10.0);
+		export_z_forces(fmg.give_forces(), fmg.give_desired_mass());
 	}
 	catch (const franka::Exception&)
 	{
@@ -104,6 +105,22 @@ void franka_hardware_controller::apply_z_force
 	}
 
 	set_control_loop_running(false);
+}
+
+void franka_hardware_controller::export_z_forces(std::vector<double> forces_z, std::vector<double> desired_mass) {
+	std::ofstream my_file("z_forces(1,5)_kp_5_sprung_2.csv");
+	double t = 0.0;
+	int size = forces_z.size();
+	for (int i = 0; i < size; i++) {
+		if (i % 10 == 0) {
+			my_file << std::to_string(t) << ",";
+			my_file << std::to_string(forces_z[i]) << ",";
+			my_file << std::to_string(desired_mass[i]) << "\n";
+		}		
+		t += 0.001;
+	}
+
+	my_file.close();
 }
 
 

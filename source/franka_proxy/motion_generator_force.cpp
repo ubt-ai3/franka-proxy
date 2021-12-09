@@ -88,8 +88,8 @@ franka::Torques force_motion_generator::callback
 	tau_command = tau_desired + k_p * (tau_desired - tau_existing) + k_i * tau_error_integral;
 
 	// Smoothly update the mass to reach the desired target value.
-	desired_mass = filter_gain * target_mass + (1 - filter_gain) * desired_mass;
-
+	//desired_mass = filter_gain * target_mass + (1 - filter_gain) * desired_mass;
+	desired_mass = target_mass;
 
 	// updateDQFilter
 	update_dq_filter(robot_state);
@@ -106,9 +106,17 @@ franka::Torques force_motion_generator::callback
 
 
 	forces_z.push_back(robot_state.O_F_ext_hat_K[2]);
+	des_mass.push_back(desired_mass * -9.81);
 
 
 	return tau_d_array;
+}
+
+std::vector<double> force_motion_generator::give_forces() {
+	return forces_z;
+}
+std::vector<double> force_motion_generator::give_desired_mass() {
+	return des_mass;
 }
 
 

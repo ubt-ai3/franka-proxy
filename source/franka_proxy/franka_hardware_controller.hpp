@@ -20,7 +20,10 @@
 #include <franka/robot.h>
 #include <franka/gripper.h>
 
+//Added includes---------
 #include "franka_motion_recorder.hpp"
+#include "fstream"
+#include "iomanip"
 
 
 namespace franka_proxy
@@ -162,6 +165,9 @@ private:
 
 	std::atomic_bool terminate_state_thread_;
 	std::thread state_thread_;
+
+	//Exporting Forces
+	void export_z_forces(std::vector<double> forces_z, std::vector<double> desired_mass);
 };
 
 

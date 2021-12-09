@@ -16,6 +16,8 @@
 #include "franka_network_control_server.hpp"
 #include "franka_network_state_server.hpp"
 
+#include <franka/exception.h>
+
 
 namespace franka_proxy
 {

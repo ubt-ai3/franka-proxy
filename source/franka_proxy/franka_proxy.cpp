@@ -99,25 +99,29 @@ int main() {
 	franka_proxy::franka_hardware_controller h_controller("192.168.1.1");
 
 	//Move test
-	std::cout << "Starting move test..." << std::endl;
-	move_test(h_controller);
+	//std::cout << "Starting move test..." << std::endl;
+	//move_test(h_controller);
 	
 	//Gripper test
-	std::cout << "Starting Gripper Test..." << std::endl;
-	gripper_test(h_controller);
+	//std::cout << "Starting Gripper Test..." << std::endl;
+	//gripper_test(h_controller);
 
 	/*z-Force measurement Test*/
-	std::cout << "Starting z-Force measurement test..." << std::endl;
-	test_measured_z_force(h_controller);
+	//std::cout << "Starting z-Force measurement test..." << std::endl;
+	//test_measured_z_force(h_controller);
 
-	//std::this_thread::sleep_for(std::chrono::seconds(3));
+	std::cout << "Applying z-force in 5 seconds..." << std::endl;
 
-	h_controller.apply_z_force(0.1, 5);
+	std::this_thread::sleep_for(std::chrono::seconds(5));
 
-	//std::this_thread::sleep_for(std::chrono::seconds(3));
-	
+	try {
+		h_controller.apply_z_force(1, 5);
+	}
+	catch (const franka::Exception& e) {
+		std::cout << "catched Exception: " << e.what() << std::endl;
+	}
 
-
+	std::this_thread::sleep_for(std::chrono::seconds(1));
 
 	//franka_proxy::franka_proxy proxy;
 	std::cout << "Press enter to close..." << std::endl;
