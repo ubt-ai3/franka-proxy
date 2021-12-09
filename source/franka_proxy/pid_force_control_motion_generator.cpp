@@ -21,8 +21,7 @@
 
 namespace franka_proxy
 {
-	namespace detail
-	{
+	
 
 
 		//////////////////////////////////////////////////////////////////////////
@@ -144,5 +143,5 @@ namespace franka_proxy
 
 
 
-	} /* namespace detail */
+
 } /* namespace franka_proxy */

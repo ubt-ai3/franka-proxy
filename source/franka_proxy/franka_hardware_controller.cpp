@@ -20,6 +20,7 @@
 
 #include "franka_motion_recorder.hpp"
 #include "motion_generator_force.hpp"
+#include "pid_force_control_motion_generator.hpp"
 #include "motion_generator_joint_max_accel.hpp"
 #include "motion_generator_seq_cart_vel_tau.hpp"
 
@@ -93,6 +94,39 @@ void franka_hardware_controller::apply_z_force
 		robot_.control(
 			[&](const franka::RobotState& robot_state,
 			    franka::Duration period) -> franka::Torques
+			{
+				return fmg.callback(robot_state, period);
+			}, true, 10.0);
+		export_z_forces(fmg.give_forces(), fmg.give_desired_mass());
+	}
+	catch (const franka::Exception&)
+	{
+		set_control_loop_running(false);
+		throw;
+	}
+
+	set_control_loop_running(false);
+}
+
+void franka_hardware_controller::apply_z_force_pid
+(const double mass, const double duration, double k_p, double k_i, double k_d)
+{
+	initialize_parameters();
+
+	try
+	{
+		detail::pid_force_control_motion_generator fmg(robot_, mass, duration,k_p, k_i, k_d);
+
+		set_control_loop_running(true);
+		{
+			// Lock the current_state_lock_ to wait for state_thread_ to finish.
+			std::lock_guard<std::mutex> state_guard(state_lock_);
+		}
+
+		// start real-time control loop
+		robot_.control(
+			[&](const franka::RobotState& robot_state,
+				franka::Duration period) -> franka::Torques
 			{
 				return fmg.callback(robot_state, period);
 			}, true, 10.0);

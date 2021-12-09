@@ -115,7 +115,7 @@ int main() {
 	std::this_thread::sleep_for(std::chrono::seconds(5));
 
 	try {
-		h_controller.apply_z_force(1, 5);
+		h_controller.apply_z_force_pid(1, 5, 1.0, 2.0, 1.0);
 	}
 	catch (const franka::Exception& e) {
 		std::cout << "catched Exception: " << e.what() << std::endl;

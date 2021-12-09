@@ -91,6 +91,11 @@ public:
 		double mass, 
 		double duration);
 
+	void apply_z_force_pid(
+		double mass,
+		double duration,
+		double k_p, double k_i, double k_d);
+
 	/**
 	 * Starts/Stops the recording callback.
 	 */
