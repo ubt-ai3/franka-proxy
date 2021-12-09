@@ -20,7 +20,6 @@
 
 #include "franka_motion_recorder.hpp"
 #include "motion_generator_force.hpp"
-#include "pid_force_control_motion_generator.hpp"
 #include "motion_generator_joint_max_accel.hpp"
 #include "motion_generator_seq_cart_vel_tau.hpp"
 
