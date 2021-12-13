@@ -172,7 +172,7 @@ private:
 	std::thread state_thread_;
 
 	//Exporting Forces
-	void export_z_forces(std::vector<double> forces_z, std::vector<double> desired_mass);
+	void export_z_forces(double k_p, double k_i, double k_d, std::vector<double> forces_z, std::vector<double> desired_mass);
 };
 
 

@@ -159,6 +159,7 @@ pid_force_control_motion_generator::pid_force_control_motion_generator
 	initial_state_ = robot.readOnce();
 }
 
+//--------------PID----------------
 franka::Torques pid_force_control_motion_generator::callback
 (const franka::RobotState& robot_state,
 	franka::Duration period)

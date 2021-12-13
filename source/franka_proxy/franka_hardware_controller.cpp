@@ -96,7 +96,7 @@ void franka_hardware_controller::apply_z_force
 			{
 				return fmg.callback(robot_state, period);
 			}, true, 10.0);
-		export_z_forces(fmg.give_forces(), fmg.give_desired_mass());
+		//export_z_forces(fmg.give_forces(), fmg.give_desired_mass());
 	}
 	catch (const franka::Exception&)
 	{
@@ -129,7 +129,7 @@ void franka_hardware_controller::apply_z_force_pid
 			{
 				return fmg.callback(robot_state, period);
 			}, true, 10.0);
-		export_z_forces(fmg.give_forces(), fmg.give_desired_mass());
+		export_z_forces(k_p, k_i, k_d, fmg.give_forces(), fmg.give_desired_mass());
 	}
 	catch (const franka::Exception&)
 	{
@@ -140,8 +140,11 @@ void franka_hardware_controller::apply_z_force_pid
 	set_control_loop_running(false);
 }
 
-void franka_hardware_controller::export_z_forces(std::vector<double> forces_z, std::vector<double> desired_mass) {
-	std::ofstream my_file("z_forces(1,5)_kp_5_sprung_2.csv");
+//Exportiert die gemessenen Kräfte in z-Richtung sowie die gewünschten Kräfte über der Zeit
+//Das enstehende csv File hat z.B. den Namen k_p_3-k_i_2-k_d_1-dm_10
+void franka_hardware_controller::export_z_forces(double k_p, double k_i, double k_d, std::vector<double> forces_z, std::vector<double> desired_mass) {
+	auto now{ std::chrono::system_clock::now() };
+	std::ofstream my_file("k_p_" + std::to_string(k_p) + "-k_i_" + std::to_string(k_i) + "-k_d_" + std::to_string(k_d) + "-dm_" + std::to_string(desired_mass[desired_mass.size()]) + ".csv");
 	double t = 0.0;
 	int size = forces_z.size();
 	for (int i = 0; i < size; i++) {
