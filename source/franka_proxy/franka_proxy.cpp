@@ -110,12 +110,12 @@ int main() {
 	//std::cout << "Starting z-Force measurement test..." << std::endl;
 	//test_measured_z_force(h_controller);
 
-	std::cout << "Applying z-force in 5 seconds..." << std::endl;
+	std::cout << "Applying z-force in 3 seconds..." << std::endl;
 
-	std::this_thread::sleep_for(std::chrono::seconds(5));
+	std::this_thread::sleep_for(std::chrono::seconds(3));
 
 	try {
-		h_controller.apply_z_force_pid(1, 5, 1.0, 2.0, 1.0);
+		h_controller.apply_z_force_pid(1, 5, 1.0, 2.0, 0.0);
 	}
 	catch (const franka::Exception& e) {
 		std::cout << "catched Exception: " << e.what() << std::endl;

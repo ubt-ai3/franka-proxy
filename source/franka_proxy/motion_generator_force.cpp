@@ -153,7 +153,8 @@ pid_force_control_motion_generator::pid_force_control_motion_generator
 	k_p(k_p),
 	k_i(k_i),
 	k_d(k_d),
-	model(robot.loadModel())
+	model(robot.loadModel()),
+	tau_old_error(Eigen::Matrix<double, 6, 1>())
 {
 	initial_state_ = robot.readOnce();
 }
@@ -187,6 +188,9 @@ franka::Torques pid_force_control_motion_generator::callback
 
 	Eigen::VectorXd desired_force_torque(6), tau_existing(7), tau_desired(7), tau_command(7), tau_J_d(7);
 
+	//--------
+	Eigen::VectorXd tau_error_differential(6);
+	//----------
 
 	desired_force_torque.setZero();
 	desired_force_torque(2) = target_mass * -9.81;
@@ -195,9 +199,16 @@ franka::Torques pid_force_control_motion_generator::callback
 	tau_existing = tau_measured - gravity;
 	tau_desired = jacobian.transpose() * desired_force_torque;
 	tau_error_integral += period.toSec() * (tau_desired - tau_existing);
-	// FF + PI control
-	tau_command = tau_desired + k_p * (tau_desired - tau_existing) + k_i * tau_error_integral;
 
+	//----------
+	tau_new_error = tau_desired - tau_existing;
+	tau_error_differential = (tau_new_error - tau_old_error) / (0.001);
+	tau_old_error = tau_new_error;
+	//----------
+
+	//FF? + PID-control
+	tau_command = tau_desired + k_p * (tau_desired - tau_existing) + k_i * tau_error_integral + k_d * tau_error_differential;
+	//tau_command = tau_desired + k_p * (tau_desired - tau_existing) + k_i * tau_error_integral;
 	
 	// updateDQFilter
 	update_dq_filter(robot_state);

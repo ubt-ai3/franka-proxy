@@ -88,7 +88,7 @@ private:
 };
 
 
-
+// ----------- PID FORCE CONTROL MOTION GENERATOR CLASS ------------
 class pid_force_control_motion_generator
 {
 public:
@@ -127,6 +127,11 @@ private:
 	double k_d;
 	double target_mass;
 	double duration;
+
+	//------------
+	Eigen::VectorXd tau_new_error;
+	Eigen::VectorXd tau_old_error;
+	//--------------
 
 	franka::Model model;
 
