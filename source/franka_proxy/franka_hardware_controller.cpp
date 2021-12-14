@@ -139,6 +139,10 @@ detail::force_motion_generator::export_data franka_hardware_controller::apply_z_
 		// robot control has finished, now get the export data and put it in the struct
 		ex_data.measured_forces = fmg.give_measured_forces();
 		ex_data.desired_forces = fmg.give_desired_forces();
+		ex_data.command_forces = fmg.give_command_forces();
+		ex_data.force_errors = fmg.give_force_errors();
+		ex_data.force_errors_integrals = fmg.give_force_errors_integral();
+		ex_data.force_errors_differentials = fmg.give_force_errors_differential();
 		
 	}
 	catch (const franka::Exception&)

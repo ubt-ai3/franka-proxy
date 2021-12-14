@@ -55,11 +55,13 @@ public:
 		//todo: check if columns can be initialized static with the use of the duration and the 1kHz frequenzy
 
 		Eigen::Matrix<double, 6, Eigen::Dynamic> masses; //the mass that should be achieved in each time step
-		std::vector<std::array<double, 6>> measured_forces;
+
+		std::vector<Eigen::Matrix<double, 6, 1>> measured_forces;
 		std::vector<Eigen::Matrix<double, 6, 1>> desired_forces;
-		Eigen::Matrix<double, 6, Eigen::Dynamic> control_forces; //the calculated value - output from the pid-control
-		Eigen::Matrix<double, 6, Eigen::Dynamic> error_integrals; //input for the i control - this value gets multiplied by k_i
-		Eigen::Matrix<double, 6, Eigen::Dynamic> error_differentials; //input for the d control - this value gets multiplied by k_d
+		std::vector<Eigen::Matrix<double, 6, 1>> command_forces; //the calculated value - output from the pid-control
+		std::vector<Eigen::Matrix<double, 6, 1>> force_errors;
+		std::vector<Eigen::Matrix<double, 6, 1>> force_errors_integrals; //input for the i control - this value gets multiplied by k_i
+		std::vector<Eigen::Matrix<double, 6, 1>> force_errors_differentials; //input for the d control - this value gets multiplied by k_d
 
 	};
 
@@ -123,8 +125,12 @@ public:
 	(const franka::RobotState& robot_state,
 		franka::Duration period);
 
-	std::vector<std::array<double, 6>> give_measured_forces();
+	std::vector<Eigen::Matrix<double, 6, 1>> give_measured_forces();
 	std::vector<Eigen::Matrix<double, 6, 1>> give_desired_forces();
+	std::vector<Eigen::Matrix<double, 6, 1>> give_command_forces();
+	std::vector<Eigen::Matrix<double, 6, 1>> give_force_errors();
+	std::vector<Eigen::Matrix<double, 6, 1>> give_force_errors_integral();
+	std::vector<Eigen::Matrix<double, 6, 1>> give_force_errors_differential();
 
 private:
 
@@ -154,11 +160,14 @@ private:
 	//------------
 	Eigen::VectorXd tau_new_error;
 	Eigen::VectorXd tau_old_error;
-	std::vector<std::array<double, 6>> measured_forces; //get über public get_measured_forces()
+
+	//Forces: 6-dimensional
+	std::vector<Eigen::Matrix<double, 6, 1>> measured_forces; //get über public get_measured_forces()
 	std::vector<Eigen::Matrix<double, 6, 1>> desired_forces;// get über public get_desired_forces()
-	std::vector<Eigen::Matrix<double, 7, 1>> calculated_forces;
-	std::vector<Eigen::Matrix<double, 6, 1>> error_integrals;
-	std::vector<Eigen::Matrix<double, 6, 1>> error_differentials;
+	std::vector<Eigen::Matrix<double, 6, 1>> command_forces;
+	std::vector<Eigen::Matrix<double, 6, 1>> force_errors;
+	std::vector<Eigen::Matrix<double, 6, 1>> force_errors_integral;
+	std::vector<Eigen::Matrix<double, 6, 1>> force_errors_differential;
 
 	//--------------
 
@@ -168,9 +177,6 @@ private:
 	Eigen::Matrix<double, 7, 1> tau_error_integral;
 
 	franka::RobotState initial_state_;
-
-	std::vector<double> forces_z{}; // debug purpose
-	std::vector<double> des_mass{}; //debug purpose
 };
 
 
