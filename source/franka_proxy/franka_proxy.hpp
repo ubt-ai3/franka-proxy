@@ -15,6 +15,7 @@
 #include "franka_hardware_controller.hpp"
 #include "franka_network_control_server.hpp"
 #include "franka_network_state_server.hpp"
+#include "motion_generator_force.hpp" //necessary for the export_data struct
 
 #include <franka/exception.h>
 

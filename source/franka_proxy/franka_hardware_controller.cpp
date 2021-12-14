@@ -107,10 +107,17 @@ void franka_hardware_controller::apply_z_force
 	set_control_loop_running(false);
 }
 
-void franka_hardware_controller::apply_z_force_pid
+detail::force_motion_generator::export_data franka_hardware_controller::apply_z_force_pid
 (const double mass, const double duration, double k_p, double k_i, double k_d)
 {
 	initialize_parameters();
+	detail::force_motion_generator::export_data ex_data;
+	ex_data.k_p = k_p;
+	ex_data.k_i = k_i;
+	ex_data.k_d = k_d;
+	ex_data.duration = duration;
+
+
 
 	try
 	{
@@ -129,13 +136,18 @@ void franka_hardware_controller::apply_z_force_pid
 			{
 				return fmg.callback(robot_state, period);
 			}, true, 10.0);
-		export_z_forces(k_p, k_i, k_d, fmg.give_forces(), fmg.give_desired_mass());
+		// robot control has finished, now get the export data and put it in the struct
+		ex_data.measured_forces = fmg.give_measured_forces();
+		ex_data.desired_forces = fmg.give_desired_forces();
+		
 	}
 	catch (const franka::Exception&)
 	{
 		set_control_loop_running(false);
 		throw;
 	}
+
+	return ex_data;
 
 	set_control_loop_running(false);
 }

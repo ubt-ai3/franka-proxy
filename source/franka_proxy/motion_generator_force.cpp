@@ -206,6 +206,12 @@ franka::Torques pid_force_control_motion_generator::callback
 	tau_error_differential = (tau_new_error - tau_old_error) / (0.001);
 	tau_old_error = tau_new_error;
 	//----------
+	//Schreibe Werte in die lokalen privaten Variablen Arrays
+	measured_forces.push_back(robot_state.O_F_ext_hat_K);
+	desired_forces.push_back(desired_force_torque);
+
+
+
 
 	//FF? + PID-control
 	tau_command = tau_desired + k_p * (tau_desired - tau_existing) + k_i * tau_error_integral + k_d * tau_error_differential;
@@ -232,11 +238,11 @@ franka::Torques pid_force_control_motion_generator::callback
 	return tau_d_array;
 }
 
-std::vector<double> pid_force_control_motion_generator::give_forces() {
-	return forces_z;
+std::vector<std::array<double, 6>> pid_force_control_motion_generator::give_measured_forces() {
+	return measured_forces;
 }
-std::vector<double> pid_force_control_motion_generator::give_desired_mass() {
-	return des_mass;
+std::vector<Eigen::Matrix<double, 6, 1>> pid_force_control_motion_generator::give_desired_forces() {
+	return desired_forces;
 }
 
 

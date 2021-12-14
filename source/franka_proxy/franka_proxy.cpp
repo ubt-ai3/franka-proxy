@@ -9,6 +9,7 @@
 
 
 #include "franka_proxy.hpp"
+#include "motion_generator_force.hpp"
 
 #include <iostream>
 
@@ -98,6 +99,8 @@ int main() {
 	
 	franka_proxy::franka_hardware_controller h_controller("192.168.1.1");
 
+
+
 	//Move test
 	//std::cout << "Starting move test..." << std::endl;
 	//move_test(h_controller);
@@ -114,14 +117,25 @@ int main() {
 
 	std::this_thread::sleep_for(std::chrono::seconds(3));
 
+	franka_proxy::detail::force_motion_generator::export_data data;
+
 	try {
-		h_controller.apply_z_force_pid(1, 5, 1.0, 2.0, 0.0);
+		data = h_controller.apply_z_force_pid(1, 5, 1.0, 2.0, 0.0);
 	}
 	catch (const franka::Exception& e) {
 		std::cout << "catched Exception: " << e.what() << std::endl;
 	}
 
 	std::this_thread::sleep_for(std::chrono::seconds(1));
+
+	for (int i = 0; i < data.measured_forces.size(); i++){
+		if (i % 10 == 0) {
+			std::cout << "Measured x-Force " << i << ": " << data.measured_forces[i][0] << std::endl;
+			std::cout << "Measured y-Force " << i << ": " << data.measured_forces[i][1] << std::endl;
+			std::cout << "Measured z-Force " << i << ": " << data.measured_forces[i][2] << std::endl;
+			std::cout << "Desired Torgue 3" << i << ": " << data.desired_forces[i][2] << std::endl;
+		}
+	}
 
 	//franka_proxy::franka_proxy proxy;
 	std::cout << "Press enter to close..." << std::endl;
