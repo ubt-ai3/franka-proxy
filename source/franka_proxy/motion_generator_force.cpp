@@ -211,21 +211,21 @@ franka::Torques pid_force_control_motion_generator::callback
 	//calculate differential of error
 	tau_error_differential = (tau_new_error - tau_old_error) / (0.001);
 	tau_old_error = tau_new_error;
-
-	points_derivative[count_loop % number_of_points_derivative] = tau_error_differential;
-	//std::cout << "Point derivative_" << count_loop << ": " << points_derivative[count_loop % number_of_points_derivative] << " modulo: "<< (count_loop%number_of_points_derivative) <<std::endl;
-	
+	points_derivative[count_loop % number_of_points_derivative] = tau_error_differential;	
 
 	for (int i = 0; i < number_of_points_derivative; i++) {
 		tau_error_differential_sum += points_derivative[i];
 	}
-	tau_error_differential_filtered = tau_error_differential_sum / number_of_points_derivative;
-	
-	//----------
-	
+	if (count_loop < number_of_points_derivative) { //die ersten number_of_points_derivative werden auf 0 gesetzt
+		tau_error_differential_filtered.setZero();
+	}
+	else {
+		tau_error_differential_filtered = tau_error_differential_sum / number_of_points_derivative;
+	}
 
 	//FF? + PID-control
-	tau_command = tau_desired + k_p * (tau_desired - tau_existing) + k_i * tau_error_integral + k_d * tau_error_differential;
+	//tau_command = tau_desired + k_p * (tau_desired - tau_existing) + k_i * tau_error_integral + k_d * tau_error_differential_filtered;
+	tau_command = k_p * (tau_desired - tau_existing) + k_i * tau_error_integral + k_d * tau_error_differential_filtered;
 	
 	// updateDQFilter
 	update_dq_filter(robot_state);

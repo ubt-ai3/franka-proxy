@@ -140,8 +140,8 @@ public:
 private:
 
 	int count_loop = 0;
-	int number_of_points_derivative = 5;
-	Eigen::Matrix<double, 7, 1> points_derivative[5];
+	int number_of_points_derivative = 10;
+	Eigen::Matrix<double, 7, 1> points_derivative[10];
 
 	void update_dq_filter(const franka::RobotState& robot_state);
 	double compute_dq_filtered(int j);
