@@ -154,7 +154,8 @@ pid_force_control_motion_generator::pid_force_control_motion_generator
 	k_i(k_i),
 	k_d(k_d),
 	model(robot.loadModel()),
-	tau_old_error(Eigen::Matrix<double, 6, 1>())
+	tau_old_error(Eigen::Matrix<double, 7, 1>()),
+	tau_new_error(Eigen::Matrix<double, 7, 1>())
 {
 	initial_state_ = robot.readOnce();
 }
@@ -186,23 +187,40 @@ franka::Torques pid_force_control_motion_generator::callback
 	Eigen::Map<const Eigen::Matrix<double, 6, 7>> jacobian(jacobian_array.data());
 
 
-	Eigen::VectorXd desired_force_torque(6), tau_error_differential(6), tau_existing(7), tau_desired(7), tau_command(7), tau_J_d(7);
+	Eigen::Matrix<double, 6, 1> desired_force_torque;
+
+	Eigen::Matrix<double, 7, 1> tau_existing;
+	Eigen::Matrix<double, 7, 1> tau_desired;
+	Eigen::Matrix<double, 7, 1> tau_command;
+	Eigen::Matrix<double, 7, 1> tau_J_d;
+	Eigen::Matrix<double, 7, 1> tau_error_differential;
+	Eigen::Matrix<double, 7, 1> tau_error_differential_sum; //Summe von den aufeinderfolgenden diff werten der errors
+	Eigen::Matrix<double, 7, 1> tau_error_differential_filtered; //tau_error_differentials_sum wird durch die anzahl der Punkte geteilt, aus denen sich die Summe zusammensetzt
 
 	//Setze gewünschte Drehmomente in Gelenken
 	desired_force_torque.setZero();
-	desired_force_torque(2) = target_mass * -9.81;
+	desired_force_torque(2, 0) = target_mass * -9.81;
 
 
 	tau_existing = tau_measured - gravity;
 	tau_desired = jacobian.transpose() * desired_force_torque;
-	tau_error_integral += period.toSec() * (tau_desired - tau_existing);
+	tau_new_error = tau_desired - tau_existing;
+
+	tau_error_integral += period.toSec() * tau_new_error;
 
 	//calculate differential of error
-	tau_new_error = tau_desired - tau_existing;
 	tau_error_differential = (tau_new_error - tau_old_error) / (0.001);
 	tau_old_error = tau_new_error;
 
-	Eigen::Matrix<double, 7, 1> tau_error = tau_desired - tau_existing;
+	points_derivative[count_loop % number_of_points_derivative] = tau_error_differential;
+	//std::cout << "Point derivative_" << count_loop << ": " << points_derivative[count_loop % number_of_points_derivative] << " modulo: "<< (count_loop%number_of_points_derivative) <<std::endl;
+	
+
+	for (int i = 0; i < number_of_points_derivative; i++) {
+		tau_error_differential_sum += points_derivative[i];
+	}
+	tau_error_differential_filtered = tau_error_differential_sum / number_of_points_derivative;
+	
 	//----------
 	
 
@@ -228,9 +246,13 @@ franka::Torques pid_force_control_motion_generator::callback
 	// A * x = b muss gelöst werden. A = J^T, x = F, b = tau. x ist der interessierende Vektor, der über verschiedene lineare Lösungssolver ermittelt werden kann
 	measured_forces.push_back((jacobian.transpose()).fullPivLu().solve(tau_existing)); 
 	command_forces.push_back((jacobian.transpose()).fullPivLu().solve(tau_command));
-	force_errors.push_back((jacobian.transpose()).fullPivLu().solve(tau_error));
+	force_errors.push_back((jacobian.transpose()).fullPivLu().solve(tau_new_error));
 	force_errors_integral.push_back((jacobian.transpose()).fullPivLu().solve(tau_error_integral));
 	force_errors_differential.push_back((jacobian.transpose()).fullPivLu().solve(tau_error_differential));
+	force_errors_differential_sum.push_back((jacobian.transpose()).fullPivLu().solve(tau_error_differential_sum));
+	force_errors_differential_filtered.push_back((jacobian.transpose()).fullPivLu().solve(tau_error_differential_filtered));
+
+	count_loop++;
 
 	return tau_d_array;
 }
@@ -252,6 +274,12 @@ std::vector<Eigen::Matrix<double, 6, 1>> pid_force_control_motion_generator::giv
 }
 std::vector<Eigen::Matrix<double, 6, 1>> pid_force_control_motion_generator::give_force_errors_differential() {
 	return force_errors_differential;
+}
+std::vector<Eigen::Matrix<double, 6, 1>> pid_force_control_motion_generator::give_force_errors_differential_sum() {
+	return force_errors_differential_sum;
+}
+std::vector<Eigen::Matrix<double, 6, 1>> pid_force_control_motion_generator::give_force_errors_differential_filtered() {
+	return force_errors_differential_filtered;
 }
 
 

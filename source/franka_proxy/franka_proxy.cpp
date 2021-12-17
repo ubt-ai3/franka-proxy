@@ -128,9 +128,9 @@ int main() {
 
 	std::this_thread::sleep_for(std::chrono::seconds(1));
 
-	for (int i = 0; i < data.measured_forces.size(); i++){
-		if (i % 100 == 0) {
-			std::cout << "Measured x-Force " << i << ": " << data.measured_forces[i][0] << std::endl;
+	for (int i = 0; i < 20; i++){
+		if (true) {
+			/*std::cout << "Measured x-Force " << i << ": " << data.measured_forces[i][0] << std::endl;
 			std::cout << "Measured y-Force " << i << ": " << data.measured_forces[i][1] << std::endl;
 			std::cout << "Measured z-Force " << i << ": " << data.measured_forces[i][2] << std::endl;
 			std::cout << "Desired x-Force" << i << ": " << data.desired_forces[i][0] << std::endl;
@@ -143,11 +143,17 @@ int main() {
 			std::cout << "Error integral y-Force" << i << ": " << data.force_errors_integrals[i][1] << std::endl;
 			std::cout << "Error integral z-Force" << i << ": " << data.force_errors_integrals[i][2] << std::endl;
 			std::cout << "Error differential x-Force" << i << ": " << data.force_errors_differentials[i][0] << std::endl;
-			std::cout << "Error differential y-Force" << i << ": " << data.force_errors_differentials[i][1] << std::endl;
+			std::cout << "Error differential y-Force" << i << ": " << data.force_errors_differentials[i][1] << std::endl;*/
 			std::cout << "Error differential z-Force" << i << ": " << data.force_errors_differentials[i][2] << std::endl;
-			std::cout << "Control x-Force" << i << ": " << data.command_forces[i][0] << std::endl;
+			/*std::cout << "Error differentia sum x-Force" << i << ": " << data.force_errors_differentials_sum[i][0] << std::endl;
+			std::cout << "Error differential sum y-Force" << i << ": " << data.force_errors_differentials_sum[i][1] << std::endl;*/
+			std::cout << "Error differential sum z-Force" << i << ": " << data.force_errors_differentials_sum[i][2] << std::endl;
+			/*std::cout << "Error differential filtered x-Force" << i << ": " << data.force_errors_differentials_filtered[i][0] << std::endl;
+			std::cout << "Error differential filtered y-Force" << i << ": " << data.force_errors_differentials_filtered[i][1] << std::endl;*/
+			std::cout << "Error differential filtered z-Force" << i << ": " << data.force_errors_differentials_filtered[i][2] << std::endl;
+			/*std::cout << "Control x-Force" << i << ": " << data.command_forces[i][0] << std::endl;
 			std::cout << "Control y-Force" << i << ": " << data.command_forces[i][1] << std::endl;
-			std::cout << "Control z-Force" << i << ": " << data.command_forces[i][2] << std::endl;
+			std::cout << "Control z-Force" << i << ": " << data.command_forces[i][2] << std::endl;*/
 			std::cout << std::endl << std::endl;
 		}
 	}

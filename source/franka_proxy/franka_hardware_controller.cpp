@@ -143,6 +143,8 @@ detail::force_motion_generator::export_data franka_hardware_controller::apply_z_
 		ex_data.force_errors = fmg.give_force_errors();
 		ex_data.force_errors_integrals = fmg.give_force_errors_integral();
 		ex_data.force_errors_differentials = fmg.give_force_errors_differential();
+		ex_data.force_errors_differentials_sum = fmg.give_force_errors_differential_sum();
+		ex_data.force_errors_differentials_filtered = fmg.give_force_errors_differential_filtered();
 		
 	}
 	catch (const franka::Exception&)

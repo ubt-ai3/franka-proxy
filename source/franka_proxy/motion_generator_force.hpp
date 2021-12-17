@@ -18,6 +18,7 @@
 
 #include <franka/robot.h>
 #include <franka/model.h>
+#include <numeric>
 
 //#include <jr3_ft_sensor/force_torque_sensor.hpp>
 
@@ -62,6 +63,8 @@ public:
 		std::vector<Eigen::Matrix<double, 6, 1>> force_errors;
 		std::vector<Eigen::Matrix<double, 6, 1>> force_errors_integrals; //input for the i control - this value gets multiplied by k_i
 		std::vector<Eigen::Matrix<double, 6, 1>> force_errors_differentials; //input for the d control - this value gets multiplied by k_d
+		std::vector<Eigen::Matrix<double, 6, 1>> force_errors_differentials_sum;
+		std::vector<Eigen::Matrix<double, 6, 1>> force_errors_differentials_filtered;
 
 	};
 
@@ -131,8 +134,14 @@ public:
 	std::vector<Eigen::Matrix<double, 6, 1>> give_force_errors();
 	std::vector<Eigen::Matrix<double, 6, 1>> give_force_errors_integral();
 	std::vector<Eigen::Matrix<double, 6, 1>> give_force_errors_differential();
+	std::vector<Eigen::Matrix<double, 6, 1>> give_force_errors_differential_sum();
+	std::vector<Eigen::Matrix<double, 6, 1>> give_force_errors_differential_filtered();
 
 private:
+
+	int count_loop = 0;
+	int number_of_points_derivative = 5;
+	Eigen::Matrix<double, 7, 1> points_derivative[5];
 
 	void update_dq_filter(const franka::RobotState& robot_state);
 	double compute_dq_filtered(int j);
@@ -158,8 +167,8 @@ private:
 	double duration;
 
 	//------------
-	Eigen::VectorXd tau_new_error;
-	Eigen::VectorXd tau_old_error;
+	Eigen::Matrix<double, 7, 1> tau_new_error;
+	Eigen::Matrix<double, 7, 1> tau_old_error;
 
 	//Forces: 6-dimensional
 	std::vector<Eigen::Matrix<double, 6, 1>> measured_forces; //get über public get_measured_forces()
@@ -168,6 +177,8 @@ private:
 	std::vector<Eigen::Matrix<double, 6, 1>> force_errors;
 	std::vector<Eigen::Matrix<double, 6, 1>> force_errors_integral;
 	std::vector<Eigen::Matrix<double, 6, 1>> force_errors_differential;
+	std::vector<Eigen::Matrix<double, 6, 1>> force_errors_differential_sum;
+	std::vector<Eigen::Matrix<double, 6, 1>> force_errors_differential_filtered;
 
 	//--------------
 
