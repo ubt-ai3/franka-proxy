@@ -49,15 +49,15 @@
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
     <Import Project="..\props\build_type_library.props" />
     <Import Project="..\props\use_vcpkg.props" />
-    <Import Project="..\..\..\..\..\tools\vc19\vs-props\build_common.props" />
-    <Import Project="..\..\..\..\..\tools\vc19\vs-props\build_mode_debug.props" />
-    <Import Project="..\..\..\..\..\tools\vc19\vs-props\build_type_library.props" />
+    <Import Project="..\props\build_common.props" />
+    <Import Project="..\props\build_mode_debug.props" />
+    <Import Project="..\props\build_type_library.props" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
     <Import Project="..\props\use_vcpkg.props" />
-    <Import Project="..\..\..\..\..\tools\vc19\vs-props\build_common.props" />
-    <Import Project="..\..\..\..\..\tools\vc19\vs-props\build_mode_release.props" />
-    <Import Project="..\..\..\..\..\tools\vc19\vs-props\build_type_library.props" />
+    <Import Project="..\props\build_common.props" />
+    <Import Project="..\props\build_mode_release.props" />
+    <Import Project="..\props\build_type_library.props" />
   </ImportGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <!-- Required for VS properties dialog to work. -->

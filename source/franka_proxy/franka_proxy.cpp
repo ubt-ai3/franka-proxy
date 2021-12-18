@@ -40,7 +40,9 @@ int main()
 {
 	try {
 		franka_proxy::franka_proxy proxy;
-		return std::cin.get();
+		while(std::cin.get()!= 'q')
+			proxy.controller_.vacuum_gripper_drop();
+		return 0;
 	}
 	catch (const std::exception& e)
 	{
