@@ -45,7 +45,7 @@ void from_json(const nlohmann::json& json, command_move_to_config& object)
 
 void to_json(nlohmann::json& json, const command_move_until_contact& object)
 {
-	json["type"] = command_move_to_config::type;
+	json["type"] = command_move_until_contact::type;
 	json["target"] = object.target_joint_config;
 }
 

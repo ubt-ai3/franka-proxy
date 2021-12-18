@@ -82,18 +82,18 @@ int main()
 	controller.open_gripper(1);
 	controller.close_gripper(1);
 	controller.open_gripper(1);*/
-	//controller.vacuum_gripper_vacuum(1000);
+	//std::this_thread::sleep_for(std::chrono::seconds(1));
 	//controller.vacuum_gripper_stop();
-//	_sleep(1000);
+//	std::this_thread::sleep_for(std::chrono::seconds(1));
 	//controller.vacuum_gripper_drop();
 	
 	
 	//controller.vacuum_gripper_stop();
 	execute_retry([&] { controller.vacuum_gripper_stop(); }, controller);
-	_sleep(10000);
+	std::this_thread::sleep_for(std::chrono::seconds(10));
 	execute_retry([&] { controller.vacuum_gripper_vacuum(100, std::chrono::milliseconds(1000)); }, controller);
 	std::cout << "pause\n";
-	_sleep(10000);
+	std::this_thread::sleep_for(std::chrono::seconds(10));
 	execute_retry([&] { controller.vacuum_gripper_stop(); }, controller);
 
 	//_sleep(10000);
