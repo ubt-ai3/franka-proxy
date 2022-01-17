@@ -55,7 +55,7 @@ public:
 
 		//todo: check if columns can be initialized static with the use of the duration and the 1kHz frequenzy
 
-		Eigen::Matrix<double, 6, Eigen::Dynamic> masses; //the mass that should be achieved in each time step
+		Eigen::Matrix<double, 6, 1> masses; //the mass that should be achieved in each time step
 
 		std::vector<Eigen::Matrix<double, 6, 1>> measured_forces;
 		std::vector<Eigen::Matrix<double, 6, 1>> desired_forces;

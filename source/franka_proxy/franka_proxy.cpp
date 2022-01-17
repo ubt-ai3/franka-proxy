@@ -102,7 +102,21 @@ void data_to_csv(franka_proxy::detail::force_motion_generator::export_data data)
 	std::cout << "Amount command forces: " << data.command_forces.size() << std::endl;
 
 	std::ofstream data_file("testExportData.csv");
-	data_file << std::to_string(data.k_p) << "," << std::to_string(data.k_i) << "," << std::to_string(data.k_d) << "\n";
+	for (int i = 1; i <= 6; i ++) {
+		data_file << std::to_string(data.masses[i]) << ",";
+	}
+	data_file << std::to_string(data.duration) << "," << std::to_string(data.k_p) << "," << std::to_string(data.k_i) << "," << std::to_string(data.k_d) << "\n";
+
+	for (int n = 0; n < data.measured_forces.size(); n++) {
+		for (int i = 0; i < 6; i++) {
+			data_file << data.measured_forces[n][i] << "," << data.desired_forces[n][i] << "," << data.command_forces[n][i] << "," << data.force_errors[n][i] << ",";
+			data_file << data.force_errors_integrals[n][i] << "," << data.force_errors_differentials[n][i] << "," << data.force_errors_differentials_sum[n][i] << "," << data.force_errors_differentials_filtered[n][i] << ",";
+		}
+		data_file << "\n";
+	}
+	
+
+	data_file.close();
 }
 
 
@@ -172,8 +186,12 @@ int main() {
 	}
 
 	//franka_proxy::franka_proxy proxy;
-	std::cout << "Press enter to close..." << std::endl;
-	return std::cin.get();
+	//std::cout << "Press enter to close..." << std::endl;
+	std::cout << "Writing the data to a csv file..." << std::endl;
+	data_to_csv(data);
+	std::cout << "Writing in csv file finished. Closing in 1 second..." << std::endl;
+	std::this_thread::sleep_for(std::chrono::seconds(1));
+	return 0;
 }
 
 
