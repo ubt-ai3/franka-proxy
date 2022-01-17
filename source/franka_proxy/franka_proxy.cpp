@@ -94,6 +94,17 @@ void test_force_control_z(franka_proxy::franka_hardware_controller& h_controller
 
 }
 
+//This function parses the force_motion_generator::export_data (which is returned from the apply_z_force_pid call in the main function) to a csv file
+void data_to_csv(franka_proxy::detail::force_motion_generator::export_data data) {
+	std::cout << "PID Parameters: " << data.k_p << ", " << data.k_i << ", " << data.k_d << std::endl;
+	std::cout << "Amount measured forces: " << data.measured_forces.size() << std::endl;
+	std::cout << "Amount desired forces: " << data.desired_forces.size() << std::endl;
+	std::cout << "Amount command forces: " << data.command_forces.size() << std::endl;
+
+	std::ofstream data_file("testExportData.csv");
+	data_file << std::to_string(data.k_p) << "," << std::to_string(data.k_i) << "," << std::to_string(data.k_d) << "\n";
+}
+
 
 int main() {
 	
@@ -120,7 +131,9 @@ int main() {
 	franka_proxy::detail::force_motion_generator::export_data data;
 
 	try {
-		data = h_controller.apply_z_force_pid(1, 5, 1.0, 2.0, 0.1);
+		//This function calls creates a pid_force_control_motion_generator which is defined in motion_generator_force.cpp
+		//In this function a force_motion_generator::export_data is created and filled with the measured values etc. and returns this data
+		data = h_controller.apply_z_force_pid(1, 5, 1.0, 2.0, 0.0);
 	}
 	catch (const franka::Exception& e) {
 		std::cout << "catched Exception: " << e.what() << std::endl;
