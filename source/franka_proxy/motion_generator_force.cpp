@@ -228,6 +228,8 @@ franka::Torques pid_force_control_motion_generator::callback
 		tau_error_differential_filtered = tau_error_differential_sum / number_of_points_derivative;
 	}
 
+
+
 	//Todo:
 	//force_command = k_p * (force_desired - force_existing) + k_i * force_error_integral + k_d * force_differential_filtered;
 	//force_command = (0, 0, -9.81, 0, 0, 0);
@@ -235,6 +237,27 @@ franka::Torques pid_force_control_motion_generator::callback
 	//tau_command += tau_gravity;
 
 
+	//New Part
+	/*Eigen::Matrix<double, 6, 1> force_desired;
+	Eigen::Matrix<double, 6, 1> force_command;
+	Eigen::Matrix<double, 6, 1> force_error_integral;
+	force_error_integral.setZero();
+	Eigen::Matrix<double, 6, 1> force_differential_filtered;
+	force_differential_filtered.setZero();
+
+	Eigen::Map<const Eigen::Matrix<double, 6, 1>> force_meausured(robot_state.O_F_ext_hat_K.data());
+
+	force_desired.setZero();
+	force_desired(2, 0) = -9.81 * target_mass;
+
+	force_command = force_desired + k_p * (force_desired - force_meausured) + k_i * force_error_integral + k_d * force_differential_filtered;
+	
+	Eigen::Matrix<double, 7, 1> tau_command_new;
+	tau_command_new = jacobian.transpose() * force_command;
+
+	std::array<double, 7> tau_d_array_new{};
+	Eigen::VectorXd::Map(&tau_d_array_new[0], 7) = tau_command_new;*/
+	//End new part
 
 
 	//FF? + PID-control
@@ -269,6 +292,10 @@ franka::Torques pid_force_control_motion_generator::callback
 
 
 	count_loop++;
+
+	/*if (count_loop & 100 == 0) {
+		std::cout << "tau_d_array[0] = " << tau_d_array[0] << "tau_d_array_new[0]" << tau_d_array_new[0] << std::endl;
+	}*/
 
 	return tau_d_array;
 }
