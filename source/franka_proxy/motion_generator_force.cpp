@@ -97,10 +97,10 @@ franka::Torques force_motion_generator::callback
 	// compute torques according to impedance control law
 	// with assumption mass = 0 (robot state does not provide ddq and own measurement too noisy)
 	for (int i = 0; i < 7; i++)
-		tau_J_d[i] = K_P_[i] * (robot_state.q_d[i] - robot_state.q[i]) +
-			K_D_[i] * (dq_d_[i] - compute_dq_filtered(i));
+		tau_J_d[i] = K_P_[i] * (robot_state.q_d[i] - robot_state.q[i]) + K_D_[i] * (dq_d_[i] - compute_dq_filtered(i));
 
 
+	//The final output vector
 	std::array<double, 7> tau_d_array{};
 	Eigen::VectorXd::Map(&tau_d_array[0], 7) = (tau_command + tau_J_d) * 0.5;
 
@@ -138,6 +138,10 @@ double force_motion_generator::compute_dq_filtered(int j)
 	return value / dq_filter_size_;
 }
 
+
+//Class Pid Force Control Motion Generator
+
+//Constructor
 pid_force_control_motion_generator::pid_force_control_motion_generator
 (franka::Robot& robot,
 	double mass,
@@ -160,14 +164,13 @@ pid_force_control_motion_generator::pid_force_control_motion_generator
 	initial_state_ = robot.readOnce();
 }
 
-//--------------PID----------------
 franka::Torques pid_force_control_motion_generator::callback
 (const franka::RobotState& robot_state,
 	franka::Duration period)
 {
 	time_ += period.toSec();
 
-	if (time_ > duration)
+	if (time_ > duration) //Finished
 	{
 		// todo this may be wrong!
 		franka::Torques current_torques(robot_state.tau_J);
@@ -197,7 +200,7 @@ franka::Torques pid_force_control_motion_generator::callback
 	Eigen::Matrix<double, 7, 1> tau_error_differential_sum; //Summe von den aufeinderfolgenden diff werten der errors
 	Eigen::Matrix<double, 7, 1> tau_error_differential_filtered; //tau_error_differentials_sum wird durch die anzahl der Punkte geteilt, aus denen sich die Summe zusammensetzt
 
-	//Setze gewünschte Drehmomente in Gelenken
+	//Setze gewünschte Drehmomente in Gelenken: Alle Richtungen gleich 0 außer z-Richtung
 	desired_force_torque.setZero();
 	desired_force_torque(2, 0) = target_mass * -9.81;
 
@@ -213,6 +216,8 @@ franka::Torques pid_force_control_motion_generator::callback
 	tau_old_error = tau_new_error;
 	points_derivative[count_loop % number_of_points_derivative] = tau_error_differential;	
 
+
+	//Calculate values for the D Control
 	for (int i = 0; i < number_of_points_derivative; i++) {
 		tau_error_differential_sum += points_derivative[i];
 	}
@@ -222,6 +227,15 @@ franka::Torques pid_force_control_motion_generator::callback
 	else {
 		tau_error_differential_filtered = tau_error_differential_sum / number_of_points_derivative;
 	}
+
+	//Todo:
+	//force_command = k_p * (force_desired - force_existing) + k_i * force_error_integral + k_d * force_differential_filtered;
+	//force_command = (0, 0, -9.81, 0, 0, 0);
+	//tau_command = jacobian.transpose() * force_command;
+	//tau_command += tau_gravity;
+
+
+
 
 	//FF? + PID-control
 	//tau_command = tau_desired + k_p * (tau_desired - tau_existing) + k_i * tau_error_integral + k_d * tau_error_differential_filtered;
@@ -233,16 +247,17 @@ franka::Torques pid_force_control_motion_generator::callback
 	// compute torques according to impedance control law
 	// with assumption mass = 0 (robot state does not provide ddq and own measurement too noisy)
 	for (int i = 0; i < 7; i++)
-		tau_J_d[i] = K_P_[i] * (robot_state.q_d[i] - robot_state.q[i]) +
-		K_D_[i] * (dq_d_[i] - compute_dq_filtered(i));
+		tau_J_d[i] = K_P_[i] * (robot_state.q_d[i] - robot_state.q[i]) + K_D_[i] * (dq_d_[i] - compute_dq_filtered(i));
 
+
+	//the final output array
 	std::array<double, 7> tau_d_array{};
+	//Todo remove the following because this results in a constant error
 	Eigen::VectorXd::Map(&tau_d_array[0], 7) = (tau_command + tau_J_d) * 0.5;
 
 	
 	//Schreibe Werte in die lokalen privaten Variablen Arrays
 	desired_forces.push_back(desired_force_torque); //Bereits in 6 Weltkoordinaten
-
 	// A * x = b muss gelöst werden. A = J^T, x = F, b = tau. x ist der interessierende Vektor, der über verschiedene lineare Lösungssolver ermittelt werden kann
 	measured_forces.push_back((jacobian.transpose()).fullPivLu().solve(tau_existing)); 
 	command_forces.push_back((jacobian.transpose()).fullPivLu().solve(tau_command));
@@ -252,11 +267,14 @@ franka::Torques pid_force_control_motion_generator::callback
 	force_errors_differential_sum.push_back((jacobian.transpose()).fullPivLu().solve(tau_error_differential_sum));
 	force_errors_differential_filtered.push_back((jacobian.transpose()).fullPivLu().solve(tau_error_differential_filtered));
 
+
 	count_loop++;
 
 	return tau_d_array;
 }
 
+
+//Get data vector functions
 std::vector<Eigen::Matrix<double, 6, 1>> pid_force_control_motion_generator::give_measured_forces() {
 	return measured_forces;
 }
