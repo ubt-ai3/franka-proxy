@@ -119,79 +119,79 @@ void data_to_csv(franka_proxy::detail::force_motion_generator::export_data data)
 	data_file.close();
 }
 
+void debug_export_data(franka_proxy::detail::force_motion_generator::export_data data) {
+
+
+
+	if (!(data.tau_meausured.size() > 0)) {
+		std::cout << "No measured values to print." << std::endl;
+		return;
+	}
+	for (int i = 0; i < data.tau_meausured.size() ; i++) {
+		if (i % 50 == 0) {
+			std::cout << "tau_desired = " << data.tau_desired[i][2] << ", ";
+			std::cout << "tau_measured = " << data.tau_meausured[i][2] << ", ";
+			std::cout << "tau_existing = " << data.tau_existing[i][2] << ", ";
+			std::cout << "tau_command = " << data.tau_command[i][2] << ", ";
+			std::cout << "tau_J_d = " << data.tau_J_d[i][2] << std::endl;
+
+			std::cout << "force_desired = " << data.desired_forces[i][2] << ", ";
+			std::cout << "force_measured = " << data.measured_forces[i][2] << ", ";
+			std::cout << "O_F_ext = " << data.extern_forces[i][2] << ", ";
+			std::cout << "force_existing = " << data.existing_forces[i][2] << ", ";
+			std::cout << "force_command = " << data.command_forces[i][2] << std::endl << std::endl;
+		}
+	}
+
+	
+}
+
+franka_proxy::detail::force_motion_generator::export_data calculate_missing_data(franka_proxy::detail::force_motion_generator::export_data data) {
+	
+	for (int i = 0; i < data.tau_meausured.size(); i++) {
+		data.command_forces.push_back((data.jacobi[i].transpose()).fullPivLu().solve(data.tau_command[i]));
+		data.measured_forces.push_back((data.jacobi[i].transpose()).fullPivLu().solve(data.tau_meausured[i]));
+		data.desired_forces.push_back((data.jacobi[i].transpose()).fullPivLu().solve(data.tau_desired[i]));
+		data.existing_forces.push_back((data.jacobi[i].transpose()).fullPivLu().solve(data.tau_existing[i]));
+	}
+	return data;
+}
+
 
 int main() {
 	
 	franka_proxy::franka_hardware_controller h_controller("192.168.1.1");
 
+	std::cout << "Applying z-force in 2 seconds..." << std::endl;
 
-
-	//Move test
-	//std::cout << "Starting move test..." << std::endl;
-	//move_test(h_controller);
-	
-	//Gripper test
-	//std::cout << "Starting Gripper Test..." << std::endl;
-	//gripper_test(h_controller);
-
-	/*z-Force measurement Test*/
-	//std::cout << "Starting z-Force measurement test..." << std::endl;
-	//test_measured_z_force(h_controller);
-
-	std::cout << "Applying z-force in 3 seconds..." << std::endl;
-
-	std::this_thread::sleep_for(std::chrono::seconds(3));
+	std::this_thread::sleep_for(std::chrono::seconds(2));
 
 	franka_proxy::detail::force_motion_generator::export_data data;
 
 	try {
 		//This function calls creates a pid_force_control_motion_generator which is defined in motion_generator_force.cpp
 		//In this function a force_motion_generator::export_data is created and filled with the measured values etc. and returns this data
-		data = h_controller.apply_z_force_pid(1, 5, 1.0, 2.0, 0.0);
+		data = h_controller.apply_z_force_pid(1, 5, 2.0, 2.0, 0.0);
 	}
 	catch (const franka::Exception& e) {
 		std::cout << "catched Exception: " << e.what() << std::endl;
 	}
 
-	std::this_thread::sleep_for(std::chrono::seconds(1));
+	//std::this_thread::sleep_for(std::chrono::seconds(1));
 
-	//for (int i = 0; i < 50; i++){
-	//	if (true) {
-	//		/*std::cout << "Measured x-Force " << i << ": " << data.measured_forces[i][0] << std::endl;
-	//		std::cout << "Measured y-Force " << i << ": " << data.measured_forces[i][1] << std::endl;*/
-	//		std::cout << "Measured z-Force " << i << ": " << data.measured_forces[i][2] << std::endl;
-	//		/*std::cout << "Desired x-Force" << i << ": " << data.desired_forces[i][0] << std::endl;
-	//		std::cout << "Desired y-Force" << i << ": " << data.desired_forces[i][1] << std::endl;*/
-	//		std::cout << "Desired z-Force" << i << ": " << data.desired_forces[i][2] << std::endl;
-	//		/*std::cout << "Error x-Force" << i << ": " << data.force_errors[i][0] << std::endl;
-	//		std::cout << "Error y-Force" << i << ": " << data.force_errors[i][1] << std::endl;*/
-	//		std::cout << "Error z-Force" << i << ": " << data.force_errors[i][2] << std::endl;
-	//		/*std::cout << "Error integral x-Force" << i << ": " << data.force_errors_integrals[i][0] << std::endl;
-	//		std::cout << "Error integral y-Force" << i << ": " << data.force_errors_integrals[i][1] << std::endl;*/
-	//		std::cout << "Error integral z-Force" << i << ": " << data.force_errors_integrals[i][2] << std::endl;
-	//		/*std::cout << "Error differential x-Force" << i << ": " << data.force_errors_differentials[i][0] << std::endl;
-	//		std::cout << "Error differential y-Force" << i << ": " << data.force_errors_differentials[i][1] << std::endl;*/
-	//		std::cout << "Error differential z-Force" << i << ": " << data.force_errors_differentials[i][2] << std::endl;
-	//		/*std::cout << "Error differentia sum x-Force" << i << ": " << data.force_errors_differentials_sum[i][0] << std::endl;
-	//		std::cout << "Error differential sum y-Force" << i << ": " << data.force_errors_differentials_sum[i][1] << std::endl;*/
-	//		std::cout << "Error differential sum z-Force" << i << ": " << data.force_errors_differentials_sum[i][2] << std::endl;
-	//		/*std::cout << "Error differential filtered x-Force" << i << ": " << data.force_errors_differentials_filtered[i][0] << std::endl;
-	//		std::cout << "Error differential filtered y-Force" << i << ": " << data.force_errors_differentials_filtered[i][1] << std::endl;*/
-	//		std::cout << "Error differential filtered z-Force" << i << ": " << data.force_errors_differentials_filtered[i][2] << std::endl;
-	//		/*std::cout << "Control x-Force" << i << ": " << data.command_forces[i][0] << std::endl;
-	//		std::cout << "Control y-Force" << i << ": " << data.command_forces[i][1] << std::endl;*/
-	//		std::cout << "Control z-Force" << i << ": " << data.command_forces[i][2] << std::endl;
-	//		std::cout << std::endl << std::endl;
-	//	}
-	//}
+
 
 	//franka_proxy::franka_proxy proxy;
 	//std::cout << "Press enter to close..." << std::endl;
-	std::cout << "Writing the data to a csv file..." << std::endl;
+	/*std::cout << "Writing the data to a csv file..." << std::endl;
 	data_to_csv(data);
-	std::cout << "Writing in csv file finished. Closing in 1 second..." << std::endl;
+	std::cout << "Writing in csv file finished. Closing in 1 second..." << std::endl;*/
 	std::this_thread::sleep_for(std::chrono::seconds(1));
+	data = calculate_missing_data(data);
+	debug_export_data(data);
 	return 0;
 }
+
+
 
 

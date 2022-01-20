@@ -53,10 +53,13 @@ public:
 
 		double duration;
 
+		std::vector<Eigen::Matrix<double, 6, 7>> jacobi;
+
 		//todo: check if columns can be initialized static with the use of the duration and the 1kHz frequenzy
 
 		Eigen::Matrix<double, 6, 1> masses; //the mass that should be achieved in each time step
 
+		std::vector<Eigen::Matrix<double, 6, 1>> existing_forces;
 		std::vector<Eigen::Matrix<double, 6, 1>> measured_forces;
 		std::vector<Eigen::Matrix<double, 6, 1>> desired_forces;
 		std::vector<Eigen::Matrix<double, 6, 1>> command_forces; //the calculated value - output from the pid-control
@@ -65,6 +68,13 @@ public:
 		std::vector<Eigen::Matrix<double, 6, 1>> force_errors_differentials; //input for the d control - this value gets multiplied by k_d
 		std::vector<Eigen::Matrix<double, 6, 1>> force_errors_differentials_sum;
 		std::vector<Eigen::Matrix<double, 6, 1>> force_errors_differentials_filtered;
+		std::vector<Eigen::Matrix<double, 6, 1>> extern_forces;
+
+		std::vector<Eigen::Matrix<double, 7, 1>> tau_meausured;
+		std::vector<Eigen::Matrix<double, 7, 1>> tau_command;
+		std::vector<Eigen::Matrix<double, 7, 1>> tau_desired;
+		std::vector<Eigen::Matrix<double, 7, 1>> tau_existing;
+		std::vector<Eigen::Matrix<double, 7, 1>> tau_J_d;
 
 	};
 
@@ -128,16 +138,10 @@ public:
 	(const franka::RobotState& robot_state,
 		franka::Duration period);
 
-	std::vector<Eigen::Matrix<double, 6, 1>> give_measured_forces();
-	std::vector<Eigen::Matrix<double, 6, 1>> give_desired_forces();
-	std::vector<Eigen::Matrix<double, 6, 1>> give_command_forces();
-	std::vector<Eigen::Matrix<double, 6, 1>> give_force_errors();
-	std::vector<Eigen::Matrix<double, 6, 1>> give_force_errors_integral();
-	std::vector<Eigen::Matrix<double, 6, 1>> give_force_errors_differential();
-	std::vector<Eigen::Matrix<double, 6, 1>> give_force_errors_differential_sum();
-	std::vector<Eigen::Matrix<double, 6, 1>> give_force_errors_differential_filtered();
+	detail::force_motion_generator::export_data get_export_data();
 
 private:
+	detail::force_motion_generator::export_data my_data;
 
 	int count_loop = 0;
 	int number_of_points_derivative = 10;

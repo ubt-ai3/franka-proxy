@@ -228,38 +228,6 @@ franka::Torques pid_force_control_motion_generator::callback
 		tau_error_differential_filtered = tau_error_differential_sum / number_of_points_derivative;
 	}
 
-
-
-	//Todo:
-	//force_command = k_p * (force_desired - force_existing) + k_i * force_error_integral + k_d * force_differential_filtered;
-	//force_command = (0, 0, -9.81, 0, 0, 0);
-	//tau_command = jacobian.transpose() * force_command;
-	//tau_command += tau_gravity;
-
-
-	//New Part
-	/*Eigen::Matrix<double, 6, 1> force_desired;
-	Eigen::Matrix<double, 6, 1> force_command;
-	Eigen::Matrix<double, 6, 1> force_error_integral;
-	force_error_integral.setZero();
-	Eigen::Matrix<double, 6, 1> force_differential_filtered;
-	force_differential_filtered.setZero();
-
-	Eigen::Map<const Eigen::Matrix<double, 6, 1>> force_meausured(robot_state.O_F_ext_hat_K.data());
-
-	force_desired.setZero();
-	force_desired(2, 0) = -9.81 * target_mass;
-
-	force_command = force_desired + k_p * (force_desired - force_meausured) + k_i * force_error_integral + k_d * force_differential_filtered;
-	
-	Eigen::Matrix<double, 7, 1> tau_command_new;
-	tau_command_new = jacobian.transpose() * force_command;
-
-	std::array<double, 7> tau_d_array_new{};
-	Eigen::VectorXd::Map(&tau_d_array_new[0], 7) = tau_command_new;*/
-	//End new part
-
-
 	//FF? + PID-control
 	//tau_command = tau_desired + k_p * (tau_desired - tau_existing) + k_i * tau_error_integral + k_d * tau_error_differential_filtered;
 	tau_command = k_p * (tau_desired - tau_existing) + k_i * tau_error_integral + k_d * tau_error_differential_filtered;
@@ -277,56 +245,29 @@ franka::Torques pid_force_control_motion_generator::callback
 	std::array<double, 7> tau_d_array{};
 	//Todo remove the following because this results in a constant error
 	Eigen::VectorXd::Map(&tau_d_array[0], 7) = (tau_command + tau_J_d) * 0.5;
+	
+	my_data.jacobi.push_back(jacobian);
+
+	my_data.tau_meausured.push_back(tau_measured);
+	my_data.tau_desired.push_back(tau_desired);
+	my_data.tau_command.push_back(tau_command);
+	my_data.tau_existing.push_back(tau_existing);
+	my_data.tau_J_d.push_back(tau_J_d);
 
 	
-	//Schreibe Werte in die lokalen privaten Variablen Arrays
-	desired_forces.push_back(desired_force_torque); //Bereits in 6 Weltkoordinaten
-	// A * x = b muss gelöst werden. A = J^T, x = F, b = tau. x ist der interessierende Vektor, der über verschiedene lineare Lösungssolver ermittelt werden kann
-	measured_forces.push_back((jacobian.transpose()).fullPivLu().solve(tau_existing)); 
-	command_forces.push_back((jacobian.transpose()).fullPivLu().solve(tau_command));
-	force_errors.push_back((jacobian.transpose()).fullPivLu().solve(tau_new_error));
-	force_errors_integral.push_back((jacobian.transpose()).fullPivLu().solve(tau_error_integral));
-	force_errors_differential.push_back((jacobian.transpose()).fullPivLu().solve(tau_error_differential));
-	force_errors_differential_sum.push_back((jacobian.transpose()).fullPivLu().solve(tau_error_differential_sum));
-	force_errors_differential_filtered.push_back((jacobian.transpose()).fullPivLu().solve(tau_error_differential_filtered));
-
+	Eigen::Map<const Eigen::Matrix<double, 6, 1>> ex_F(robot_state.O_F_ext_hat_K.data());
+	my_data.extern_forces.push_back(ex_F);
 
 	count_loop++;
-
-	/*if (count_loop & 100 == 0) {
-		std::cout << "tau_d_array[0] = " << tau_d_array[0] << "tau_d_array_new[0]" << tau_d_array_new[0] << std::endl;
-	}*/
 
 	return tau_d_array;
 }
 
 
-//Get data vector functions
-std::vector<Eigen::Matrix<double, 6, 1>> pid_force_control_motion_generator::give_measured_forces() {
-	return measured_forces;
-}
-std::vector<Eigen::Matrix<double, 6, 1>> pid_force_control_motion_generator::give_desired_forces() {
-	return desired_forces;
-}
-std::vector<Eigen::Matrix<double, 6, 1>> pid_force_control_motion_generator::give_command_forces() {
-	return command_forces;
-}
-std::vector<Eigen::Matrix<double, 6, 1>> pid_force_control_motion_generator::give_force_errors() {
-	return force_errors;
-}
-std::vector<Eigen::Matrix<double, 6, 1>> pid_force_control_motion_generator::give_force_errors_integral() {
-	return force_errors_integral;
-}
-std::vector<Eigen::Matrix<double, 6, 1>> pid_force_control_motion_generator::give_force_errors_differential() {
-	return force_errors_differential;
-}
-std::vector<Eigen::Matrix<double, 6, 1>> pid_force_control_motion_generator::give_force_errors_differential_sum() {
-	return force_errors_differential_sum;
-}
-std::vector<Eigen::Matrix<double, 6, 1>> pid_force_control_motion_generator::give_force_errors_differential_filtered() {
-	return force_errors_differential_filtered;
-}
 
+detail::force_motion_generator::export_data pid_force_control_motion_generator::get_export_data() {
+	return my_data;
+}
 
 void pid_force_control_motion_generator::update_dq_filter(const franka::RobotState& robot_state)
 {

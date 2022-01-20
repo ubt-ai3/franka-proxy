@@ -136,15 +136,8 @@ detail::force_motion_generator::export_data franka_hardware_controller::apply_z_
 			{
 				return fmg.callback(robot_state, period);
 			}, true, 10.0);
-		// robot control has finished, now get the export data and put it in the struct
-		ex_data.measured_forces = fmg.give_measured_forces();
-		ex_data.desired_forces = fmg.give_desired_forces();
-		ex_data.command_forces = fmg.give_command_forces();
-		ex_data.force_errors = fmg.give_force_errors();
-		ex_data.force_errors_integrals = fmg.give_force_errors_integral();
-		ex_data.force_errors_differentials = fmg.give_force_errors_differential();
-		ex_data.force_errors_differentials_sum = fmg.give_force_errors_differential_sum();
-		ex_data.force_errors_differentials_filtered = fmg.give_force_errors_differential_filtered();
+		
+		ex_data = fmg.get_export_data();
 		
 	}
 	catch (const franka::Exception&)
@@ -153,9 +146,11 @@ detail::force_motion_generator::export_data franka_hardware_controller::apply_z_
 		throw;
 	}
 
-	return ex_data;
+	
 
 	set_control_loop_running(false);
+
+	return ex_data;
 }
 
 //Exportiert die gemessenen Kräfte in z-Richtung sowie die gewünschten Kräfte über der Zeit
