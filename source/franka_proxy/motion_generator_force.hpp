@@ -69,12 +69,14 @@ public:
 		std::vector<Eigen::Matrix<double, 6, 1>> force_errors_differentials_sum;
 		std::vector<Eigen::Matrix<double, 6, 1>> force_errors_differentials_filtered;
 		std::vector<Eigen::Matrix<double, 6, 1>> extern_forces;
+		std::vector<Eigen::Matrix<double, 6, 1>> force_gravity;
 
 		std::vector<Eigen::Matrix<double, 7, 1>> tau_meausured;
 		std::vector<Eigen::Matrix<double, 7, 1>> tau_command;
 		std::vector<Eigen::Matrix<double, 7, 1>> tau_desired;
 		std::vector<Eigen::Matrix<double, 7, 1>> tau_existing;
 		std::vector<Eigen::Matrix<double, 7, 1>> tau_J_d;
+		std::vector<Eigen::Matrix<double, 7, 1>> tau_gravity;
 
 	};
 

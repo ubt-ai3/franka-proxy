@@ -246,15 +246,15 @@ franka::Torques pid_force_control_motion_generator::callback
 	//Todo remove the following because this results in a constant error
 	Eigen::VectorXd::Map(&tau_d_array[0], 7) = (tau_command + tau_J_d) * 0.5;
 	
-	my_data.jacobi.push_back(jacobian);
 
+	my_data.jacobi.push_back(jacobian);
 	my_data.tau_meausured.push_back(tau_measured);
 	my_data.tau_desired.push_back(tau_desired);
 	my_data.tau_command.push_back(tau_command);
 	my_data.tau_existing.push_back(tau_existing);
 	my_data.tau_J_d.push_back(tau_J_d);
+	my_data.tau_gravity.push_back(gravity);
 
-	
 	Eigen::Map<const Eigen::Matrix<double, 6, 1>> ex_F(robot_state.O_F_ext_hat_K.data());
 	my_data.extern_forces.push_back(ex_F);
 

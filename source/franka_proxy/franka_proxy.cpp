@@ -115,13 +115,10 @@ void data_to_csv(franka_proxy::detail::force_motion_generator::export_data data)
 		data_file << "\n";
 	}
 	
-
 	data_file.close();
 }
 
 void debug_export_data(franka_proxy::detail::force_motion_generator::export_data data) {
-
-
 
 	if (!(data.tau_meausured.size() > 0)) {
 		std::cout << "No measured values to print." << std::endl;
@@ -129,19 +126,45 @@ void debug_export_data(franka_proxy::detail::force_motion_generator::export_data
 	}
 	for (int i = 0; i < data.tau_meausured.size() ; i++) {
 		if (i % 50 == 0) {
+			std::cout << "i:" << i << std::endl;
 			std::cout << "tau_desired = " << data.tau_desired[i][2] << ", ";
 			std::cout << "tau_measured = " << data.tau_meausured[i][2] << ", ";
 			std::cout << "tau_existing = " << data.tau_existing[i][2] << ", ";
 			std::cout << "tau_command = " << data.tau_command[i][2] << ", ";
-			std::cout << "tau_J_d = " << data.tau_J_d[i][2] << std::endl;
+			std::cout << "tau_J_d = " << data.tau_J_d[i][2] << ", ";
+			std::cout << "tau_gravity = " << data.tau_gravity[i][2] << std::endl;
 
 			std::cout << "force_desired = " << data.desired_forces[i][2] << ", ";
 			std::cout << "force_measured = " << data.measured_forces[i][2] << ", ";
-			std::cout << "O_F_ext = " << data.extern_forces[i][2] << ", ";
 			std::cout << "force_existing = " << data.existing_forces[i][2] << ", ";
-			std::cout << "force_command = " << data.command_forces[i][2] << std::endl << std::endl;
+			std::cout << "force_command = " << data.command_forces[i][2] << ", ";
+			std::cout << "O_F_ext = " << data.extern_forces[i][2] << ", ";
+			std::cout << "force_gravity = " << data.force_gravity[i][2] << std::endl << std::endl;
 		}
 	}
+
+	//for (int j = 0; j < 6; j++) {
+	//	std:: cout << std::endl;
+	//	std::cout << "Dimension: " << j << std::endl;
+	//	std::cout << "tau_desired = " << data.tau_desired[4700][j] << ", ";
+	//	std::cout << "tau_measured = " << data.tau_meausured[i][2] << ", ";
+	//	std::cout << "tau_existing = " << data.tau_existing[i][2] << ", ";
+	//}
+
+	//std::cout << "tau_desired = " << data.tau_desired[i][2] << ", ";
+	//
+	//std::cout << "tau_command = " << data.tau_command[i][2] << ", ";
+	//std::cout << "tau_J_d = " << data.tau_J_d[i][2] << ", ";
+	//std::cout << "tau_gravity = " << data.tau_gravity[i][2] << std::endl;
+
+	//std::cout << "force_desired = " << data.desired_forces[i][2] << ", ";
+	//std::cout << "force_measured = " << data.measured_forces[i][2] << ", ";
+	//std::cout << "force_existing = " << data.existing_forces[i][2] << ", ";
+	//std::cout << "force_command = " << data.command_forces[i][2] << ", ";
+	//std::cout << "O_F_ext = " << data.extern_forces[i][2] << ", ";
+	//std::cout << "force_gravity = " << data.force_gravity[i][2] << std::endl << std::endl;
+
+	
 
 	
 }
@@ -153,6 +176,7 @@ franka_proxy::detail::force_motion_generator::export_data calculate_missing_data
 		data.measured_forces.push_back((data.jacobi[i].transpose()).fullPivLu().solve(data.tau_meausured[i]));
 		data.desired_forces.push_back((data.jacobi[i].transpose()).fullPivLu().solve(data.tau_desired[i]));
 		data.existing_forces.push_back((data.jacobi[i].transpose()).fullPivLu().solve(data.tau_existing[i]));
+		data.force_gravity.push_back((data.jacobi[i].transpose()).fullPivLu().solve(data.tau_gravity[i]));
 	}
 	return data;
 }
