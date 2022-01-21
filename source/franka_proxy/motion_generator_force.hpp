@@ -144,6 +144,12 @@ public:
 	detail::force_motion_generator::export_data get_export_data();
 
 private:
+	double k_p;
+	double k_i;
+	double k_d;
+	double target_mass;
+	double duration;
+	
 	detail::force_motion_generator::export_data my_data;
 
 	int count_loop = 0;
@@ -154,7 +160,6 @@ private:
 	double compute_dq_filtered(int j);
 
 	double time_{ 0.0 };
-
 
 	// Stiffness & Damping
 	const std::array<double, 7> K_P_ = { {600.0, 600.0, 600.0, 600.0, 250.0, 150.0, 50.0} };
@@ -167,32 +172,8 @@ private:
 	std::array<double, 7> dq_d_;
 	std::vector<double> dq_buffer_;
 
-	double k_p;
-	double k_i;
-	double k_d;
-	double target_mass;
-	double duration;
-
-	//------------
-	Eigen::Matrix<double, 7, 1> tau_new_error;
-	Eigen::Matrix<double, 7, 1> tau_old_error;
-
-	//Forces: 6-dimensional
-	std::vector<Eigen::Matrix<double, 6, 1>> measured_forces; //get über public get_measured_forces()
-	std::vector<Eigen::Matrix<double, 6, 1>> desired_forces;// get über public get_desired_forces()
-	std::vector<Eigen::Matrix<double, 6, 1>> command_forces;
-	std::vector<Eigen::Matrix<double, 6, 1>> force_errors;
-	std::vector<Eigen::Matrix<double, 6, 1>> force_errors_integral;
-	std::vector<Eigen::Matrix<double, 6, 1>> force_errors_differential;
-	std::vector<Eigen::Matrix<double, 6, 1>> force_errors_differential_sum;
-	std::vector<Eigen::Matrix<double, 6, 1>> force_errors_differential_filtered;
-
-	//--------------
-
 	franka::Model model;
 
-	Eigen::Matrix<double, 7, 1> initial_tau_ext;
-	Eigen::Matrix<double, 7, 1> tau_error_integral;
 
 	franka::RobotState initial_state_;
 };

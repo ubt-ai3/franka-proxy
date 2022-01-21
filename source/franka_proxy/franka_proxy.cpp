@@ -120,11 +120,24 @@ void data_to_csv(franka_proxy::detail::force_motion_generator::export_data data)
 
 void debug_export_data(franka_proxy::detail::force_motion_generator::export_data data) {
 
-	if (!(data.tau_meausured.size() > 0)) {
+	if (!(data.existing_forces.size() > 0)) {
 		std::cout << "No measured values to print." << std::endl;
 		return;
 	}
-	for (int i = 0; i < data.tau_meausured.size() ; i++) {
+	for (int i = 0; i < data.existing_forces.size(); i++) {
+		if (i % 100 == 0) {
+			std::cout << "i: " << i << std::endl;
+			for (int j = 0; j < 6; j++) {
+				std::cout << "Dim: " << j << std::endl;
+				std::cout << "force_desired = " << data.desired_forces[i][j] << ", ";
+				std::cout << "force_existing = " << data.existing_forces[i][j] << std::endl;
+			}
+			std::cout << std::endl;
+		}
+		
+	}
+
+	/*for (int i = 0; i < data.tau_meausured.size() ; i++) {
 		if (i % 50 == 0) {
 			std::cout << "i:" << i << std::endl;
 			std::cout << "tau_desired = " << data.tau_desired[i][2] << ", ";
@@ -168,7 +181,7 @@ void debug_export_data(franka_proxy::detail::force_motion_generator::export_data
 				std::cout << "force_gravity = " << data.force_gravity[n][j] << std::endl << std::endl;
 			}
 		}
-	}
+	}*/
 	
 }
 
@@ -198,7 +211,7 @@ int main() {
 	try {
 		//This function calls creates a pid_force_control_motion_generator which is defined in motion_generator_force.cpp
 		//In this function a force_motion_generator::export_data is created and filled with the measured values etc. and returns this data
-		data = h_controller.apply_z_force_pid(1, 5, 0.5, 0.0, 0.0);
+		data = h_controller.apply_z_force_pid(1, 5, 0.4, 0.0, 0.0);
 	}
 	catch (const franka::Exception& e) {
 		std::cout << "catched Exception: " << e.what() << std::endl;
@@ -214,7 +227,7 @@ int main() {
 	data_to_csv(data);
 	std::cout << "Writing in csv file finished. Closing in 1 second..." << std::endl;*/
 	std::this_thread::sleep_for(std::chrono::seconds(1));
-	data = calculate_missing_data(data);
+	//data = calculate_missing_data(data);
 	debug_export_data(data);
 	return 0;
 }

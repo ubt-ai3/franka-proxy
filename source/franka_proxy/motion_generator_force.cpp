@@ -157,9 +157,7 @@ pid_force_control_motion_generator::pid_force_control_motion_generator
 	k_p(k_p),
 	k_i(k_i),
 	k_d(k_d),
-	model(robot.loadModel()),
-	tau_old_error(Eigen::Matrix<double, 7, 1>()),
-	tau_new_error(Eigen::Matrix<double, 7, 1>())
+	model(robot.loadModel())
 {
 	initial_state_ = robot.readOnce();
 }
@@ -178,106 +176,33 @@ franka::Torques pid_force_control_motion_generator::callback
 		return current_torques;
 	}
 
-	Eigen::Map<const Eigen::Matrix<double, 7, 1>> tau_measured(robot_state.tau_J.data());
-
-	std::array<double, 49> mass_array = model.mass(robot_state);
-	Eigen::Map<const Eigen::Matrix<double, 7, 7>> mass(mass_array.data());
-
-	std::array<double, 7> gravity_array = model.gravity(robot_state);
-	Eigen::Map<const Eigen::Matrix<double, 7, 1>> gravity(gravity_array.data());
-
 	std::array<double, 42> jacobian_array = model.zeroJacobian(franka::Frame::kEndEffector, robot_state);
 	Eigen::Map<const Eigen::Matrix<double, 6, 7>> jacobian(jacobian_array.data());
-
-
-	Eigen::Matrix<double, 6, 1> desired_force_torque;
-
-	Eigen::Matrix<double, 7, 1> tau_existing;
-	Eigen::Matrix<double, 7, 1> tau_desired;
-	Eigen::Matrix<double, 7, 1> tau_command;
-	Eigen::Matrix<double, 7, 1> tau_J_d;
-	Eigen::Matrix<double, 7, 1> tau_error_differential;
-	Eigen::Matrix<double, 7, 1> tau_error_differential_sum; //Summe von den aufeinderfolgenden diff werten der errors
-	Eigen::Matrix<double, 7, 1> tau_error_differential_filtered; //tau_error_differentials_sum wird durch die anzahl der Punkte geteilt, aus denen sich die Summe zusammensetzt
-
-	//Setze gewünschte Drehmomente in Gelenken: Alle Richtungen gleich 0 außer z-Richtung
-	desired_force_torque.setZero();
-	desired_force_torque(2, 0) = target_mass * -9.81;
-
-
-	tau_existing = tau_measured - gravity;
-	tau_desired = jacobian.transpose() * desired_force_torque;
-	tau_new_error = tau_desired - tau_existing;
-
-	tau_error_integral += period.toSec() * tau_new_error;
-
-	//calculate differential of error
-	tau_error_differential = (tau_new_error - tau_old_error) / (0.001);
-	tau_old_error = tau_new_error;
-	points_derivative[count_loop % number_of_points_derivative] = tau_error_differential;	
-
-
-	//Calculate values for the D Control
-	for (int i = 0; i < number_of_points_derivative; i++) {
-		tau_error_differential_sum += points_derivative[i];
-	}
-	if (count_loop < number_of_points_derivative) { //die ersten number_of_points_derivative werden auf 0 gesetzt
-		tau_error_differential_filtered.setZero();
-	}
-	else {
-		tau_error_differential_filtered = tau_error_differential_sum / number_of_points_derivative;
-	}
-
-	//FF? + PID-control
-	//tau_command = tau_desired + k_p * (tau_desired - tau_existing) + k_i * tau_error_integral + k_d * tau_error_differential_filtered;
-	tau_command = k_p * (tau_desired - tau_existing) + k_i * tau_error_integral + k_d * tau_error_differential_filtered;
-	
-	// updateDQFilter
-	update_dq_filter(robot_state);
-
-	// compute torques according to impedance control law
-	// with assumption mass = 0 (robot state does not provide ddq and own measurement too noisy)
-	for (int i = 0; i < 7; i++)
-		tau_J_d[i] = K_P_[i] * (robot_state.q_d[i] - robot_state.q[i]) + K_D_[i] * (dq_d_[i] - compute_dq_filtered(i));
-
-
-	//the final output array
-	std::array<double, 7> tau_d_array{};
-	//Todo remove the following because this results in a constant error
-	Eigen::VectorXd::Map(&tau_d_array[0], 7) = (tau_command + tau_J_d) * 0.5;
-	
-
-	my_data.jacobi.push_back(jacobian);
-	my_data.tau_meausured.push_back(tau_measured);
-	my_data.tau_desired.push_back(tau_desired);
-	my_data.tau_command.push_back(tau_command);
-	my_data.tau_existing.push_back(tau_existing);
-	my_data.tau_J_d.push_back(tau_J_d);
-	my_data.tau_gravity.push_back(gravity);
-
-	Eigen::Map<const Eigen::Matrix<double, 6, 1>> ex_F(robot_state.O_F_ext_hat_K.data());
-	my_data.extern_forces.push_back(ex_F);
-
-	count_loop++;
-
 	Eigen::Matrix<double, 6, 1> force_command;
 	Eigen::Matrix<double, 6, 1> force_desired;
-	Eigen::Matrix<double, 6, 1> force_existing;
-	Eigen::Map<const Eigen::Matrix<double, 6, 1>> force_measured(robot_state.O_F_ext_hat_K.data());
+	Eigen::Map<const Eigen::Matrix<double, 6, 1>> force_existing(robot_state.O_F_ext_hat_K.data());
+
+	//Set force_desired
 	force_desired.setZero();
 	force_desired(2, 0) = target_mass * -9.81;
 
-	force_existing = force_measured - 0 * ((jacobian.transpose()).fullPivLu().solve(gravity));
-
+	//Pid Force control
 	force_command = k_p * (force_desired - force_existing);
 
+	//Convert in 7 joint space
 	Eigen::Matrix<double, 7, 1> new_tau_command;
-	new_tau_command = (jacobian.transpose() * force_command) + 0 * gravity;
+	new_tau_command = (jacobian.transpose() * force_command);
 
-	my_data.new_tau_command.push_back(new_tau_command);
-
+	//Create and fill output array
 	std::array<double, 7> new_tau_d_array{};
 	Eigen::VectorXd::Map(&new_tau_d_array[0], 7) = new_tau_command;
+
+	//Push data in export_data struct
+	my_data.desired_forces.push_back(force_desired);
+	my_data.existing_forces.push_back(force_existing);
+	my_data.command_forces.push_back(force_command);
+
+	count_loop++;
 
 	return new_tau_d_array;
 }
