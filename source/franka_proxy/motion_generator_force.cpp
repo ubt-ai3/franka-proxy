@@ -150,8 +150,6 @@ pid_force_control_motion_generator::pid_force_control_motion_generator
 	double k_i,
 	double k_d)
 	:
-	dq_d_({ 0., 0., 0., 0., 0., 0., 0. }),
-	dq_buffer_(dq_filter_size_ * 7, 0),
 	target_mass(mass),
 	duration(duration),
 	k_p(k_p),
@@ -186,8 +184,11 @@ franka::Torques pid_force_control_motion_generator::callback
 	force_desired.setZero();
 	force_desired(2, 0) = target_mass * -9.81;
 
+	//Integral
+	force_error_integral += period.toSec() * (force_desired - force_existing);
+
 	//Pid Force control
-	force_command = k_p * (force_desired - force_existing);
+	force_command = k_p * (force_desired - force_existing) + k_i * force_error_integral;
 
 	//Convert in 7 joint space
 	Eigen::Matrix<double, 7, 1> new_tau_command;
@@ -211,24 +212,6 @@ franka::Torques pid_force_control_motion_generator::callback
 
 detail::force_motion_generator::export_data pid_force_control_motion_generator::get_export_data() {
 	return my_data;
-}
-
-void pid_force_control_motion_generator::update_dq_filter(const franka::RobotState& robot_state)
-{
-	for (int i = 0; i < 7; i++)
-		dq_buffer_[dq_current_filter_position_ * 7 + i] = robot_state.dq[i];
-
-	dq_current_filter_position_ = (dq_current_filter_position_ + 1) % dq_filter_size_;
-}
-
-
-double pid_force_control_motion_generator::compute_dq_filtered(int j)
-{
-	double value = 0.0;
-	for (size_t i = j; i < 7 * dq_filter_size_; i += 7)
-		value += dq_buffer_[i];
-
-	return value / dq_filter_size_;
 }
 
 

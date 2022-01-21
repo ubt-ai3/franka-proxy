@@ -144,42 +144,22 @@ public:
 	detail::force_motion_generator::export_data get_export_data();
 
 private:
+	detail::force_motion_generator::export_data my_data;
+
+	franka::Model model;
+	franka::RobotState initial_state_;
+
 	double k_p;
 	double k_i;
 	double k_d;
 	double target_mass;
 	double duration;
 	
-	detail::force_motion_generator::export_data my_data;
-
 	int count_loop = 0;
-	int number_of_points_derivative = 10;
-	Eigen::Matrix<double, 7, 1> points_derivative[10];
-
-	void update_dq_filter(const franka::RobotState& robot_state);
-	double compute_dq_filtered(int j);
-
 	double time_{ 0.0 };
 
-	// Stiffness & Damping
-	const std::array<double, 7> K_P_ = { {600.0, 600.0, 600.0, 600.0, 250.0, 150.0, 50.0} };
-	const std::array<double, 7> K_D_ = { {50.0, 50.0, 50.0, 50.0, 30.0, 25.0, 15.0} };
-
-
-	size_t dq_current_filter_position_ = 0;
-	const size_t dq_filter_size_ = 5;
-
-	std::array<double, 7> dq_d_;
-	std::vector<double> dq_buffer_;
-
-	franka::Model model;
-
-
-	franka::RobotState initial_state_;
+	Eigen::Matrix<double, 6, 1> force_error_integral;
 };
-
-
-
 
 } /* namespace detail */
 } /* namespace franka_proxy */
