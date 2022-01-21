@@ -95,28 +95,28 @@ void test_force_control_z(franka_proxy::franka_hardware_controller& h_controller
 }
 
 //This function parses the force_motion_generator::export_data (which is returned from the apply_z_force_pid call in the main function) to a csv file
-void data_to_csv(franka_proxy::detail::force_motion_generator::export_data data) {
-	std::cout << "PID Parameters: " << data.k_p << ", " << data.k_i << ", " << data.k_d << std::endl;
-	std::cout << "Amount measured forces: " << data.measured_forces.size() << std::endl;
-	std::cout << "Amount desired forces: " << data.desired_forces.size() << std::endl;
-	std::cout << "Amount command forces: " << data.command_forces.size() << std::endl;
-
-	std::ofstream data_file("testExportData.csv");
-	for (int i = 1; i <= 6; i ++) {
-		data_file << std::to_string(data.masses[i]) << ",";
-	}
-	data_file << std::to_string(data.duration) << "," << std::to_string(data.k_p) << "," << std::to_string(data.k_i) << "," << std::to_string(data.k_d) << "\n";
-
-	for (int n = 0; n < data.measured_forces.size(); n++) {
-		for (int i = 0; i < 6; i++) {
-			data_file << data.measured_forces[n][i] << "," << data.desired_forces[n][i] << "," << data.command_forces[n][i] << "," << data.force_errors[n][i] << ",";
-			data_file << data.force_errors_integrals[n][i] << "," << data.force_errors_differentials[n][i] << "," << data.force_errors_differentials_sum[n][i] << "," << data.force_errors_differentials_filtered[n][i] << ",";
-		}
-		data_file << "\n";
-	}
-	
-	data_file.close();
-}
+//void data_to_csv(franka_proxy::detail::force_motion_generator::export_data data) {
+//	std::cout << "PID Parameters: " << data.k_p << ", " << data.k_i << ", " << data.k_d << std::endl;
+//	std::cout << "Amount measured forces: " << data.existing_forces.size() << std::endl;
+//	std::cout << "Amount desired forces: " << data.desired_forces.size() << std::endl;
+//	std::cout << "Amount command forces: " << data.command_forces.size() << std::endl;
+//
+//	std::ofstream data_file("testExportData.csv");
+//	for (int i = 1; i <= 6; i ++) {
+//		data_file << std::to_string(data.masses[i]) << ",";
+//	}
+//	data_file << std::to_string(data.duration) << "," << std::to_string(data.k_p) << "," << std::to_string(data.k_i) << "," << std::to_string(data.k_d) << "\n";
+//
+//	for (int n = 0; n < data.measured_forces.size(); n++) {
+//		for (int i = 0; i < 6; i++) {
+//			data_file << data.measured_forces[n][i] << "," << data.desired_forces[n][i] << "," << data.command_forces[n][i] << "," << data.force_errors[n][i] << ",";
+//			data_file << data.force_errors_integrals[n][i] << "," << data.force_errors_differentials[n][i] << "," << data.force_errors_differentials_sum[n][i] << "," << data.force_errors_differentials_filtered[n][i] << ",";
+//		}
+//		data_file << "\n";
+//	}
+//	
+//	data_file.close();
+//}
 
 void debug_export_data(franka_proxy::detail::force_motion_generator::export_data data) {
 
@@ -128,9 +128,12 @@ void debug_export_data(franka_proxy::detail::force_motion_generator::export_data
 		if (i % 100 == 0) {
 			std::cout << "i: " << i << std::endl;
 			for (int j = 0; j < 6; j++) {
-				std::cout << "Dim: " << j << std::endl;
+				std::cout << "Dim: " << j+1 << std::endl;
 				std::cout << "force_desired = " << data.desired_forces[i][j] << ", ";
 				std::cout << "force_existing = " << data.existing_forces[i][j] << std::endl;
+				std::cout << "force_command = " << data.command_forces[i][j] << ", ";
+				std::cout << "position_command = " << data.position_forces[i][j] << ", ";
+				std::cout << "hybrid_command = " << data.hybrid_forces[i][j] << std::endl;
 			}
 			std::cout << std::endl;
 		}
@@ -152,7 +155,7 @@ int main() {
 	try {
 		//This function calls creates a pid_force_control_motion_generator which is defined in motion_generator_force.cpp
 		//In this function a force_motion_generator::export_data is created and filled with the measured values etc. and returns this data
-		data = h_controller.apply_z_force_pid(1.0, 5, 0.4, 0.05, 0.0);
+		data = h_controller.apply_z_force_pid(1.0, 5, 0.5, 1.2, 0.0);
 	}
 	catch (const franka::Exception& e) {
 		std::cout << "catched Exception: " << e.what() << std::endl;

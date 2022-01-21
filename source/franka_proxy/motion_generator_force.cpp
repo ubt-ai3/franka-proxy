@@ -174,11 +174,19 @@ franka::Torques pid_force_control_motion_generator::callback
 		return current_torques;
 	}
 
+	
+
 	std::array<double, 42> jacobian_array = model.zeroJacobian(franka::Frame::kEndEffector, robot_state);
 	Eigen::Map<const Eigen::Matrix<double, 6, 7>> jacobian(jacobian_array.data());
 	Eigen::Matrix<double, 6, 1> force_command;
 	Eigen::Matrix<double, 6, 1> force_desired;
 	Eigen::Map<const Eigen::Matrix<double, 6, 1>> force_existing(robot_state.O_F_ext_hat_K.data());
+
+	//Set desired cartesian Position as the first measured position
+	if (count_loop == 0) {
+		Eigen::Map<const Eigen::Matrix<double, 7, 1>> d_j_pos(robot_state.q.data());
+		desired_cartesian_pos = (jacobian.transpose()).fullPivLu().solve(d_j_pos);
+	}
 
 	//Set force_desired
 	force_desired.setZero();
@@ -190,22 +198,35 @@ franka::Torques pid_force_control_motion_generator::callback
 	//Pid Force control
 	force_command = k_p * (force_desired - force_existing) + k_i * force_error_integral;
 
+	//Position control
+	Eigen::Map<const Eigen::Matrix<double, 7, 1>> j_pos(robot_state.q.data());
+	Eigen::Matrix<double, 6, 1> measured_cartesian_pos = (jacobian.transpose()).fullPivLu().solve(j_pos);
+	
+	Eigen::Matrix<double, 6, 1> position_command = 1000 * (desired_cartesian_pos - measured_cartesian_pos);
+
+	//Hybrid Control
+	Eigen::Matrix<double, 6, 1> hybrid_command;
+	hybrid_command = position_command;
+	hybrid_command(2, 0) = force_command(2, 0);
+
 	//Convert in 7 joint space
-	Eigen::Matrix<double, 7, 1> new_tau_command;
-	new_tau_command = (jacobian.transpose() * force_command);
+	Eigen::Matrix<double, 7, 1> tau_command;
+	tau_command = (jacobian.transpose() * hybrid_command);
 
 	//Create and fill output array
-	std::array<double, 7> new_tau_d_array{};
-	Eigen::VectorXd::Map(&new_tau_d_array[0], 7) = new_tau_command;
+	std::array<double, 7> tau_d_array{};
+	Eigen::VectorXd::Map(&tau_d_array[0], 7) = tau_command;
 
 	//Push data in export_data struct
 	my_data.desired_forces.push_back(force_desired);
 	my_data.existing_forces.push_back(force_existing);
 	my_data.command_forces.push_back(force_command);
+	my_data.position_forces.push_back(position_command);
+	my_data.hybrid_forces.push_back(hybrid_command);
 
 	count_loop++;
 
-	return new_tau_d_array;
+	return tau_d_array;
 }
 
 

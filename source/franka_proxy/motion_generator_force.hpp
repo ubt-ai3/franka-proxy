@@ -55,29 +55,15 @@ public:
 
 		std::vector<Eigen::Matrix<double, 6, 7>> jacobi;
 
-		//todo: check if columns can be initialized static with the use of the duration and the 1kHz frequenzy
 
 		Eigen::Matrix<double, 6, 1> masses; //the mass that should be achieved in each time step
 
 		std::vector<Eigen::Matrix<double, 6, 1>> existing_forces;
-		std::vector<Eigen::Matrix<double, 6, 1>> measured_forces;
 		std::vector<Eigen::Matrix<double, 6, 1>> desired_forces;
-		std::vector<Eigen::Matrix<double, 6, 1>> command_forces; //the calculated value - output from the pid-control
-		std::vector<Eigen::Matrix<double, 6, 1>> force_errors;
-		std::vector<Eigen::Matrix<double, 6, 1>> force_errors_integrals; //input for the i control - this value gets multiplied by k_i
-		std::vector<Eigen::Matrix<double, 6, 1>> force_errors_differentials; //input for the d control - this value gets multiplied by k_d
-		std::vector<Eigen::Matrix<double, 6, 1>> force_errors_differentials_sum;
-		std::vector<Eigen::Matrix<double, 6, 1>> force_errors_differentials_filtered;
-		std::vector<Eigen::Matrix<double, 6, 1>> extern_forces;
-		std::vector<Eigen::Matrix<double, 6, 1>> force_gravity;
-
-		std::vector<Eigen::Matrix<double, 7, 1>> tau_meausured;
-		std::vector<Eigen::Matrix<double, 7, 1>> tau_command;
-		std::vector<Eigen::Matrix<double, 7, 1>> tau_desired;
-		std::vector<Eigen::Matrix<double, 7, 1>> tau_existing;
-		std::vector<Eigen::Matrix<double, 7, 1>> tau_J_d;
-		std::vector<Eigen::Matrix<double, 7, 1>> tau_gravity;
-		std::vector<Eigen::Matrix<double, 7, 1>> new_tau_command;
+		std::vector<Eigen::Matrix<double, 6, 1>> command_forces;
+		std::vector<Eigen::Matrix<double, 6, 1>> position_forces;
+		std::vector<Eigen::Matrix<double, 6, 1>> hybrid_forces;
+		std::vector<Eigen::Matrix<double, 6, 1>> test_command_forces;
 
 	};
 
@@ -159,6 +145,8 @@ private:
 	double time_{ 0.0 };
 
 	Eigen::Matrix<double, 6, 1> force_error_integral;
+
+	Eigen::Matrix<double, 6, 1> desired_cartesian_pos;
 };
 
 } /* namespace detail */
