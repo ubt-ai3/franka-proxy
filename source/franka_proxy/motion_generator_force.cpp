@@ -260,7 +260,26 @@ franka::Torques pid_force_control_motion_generator::callback
 
 	count_loop++;
 
-	return tau_d_array;
+	Eigen::Matrix<double, 6, 1> force_command;
+	Eigen::Matrix<double, 6, 1> force_desired;
+	Eigen::Matrix<double, 6, 1> force_existing;
+	Eigen::Map<const Eigen::Matrix<double, 6, 1>> force_measured(robot_state.O_F_ext_hat_K.data());
+	force_desired.setZero();
+	force_desired(2, 0) = target_mass * -9.81;
+
+	force_existing = force_measured - 0 * ((jacobian.transpose()).fullPivLu().solve(gravity));
+
+	force_command = k_p * (force_desired - force_existing);
+
+	Eigen::Matrix<double, 7, 1> new_tau_command;
+	new_tau_command = (jacobian.transpose() * force_command) + 0 * gravity;
+
+	my_data.new_tau_command.push_back(new_tau_command);
+
+	std::array<double, 7> new_tau_d_array{};
+	Eigen::VectorXd::Map(&new_tau_d_array[0], 7) = new_tau_command;
+
+	return new_tau_d_array;
 }
 
 

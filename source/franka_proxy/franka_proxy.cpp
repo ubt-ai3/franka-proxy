@@ -131,6 +131,7 @@ void debug_export_data(franka_proxy::detail::force_motion_generator::export_data
 			std::cout << "tau_measured = " << data.tau_meausured[i][2] << ", ";
 			std::cout << "tau_existing = " << data.tau_existing[i][2] << ", ";
 			std::cout << "tau_command = " << data.tau_command[i][2] << ", ";
+			std::cout << "new_tau_command = " << data.new_tau_command[i][2] << ", ";
 			std::cout << "tau_J_d = " << data.tau_J_d[i][2] << ", ";
 			std::cout << "tau_gravity = " << data.tau_gravity[i][2] << std::endl;
 
@@ -143,29 +144,31 @@ void debug_export_data(franka_proxy::detail::force_motion_generator::export_data
 		}
 	}
 
-	//for (int j = 0; j < 6; j++) {
-	//	std:: cout << std::endl;
-	//	std::cout << "Dimension: " << j << std::endl;
-	//	std::cout << "tau_desired = " << data.tau_desired[4700][j] << ", ";
-	//	std::cout << "tau_measured = " << data.tau_meausured[i][2] << ", ";
-	//	std::cout << "tau_existing = " << data.tau_existing[i][2] << ", ";
-	//}
-
-	//std::cout << "tau_desired = " << data.tau_desired[i][2] << ", ";
-	//
-	//std::cout << "tau_command = " << data.tau_command[i][2] << ", ";
-	//std::cout << "tau_J_d = " << data.tau_J_d[i][2] << ", ";
-	//std::cout << "tau_gravity = " << data.tau_gravity[i][2] << std::endl;
-
-	//std::cout << "force_desired = " << data.desired_forces[i][2] << ", ";
-	//std::cout << "force_measured = " << data.measured_forces[i][2] << ", ";
-	//std::cout << "force_existing = " << data.existing_forces[i][2] << ", ";
-	//std::cout << "force_command = " << data.command_forces[i][2] << ", ";
-	//std::cout << "O_F_ext = " << data.extern_forces[i][2] << ", ";
-	//std::cout << "force_gravity = " << data.force_gravity[i][2] << std::endl << std::endl;
-
 	
+	for (int n = 0; n < data.tau_meausured.size(); n++) {
+		if (n % 500 == 0) {
+			std::cout << "n = " << n << std::endl;
+			for (int j = 0; j < 7; j++) {
+				std::cout << "Tau Dimension: " << j + 1 << std::endl;
+				std::cout << "tau_desired = " << data.tau_desired[n][j] << ", ";
+				std::cout << "tau_measured = " << data.tau_meausured[n][j] << ", ";
+				std::cout << "tau_existing = " << data.tau_existing[n][j] << ", ";
+				std::cout << "tau_command = " << data.tau_command[n][j] << ", ";
+				std::cout << "new_tau_command = " << data.new_tau_command[n][j] << ", ";
+				std::cout << "tau_gravity = " << data.tau_gravity[n][j] << std::endl << std::endl;
+			}
 
+			for (int j = 0; j < 6; j++) {
+				std::cout << "Force Dimension: " << j + 1 << std::endl;
+				std::cout << "force_desired = " << data.desired_forces[n][j] << ", ";
+				std::cout << "force_measured = " << data.measured_forces[n][j] << ", ";
+				std::cout << "force_existing = " << data.existing_forces[n][j] << ", ";
+				std::cout << "force_command = " << data.command_forces[n][j] << ", ";
+				std::cout << "O_F_ext = " << data.extern_forces[n][j] << ", ";
+				std::cout << "force_gravity = " << data.force_gravity[n][j] << std::endl << std::endl;
+			}
+		}
+	}
 	
 }
 
@@ -195,7 +198,7 @@ int main() {
 	try {
 		//This function calls creates a pid_force_control_motion_generator which is defined in motion_generator_force.cpp
 		//In this function a force_motion_generator::export_data is created and filled with the measured values etc. and returns this data
-		data = h_controller.apply_z_force_pid(1, 5, 2.0, 2.0, 0.0);
+		data = h_controller.apply_z_force_pid(1, 5, 0.5, 0.0, 0.0);
 	}
 	catch (const franka::Exception& e) {
 		std::cout << "catched Exception: " << e.what() << std::endl;

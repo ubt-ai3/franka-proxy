@@ -77,6 +77,7 @@ public:
 		std::vector<Eigen::Matrix<double, 7, 1>> tau_existing;
 		std::vector<Eigen::Matrix<double, 7, 1>> tau_J_d;
 		std::vector<Eigen::Matrix<double, 7, 1>> tau_gravity;
+		std::vector<Eigen::Matrix<double, 7, 1>> new_tau_command;
 
 	};
 
