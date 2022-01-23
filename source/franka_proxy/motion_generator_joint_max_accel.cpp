@@ -82,17 +82,22 @@ bool franka_joint_motion_generator::calculateDesiredValues
 		}
 		else
 		{
+			//uses the Formulas of Modeling, identification and control of robots
+			//from page 327 to page 328
 			if (t < t_1_sync_[i])
 			{
+				//formula 13.37
 				(*delta_q_d)[i] = -1.0 / std::pow(t_1_sync_[i], 3.0) * dq_max_sync_[i] * sign_delta_q[i] *
 					(0.5 * t - t_1_sync_[i]) * std::pow(t, 3.0);
 			}
 			else if (t >= t_1_sync_[i] && t < t_2_sync_[i])
 			{
+				//13.42
 				(*delta_q_d)[i] = q_1_[i] + (t - t_1_sync_[i]) * dq_max_sync_[i] * sign_delta_q[i];
 			}
 			else if (t >= t_2_sync_[i] && t < t_f_sync_[i])
 			{
+				//13.43
 				(*delta_q_d)[i] = delta_q_[i] +
 					0.5 *
 					(1.0 / std::pow(delta_t_2_sync_[i], 3.0) *
@@ -188,8 +193,8 @@ franka::JointPositions franka_joint_motion_generator::operator()
 	time_ += period.toSec();
 
 	{
-		std::lock_guard<std::mutex> state_guard(current_state_lock_);
-		current_state_ = robot_state;
+		//debug std::lock_guard<std::mutex> state_guard(current_state_lock_);
+		//current_state_ = robot_state;
 	}
 
 	if (stop_motion_)
