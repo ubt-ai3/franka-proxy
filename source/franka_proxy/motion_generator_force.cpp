@@ -192,7 +192,9 @@ franka::Torques pid_force_control_motion_generator::callback
 	
 
 	//Pid Force control
-	force_command = k_p_f * (force_desired - force_existing) + k_i_f * force_error_integral;
+	for (int i = 0; i < 6; i++) {
+		force_command(i, 0) = k_p_f[i] * (force_desired(i, 0) - force_existing(i, 0) + k_i_f[i] * force_error_integral(i, 0));
+	}
 
 	//Position control
 	Eigen::Map<const Eigen::Matrix<double, 7, 1>> j_pos(robot_state.q.data());
@@ -200,7 +202,10 @@ franka::Torques pid_force_control_motion_generator::callback
 
 	position_error_integral += period.toSec() * (desired_cartesian_pos - measured_cartesian_pos);
 	
-	Eigen::Matrix<double, 6, 1> position_command = k_p_p * (desired_cartesian_pos - measured_cartesian_pos) + k_i_p * position_error_integral;
+	Eigen::Matrix<double, 6, 1> position_command;
+	for (int i = 0; i < 6; i ++) {
+		position_command(i, 0) = k_p_p[i] * (desired_cartesian_pos(i, 0) - measured_cartesian_pos(i, 0)) + k_i_p[i] * position_error_integral(i, 0);
+	}
 
 	//Hybrid Control
 	Eigen::Matrix<double, 6, 1> hybrid_command;

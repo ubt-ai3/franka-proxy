@@ -135,15 +135,15 @@ private:
 	franka::Model model;
 	franka::RobotState initial_state_;
 
-	double k_p_f = 0.4;
-	double k_i_f = 0.5;
-	double k_d_f = 0.0;
+	std::array<double, 6> k_p_f = { 0.3, 0.3, 0.3, 0.3, 0.3, 0.3 };
+	std::array<double, 6> k_i_f = { 0.4, 0.4, 0.4, 0.4, 0.4, 0.4 };
+	std::array<double, 6> k_d_f = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
 	double target_mass;
 	double duration;
 
-	double k_p_p = 300.0;
-	double k_i_p = 100.0;
-	double k_d_p = 0.0;
+	std::array<double, 6> k_p_p = { 300.0, 300.0, 300.0, 300.0, 300.0, 300.0 };
+	std::array<double, 6> k_i_p = { 100.0, 100.0, 100.0, 100.0, 100.0, 100.0 };
+	std::array<double, 6> k_d_p = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
 	
 	const size_t tau_command_filter_size = 5;
 	size_t tau_command_current_filter_position = 0;
