@@ -95,8 +95,7 @@ public:
 
 	detail::force_motion_generator::export_data apply_z_force_pid(
 		double mass,
-		double duration,
-		double k_p, double k_i, double k_d);
+		double duration);
 
 	/**
 	 * Starts/Stops the recording callback.

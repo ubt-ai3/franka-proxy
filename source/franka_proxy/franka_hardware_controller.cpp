@@ -108,20 +108,17 @@ void franka_hardware_controller::apply_z_force
 }
 
 detail::force_motion_generator::export_data franka_hardware_controller::apply_z_force_pid
-(const double mass, const double duration, double k_p, double k_i, double k_d)
+(const double mass, const double duration)
 {
 	initialize_parameters();
 	detail::force_motion_generator::export_data ex_data;
-	ex_data.k_p = k_p;
-	ex_data.k_i = k_i;
-	ex_data.k_d = k_d;
 	ex_data.duration = duration;
 
 
 
 	try
 	{
-		detail::pid_force_control_motion_generator fmg(robot_, mass, duration,k_p, k_i, k_d);
+		detail::pid_force_control_motion_generator fmg(robot_, mass, duration);
 
 		set_control_loop_running(true);
 		{

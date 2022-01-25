@@ -121,7 +121,7 @@ class pid_force_control_motion_generator
 public:
 
 	pid_force_control_motion_generator
-	(franka::Robot& robot, double mass, double duration, double k_p, double k_i, double k_d);
+	(franka::Robot& robot, double mass, double duration);
 
 	franka::Torques callback
 	(const franka::RobotState& robot_state,
@@ -135,14 +135,14 @@ private:
 	franka::Model model;
 	franka::RobotState initial_state_;
 
-	double k_p_f;
-	double k_i_f;
-	double k_d_f;
+	double k_p_f = 0.4;
+	double k_i_f = 0.5;
+	double k_d_f = 0.0;
 	double target_mass;
 	double duration;
 
-	double k_p_p = 200.0;
-	double k_i_p = 1.0;
+	double k_p_p = 300.0;
+	double k_i_p = 100.0;
 	double k_d_p = 0.0;
 	
 	const size_t tau_command_filter_size = 5;

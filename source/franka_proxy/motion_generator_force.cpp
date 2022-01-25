@@ -145,17 +145,11 @@ double force_motion_generator::compute_dq_filtered(int j)
 pid_force_control_motion_generator::pid_force_control_motion_generator
 (franka::Robot& robot,
 	double mass,
-	double duration,
-	double k_p,
-	double k_i,
-	double k_d)
+	double duration)
 	:
 	tau_command_buffer(tau_command_filter_size * 7, 0),
 	target_mass(mass),
 	duration(duration),
-	k_p_f(k_p),
-	k_i_f(k_i),
-	k_d_f(k_d),
 	model(robot.loadModel())
 {
 	initial_state_ = robot.readOnce();
@@ -211,7 +205,10 @@ franka::Torques pid_force_control_motion_generator::callback
 	//Hybrid Control
 	Eigen::Matrix<double, 6, 1> hybrid_command;
 	hybrid_command = position_command;
-	hybrid_command(2, 0) = force_command(2, 0);
+	hybrid_command(2, 0) = force_command(2, 0); //F_z
+	//hybrid_command(3, 0) = force_command(3, 0); //M_x
+	//hybrid_command(4, 0) = force_command(4, 0); //M_y
+	//hybrid_command = force_command;
 
 	//Convert in 7 joint space
 	Eigen::Matrix<double, 7, 1> tau_command;
