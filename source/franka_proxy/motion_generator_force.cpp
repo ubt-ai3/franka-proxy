@@ -152,9 +152,9 @@ pid_force_control_motion_generator::pid_force_control_motion_generator
 	:
 	target_mass(mass),
 	duration(duration),
-	k_p(k_p),
-	k_i(k_i),
-	k_d(k_d),
+	k_p_f(k_p),
+	k_i_f(k_i),
+	k_d_f(k_d),
 	model(robot.loadModel())
 {
 	initial_state_ = robot.readOnce();
@@ -194,15 +194,18 @@ franka::Torques pid_force_control_motion_generator::callback
 
 	//Integral
 	force_error_integral += period.toSec() * (force_desired - force_existing);
+	
 
 	//Pid Force control
-	force_command = k_p * (force_desired - force_existing) + k_i * force_error_integral;
+	force_command = k_p_f * (force_desired - force_existing) + k_i_f * force_error_integral;
 
 	//Position control
 	Eigen::Map<const Eigen::Matrix<double, 7, 1>> j_pos(robot_state.q.data());
 	Eigen::Matrix<double, 6, 1> measured_cartesian_pos = (jacobian.transpose()).fullPivLu().solve(j_pos);
+
+	position_error_integral += period.toSec() * (desired_cartesian_pos - measured_cartesian_pos);
 	
-	Eigen::Matrix<double, 6, 1> position_command = 1000 * (desired_cartesian_pos - measured_cartesian_pos);
+	Eigen::Matrix<double, 6, 1> position_command = k_p_p * (desired_cartesian_pos - measured_cartesian_pos) + k_i_p * position_error_integral;
 
 	//Hybrid Control
 	Eigen::Matrix<double, 6, 1> hybrid_command;
@@ -229,12 +232,9 @@ franka::Torques pid_force_control_motion_generator::callback
 	return tau_d_array;
 }
 
-
-
 detail::force_motion_generator::export_data pid_force_control_motion_generator::get_export_data() {
 	return my_data;
 }
-
 
 } /* namespace detail */
 } /* namespace franka_proxy */

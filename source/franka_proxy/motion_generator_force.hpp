@@ -135,16 +135,21 @@ private:
 	franka::Model model;
 	franka::RobotState initial_state_;
 
-	double k_p;
-	double k_i;
-	double k_d;
+	double k_p_f;
+	double k_i_f;
+	double k_d_f;
 	double target_mass;
 	double duration;
+
+	double k_p_p = 200.0;
+	double k_i_p = 1.0;
+	double k_d_p = 0.0;
 	
 	int count_loop = 0;
 	double time_{ 0.0 };
 
 	Eigen::Matrix<double, 6, 1> force_error_integral;
+	Eigen::Matrix<double, 6, 1> position_error_integral;
 
 	Eigen::Matrix<double, 6, 1> desired_cartesian_pos;
 };
