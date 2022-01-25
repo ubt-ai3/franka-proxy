@@ -208,12 +208,20 @@ franka::Torques pid_force_control_motion_generator::callback
 	}
 
 	//Hybrid Control
+	Eigen::Matrix< double, 6, 1> s;
+	s << 1, 1, 0, 1, 1, 1;
+	Eigen::Matrix< double, 6, 6> compliance_selection_matrix = s.array().sqrt().matrix().asDiagonal();
+
+	Eigen::Matrix< double, 6, 1> e;
+	e << 1, 1, 1, 1, 1, 1;
+	Eigen::Matrix< double, 6, 6> unit_matrix = e.array().sqrt().matrix().asDiagonal();
+
+	position_command = compliance_selection_matrix * position_command;
+	force_command = (unit_matrix - compliance_selection_matrix) * force_command;
+
 	Eigen::Matrix<double, 6, 1> hybrid_command;
 	hybrid_command = position_command;
-	hybrid_command(2, 0) = force_command(2, 0); //F_z
-	//hybrid_command(3, 0) = force_command(3, 0); //M_x
-	//hybrid_command(4, 0) = force_command(4, 0); //M_y
-	//hybrid_command = force_command;
+	hybrid_command = position_command + force_command;
 
 	//Convert in 7 joint space
 	Eigen::Matrix<double, 7, 1> tau_command;

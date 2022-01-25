@@ -135,6 +135,8 @@ private:
 	franka::Model model;
 	franka::RobotState initial_state_;
 
+	
+
 	std::array<double, 6> k_p_f = { 0.3, 0.3, 0.3, 0.3, 0.3, 0.3 };
 	std::array<double, 6> k_i_f = { 0.4, 0.4, 0.4, 0.4, 0.4, 0.4 };
 	std::array<double, 6> k_d_f = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
