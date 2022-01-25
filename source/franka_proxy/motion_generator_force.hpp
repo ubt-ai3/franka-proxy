@@ -145,6 +145,14 @@ private:
 	double k_i_p = 1.0;
 	double k_d_p = 0.0;
 	
+	const size_t tau_command_filter_size = 5;
+	size_t tau_command_current_filter_position = 0;
+	std::vector<double> tau_command_buffer;
+
+	void update_tau_command_filter(Eigen::Matrix<double, 7, 1> tau_command);
+	double compute_tau_command_filtered(int j);
+
+
 	int count_loop = 0;
 	double time_{ 0.0 };
 

@@ -150,6 +150,7 @@ pid_force_control_motion_generator::pid_force_control_motion_generator
 	double k_i,
 	double k_d)
 	:
+	tau_command_buffer(tau_command_filter_size * 7, 0),
 	target_mass(mass),
 	duration(duration),
 	k_p_f(k_p),
@@ -216,6 +217,12 @@ franka::Torques pid_force_control_motion_generator::callback
 	Eigen::Matrix<double, 7, 1> tau_command;
 	tau_command = (jacobian.transpose() * hybrid_command);
 
+	//Filter tau_command
+	update_tau_command_filter(tau_command);
+	for (int i = 0; i < 7; i++) {
+		tau_command(i, 0) = compute_tau_command_filtered(i);
+	}
+
 	//Create and fill output array
 	std::array<double, 7> tau_d_array{};
 	Eigen::VectorXd::Map(&tau_d_array[0], 7) = tau_command;
@@ -231,6 +238,22 @@ franka::Torques pid_force_control_motion_generator::callback
 
 	return tau_d_array;
 }
+
+void detail::pid_force_control_motion_generator::update_tau_command_filter(Eigen::Matrix<double, 7, 1> tau_command) {
+	for (int i = 0; i < 7; i ++) {
+		tau_command_buffer[tau_command_current_filter_position * 7 + i] = tau_command(i, 0);
+	}
+	tau_command_current_filter_position = (tau_command_current_filter_position + 1) % tau_command_filter_size;
+}
+
+double detail::pid_force_control_motion_generator::compute_tau_command_filtered(int j) {
+	double value = 0.0;
+	for (int i = j; i < j * tau_command_filter_size; i += 7) {
+		value += tau_command_buffer[i];
+	}
+	return (value / tau_command_filter_size);
+}
+
 
 detail::force_motion_generator::export_data pid_force_control_motion_generator::get_export_data() {
 	return my_data;
