@@ -95,14 +95,14 @@ void franka_state_server::task_main()
 				if (vacuum_gripper_state_.part_present != object_present)
 				{
 					if (vacuum_gripper_state_.part_present)
-						std::cout << "object vacuumed\n";
+						std::cout << "object attached\n";
 					else
-						std::cout << "object dropped\n";
+						std::cout << "object detached\n";
 
 				}
 				object_present = vacuum_gripper_state_.part_present;
 
-				static bool part_detached = false;
+				/*static bool part_detached = false;
 				if (vacuum_gripper_state_.part_detached != part_detached)
 				{
 					if (vacuum_gripper_state_.part_detached)
@@ -110,7 +110,7 @@ void franka_state_server::task_main()
 					else
 						std::cout << "un-detached\n";
 				}
-				part_detached = vacuum_gripper_state_.part_detached;
+				part_detached = vacuum_gripper_state_.part_detached;*/
 
 
 

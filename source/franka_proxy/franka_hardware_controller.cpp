@@ -164,11 +164,11 @@ void franka_hardware_controller::move_to(const robot_config_7dof& target)
 	}
 	catch (const franka::Exception& e)
 	{
-		std::cout << "Error in control loop :"<<e.what()<<"\n";
-		set_control_loop_running(false);
 
+		set_control_loop_running(false);
+		std::cout << "Error in move_to control loop :" << e.what() << "\n";
 		//debug
-		std::fstream f("motion_log.csv", std::ios::app);
+		/*std::fstream f("motion_log.csv", std::ios::app);
 		f << robot_state_before.q[0];
 		for (int i = 1; i < 7; i++)
 		{
@@ -187,7 +187,7 @@ void franka_hardware_controller::move_to(const robot_config_7dof& target)
 		{
 			f << "," << target[i];
 		}
-		f << "\n";
+		f << "\n";*/
 		throw;
 	}
 
@@ -214,23 +214,30 @@ bool franka_hardware_controller::move_to_until_contact
 			std::lock_guard<std::mutex> state_guard(state_lock_);
 		}
 
-		robot_.control
+		/*robot_.control
 			(motion_generator,
 			 franka::ControllerMode::kJointImpedance,
-			 true, 20.);
+			 true, 20.);*/
+		robot_.control
+		(motion_generator,
+			franka::ControllerMode::kCartesianImpedance,
+			true, 100.);
 	}
 	catch (const detail::franka_joint_motion_generator::stop_motion_trigger&)
 	{
+		std::cout << "motion stopped\n";
 	}
 	catch (const detail::franka_joint_motion_generator::contact_stop_trigger&)
 	{
 		set_control_loop_running(false);
 		set_default_collision_behaviour();
+		std::cout << "contact detected" << std::endl;
 		return false;
 	}
 	catch (const franka::Exception&)
 	{
 		set_control_loop_running(false);
+		std::cout << "error in move to until contact control loop\n";
 		throw;
 	}
 	
@@ -329,15 +336,22 @@ bool franka_hardware_controller::vacuum_gripper_drop(std::chrono::milliseconds t
 	if(!vacuum_gripper_)
 		throw std::runtime_error("Tried to use non existent gripper, make sure you use the vacuum gripper");
 	bool success = false;
-
-	success = vacuum_gripper_->dropOff(drop_timeout);
-
+	try
+	{
+		success = vacuum_gripper_->dropOff(drop_timeout);
+	}
+	catch (const franka::CommandException& e)
+	{
+		//TODO
+		//for some reason dropoff always throws this
+		std::cout << "drop off failed\n";
+	}
+	if(success)
+		std::cout << "drop off successful\n";
 	{
 		std::scoped_lock<std::mutex> state_guard(state_lock_);
 		vacuum_gripper_state_ = vacuum_gripper_->readOnce();
 	}
-	std::cout << "dropping \n";
-
 	return success;
 }
 
@@ -364,7 +378,8 @@ bool franka_hardware_controller::vacuum_gripper_vacuum(std::uint8_t vacuum_stren
 		std::scoped_lock<std::mutex> state_guard(state_lock_);
 		vacuum_gripper_state_ = vacuum_gripper_->readOnce();
 	}
-
+	if (success != vacuum_gripper_state_.part_present)
+		std::cout << "Failed vacuum but attached object\n";
 	//if (vacuum_gripper_state_.in_control_range)
 	//	std::cout << "in control range\n";
 	//if (vacuum_gripper_state_.part_detached)
@@ -372,7 +387,7 @@ bool franka_hardware_controller::vacuum_gripper_vacuum(std::uint8_t vacuum_stren
 	//if (vacuum_gripper_state_.part_present)
 	//	std::cout << "part present\n";
 	//std::cout << "vacuum level: " << vacuum_gripper_state_.vacuum << "\n\n";
-	return success;
+	return vacuum_gripper_state_.part_present;
 }
 
 bool franka_hardware_controller::vacuum_gripper_stop()

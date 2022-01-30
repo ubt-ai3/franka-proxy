@@ -40,7 +40,8 @@ int main()
 {
 	try {
 		franka_proxy::franka_proxy proxy;
-		while (std::cin.get() != 'q')
+		std::string word;
+		while (std::cin >> word,word!= "q")
 		{
 			try {
 				proxy.controller_.vacuum_gripper_drop();
