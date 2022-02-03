@@ -138,8 +138,9 @@ double force_motion_generator::compute_dq_filtered(int j)
 	return value / dq_filter_size_;
 }
 
-
-//Class Pid Force Control Motion Generator
+//-------------------------------------------------------------------------------------------------
+//------------------Class Pid Force Control Motion Generator---------------------------------------
+//-------------------------------------------------------------------------------------------------
 
 //Constructor
 pid_force_control_motion_generator::pid_force_control_motion_generator
@@ -148,6 +149,8 @@ pid_force_control_motion_generator::pid_force_control_motion_generator
 	double duration)
 	:
 	tau_command_buffer(tau_command_filter_size * 7, 0),
+	force_error_diff_buffer(force_error_diff_filter_size * 6, 0),
+	position_error_diff_buffer(position_error_diff_filter_size * 6, 0),
 	target_mass(mass),
 	duration(duration),
 	model(robot.loadModel())
@@ -169,58 +172,94 @@ franka::Torques pid_force_control_motion_generator::callback
 		return current_torques;
 	}
 
-	
-
 	std::array<double, 42> jacobian_array = model.zeroJacobian(franka::Frame::kEndEffector, robot_state);
 	Eigen::Map<const Eigen::Matrix<double, 6, 7>> jacobian(jacobian_array.data());
 	Eigen::Matrix<double, 6, 1> force_command;
 	Eigen::Matrix<double, 6, 1> force_desired;
 	Eigen::Map<const Eigen::Matrix<double, 6, 1>> force_existing(robot_state.O_F_ext_hat_K.data());
 
-	//Set desired cartesian Position as the first measured position
+	//Set desired cartesian Position as the first measured position (initial)
 	if (count_loop == 0) {
-		Eigen::Map<const Eigen::Matrix<double, 7, 1>> d_j_pos(robot_state.q.data());
-		desired_cartesian_pos = (jacobian.transpose()).fullPivLu().solve(d_j_pos);
+		Eigen::Affine3d initial_transform(Eigen::Matrix4d::Map(initial_state_.O_T_EE.data()));
+		position_desired = initial_transform.translation();
+		orientation_desired = initial_transform.linear();
 	}
 
 	//Set force_desired
 	force_desired.setZero();
 	force_desired(2, 0) = target_mass * -9.81;
 
-	//Integral
-	force_error_integral += period.toSec() * (force_desired - force_existing);
-	
+	//force error
+	Eigen::Matrix<double, 6, 1> force_error = force_desired - force_existing;
 
+	//force Integral
+	force_error_integral += period.toSec() * force_error;
+	
+	//force Differential
+	Eigen::Matrix<double, 6, 1> force_error_diff_filtered;
+	if (count_loop != 0) { //if period.toMSec = 0.0 the error_diff is infinite
+		Eigen::Matrix<double, 6, 1> force_error_diff = (force_error - old_force_error) / period.toMSec();
+		update_force_error_diff_filter(force_error_diff);
+		for (int i = 0; i < 6; i++) {
+			force_error_diff_filtered(i, 0) = compute_force_error_diff_filtered(i);
+		}
+	}
+	old_force_error = force_error;
+	
 	//Pid Force control
 	for (int i = 0; i < 6; i++) {
-		force_command(i, 0) = k_p_f[i] * (force_desired(i, 0) - force_existing(i, 0) + k_i_f[i] * force_error_integral(i, 0));
+		force_command(i, 0) = k_p_f[i] * force_error(i,0) + k_i_f[i] * force_error_integral(i, 0) + k_d_f[i] * force_error_diff_filtered(i, 0);
 	}
 
 	//Position control
-	Eigen::Map<const Eigen::Matrix<double, 7, 1>> j_pos(robot_state.q.data());
-	Eigen::Matrix<double, 6, 1> measured_cartesian_pos = (jacobian.transpose()).fullPivLu().solve(j_pos);
+	Eigen::Affine3d transform(Eigen::Matrix4d::Map(robot_state.O_T_EE.data()));
+	Eigen::Vector3d position(transform.translation());
+	Eigen::Quaterniond orientation(transform.linear());
 
-	position_error_integral += period.toSec() * (desired_cartesian_pos - measured_cartesian_pos);
-	
+	//Position error
+	Eigen::Matrix<double, 6, 1> position_error;
+	position_error.head(3) << position - position_desired;
+	// orientation error
+	// "difference" quaternion
+	if (orientation_desired.coeffs().dot(orientation.coeffs()) < 0.0) {
+		orientation.coeffs() << -orientation.coeffs();
+	}
+	// "difference" quaternion
+	Eigen::Quaterniond error_quaternion(orientation.inverse() * orientation_desired);
+	position_error.tail(3) << error_quaternion.x(), error_quaternion.y(), error_quaternion.z();
+	// Transform to base frame
+	position_error.tail(3) << -transform.linear() * position_error.tail(3);
+
+	//Position integral
+	position_error_integral += period.toSec() * position_error;
+
+	//Position Differential
+	Eigen::Matrix<double, 6, 1> position_error_diff_filtered;
+	if (count_loop != 0) { //if period.toMSec = 0.0 the error_diff is infinite
+		Eigen::Matrix<double, 6, 1> position_error_diff = (position_error - old_position_error) / period.toMSec();
+		update_position_error_diff_filter(position_error_diff);
+		for (int i = 0; i < 6; i++) {
+			position_error_diff_filtered(i, 0) = compute_position_error_diff_filtered(i);
+		}
+	}
+	old_position_error = position_error;
+
+	//Position PID Control
 	Eigen::Matrix<double, 6, 1> position_command;
-	for (int i = 0; i < 6; i ++) {
-		position_command(i, 0) = k_p_p[i] * (desired_cartesian_pos(i, 0) - measured_cartesian_pos(i, 0)) + k_i_p[i] * position_error_integral(i, 0);
+	for (int i = 0; i < 6; i++) {
+		position_command(i, 0) = k_p_p[i] * position_error(i, 0) + k_i_p[i] * position_error_integral(i, 0) + k_d_p[i] * position_error_diff_filtered(i,0);
 	}
 
-	//Hybrid Control
+	//Hybrid Control combines FOrce and Position commands
 	Eigen::Matrix< double, 6, 1> s;
-	s << 1, 1, 0, 1, 1, 1;
+	s << 1, 1, 1, 1, 1, 1;
 	Eigen::Matrix< double, 6, 6> compliance_selection_matrix = s.array().sqrt().matrix().asDiagonal();
-
-	Eigen::Matrix< double, 6, 1> e;
-	e << 1, 1, 1, 1, 1, 1;
-	Eigen::Matrix< double, 6, 6> unit_matrix = e.array().sqrt().matrix().asDiagonal();
+	Eigen::Matrix< double, 6, 6> unit_matrix = Eigen::Matrix< double, 6, 6>::Identity();
 
 	position_command = compliance_selection_matrix * position_command;
 	force_command = (unit_matrix - compliance_selection_matrix) * force_command;
 
 	Eigen::Matrix<double, 6, 1> hybrid_command;
-	hybrid_command = position_command;
 	hybrid_command = position_command + force_command;
 
 	//Convert in 7 joint space
@@ -264,6 +303,35 @@ double detail::pid_force_control_motion_generator::compute_tau_command_filtered(
 	return (value / tau_command_filter_size);
 }
 
+void detail::pid_force_control_motion_generator::update_force_error_diff_filter(Eigen::Matrix<double, 6, 1> force_error_diff) {
+	for (int i = 0; i < 6; i++) {
+		force_error_diff_buffer[force_error_diff_current_filter_position * 6 + i] = force_error_diff(i, 0);
+	}
+	force_error_diff_current_filter_position = (force_error_diff_current_filter_position + 1) % force_error_diff_filter_size;
+}
+
+double detail::pid_force_control_motion_generator::compute_force_error_diff_filtered(int j) {
+	double value = 0.0;
+	for (int i = j; i < j * force_error_diff_filter_size; i += 6) {
+		value += force_error_diff_buffer[i];
+	}
+	return (value / force_error_diff_filter_size);
+}
+
+void detail::pid_force_control_motion_generator::update_position_error_diff_filter(Eigen::Matrix<double, 6, 1> position_error_diff) {
+	for (int i = 0; i < 6; i++) {
+		position_error_diff_buffer[position_error_diff_current_filter_position * 6 + i] = position_error_diff(i, 0);
+	}
+	position_error_diff_current_filter_position = (position_error_diff_current_filter_position + 1) % position_error_diff_filter_size;
+}
+
+double detail::pid_force_control_motion_generator::compute_position_error_diff_filtered(int j) {
+	double value = 0.0;
+	for (int i = j; i < j * position_error_diff_filter_size; i += 6) {
+		value += position_error_diff_buffer[i];
+	}
+	return (value / position_error_diff_filter_size);
+}
 
 detail::force_motion_generator::export_data pid_force_control_motion_generator::get_export_data() {
 	return my_data;
