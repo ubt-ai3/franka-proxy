@@ -36,22 +36,6 @@ franka_proxy::franka_proxy()
 
 } /* namespace franka_proxy */
 
-void print_status(const franka_proxy::franka_hardware_controller& h_controller)  {
-	std::cout << "Joint position of the robot: " << std::endl;
-	auto config = h_controller.robot_state();
-	for (int i = 0; i < 7; i++) {
-		std::cout << config.q[i] << "  ";
-	}
-	std::cout << std::endl;
-}
-
-void print_joint_pos(franka_proxy::robot_config_7dof pos) {
-	for (int i = 0; i < 7; i++) {
-		std::cout << pos[i] << "  ";
-	}
-	std::cout << std:: endl;
-}
-
 void gripper_test(franka_proxy::franka_hardware_controller& h_controller) {
 	h_controller.open_gripper(0.1);
 	h_controller.close_gripper(0.1);
@@ -77,46 +61,19 @@ void move_test(franka_proxy::franka_hardware_controller& h_controller) {
 	print_status(h_controller);
 }
 
-void test_measured_z_force(franka_proxy::franka_hardware_controller& robot) {
-	std::this_thread::sleep_for(std::chrono::milliseconds(2000));
-	for (int i = 0; i < 50; i++) {
-
-		std::this_thread::sleep_for(std::chrono::milliseconds(100));
-		for (int j = 0; j < 7; j++) {
-			std::cout << robot.robot_state().tau_J[j] << "  ";
-		}
-		std::cout << std::endl;
-		
-	}
-}
-
-void test_force_control_z(franka_proxy::franka_hardware_controller& h_controller) {
-
-}
-
 //This function parses the force_motion_generator::export_data (which is returned from the apply_z_force_pid call in the main function) to a csv file
-//void data_to_csv(franka_proxy::detail::force_motion_generator::export_data data) {
-//	std::cout << "PID Parameters: " << data.k_p << ", " << data.k_i << ", " << data.k_d << std::endl;
-//	std::cout << "Amount measured forces: " << data.existing_forces.size() << std::endl;
-//	std::cout << "Amount desired forces: " << data.desired_forces.size() << std::endl;
-//	std::cout << "Amount command forces: " << data.command_forces.size() << std::endl;
-//
-//	std::ofstream data_file("testExportData.csv");
-//	for (int i = 1; i <= 6; i ++) {
-//		data_file << std::to_string(data.masses[i]) << ",";
-//	}
-//	data_file << std::to_string(data.duration) << "," << std::to_string(data.k_p) << "," << std::to_string(data.k_i) << "," << std::to_string(data.k_d) << "\n";
-//
-//	for (int n = 0; n < data.measured_forces.size(); n++) {
-//		for (int i = 0; i < 6; i++) {
-//			data_file << data.measured_forces[n][i] << "," << data.desired_forces[n][i] << "," << data.command_forces[n][i] << "," << data.force_errors[n][i] << ",";
-//			data_file << data.force_errors_integrals[n][i] << "," << data.force_errors_differentials[n][i] << "," << data.force_errors_differentials_sum[n][i] << "," << data.force_errors_differentials_filtered[n][i] << ",";
-//		}
-//		data_file << "\n";
-//	}
-//	
-//	data_file.close();
-//}
+void data_to_csv(franka_proxy::detail::force_motion_generator::export_data data) {
+
+	std::ofstream data_file("testExportData.csv");
+	//todo: print all necessary parts from export_data in csv file
+	for (int n = 0; n < data.measured_forces.size(); n++) {
+		for (int i = 0; i < 6; i++) {
+			data_file << data.measured_forces[n][i] << ",";
+		}
+		data_file << "\n";
+	}	
+	data_file.close();
+}
 
 void debug_export_data(franka_proxy::detail::force_motion_generator::export_data data) {
 
@@ -141,7 +98,6 @@ void debug_export_data(franka_proxy::detail::force_motion_generator::export_data
 	}	
 }
 
-
 int main() {
 	
 	franka_proxy::franka_hardware_controller h_controller("192.168.1.1");
@@ -161,12 +117,6 @@ int main() {
 		std::cout << "catched Exception: " << e.what() << std::endl;
 	}
 
-	//std::this_thread::sleep_for(std::chrono::seconds(1));
-
-
-
-	//franka_proxy::franka_proxy proxy;
-	//std::cout << "Press enter to close..." << std::endl;
 	/*std::cout << "Writing the data to a csv file..." << std::endl;
 	data_to_csv(data);
 	std::cout << "Writing in csv file finished. Closing in 1 second..." << std::endl;*/
