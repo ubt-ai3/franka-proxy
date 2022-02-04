@@ -174,8 +174,6 @@ franka::Torques pid_force_control_motion_generator::callback
 
 	std::array<double, 42> jacobian_array = model.zeroJacobian(franka::Frame::kEndEffector, robot_state);
 	Eigen::Map<const Eigen::Matrix<double, 6, 7>> jacobian(jacobian_array.data());
-	Eigen::Matrix<double, 6, 1> force_command;
-	Eigen::Matrix<double, 6, 1> force_desired;
 	Eigen::Map<const Eigen::Matrix<double, 6, 1>> force_existing(robot_state.O_F_ext_hat_K.data());
 
 	//Set desired cartesian Position as the first measured position (initial)
@@ -186,6 +184,7 @@ franka::Torques pid_force_control_motion_generator::callback
 	}
 
 	//Set force_desired
+	Eigen::Matrix<double, 6, 1> force_desired;
 	force_desired.setZero();
 	force_desired(2, 0) = target_mass * -9.81;
 
@@ -204,9 +203,15 @@ franka::Torques pid_force_control_motion_generator::callback
 			force_error_diff_filtered(i, 0) = compute_force_error_diff_filtered(i);
 		}
 	}
+	else {
+		for (int i = 0; i < 6; i++) {
+			force_error_diff_filtered(i, 0) = 0.0;
+		}
+	}
 	old_force_error = force_error;
 	
 	//Pid Force control
+	Eigen::Matrix<double, 6, 1> force_command;
 	for (int i = 0; i < 6; i++) {
 		force_command(i, 0) = k_p_f[i] * force_error(i,0) + k_i_f[i] * force_error_integral(i, 0) + k_d_f[i] * force_error_diff_filtered(i, 0);
 	}
@@ -240,6 +245,11 @@ franka::Torques pid_force_control_motion_generator::callback
 		update_position_error_diff_filter(position_error_diff);
 		for (int i = 0; i < 6; i++) {
 			position_error_diff_filtered(i, 0) = compute_position_error_diff_filtered(i);
+		}
+	}
+	else {
+		for (int i = 0; i < 6; i++) {
+			position_error_diff_filtered(i, 0) = 0.0;
 		}
 	}
 	old_position_error = position_error;
@@ -277,11 +287,13 @@ franka::Torques pid_force_control_motion_generator::callback
 	Eigen::VectorXd::Map(&tau_d_array[0], 7) = tau_command;
 
 	//Push data in export_data struct
-	my_data.desired_forces.push_back(force_desired);
-	my_data.existing_forces.push_back(force_existing);
-	my_data.command_forces.push_back(force_command);
-	my_data.position_forces.push_back(position_command);
-	my_data.hybrid_forces.push_back(hybrid_command);
+	//my_data.measured_positions.push_back();
+	my_data.measured_forces.push_back(force_existing);
+	my_data.position_errors.push_back(position_error);
+	my_data.force_errors.push_back(force_error);
+	my_data.position_commands.push_back(position_command);
+	my_data.force_commands.push_back(force_command);
+
 
 	count_loop++;
 

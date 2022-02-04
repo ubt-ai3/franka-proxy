@@ -47,23 +47,19 @@ class force_motion_generator
 public:
 
 	struct export_data {
-		double k_p;
-		double k_i;
-		double k_d;
+		std::array<double, 6> k_p_f;
+		std::array<double, 6> k_i_f;
+		std::array<double, 6> k_d_f;
+		std::array<double, 6> k_p_p;
+		std::array<double, 6> k_i_p;
+		std::array<double, 6> k_d_p;
 
-		double duration;
-
-		std::vector<Eigen::Matrix<double, 6, 7>> jacobi;
-
-
-		Eigen::Matrix<double, 6, 1> masses; //the mass that should be achieved in each time step
-
-		std::vector<Eigen::Matrix<double, 6, 1>> existing_forces;
-		std::vector<Eigen::Matrix<double, 6, 1>> desired_forces;
-		std::vector<Eigen::Matrix<double, 6, 1>> command_forces;
-		std::vector<Eigen::Matrix<double, 6, 1>> position_forces;
-		std::vector<Eigen::Matrix<double, 6, 1>> hybrid_forces;
-		std::vector<Eigen::Matrix<double, 6, 1>> test_command_forces;
+		std::vector<Eigen::Matrix<double, 6, 1>> measured_positions;
+		std::vector<Eigen::Matrix<double, 6, 1>> measured_forces;
+		std::vector<Eigen::Matrix<double, 6, 1>> position_errors;
+		std::vector<Eigen::Matrix<double, 6, 1>> force_errors;
+		std::vector<Eigen::Matrix<double, 6, 1>> position_commands;
+		std::vector<Eigen::Matrix<double, 6, 1>> force_commands;
 
 	};
 

@@ -112,7 +112,6 @@ detail::force_motion_generator::export_data franka_hardware_controller::apply_z_
 {
 	initialize_parameters();
 	detail::force_motion_generator::export_data ex_data;
-	ex_data.duration = duration;
 
 
 

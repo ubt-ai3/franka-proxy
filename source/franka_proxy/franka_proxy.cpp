@@ -120,20 +120,20 @@ void test_force_control_z(franka_proxy::franka_hardware_controller& h_controller
 
 void debug_export_data(franka_proxy::detail::force_motion_generator::export_data data) {
 
-	if (!(data.existing_forces.size() > 0)) {
+	if (!(data.force_commands.size() > 0)) {
 		std::cout << "No measured values to print." << std::endl;
 		return;
 	}
-	for (int i = 0; i < data.existing_forces.size(); i++) {
-		if (i % 100 == 0) {
+	for (int i = 0; i < data.force_commands.size(); i++) {
+		if (i % 500 == 0) {
 			std::cout << "i: " << i << std::endl;
 			for (int j = 0; j < 6; j++) {
 				std::cout << "Dim: " << j+1 << std::endl;
-				std::cout << "force_desired = " << data.desired_forces[i][j] << ", ";
-				std::cout << "force_existing = " << data.existing_forces[i][j] << std::endl;
-				std::cout << "force_command = " << data.command_forces[i][j] << ", ";
-				std::cout << "position_command = " << data.position_forces[i][j] << ", ";
-				std::cout << "hybrid_command = " << data.hybrid_forces[i][j] << std::endl;
+				std::cout << "measured_force = " << data.measured_forces[i][j] << ", ";
+				std::cout << "position_error = " << data.position_errors[i][j] << ", ";
+				std::cout << "force_error = " << data.force_errors[i][j] << ", ";
+				std::cout << "position_command = " << data.position_commands[i][j] << ", ";
+				std::cout << "force_command = " << data.force_commands[i][j] << std::endl;
 			}
 			std::cout << std::endl;
 		}
