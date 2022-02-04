@@ -126,34 +126,46 @@ public:
 	detail::force_motion_generator::export_data get_export_data();
 
 private:
-	detail::force_motion_generator::export_data my_data;
-
-	franka::Model model;
+	franka::Model model_;
 	franka::RobotState initial_state_;
 
-	std::array<double, 6> k_p_f = { 1.5, 1.5, 1.5, 0.5, 0.5, 0.5 };
-	std::array<double, 6> k_i_f = { 2.0, 2.0, 2.0, 1.0, 1.0, 1.0 };
-	std::array<double, 6> k_d_f = { 100, 100, 100, 50, 50, 50 };
-	double target_mass;
-	double duration;
+	int count_loop_ = 0;
+	double time_{ 0.0 };
+	double target_mass_;
+	double duration_;
 
-	std::array<double, 6> k_p_p = { -200, -200, -200, -20, -20, -20 };
-	std::array<double, 6> k_i_p = { -200, -200, -200, -20, -20, -20 };
-	std::array<double, 6> k_d_p = { -500, -500, -500, -50, -50, -50 };
+	std::array<double, 6> k_p_f_ = { 1.5, 1.5, 1.5, 0.5, 0.5, 0.5 };
+	std::array<double, 6> k_i_f_ = { 2.0, 2.0, 2.0, 1.0, 1.0, 1.0 };
+	std::array<double, 6> k_d_f_ = { 100, 100, 100, 50, 50, 50 };
+
+	std::array<double, 6> k_p_p_ = { -200, -200, -200, -20, -20, -20 };
+	std::array<double, 6> k_i_p_ = { -200, -200, -200, -20, -20, -20 };
+	std::array<double, 6> k_d_p_ = { -500, -500, -500, -50, -50, -50 };
 	
-	const size_t tau_command_filter_size = 5;
-	size_t tau_command_current_filter_position = 0;
-	std::vector<double> tau_command_buffer;
+	const size_t tau_command_filter_size_ = 5;
+	size_t tau_command_current_filter_position_ = 0;
+	std::vector<double> tau_command_buffer_;
 
-	Eigen::Matrix<double, 6, 1> old_force_error;
-	const size_t force_error_diff_filter_size = 5;
-	size_t force_error_diff_current_filter_position = 0;
-	std::vector<double> force_error_diff_buffer;
+	Eigen::Matrix<double, 6, 1> old_force_error_;
+	const size_t force_error_diff_filter_size_ = 5;
+	size_t force_error_diff_current_filter_position_ = 0;
+	std::vector<double> force_error_diff_buffer_;
 
-	Eigen::Matrix<double, 6, 1> old_position_error;
-	const size_t position_error_diff_filter_size = 5;
-	size_t position_error_diff_current_filter_position = 0;
-	std::vector<double> position_error_diff_buffer;
+	Eigen::Matrix<double, 6, 1> old_position_error_;
+	const size_t position_error_diff_filter_size_ = 5;
+	size_t position_error_diff_current_filter_position_ = 0;
+	std::vector<double> position_error_diff_buffer_;
+
+	Eigen::Matrix<double, 6, 1> force_error_integral_;
+	Eigen::Matrix<double, 6, 1> position_error_integral_;
+
+	Eigen::Matrix<double, 6, 1> desired_cartesian_pos_;
+
+	//initial position and rotation values are desired values for the position control
+	Eigen::Vector3d position_desired_;
+	Eigen::Quaterniond orientation_desired_;
+
+	detail::force_motion_generator::export_data my_data_;
 
 	void update_tau_command_filter(Eigen::Matrix<double, 7, 1> tau_command);
 	double compute_tau_command_filtered(int j);
@@ -163,18 +175,6 @@ private:
 
 	void update_position_error_diff_filter(Eigen::Matrix<double, 6, 1> position_error_diff);
 	double compute_position_error_diff_filtered(int j);
-
-	int count_loop = 0;
-	double time_{ 0.0 };
-
-	Eigen::Matrix<double, 6, 1> force_error_integral;
-	Eigen::Matrix<double, 6, 1> position_error_integral;
-
-	Eigen::Matrix<double, 6, 1> desired_cartesian_pos;
-
-	//initial position and rotation values are desired values for the position control
-	Eigen::Vector3d position_desired;
-	Eigen::Quaterniond orientation_desired;
 };
 
 } /* namespace detail */

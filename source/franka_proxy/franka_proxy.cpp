@@ -51,14 +51,10 @@ void move_test(franka_proxy::franka_hardware_controller& h_controller) {
 	h_controller.set_speed_factor(0.2);
 
 	std::cout << "Moving to position one:" << std::endl;
-	print_joint_pos(pos1);
 	h_controller.move_to(pos1);
-	print_status(h_controller);
 
 	std::cout << "Moving back to idle position:" << std::endl;
-	print_joint_pos(posIdle);
 	h_controller.move_to(posIdle);
-	print_status(h_controller);
 }
 
 //This function parses the force_motion_generator::export_data (which is returned from the apply_z_force_pid call in the main function) to a csv file
