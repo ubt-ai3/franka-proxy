@@ -216,6 +216,52 @@ franka::Torques pid_force_control_motion_generator::callback
 		force_command(i, 0) = k_p_f_[i] * force_error(i,0) + k_i_f_[i] * force_error_integral_(i, 0) + k_d_f_[i] * force_error_diff_filtered(i, 0);
 	}
 
+	//Spring damper System for position control
+	auto current_step = static_cast<size_t>(time_ * 1000.);
+	std::array<double, 7> q_d = q_sequence_[current_step];
+	// get state variables
+	update_dq_filter(robot_state);
+	Eigen::Map<const Eigen::Matrix<double, 7, 1>> tau_measured(robot_state.tau_J.data());
+
+	std::array<double, 49> mass_array = model_.mass(robot_state);
+	Eigen::Map<Eigen::Matrix<double, 7, 1>> mass(mass_array.data());
+	std::array<double, 7> gravity_array = model_.gravity(robot_state);
+	Eigen::Map<Eigen::Matrix<double, 7, 1>> gravity(gravity_array.data());
+
+	// --- cartesian motion ---
+	auto current_pose = model_.pose(franka::Frame::kEndEffector, robot_state.q, robot_state.F_T_EE, robot_state.EE_T_K);
+	Eigen::Affine3d transform(Eigen::Matrix4d::Map(current_pose.data()));
+	//Eigen::Affine3d transform(Eigen::Matrix4d::Map(robot_state.O_T_EE.data()));
+	Eigen::Vector3d position(transform.translation());
+	Eigen::Quaterniond orientation(transform.linear());
+
+	// calculate pose from desired joints 
+	auto desired_pose = model_.pose(franka::Frame::kEndEffector, q_d, robot_state.F_T_EE, robot_state.EE_T_K);
+	Eigen::Affine3d transform_d(Eigen::Matrix4d::Map(desired_pose.data()));
+	Eigen::Vector3d position_d(transform_d.translation());
+	Eigen::Quaterniond orientation_d(transform_d.linear());
+
+	// compute error to desired pose
+	Eigen::Matrix<double, 6, 1> error;
+
+	// position error
+	error.head(3) = position - position_d;
+
+	// orientation error
+	if (orientation_d.coeffs().dot(orientation.coeffs()) < 0.0)
+		orientation.coeffs() = -orientation.coeffs();
+	Eigen::Quaterniond error_quaternion(orientation.inverse() * orientation_d);
+	error.tail(3) << error_quaternion.x(), error_quaternion.y(), error_quaternion.z();
+	// transform to base frame
+	error.tail(3) = -transform_d.linear() * error.tail(3);
+
+
+	// spring damper system with damping ratio=1 and filtered dq
+	Eigen::Matrix<double, 6, 1> ft_cartesian_motion = -stiffness_ * error - damping_ * (jacobian * compute_dq_filtered());
+
+	// --- cartesian motion end --- 
+
+	/*
 	//Position control
 	Eigen::Affine3d transform(Eigen::Matrix4d::Map(robot_state.O_T_EE.data()));
 	Eigen::Vector3d position(transform.translation());
@@ -254,27 +300,38 @@ franka::Torques pid_force_control_motion_generator::callback
 	}
 	old_position_error_ = position_error;
 
+		
+
 	//Position PID Control
 	Eigen::Matrix<double, 6, 1> position_command;
 	for (int i = 0; i < 6; i++) {
-		position_command(i, 0) = k_p_p_[i] * position_error(i, 0) + k_i_p_[i] * position_error_integral_(i, 0) + k_d_p_[i] * position_error_diff_filtered(i,0);
+		position_command(i, 0) = k_p_p_[i] * position_error(i, 0) + k_i_p_[i] * position_error_integral_(i, 0) +  k_d_p_[i] * position_error_diff_filtered(i,0);
 	}
+	*/
 
 	//Hybrid Control combines Force and Position commands
 	Eigen::Matrix< double, 6, 1> s;
 	s << 1, 1, 1, 1, 1, 1; //1 = Position controlled, 0 = force controlled
-	Eigen::Matrix< double, 6, 6> compliance_selection_matrix = s.array().sqrt().matrix().asDiagonal();
+	Eigen::Matrix< double, 6, 6> compliance_selection_matrix = s.array().matrix().asDiagonal();
 	Eigen::Matrix< double, 6, 6> unit_matrix = Eigen::Matrix< double, 6, 6>::Identity();
 
+	Eigen::Matrix<double, 6, 1> position_command = ft_cartesian_motion; //Spring damping system
 	position_command = compliance_selection_matrix * position_command;
 	force_command = (unit_matrix - compliance_selection_matrix) * force_command;
 
 	Eigen::Matrix<double, 6, 1> hybrid_command;
 	hybrid_command = position_command + force_command;
 
+
 	//Convert in 7 joint space
 	Eigen::Matrix<double, 7, 1> tau_command;
 	tau_command = (jacobian.transpose() * hybrid_command);
+
+	//Coriolis
+	std::array<double, 7> coriolis_array = model_.coriolis(robot_state);
+	Eigen::Map<const Eigen::Matrix<double, 7, 1>> coriolis(coriolis_array.data());
+
+	tau_command += coriolis;
 
 	//Filter tau_command
 	update_tau_command_filter(tau_command);
@@ -289,7 +346,7 @@ franka::Torques pid_force_control_motion_generator::callback
 	//Push data in export_data struct
 	//my_data.measured_positions.push_back();
 	my_data_.measured_forces.push_back(force_existing);
-	my_data_.position_errors.push_back(position_error);
+	//my_data_.position_errors.push_back(position_error);
 	my_data_.force_errors.push_back(force_error);
 	my_data_.position_commands.push_back(position_command);
 	my_data_.force_commands.push_back(force_command);
@@ -298,6 +355,24 @@ franka::Torques pid_force_control_motion_generator::callback
 	count_loop_ ++;
 
 	return tau_d_array;
+}
+
+void pid_force_control_motion_generator::update_dq_filter(const franka::RobotState& robot_state)
+{
+	dq_buffer_[dq_current_filter_position_] = Eigen::Matrix<double,7,1>(robot_state.dq.data());
+
+	dq_current_filter_position_ = (dq_current_filter_position_ + 1) % dq_filter_size_;
+}
+
+
+Eigen::Matrix<double, 7, 1> pid_force_control_motion_generator::compute_dq_filtered()
+{
+	eigen_vector7d value(eigen_vector7d::Zero());
+
+	for (size_t i = 0; i < dq_filter_size_; ++i)
+		value += dq_buffer_[i];
+
+	return value / dq_filter_size_;
 }
 
 void detail::pid_force_control_motion_generator::update_tau_command_filter(Eigen::Matrix<double, 7, 1> tau_command) {

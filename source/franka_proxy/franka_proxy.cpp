@@ -107,7 +107,7 @@ int main() {
 	try {
 		//This function calls creates a pid_force_control_motion_generator which is defined in motion_generator_force.cpp
 		//In this function a force_motion_generator::export_data is created and filled with the measured values etc. and returns this data
-		data = h_controller.apply_z_force_pid(2.0, 10);
+		data = h_controller.apply_z_force_pid(1.0, 10);
 	}
 	catch (const franka::Exception& e) {
 		std::cout << "catched Exception: " << e.what() << std::endl;

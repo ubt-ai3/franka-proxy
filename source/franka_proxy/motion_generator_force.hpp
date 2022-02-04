@@ -138,9 +138,9 @@ private:
 	std::array<double, 6> k_i_f_ = { 2.0, 2.0, 2.0, 1.0, 1.0, 1.0 };
 	std::array<double, 6> k_d_f_ = { 100, 100, 100, 50, 50, 50 };
 
-	std::array<double, 6> k_p_p_ = { -200, -200, -200, -20, -20, -20 };
-	std::array<double, 6> k_i_p_ = { -200, -200, -200, -20, -20, -20 };
-	std::array<double, 6> k_d_p_ = { -500, -500, -500, -50, -50, -50 };
+	std::array<double, 6> k_p_p_ = { -1000, -1000, -1000, -200, -200, -200 };
+	std::array<double, 6> k_i_p_ = { -0, -0, -0, -0, -0, -0 };
+	std::array<double, 6> k_d_p_ = { -0, -0, -0, -0, -0, -0 };
 	
 	const size_t tau_command_filter_size_ = 5;
 	size_t tau_command_current_filter_position_ = 0;
@@ -175,6 +175,21 @@ private:
 
 	void update_position_error_diff_filter(Eigen::Matrix<double, 6, 1> position_error_diff);
 	double compute_position_error_diff_filtered(int j);
+
+	//Spring Damping System Position related
+	using eigen_vector7d = Eigen::Matrix<double, 7, 1>;
+
+	const std::vector<std::array<double, 7>> q_sequence_;
+
+	void update_dq_filter(const franka::RobotState& robot_state);
+	Eigen::Matrix<double, 7, 1> compute_dq_filtered();
+
+	Eigen::MatrixXd stiffness_;
+	Eigen::MatrixXd damping_;
+
+	size_t dq_current_filter_position_ = 0;
+	size_t dq_filter_size_ = 10;
+	std::vector<eigen_vector7d> dq_buffer_;
 };
 
 } /* namespace detail */
