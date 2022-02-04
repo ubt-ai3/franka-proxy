@@ -260,9 +260,9 @@ franka::Torques pid_force_control_motion_generator::callback
 		position_command(i, 0) = k_p_p[i] * position_error(i, 0) + k_i_p[i] * position_error_integral(i, 0) + k_d_p[i] * position_error_diff_filtered(i,0);
 	}
 
-	//Hybrid Control combines FOrce and Position commands
+	//Hybrid Control combines Force and Position commands
 	Eigen::Matrix< double, 6, 1> s;
-	s << 1, 1, 1, 1, 1, 1;
+	s << 1, 1, 1, 1, 1, 1; //1 = Position controlled, 0 = force controlled
 	Eigen::Matrix< double, 6, 6> compliance_selection_matrix = s.array().sqrt().matrix().asDiagonal();
 	Eigen::Matrix< double, 6, 6> unit_matrix = Eigen::Matrix< double, 6, 6>::Identity();
 
