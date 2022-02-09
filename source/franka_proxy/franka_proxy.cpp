@@ -83,7 +83,7 @@ void debug_export_data(franka_proxy::detail::force_motion_generator::export_data
 			for (int j = 0; j < 6; j++) {
 				std::cout << "Dim: " << j+1 << std::endl;
 				std::cout << "measured_force = " << data.measured_forces[i][j] << ", ";
-				std::cout << "position_error = " << data.position_errors[i][j] << ", ";
+				//std::cout << "position_error = " << data.position_errors[i][j] << ", ";
 				std::cout << "force_error = " << data.force_errors[i][j] << ", ";
 				std::cout << "position_command = " << data.position_commands[i][j] << ", ";
 				std::cout << "force_command = " << data.force_commands[i][j] << std::endl;
