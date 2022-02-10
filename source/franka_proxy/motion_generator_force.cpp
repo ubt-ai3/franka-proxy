@@ -147,7 +147,7 @@ hybrid_control_motion_generator::hybrid_control_motion_generator
 (franka::Robot& robot,
 	double mass,
 	double duration,
-	csv_data &data)
+	csv_data& data)
 	:
 	tau_command_buffer_(tau_command_filter_size_ * 7, 0),
 	force_error_diff_buffer_(force_error_diff_filter_size_ * 6, 0),
@@ -157,7 +157,8 @@ hybrid_control_motion_generator::hybrid_control_motion_generator
 	model_(robot.loadModel()),
 	stiffness_(6, 6),
 	damping_(6, 6),
-	dq_buffer_(dq_filter_size_, eigen_vector7d::Zero())
+	dq_buffer_(dq_filter_size_, eigen_vector7d::Zero()),
+	data_(data)
 {
 	initial_state_ = robot.readOnce();
 
@@ -191,7 +192,9 @@ franka::Torques hybrid_control_motion_generator::callback
 
 	std::array<double, 42> jacobian_array = model_.zeroJacobian(franka::Frame::kEndEffector, robot_state);
 	Eigen::Map<const Eigen::Matrix<double, 6, 7>> jacobian(jacobian_array.data());
+	data_.zero_jacobian.push_back(jacobian);
 	Eigen::Map<const Eigen::Matrix<double, 6, 1>> force_existing(robot_state.O_F_ext_hat_K.data());
+	data_.o_F_ext_hat_K.push_back(force_existing);
 
 	//Set desired cartesian Position as the first measured position (initial)
 	if (count_loop_ == 0) {
@@ -204,12 +207,15 @@ franka::Torques hybrid_control_motion_generator::callback
 	Eigen::Matrix<double, 6, 1> force_desired;
 	force_desired.setZero();
 	force_desired(2, 0) = target_mass_ * -9.81;
+	data_.force_desired.push_back(force_desired);
 
 	//force error
 	Eigen::Matrix<double, 6, 1> force_error = force_desired - force_existing;
+	data_.force_error.push_back(force_error);	
 
 	//force Integral
 	force_error_integral_ += period.toSec() * force_error;
+	data_.force_error_integral.push_back(force_error_integral_);
 	
 	//force Differential
 	Eigen::Matrix<double, 6, 1> force_error_diff_filtered;
@@ -226,29 +232,42 @@ franka::Torques hybrid_control_motion_generator::callback
 		}
 	}
 	old_force_error_ = force_error;
+	data_.force_error_diff_filtered.push_back(force_error_diff_filtered);
 	
 	//Pid Force control
 	Eigen::Matrix<double, 6, 1> force_command;
+	Eigen::Matrix<double, 6, 1> force_command_p;
+	Eigen::Matrix<double, 6, 1> force_command_i;
+	Eigen::Matrix<double, 6, 1> force_command_d;
 	for (int i = 0; i < 6; i++) {
-		force_command(i, 0) = k_p_f_[i] * force_error(i,0) + k_i_f_[i] * force_error_integral_(i, 0) + k_d_f_[i] * force_error_diff_filtered(i, 0);
+		force_command_p(i, 0) = k_p_f_[i] * force_error(i, 0);
+		force_command_i(i, 0) = k_i_f_[i] * force_error_integral_(i, 0);
+		force_command_d(i, 0) = k_d_f_[i] * force_error_diff_filtered(i, 0);
+
+		force_command(i, 0) = force_command_p(i, 0) + force_command_i(i, 0) + force_command_d(i, 0);
+
 	}
+	data_.force_command.push_back(force_command);
+	data_.force_command_p.push_back(force_command_p);
+	data_.force_command_i.push_back(force_command_i);
+	data_.force_command_d.push_back(force_command_d);
 
 
 	//Position control
 	update_dq_filter(robot_state);
 
-	// current position
+	//Current position
 	auto current_pose = model_.pose(franka::Frame::kEndEffector, robot_state.q, robot_state.F_T_EE, robot_state.EE_T_K);
 	Eigen::Affine3d transform(Eigen::Matrix4d::Map(current_pose.data())); //was used in new spring damper control
 	//Eigen::Affine3d transform(Eigen::Matrix4d::Map(robot_state.O_T_EE.data())); //was used in old PID control
 	Eigen::Vector3d position(transform.translation());
 	Eigen::Quaterniond orientation(transform.linear());
 
-	// position error
+	//Position error
 	Eigen::Matrix<double, 6, 1> position_error;
 	position_error.head(3) = position - position_desired_;
 
-	// orientation error
+	//Orientation error
 	if (orientation_desired_.coeffs().dot(orientation.coeffs()) < 0.0) {
 		orientation.coeffs() = -orientation.coeffs(); //orientation.coeffs() << -orientation.coeffs(); bei pid control
 	}
@@ -256,10 +275,12 @@ franka::Torques hybrid_control_motion_generator::callback
 	position_error.tail(3) << error_quaternion.x(), error_quaternion.y(), error_quaternion.z();
 	// transform to base frame
 	position_error.tail(3) = -transform.linear() * position_error.tail(3); //-transform_d.linear() * error.tail(3);
+	data_.position_error.push_back(position_error);
 
 
 	//Position integral
 	position_error_integral_ += period.toSec() * position_error;
+	data_.position_error.push_back(position_error_integral_);
 
 	//Position Differential
 	Eigen::Matrix<double, 6, 1> position_error_diff_filtered;
@@ -276,15 +297,26 @@ franka::Torques hybrid_control_motion_generator::callback
 		}
 	}
 	old_position_error_ = position_error;
+	data_.position_error_diff_filtered.push_back(position_error_diff_filtered);
 
 	// spring damper system with damping ratio=1 and filtered dq
 	Eigen::Matrix<double, 6, 1> position_command_sd = -stiffness_ * position_error - damping_ * (jacobian * compute_dq_filtered());
 
 	//Position PID Control
 	Eigen::Matrix<double, 6, 1> position_command_pid;
+	Eigen::Matrix<double, 6, 1> position_command_p;
+	Eigen::Matrix<double, 6, 1> position_command_i;
+	Eigen::Matrix<double, 6, 1> position_command_d;
 	for (int i = 0; i < 6; i++) {
-		position_command_pid(i, 0) = k_p_p_[i] * position_error(i, 0) + k_i_p_[i] * position_error_integral_(i, 0) +  k_d_p_[i] * position_error_diff_filtered(i,0);
+		position_command_p(i, 0) = k_p_p_[i] * position_error(i, 0);
+		position_command_i(i, 0) = k_i_p_[i] * position_error_integral_(i, 0);
+		position_command_d(i, 0) = k_d_p_[i] * position_error_diff_filtered(i, 0);
+		position_command_pid(i, 0) = position_command_p(i, 0) + position_command_i(i, 0) + position_command_d(i, 0);
 	}
+	data_.position_command.push_back(position_command_pid);
+	data_.position_command_p.push_back(position_command_p);
+	data_.position_command_i.push_back(position_command_i);
+	data_.position_command_d.push_back(position_command_d);
 
 	//Hybrid Control combines Force and Position commands
 	Eigen::Matrix< double, 6, 1> s;
@@ -292,7 +324,7 @@ franka::Torques hybrid_control_motion_generator::callback
 	Eigen::Matrix< double, 6, 6> compliance_selection_matrix = s.array().matrix().asDiagonal();
 	Eigen::Matrix< double, 6, 6> unit_matrix = Eigen::Matrix< double, 6, 6>::Identity();
 
-	Eigen::Matrix<double, 6, 1> position_command = position_command_sd; //Change here to reimplement PID Position Control
+	Eigen::Matrix<double, 6, 1> position_command = position_command_pid; //Change here to reimplement PID Position Control
 	position_command = compliance_selection_matrix * position_command;
 	force_command = (unit_matrix - compliance_selection_matrix) * force_command;
 
@@ -302,10 +334,12 @@ franka::Torques hybrid_control_motion_generator::callback
 	//Convert in 7 joint space
 	Eigen::Matrix<double, 7, 1> tau_command;
 	tau_command = (jacobian.transpose() * hybrid_command);
+	data_.tau_command.push_back(tau_command);
 
 	//Coriolis
 	std::array<double, 7> coriolis_array = model_.coriolis(robot_state);
 	Eigen::Map<const Eigen::Matrix<double, 7, 1>> coriolis(coriolis_array.data());
+	data_.coriolis.push_back(coriolis);
 
 	tau_command += coriolis;
 
@@ -314,6 +348,7 @@ franka::Torques hybrid_control_motion_generator::callback
 	for (int i = 0; i < 7; i++) {
 		tau_command(i, 0) = compute_tau_command_filtered(i);
 	}
+	data_.tau_command_filtered.push_back(tau_command);
 
 	//Create and fill output array
 	std::array<double, 7> tau_d_array{};

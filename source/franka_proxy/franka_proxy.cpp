@@ -122,9 +122,10 @@ int main() {
 		h_controller.move_to_until_contact(pos1);
 		std::cout << "Hybrid Force/ Position control in 1 second..." << std::endl;
 		std::this_thread::sleep_for(std::chrono::seconds(1));
-		h_controller.hybrid_control(data, 3.0, 10);
+		h_controller.hybrid_control(data, 1.0, 10);
 		std::cout << "Now moving back to idle position" << std::endl;
 		h_controller.move_to(pos2);
+		std::cout << data.duration << std::endl;
 	}
 	catch (const franka::Exception& e) {
 		std::cout << "catched Exception: " << e.what() << std::endl;

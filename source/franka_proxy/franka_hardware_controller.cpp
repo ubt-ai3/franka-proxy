@@ -112,7 +112,6 @@ void franka_hardware_controller::hybrid_control
 	initialize_parameters();
 
 
-
 	try
 	{
 		detail::hybrid_control_motion_generator fmg(robot_, mass, duration, data);

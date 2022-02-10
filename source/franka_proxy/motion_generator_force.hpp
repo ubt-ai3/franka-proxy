@@ -174,6 +174,8 @@ private:
 	size_t dq_current_filter_position_ = 0;
 	size_t dq_filter_size_ = 10;
 	std::vector<eigen_vector7d> dq_buffer_;
+
+	csv_data &data_;
 };
 
 } /* namespace detail */
