@@ -139,11 +139,11 @@ double force_motion_generator::compute_dq_filtered(int j)
 }
 
 //-------------------------------------------------------------------------------------------------
-//------------------Class Pid Force Control Motion Generator---------------------------------------
+//------------------Class Hybrid Control Motion Generator---------------------------------------
 //-------------------------------------------------------------------------------------------------
 
 //Constructor
-pid_force_control_motion_generator::pid_force_control_motion_generator
+hybrid_control_motion_generator::hybrid_control_motion_generator
 (franka::Robot& robot,
 	double mass,
 	double duration)
@@ -174,7 +174,7 @@ pid_force_control_motion_generator::pid_force_control_motion_generator
 		.5 * sqrt(rotational_stiffness_) * Eigen::MatrixXd::Identity(3, 3);
 }
 
-franka::Torques pid_force_control_motion_generator::callback
+franka::Torques hybrid_control_motion_generator::callback
 (const franka::RobotState& robot_state,
 	franka::Duration period)
 {
@@ -229,12 +229,11 @@ franka::Torques pid_force_control_motion_generator::callback
 	//Pid Force control
 	Eigen::Matrix<double, 6, 1> force_command;
 	for (int i = 0; i < 6; i++) {
-		force_command(i, 0) = k_p_f_[i] * force_error(i,0) + 0 * k_i_f_[i] * force_error_integral_(i, 0) + k_d_f_[i] * force_error_diff_filtered(i, 0);
+		force_command(i, 0) = k_p_f_[i] * force_error(i,0) + k_i_f_[i] * force_error_integral_(i, 0) + k_d_f_[i] * force_error_diff_filtered(i, 0);
 	}
 
 
 	//Position control
-
 	update_dq_filter(robot_state);
 
 	// current position
@@ -319,21 +318,12 @@ franka::Torques pid_force_control_motion_generator::callback
 	std::array<double, 7> tau_d_array{};
 	Eigen::VectorXd::Map(&tau_d_array[0], 7) = tau_command;
 
-	//Push data in export_data struct
-	//my_data.measured_positions.push_back();
-	my_data_.measured_forces.push_back(force_existing);
-	//my_data_.position_errors.push_back(position_error);
-	my_data_.force_errors.push_back(force_error);
-	my_data_.position_commands.push_back(position_command);
-	my_data_.force_commands.push_back(force_command);
-
-
 	count_loop_ ++;
 
 	return tau_d_array;
 }
 
-void pid_force_control_motion_generator::update_dq_filter(const franka::RobotState& robot_state)
+void hybrid_control_motion_generator::update_dq_filter(const franka::RobotState& robot_state)
 {
 	dq_buffer_[dq_current_filter_position_] = Eigen::Matrix<double,7,1>(robot_state.dq.data());
 
@@ -341,7 +331,7 @@ void pid_force_control_motion_generator::update_dq_filter(const franka::RobotSta
 }
 
 
-Eigen::Matrix<double, 7, 1> pid_force_control_motion_generator::compute_dq_filtered()
+Eigen::Matrix<double, 7, 1> hybrid_control_motion_generator::compute_dq_filtered()
 {
 	eigen_vector7d value(eigen_vector7d::Zero());
 
@@ -351,14 +341,14 @@ Eigen::Matrix<double, 7, 1> pid_force_control_motion_generator::compute_dq_filte
 	return value / dq_filter_size_;
 }
 
-void detail::pid_force_control_motion_generator::update_tau_command_filter(Eigen::Matrix<double, 7, 1> tau_command) {
+void detail::hybrid_control_motion_generator::update_tau_command_filter(Eigen::Matrix<double, 7, 1> tau_command) {
 	for (int i = 0; i < 7; i ++) {
 		tau_command_buffer_[tau_command_current_filter_position_ * 7 + i] = tau_command(i, 0);
 	}
 	tau_command_current_filter_position_ = (tau_command_current_filter_position_ + 1) % tau_command_filter_size_;
 }
 
-double detail::pid_force_control_motion_generator::compute_tau_command_filtered(int j) {
+double detail::hybrid_control_motion_generator::compute_tau_command_filtered(int j) {
 	double value = 0.0;
 	for (int i = j; i < j * tau_command_filter_size_; i += 7) {
 		value += tau_command_buffer_[i];
@@ -366,14 +356,14 @@ double detail::pid_force_control_motion_generator::compute_tau_command_filtered(
 	return (value / tau_command_filter_size_);
 }
 
-void detail::pid_force_control_motion_generator::update_force_error_diff_filter(Eigen::Matrix<double, 6, 1> force_error_diff) {
+void detail::hybrid_control_motion_generator::update_force_error_diff_filter(Eigen::Matrix<double, 6, 1> force_error_diff) {
 	for (int i = 0; i < 6; i++) {
 		force_error_diff_buffer_[force_error_diff_current_filter_position_ * 6 + i] = force_error_diff(i, 0);
 	}
 	force_error_diff_current_filter_position_ = (force_error_diff_current_filter_position_ + 1) % force_error_diff_filter_size_;
 }
 
-double detail::pid_force_control_motion_generator::compute_force_error_diff_filtered(int j) {
+double detail::hybrid_control_motion_generator::compute_force_error_diff_filtered(int j) {
 	double value = 0.0;
 	for (int i = j; i < j * force_error_diff_filter_size_; i += 6) {
 		value += force_error_diff_buffer_[i];
@@ -381,14 +371,14 @@ double detail::pid_force_control_motion_generator::compute_force_error_diff_filt
 	return (value / force_error_diff_filter_size_);
 }
 
-void detail::pid_force_control_motion_generator::update_position_error_diff_filter(Eigen::Matrix<double, 6, 1> position_error_diff) {
+void detail::hybrid_control_motion_generator::update_position_error_diff_filter(Eigen::Matrix<double, 6, 1> position_error_diff) {
 	for (int i = 0; i < 6; i++) {
 		position_error_diff_buffer_[position_error_diff_current_filter_position_ * 6 + i] = position_error_diff(i, 0);
 	}
 	position_error_diff_current_filter_position_ = (position_error_diff_current_filter_position_ + 1) % position_error_diff_filter_size_;
 }
 
-double detail::pid_force_control_motion_generator::compute_position_error_diff_filtered(int j) {
+double detail::hybrid_control_motion_generator::compute_position_error_diff_filtered(int j) {
 	double value = 0.0;
 	for (int i = j; i < j * position_error_diff_filter_size_; i += 6) {
 		value += position_error_diff_buffer_[i];
@@ -396,9 +386,6 @@ double detail::pid_force_control_motion_generator::compute_position_error_diff_f
 	return (value / position_error_diff_filter_size_);
 }
 
-detail::force_motion_generator::export_data pid_force_control_motion_generator::get_export_data() {
-	return my_data_;
-}
 
 } /* namespace detail */
 } /* namespace franka_proxy */

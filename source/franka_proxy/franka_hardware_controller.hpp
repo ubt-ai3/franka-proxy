@@ -93,7 +93,7 @@ public:
 		double mass, 
 		double duration);
 
-	void apply_z_force_pid(
+	void hybrid_control(
 		double mass,
 		double duration);
 
@@ -121,11 +121,9 @@ public:
 
 	static constexpr double default_gripper_speed = 0.025;
 
-	detail::force_motion_generator::export_data get_data();
 
 
 private:
-	detail::force_motion_generator::export_data data;
 
 	/**
 	 * Used to update the current robot state while no control loop is
@@ -175,8 +173,6 @@ private:
 	std::atomic_bool terminate_state_thread_;
 	std::thread state_thread_;
 
-	//Exporting Forces
-	void export_z_forces(double k_p, double k_i, double k_d, std::vector<double> forces_z, std::vector<double> desired_mass);
 };
 
 

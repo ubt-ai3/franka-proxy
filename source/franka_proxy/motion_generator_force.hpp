@@ -45,24 +45,7 @@ class force_motion_generator
 	
 
 public:
-
-	struct export_data {
-		std::array<double, 6> k_p_f;
-		std::array<double, 6> k_i_f;
-		std::array<double, 6> k_d_f;
-		std::array<double, 6> k_p_p;
-		std::array<double, 6> k_i_p;
-		std::array<double, 6> k_d_p;
-
-		std::vector<Eigen::Matrix<double, 6, 1>> measured_positions;
-		std::vector<Eigen::Matrix<double, 6, 1>> measured_forces;
-		std::vector<Eigen::Matrix<double, 6, 1>> position_errors;
-		std::vector<Eigen::Matrix<double, 6, 1>> force_errors;
-		std::vector<Eigen::Matrix<double, 6, 1>> position_commands;
-		std::vector<Eigen::Matrix<double, 6, 1>> force_commands;
-
-	};
-
+		
 	force_motion_generator
 		(franka::Robot& robot, double mass, double duration);
 
@@ -111,19 +94,18 @@ private:
 };
 
 
-// ----------- PID FORCE CONTROL MOTION GENERATOR CLASS ------------
-class pid_force_control_motion_generator
+// ----------- HYBRID CONTROL MOTION GENERATOR CLASS ------------
+class hybrid_control_motion_generator
 {
 public:
 
-	pid_force_control_motion_generator
+	hybrid_control_motion_generator
 	(franka::Robot& robot, double mass, double duration);
 
 	franka::Torques callback
 	(const franka::RobotState& robot_state,
 		franka::Duration period);
 
-	detail::force_motion_generator::export_data get_export_data();
 
 private:
 	franka::Model model_;
@@ -165,7 +147,6 @@ private:
 	Eigen::Vector3d position_desired_;
 	Eigen::Quaterniond orientation_desired_;
 
-	detail::force_motion_generator::export_data my_data_;
 
 	void update_tau_command_filter(Eigen::Matrix<double, 7, 1> tau_command);
 	double compute_tau_command_filtered(int j);

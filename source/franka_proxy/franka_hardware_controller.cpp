@@ -78,7 +78,6 @@ void franka_hardware_controller::apply_z_force
 	(const double mass, const double duration)
 {
 	initialize_parameters();
-
 	try
 	{
 		detail::force_motion_generator fmg(robot_, mass, duration);
@@ -107,16 +106,16 @@ void franka_hardware_controller::apply_z_force
 	set_control_loop_running(false);
 }
 
-void franka_hardware_controller::apply_z_force_pid
+void franka_hardware_controller::hybrid_control
 (const double mass, const double duration)
 {
 	initialize_parameters();
 
-	detail::pid_force_control_motion_generator fmg(robot_, mass, duration);
+
 
 	try
 	{
-
+		detail::hybrid_control_motion_generator fmg(robot_, mass, duration);
 		set_control_loop_running(true);
 		{
 			// Lock the current_state_lock_ to wait for state_thread_ to finish.
@@ -131,42 +130,17 @@ void franka_hardware_controller::apply_z_force_pid
 				return fmg.callback(robot_state, period);
 			}, true, 1000.0);
 		
-		data = fmg.get_export_data();
 		
 	}
 	catch (const franka::Exception&)
 	{
 		set_control_loop_running(false);
-		std::cout << fmg.get_export_data().measured_positions.size() << std::endl;
-		data = fmg.get_export_data();
 		throw;
 	}
 
 	set_control_loop_running(false);
 }
 
-detail::force_motion_generator::export_data franka_hardware_controller::get_data() {
-	return data;
-}
-
-//Exportiert die gemessenen Kräfte in z-Richtung sowie die gewünschten Kräfte über der Zeit
-//Das enstehende csv File hat z.B. den Namen k_p_3-k_i_2-k_d_1-dm_10
-void franka_hardware_controller::export_z_forces(double k_p, double k_i, double k_d, std::vector<double> forces_z, std::vector<double> desired_mass) {
-	auto now{ std::chrono::system_clock::now() };
-	std::ofstream my_file("k_p_" + std::to_string(k_p) + "-k_i_" + std::to_string(k_i) + "-k_d_" + std::to_string(k_d) + "-dm_" + std::to_string(desired_mass[desired_mass.size()]) + ".csv");
-	double t = 0.0;
-	int size = forces_z.size();
-	for (int i = 0; i < size; i++) {
-		if (i % 10 == 0) {
-			my_file << std::to_string(t) << ",";
-			my_file << std::to_string(forces_z[i]) << ",";
-			my_file << std::to_string(desired_mass[i]) << "\n";
-		}		
-		t += 0.001;
-	}
-
-	my_file.close();
-}
 
 
 void franka_hardware_controller::move_to(const robot_config_7dof& target)

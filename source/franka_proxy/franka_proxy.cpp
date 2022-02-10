@@ -16,7 +16,7 @@
 
 namespace franka_proxy
 {
-
+	
 
 //////////////////////////////////////////////////////////////////////////
 //
@@ -58,41 +58,41 @@ void move_test(franka_proxy::franka_hardware_controller& h_controller) {
 }
 
 //This function parses the force_motion_generator::export_data (which is returned from the apply_z_force_pid call in the main function) to a csv file
-void data_to_csv(franka_proxy::detail::force_motion_generator::export_data data) {
+//void data_to_csv(franka_proxy::franka_proxy::csv_data data) {
+//
+//	std::ofstream data_file("testExportData.csv");
+//	//todo: print all necessary parts from export_data in csv file
+//	/*for (int n = 0; n < data.measured_forces.size(); n++) {
+//		for (int i = 0; i < 6; i++) {
+//			data_file << data.measured_forces[n][i] << ",";
+//		}
+//		data_file << "\n";
+//	}*/	
+//	data_file.close();
+//}
 
-	std::ofstream data_file("testExportData.csv");
-	//todo: print all necessary parts from export_data in csv file
-	for (int n = 0; n < data.measured_forces.size(); n++) {
-		for (int i = 0; i < 6; i++) {
-			data_file << data.measured_forces[n][i] << ",";
-		}
-		data_file << "\n";
-	}	
-	data_file.close();
-}
-
-void debug_export_data(franka_proxy::detail::force_motion_generator::export_data data) {
-
-	if (!(data.force_commands.size() > 0)) {
-		std::cout << "No measured values to print." << std::endl;
-		return;
-	}
-	for (int i = 0; i < data.force_commands.size(); i++) {
-		if (i % 500 == 0) {
-			std::cout << "i: " << i << std::endl;
-			for (int j = 0; j < 6; j++) {
-				std::cout << "Dim: " << j+1 << std::endl;
-				std::cout << "measured_force = " << data.measured_forces[i][j] << ", ";
-				//std::cout << "position_error = " << data.position_errors[i][j] << ", ";
-				std::cout << "force_error = " << data.force_errors[i][j] << ", ";
-				std::cout << "position_command = " << data.position_commands[i][j] << ", ";
-				std::cout << "force_command = " << data.force_commands[i][j] << std::endl;
-			}
-			std::cout << std::endl;
-		}
-		
-	}	
-}
+//void debug_export_data(franka_proxy::franka_proxy::csv_data data) {
+//
+//	//if (!(data.force_commands.size() > 0)) {
+//	//	std::cout << "No measured values to print." << std::endl;
+//	//	return;
+//	//}
+//	//for (int i = 0; i < data.force_commands.size(); i++) {
+//	//	if (i % 500 == 0) {
+//	//		std::cout << "i: " << i << std::endl;
+//	//		for (int j = 0; j < 6; j++) {
+//	//			std::cout << "Dim: " << j+1 << std::endl;
+//	//			std::cout << "measured_force = " << data.measured_forces[i][j] << ", ";
+//	//			//std::cout << "position_error = " << data.position_errors[i][j] << ", ";
+//	//			std::cout << "force_error = " << data.force_errors[i][j] << ", ";
+//	//			std::cout << "position_command = " << data.position_commands[i][j] << ", ";
+//	//			std::cout << "force_command = " << data.force_commands[i][j] << std::endl;
+//	//		}
+//	//		std::cout << std::endl;
+//	//	}
+//	//	
+//	//}	
+//}
 
 
 void print_curent_joint_pos(franka_proxy::franka_hardware_controller& h_controller) {
@@ -110,7 +110,8 @@ int main() {
 
 	std::this_thread::sleep_for(std::chrono::seconds(2));
 
-	franka_proxy::detail::force_motion_generator::export_data data;
+	franka_proxy::csv_data data = {};
+
 
 	std::array<double, 7> pos1 = { -0.148474, 0.66516, 0.0542239, -1.97034, -0.0870424, 2.68921, 0.648864 }; //kontakt auf holzplatte
 	std::array<double, 7> pos2 = { -0.149195, 0.657161, 0.0538761, -1.97476, -0.0856461, 2.68536, 0.664352 }; //knapp oberhalb der holzplatte
@@ -121,8 +122,7 @@ int main() {
 		h_controller.move_to_until_contact(pos1);
 		std::cout << "Hybrid Force/ Position control in 1 second..." << std::endl;
 		std::this_thread::sleep_for(std::chrono::seconds(1));
-		h_controller.apply_z_force_pid(3.0, 10);
-		data = h_controller.get_data();
+		h_controller.hybrid_control(3.0, 10);
 		std::cout << "Now moving back to idle position" << std::endl;
 		h_controller.move_to(pos2);
 	}
@@ -134,7 +134,6 @@ int main() {
 	data_to_csv(data);
 	std::cout << "Writing in csv file finished. Closing in 1 second..." << std::endl;*/
 	std::this_thread::sleep_for(std::chrono::seconds(1));
-	debug_export_data(data);
 	return 0;
 }
 
