@@ -13,6 +13,7 @@
 #include "csv_data_struct.hpp"
 
 #include <iostream>
+#include <iomanip>
 
 
 namespace franka_proxy
@@ -59,18 +60,25 @@ void move_test(franka_proxy::franka_hardware_controller& h_controller) {
 }
 
 //This function parses the force_motion_generator::export_data (which is returned from the apply_z_force_pid call in the main function) to a csv file
-//void data_to_csv(franka_proxy::franka_proxy::csv_data data) {
-//
-//	std::ofstream data_file("testExportData.csv");
-//	//todo: print all necessary parts from export_data in csv file
-//	/*for (int n = 0; n < data.measured_forces.size(); n++) {
-//		for (int i = 0; i < 6; i++) {
-//			data_file << data.measured_forces[n][i] << ",";
-//		}
-//		data_file << "\n";
-//	}*/	
-//	data_file.close();
-//}
+void data_to_csv(csv_data data) {
+
+	auto t = std::time(nullptr);
+	auto tm = *std::localtime(&t);
+	std::ostringstream oss;
+	oss << std::put_time(&tm, "%d-%m-%Y %H-%M-%S");
+	auto time_string = oss.str();
+	std::string path = "C:/Users/hecken/Desktop/BA_Hecken/csv_data_files/";
+
+	std::ofstream data_file(path + time_string + ".csv");
+	
+	for (int n = 0; n < data.zero_jacobian.size(); n++) {
+		for (int i = 0; i < 6; i++) {
+			data_file << data.position_command[n][i] << ",";
+		}
+		data_file << "\n";
+	}	
+	data_file.close();
+}
 
 //void debug_export_data(franka_proxy::franka_proxy::csv_data data) {
 //
@@ -119,21 +127,20 @@ int main() {
 	try {
 		//This function calls creates a pid_force_control_motion_generator which is defined in motion_generator_force.cpp
 		//In this function a force_motion_generator::export_data is created and filled with the measured values etc. and returns this data
-		h_controller.move_to_until_contact(pos1);
+		//h_controller.move_to_until_contact(pos1);
 		std::cout << "Hybrid Force/ Position control in 1 second..." << std::endl;
 		std::this_thread::sleep_for(std::chrono::seconds(1));
 		h_controller.hybrid_control(data, 1.0, 10);
 		std::cout << "Now moving back to idle position" << std::endl;
-		h_controller.move_to(pos2);
-		std::cout << data.duration << std::endl;
+		//h_controller.move_to(pos2);
 	}
 	catch (const franka::Exception& e) {
 		std::cout << "catched Exception: " << e.what() << std::endl;
 	}
 
-	/*std::cout << "Writing the data to a csv file..." << std::endl;
+	std::cout << "Writing the data to a csv file..." << std::endl;
 	data_to_csv(data);
-	std::cout << "Writing in csv file finished. Closing in 1 second..." << std::endl;*/
+	std::cout << "Writing in csv file finished. Closing in 1 second..." << std::endl;
 	std::this_thread::sleep_for(std::chrono::seconds(1));
 	return 0;
 }

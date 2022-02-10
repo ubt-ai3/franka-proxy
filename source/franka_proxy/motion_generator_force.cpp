@@ -320,7 +320,7 @@ franka::Torques hybrid_control_motion_generator::callback
 
 	//Hybrid Control combines Force and Position commands
 	Eigen::Matrix< double, 6, 1> s;
-	s << 1, 1, 0, 1, 1, 1; //1 = Position controlled, 0 = force controlled
+	s << 1, 1, 1, 1, 1, 1; //1 = Position controlled, 0 = force controlled
 	Eigen::Matrix< double, 6, 6> compliance_selection_matrix = s.array().matrix().asDiagonal();
 	Eigen::Matrix< double, 6, 6> unit_matrix = Eigen::Matrix< double, 6, 6>::Identity();
 
