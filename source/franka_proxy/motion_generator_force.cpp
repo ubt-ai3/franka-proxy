@@ -146,7 +146,8 @@ double force_motion_generator::compute_dq_filtered(int j)
 hybrid_control_motion_generator::hybrid_control_motion_generator
 (franka::Robot& robot,
 	double mass,
-	double duration)
+	double duration,
+	csv_data &data)
 	:
 	tau_command_buffer_(tau_command_filter_size_ * 7, 0),
 	force_error_diff_buffer_(force_error_diff_filter_size_ * 6, 0),

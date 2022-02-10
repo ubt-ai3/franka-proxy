@@ -19,6 +19,7 @@
 #include <franka/robot.h>
 #include <franka/model.h>
 #include <numeric>
+#include "csv_data_struct.hpp"
 
 //#include <jr3_ft_sensor/force_torque_sensor.hpp>
 
@@ -100,7 +101,7 @@ class hybrid_control_motion_generator
 public:
 
 	hybrid_control_motion_generator
-	(franka::Robot& robot, double mass, double duration);
+	(franka::Robot& robot, double mass, double duration, csv_data &data);
 
 	franka::Torques callback
 	(const franka::RobotState& robot_state,

@@ -107,7 +107,7 @@ void franka_hardware_controller::apply_z_force
 }
 
 void franka_hardware_controller::hybrid_control
-(const double mass, const double duration)
+(csv_data &data, const double mass, const double duration)
 {
 	initialize_parameters();
 
@@ -115,7 +115,7 @@ void franka_hardware_controller::hybrid_control
 
 	try
 	{
-		detail::hybrid_control_motion_generator fmg(robot_, mass, duration);
+		detail::hybrid_control_motion_generator fmg(robot_, mass, duration, data);
 		set_control_loop_running(true);
 		{
 			// Lock the current_state_lock_ to wait for state_thread_ to finish.

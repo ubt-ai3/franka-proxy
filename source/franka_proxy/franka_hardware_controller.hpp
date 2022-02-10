@@ -26,6 +26,7 @@
 #include "iomanip"
 
 #include "motion_generator_force.hpp"
+#include "csv_data_struct.hpp"
 
 
 namespace franka_proxy
@@ -94,6 +95,7 @@ public:
 		double duration);
 
 	void hybrid_control(
+		csv_data &data,
 		double mass,
 		double duration);
 

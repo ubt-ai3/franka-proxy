@@ -10,6 +10,7 @@
 
 #include "franka_proxy.hpp"
 #include "motion_generator_force.hpp"
+#include "csv_data_struct.hpp"
 
 #include <iostream>
 
@@ -110,8 +111,7 @@ int main() {
 
 	std::this_thread::sleep_for(std::chrono::seconds(2));
 
-	franka_proxy::csv_data data = {};
-
+	csv_data data = {};
 
 	std::array<double, 7> pos1 = { -0.148474, 0.66516, 0.0542239, -1.97034, -0.0870424, 2.68921, 0.648864 }; //kontakt auf holzplatte
 	std::array<double, 7> pos2 = { -0.149195, 0.657161, 0.0538761, -1.97476, -0.0856461, 2.68536, 0.664352 }; //knapp oberhalb der holzplatte
@@ -122,7 +122,7 @@ int main() {
 		h_controller.move_to_until_contact(pos1);
 		std::cout << "Hybrid Force/ Position control in 1 second..." << std::endl;
 		std::this_thread::sleep_for(std::chrono::seconds(1));
-		h_controller.hybrid_control(3.0, 10);
+		h_controller.hybrid_control(data, 3.0, 10);
 		std::cout << "Now moving back to idle position" << std::endl;
 		h_controller.move_to(pos2);
 	}
