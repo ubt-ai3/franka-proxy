@@ -93,7 +93,7 @@ public:
 		double mass, 
 		double duration);
 
-	detail::force_motion_generator::export_data apply_z_force_pid(
+	void apply_z_force_pid(
 		double mass,
 		double duration);
 
@@ -121,8 +121,11 @@ public:
 
 	static constexpr double default_gripper_speed = 0.025;
 
+	detail::force_motion_generator::export_data get_data();
+
 
 private:
+	detail::force_motion_generator::export_data data;
 
 	/**
 	 * Used to update the current robot state while no control loop is

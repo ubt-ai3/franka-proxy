@@ -94,20 +94,37 @@ void debug_export_data(franka_proxy::detail::force_motion_generator::export_data
 	}	
 }
 
+
+void print_curent_joint_pos(franka_proxy::franka_hardware_controller& h_controller) {
+	for (int i = 0; i < 7; i++) {
+		std::cout << h_controller.robot_state().q[i] << ", ";
+	}
+	std::cout << std::endl;
+}
+
 int main() {
 	
 	franka_proxy::franka_hardware_controller h_controller("192.168.1.1");
 
-	std::cout << "Applying z-force in 2 seconds..." << std::endl;
+	std::cout << "Moving to start position in 2 seconds..." << std::endl;
 
 	std::this_thread::sleep_for(std::chrono::seconds(2));
 
 	franka_proxy::detail::force_motion_generator::export_data data;
 
+	std::array<double, 7> pos1 = { -0.148474, 0.66516, 0.0542239, -1.97034, -0.0870424, 2.68921, 0.648864 }; //kontakt auf holzplatte
+	std::array<double, 7> pos2 = { -0.149195, 0.657161, 0.0538761, -1.97476, -0.0856461, 2.68536, 0.664352 }; //knapp oberhalb der holzplatte
+
 	try {
 		//This function calls creates a pid_force_control_motion_generator which is defined in motion_generator_force.cpp
 		//In this function a force_motion_generator::export_data is created and filled with the measured values etc. and returns this data
-		data = h_controller.apply_z_force_pid(3.0, 10);
+		h_controller.move_to_until_contact(pos1);
+		std::cout << "Hybrid Force/ Position control in 1 second..." << std::endl;
+		std::this_thread::sleep_for(std::chrono::seconds(1));
+		h_controller.apply_z_force_pid(3.0, 10);
+		data = h_controller.get_data();
+		std::cout << "Now moving back to idle position" << std::endl;
+		h_controller.move_to(pos2);
 	}
 	catch (const franka::Exception& e) {
 		std::cout << "catched Exception: " << e.what() << std::endl;

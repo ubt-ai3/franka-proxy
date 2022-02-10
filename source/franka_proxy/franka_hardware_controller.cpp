@@ -107,17 +107,15 @@ void franka_hardware_controller::apply_z_force
 	set_control_loop_running(false);
 }
 
-detail::force_motion_generator::export_data franka_hardware_controller::apply_z_force_pid
+void franka_hardware_controller::apply_z_force_pid
 (const double mass, const double duration)
 {
 	initialize_parameters();
-	detail::force_motion_generator::export_data ex_data;
 
-
+	detail::pid_force_control_motion_generator fmg(robot_, mass, duration);
 
 	try
 	{
-		detail::pid_force_control_motion_generator fmg(robot_, mass, duration);
 
 		set_control_loop_running(true);
 		{
@@ -131,22 +129,24 @@ detail::force_motion_generator::export_data franka_hardware_controller::apply_z_
 				franka::Duration period) -> franka::Torques
 			{
 				return fmg.callback(robot_state, period);
-			}, true, 10.0);
+			}, true, 1000.0);
 		
-		ex_data = fmg.get_export_data();
+		data = fmg.get_export_data();
 		
 	}
 	catch (const franka::Exception&)
 	{
 		set_control_loop_running(false);
+		std::cout << fmg.get_export_data().measured_positions.size() << std::endl;
+		data = fmg.get_export_data();
 		throw;
 	}
 
-	
-
 	set_control_loop_running(false);
+}
 
-	return ex_data;
+detail::force_motion_generator::export_data franka_hardware_controller::get_data() {
+	return data;
 }
 
 //Exportiert die gemessenen Kräfte in z-Richtung sowie die gewünschten Kräfte über der Zeit

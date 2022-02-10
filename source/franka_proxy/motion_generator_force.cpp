@@ -229,7 +229,7 @@ franka::Torques pid_force_control_motion_generator::callback
 	//Pid Force control
 	Eigen::Matrix<double, 6, 1> force_command;
 	for (int i = 0; i < 6; i++) {
-		force_command(i, 0) = k_p_f_[i] * force_error(i,0) + k_i_f_[i] * force_error_integral_(i, 0) + k_d_f_[i] * force_error_diff_filtered(i, 0);
+		force_command(i, 0) = k_p_f_[i] * force_error(i,0) + 0 * k_i_f_[i] * force_error_integral_(i, 0) + k_d_f_[i] * force_error_diff_filtered(i, 0);
 	}
 
 
@@ -250,7 +250,7 @@ franka::Torques pid_force_control_motion_generator::callback
 
 	// orientation error
 	if (orientation_desired_.coeffs().dot(orientation.coeffs()) < 0.0) {
-		orientation_desired_.coeffs() = -orientation.coeffs(); //orientation.coeffs() << -orientation.coeffs(); bei pid control
+		orientation.coeffs() = -orientation.coeffs(); //orientation.coeffs() << -orientation.coeffs(); bei pid control
 	}
 	Eigen::Quaterniond error_quaternion(orientation.inverse() * orientation_desired_);
 	position_error.tail(3) << error_quaternion.x(), error_quaternion.y(), error_quaternion.z();

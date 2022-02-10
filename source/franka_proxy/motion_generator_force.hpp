@@ -186,8 +186,8 @@ private:
 
 	Eigen::MatrixXd stiffness_;
 	Eigen::MatrixXd damping_;
-	const double translational_stiffness_{ 3000.0 };
-	const double rotational_stiffness_{ 300.0 };
+	const double translational_stiffness_{ 1000.0 };
+	const double rotational_stiffness_{ 100.0 };
 
 	size_t dq_current_filter_position_ = 0;
 	size_t dq_filter_size_ = 10;
