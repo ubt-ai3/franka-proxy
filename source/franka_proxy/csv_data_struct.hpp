@@ -12,6 +12,7 @@ struct csv_data {
 	std::array<double, 6> k_d_p;
 
 	std::vector<Eigen::Matrix<double, 6, 7 >> zero_jacobian;
+
 	std::vector<Eigen::Matrix<double, 6, 1 >> o_F_ext_hat_K;
 	std::vector<Eigen::Matrix<double, 6, 1>> force_desired;
 	std::vector<Eigen::Matrix<double, 6, 1>> force_error;

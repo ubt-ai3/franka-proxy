@@ -38,70 +38,61 @@ franka_proxy::franka_proxy()
 
 } /* namespace franka_proxy */
 
-void gripper_test(franka_proxy::franka_hardware_controller& h_controller) {
-	h_controller.open_gripper(0.1);
-	h_controller.close_gripper(0.1);
-	h_controller.open_gripper(0.1);
-}
 
-void move_test(franka_proxy::franka_hardware_controller& h_controller) {
-	franka_proxy::robot_config_7dof posIdle
-	{ {0.166, 0.078, -0.152, -2.615, 0.020, 2.714, -2.390} };
-	franka_proxy::robot_config_7dof pos1
-	{ {2.46732, -1.0536, -0.9351, -1.6704, 0.13675, 1.42062, 0.33471} };
+void put_data_in_csv(std::vector<Eigen::Matrix<double, 6, 1>> data, std::string file_name) {
+	int length = data.size();
 
-	h_controller.set_speed_factor(0.2);
+	std::ofstream data_file(file_name);
 
-	std::cout << "Moving to position one:" << std::endl;
-	h_controller.move_to(pos1);
+	data_file << "n, x, y, z, mx, my, mz \n";
 
-	std::cout << "Moving back to idle position:" << std::endl;
-	h_controller.move_to(posIdle);
+	for (int n = 0; n < length; n++) {
+		data_file << (n + 1) << ", ";
+		for (int i = 0; i < 6; i++) {
+			data_file << data[n][i];
+			if (i != 5) {
+				data_file << ", ";
+			}
+		}
+		data_file << "\n";
+	}
+	data_file.close();
 }
 
 //This function parses the force_motion_generator::export_data (which is returned from the apply_z_force_pid call in the main function) to a csv file
-void data_to_csv(csv_data data) {
+void csv_parser(csv_data data) {
+	int length = data.force_command.size();
 
 	auto t = std::time(nullptr);
 	auto tm = *std::localtime(&t);
 	std::ostringstream oss;
 	oss << std::put_time(&tm, "%d-%m-%Y %H-%M-%S");
 	auto time_string = oss.str();
-	std::string path = "C:/Users/hecken/Desktop/BA_Hecken/csv_data_files/";
 
-	std::ofstream data_file(path + time_string + ".csv");
-	
-	for (int n = 0; n < data.zero_jacobian.size(); n++) {
-		for (int i = 0; i < 6; i++) {
-			data_file << data.position_command[n][i] << ",";
-		}
-		data_file << "\n";
-	}	
-	data_file.close();
+	std::string path = "C:/Users/hecken/Desktop/BA_Hecken/csv_data_files/" + time_string + "/";
+	CreateDirectoryA(path.c_str(), NULL);
+
+	put_data_in_csv(data.o_F_ext_hat_K, path + "o_F_ext_hat_K.csv");
+	put_data_in_csv(data.force_desired, path + "force_desired.csv");
+	put_data_in_csv(data.force_error, path + "force_error.csv");
+	put_data_in_csv(data.force_error_integral, path + "force_error_integral.csv");
+	put_data_in_csv(data.force_error_diff_filtered, path + "force_error_diff_filtered.csv");
+
+	put_data_in_csv(data.force_command, path + "force_command.csv");
+	put_data_in_csv(data.force_command_p, path + "force_command_p.csv");
+	put_data_in_csv(data.force_command_i, path + "force_command_i.csv");
+	put_data_in_csv(data.force_command_d, path + "force_command_d.csv");
+
+	put_data_in_csv(data.position_error, path + "position_error.csv");
+	put_data_in_csv(data.position_error_integral, path + "position_error_integral.csv");
+	put_data_in_csv(data.position_error_diff_filtered, path + "position_error_diff_filtered.csv");
+
+	put_data_in_csv(data.position_command, path + "position_command.csv");
+	put_data_in_csv(data.position_command_p, path + "position_command_p.csv");
+	put_data_in_csv(data.position_command_i, path + "position_command_i.csv");
+	put_data_in_csv(data.position_command_d, path + "position_command_d.csv");
 }
 
-//void debug_export_data(franka_proxy::franka_proxy::csv_data data) {
-//
-//	//if (!(data.force_commands.size() > 0)) {
-//	//	std::cout << "No measured values to print." << std::endl;
-//	//	return;
-//	//}
-//	//for (int i = 0; i < data.force_commands.size(); i++) {
-//	//	if (i % 500 == 0) {
-//	//		std::cout << "i: " << i << std::endl;
-//	//		for (int j = 0; j < 6; j++) {
-//	//			std::cout << "Dim: " << j+1 << std::endl;
-//	//			std::cout << "measured_force = " << data.measured_forces[i][j] << ", ";
-//	//			//std::cout << "position_error = " << data.position_errors[i][j] << ", ";
-//	//			std::cout << "force_error = " << data.force_errors[i][j] << ", ";
-//	//			std::cout << "position_command = " << data.position_commands[i][j] << ", ";
-//	//			std::cout << "force_command = " << data.force_commands[i][j] << std::endl;
-//	//		}
-//	//		std::cout << std::endl;
-//	//	}
-//	//	
-//	//}	
-//}
 
 
 void print_curent_joint_pos(franka_proxy::franka_hardware_controller& h_controller) {
@@ -127,19 +118,19 @@ int main() {
 	try {
 		//This function calls creates a pid_force_control_motion_generator which is defined in motion_generator_force.cpp
 		//In this function a force_motion_generator::export_data is created and filled with the measured values etc. and returns this data
-		//h_controller.move_to_until_contact(pos1);
+		h_controller.move_to(pos2);
+		h_controller.move_to_until_contact(pos1);
 		std::cout << "Hybrid Force/ Position control in 1 second..." << std::endl;
 		std::this_thread::sleep_for(std::chrono::seconds(1));
 		h_controller.hybrid_control(data, 1.0, 10);
-		std::cout << "Now moving back to idle position" << std::endl;
-		//h_controller.move_to(pos2);
+		
 	}
 	catch (const franka::Exception& e) {
 		std::cout << "catched Exception: " << e.what() << std::endl;
 	}
 
 	std::cout << "Writing the data to a csv file..." << std::endl;
-	data_to_csv(data);
+	csv_parser(data);
 	std::cout << "Writing in csv file finished. Closing in 1 second..." << std::endl;
 	std::this_thread::sleep_for(std::chrono::seconds(1));
 	return 0;

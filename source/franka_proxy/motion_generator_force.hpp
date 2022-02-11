@@ -117,8 +117,8 @@ private:
 	double target_mass_;
 	double duration_;
 
-	std::array<double, 6> k_p_f_ = { 1.5, 1.5, 1.5, 0.5, 0.5, 0.5 };
-	std::array<double, 6> k_i_f_ = { 2.0, 2.0, 2.0, 1.0, 1.0, 1.0 };
+	std::array<double, 6> k_p_f_ = { 1, 1, 1, 0.5, 0.5, 0.5 };
+	std::array<double, 6> k_i_f_ = { 1.0, 1.0, 1.0, 0.5, 0.5, 0.5 };
 	std::array<double, 6> k_d_f_ = { 100, 100, 100, 50, 50, 50 };
 
 	std::array<double, 6> k_p_p_ = { -200, -200, -200, -20, -20, -20 };
