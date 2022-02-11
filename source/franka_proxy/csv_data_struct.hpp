@@ -4,6 +4,8 @@
 struct csv_data {
 	double duration;
 
+	std::array<double, 6> selection_array;
+
 	std::array<double, 6> k_p_f;
 	std::array<double, 6> k_i_f;
 	std::array<double, 6> k_d_f;

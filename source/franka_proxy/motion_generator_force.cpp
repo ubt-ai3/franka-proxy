@@ -198,6 +198,8 @@ franka::Torques hybrid_control_motion_generator::callback
 
 	//Set desired cartesian Position as the first measured position (initial)
 	if (count_loop_ == 0) {
+		data_.duration = duration_;
+
 		Eigen::Affine3d initial_transform(Eigen::Matrix4d::Map(initial_state_.O_T_EE.data()));
 		position_desired_ = initial_transform.translation();
 		orientation_desired_ = initial_transform.linear();
@@ -220,7 +222,7 @@ franka::Torques hybrid_control_motion_generator::callback
 	//force Differential
 	Eigen::Matrix<double, 6, 1> force_error_diff_filtered;
 	if (count_loop_ != 0) { //if period.toMSec = 0.0 the error_diff is infinite
-		Eigen::Matrix<double, 6, 1> force_error_diff = (force_error - old_force_error_) / period.toMSec();
+		Eigen::Matrix<double, 6, 1> force_error_diff = (force_error - old_force_error_); //period.toMSec()
 		update_force_error_diff_filter(force_error_diff);
 		for (int i = 0; i < 6; i++) {
 			force_error_diff_filtered(i, 0) = compute_force_error_diff_filtered(i);
@@ -285,7 +287,7 @@ franka::Torques hybrid_control_motion_generator::callback
 	//Position Differential
 	Eigen::Matrix<double, 6, 1> position_error_diff_filtered;
 	if (count_loop_ != 0) { //if period.toMSec = 0.0 the error_diff is infinite
-		Eigen::Matrix<double, 6, 1> position_error_diff = (position_error - old_position_error_) / period.toMSec();
+		Eigen::Matrix<double, 6, 1> position_error_diff = (position_error - old_position_error_); //period.toMSec()
 		update_position_error_diff_filter(position_error_diff);
 		for (int i = 0; i < 6; i++) {
 			position_error_diff_filtered(i, 0) = compute_position_error_diff_filtered(i);
@@ -323,6 +325,7 @@ franka::Torques hybrid_control_motion_generator::callback
 	s << 1, 1, 0, 1, 1, 1; //1 = Position controlled, 0 = force controlled
 	Eigen::Matrix< double, 6, 6> compliance_selection_matrix = s.array().matrix().asDiagonal();
 	Eigen::Matrix< double, 6, 6> unit_matrix = Eigen::Matrix< double, 6, 6>::Identity();
+	
 
 	Eigen::Matrix<double, 6, 1> position_command = position_command_pid; //Change here to reimplement PID Position Control
 	position_command = compliance_selection_matrix * position_command;
@@ -386,7 +389,7 @@ void detail::hybrid_control_motion_generator::update_tau_command_filter(Eigen::M
 
 double detail::hybrid_control_motion_generator::compute_tau_command_filtered(int j) {
 	double value = 0.0;
-	for (int i = j; i < j * tau_command_filter_size_; i += 7) {
+	for (int i = j; i < 7 * tau_command_filter_size_; i += 7) {
 		value += tau_command_buffer_[i];
 	}
 	return (value / tau_command_filter_size_);
@@ -401,7 +404,7 @@ void detail::hybrid_control_motion_generator::update_force_error_diff_filter(Eig
 
 double detail::hybrid_control_motion_generator::compute_force_error_diff_filtered(int j) {
 	double value = 0.0;
-	for (int i = j; i < j * force_error_diff_filter_size_; i += 6) {
+	for (int i = j; i < 6 * force_error_diff_filter_size_; i += 6) {
 		value += force_error_diff_buffer_[i];
 	}
 	return (value / force_error_diff_filter_size_);
@@ -416,7 +419,7 @@ void detail::hybrid_control_motion_generator::update_position_error_diff_filter(
 
 double detail::hybrid_control_motion_generator::compute_position_error_diff_filtered(int j) {
 	double value = 0.0;
-	for (int i = j; i < j * position_error_diff_filter_size_; i += 6) {
+	for (int i = j; i < 6 * position_error_diff_filter_size_; i += 6) {
 		value += position_error_diff_buffer_[i];
 	}
 	return (value / position_error_diff_filter_size_);

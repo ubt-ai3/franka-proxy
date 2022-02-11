@@ -117,25 +117,25 @@ private:
 	double target_mass_;
 	double duration_;
 
-	std::array<double, 6> k_p_f_ = { 1, 1, 1, 0.5, 0.5, 0.5 };
-	std::array<double, 6> k_i_f_ = { 1.0, 1.0, 1.0, 0.5, 0.5, 0.5 };
-	std::array<double, 6> k_d_f_ = { 100, 100, 100, 50, 50, 50 };
+	std::array<double, 6> k_p_f_ = { 3.0, 3.0, 0.5, 1.5, 1.5, 1.5 };
+	std::array<double, 6> k_i_f_ = { 0, 0, 5, 0, 0, 0 };
+	std::array<double, 6> k_d_f_ = { 100, 100, 1, 50, 50, 50 };
 
-	std::array<double, 6> k_p_p_ = { -200, -200, -200, -20, -20, -20 };
-	std::array<double, 6> k_i_p_ = { -200, -200, -200, -20, -20, -20 };
-	std::array<double, 6> k_d_p_ = { -500, -500, -500, -50, -50, -50 };
+	std::array<double, 6> k_p_p_ = { -200, -200, -200, -50, -50, -50 };
+	std::array<double, 6> k_i_p_ = { -200, -200, -200, -30, -30, -30 };
+	std::array<double, 6> k_d_p_ = { -1000, -1000, -1000, -100, -100, -100 };
 	
 	const size_t tau_command_filter_size_ = 5;
 	size_t tau_command_current_filter_position_ = 0;
 	std::vector<double> tau_command_buffer_;
 
 	Eigen::Matrix<double, 6, 1> old_force_error_;
-	const size_t force_error_diff_filter_size_ = 5;
+	const size_t force_error_diff_filter_size_ = 50;
 	size_t force_error_diff_current_filter_position_ = 0;
 	std::vector<double> force_error_diff_buffer_;
 
 	Eigen::Matrix<double, 6, 1> old_position_error_;
-	const size_t position_error_diff_filter_size_ = 5;
+	const size_t position_error_diff_filter_size_ = 50;
 	size_t position_error_diff_current_filter_position_ = 0;
 	std::vector<double> position_error_diff_buffer_;
 
