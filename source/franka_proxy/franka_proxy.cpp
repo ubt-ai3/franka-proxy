@@ -126,14 +126,29 @@ int main() {
 	std::array<double, 7> pos3 = { -0.538555, 0.570877, -0.182261, -2.12031, 0.223319, 2.70837, 0.762102 }; //knapp oberhalb der holzplatte rechts
 	std::array<double, 7> pos4 = { -0.542976, 0.596388, -0.182899, -2.11954, 0.222944, 2.70741, 0.74313 }; //knapp oberhalb der holzplatte rechts
 
+	std::array<double, 7> posAir = { 0.00808741, 0.224202, -0.0017594, -1.84288, -0.0287991, 2.03331, 0.807086 }; //in der luft bei (0.6, 0, 0.3)
+
 	try {
 		//This function calls creates a pid_force_control_motion_generator which is defined in motion_generator_force.cpp
 		//In this function a force_motion_generator::export_data is created and filled with the measured values etc. and returns this data
 		//h_controller.move_to(pos1);
 		//h_controller.move_to_until_contact(pos2);
+		h_controller.move_to(posAir);
+		Eigen::Vector3d des_pos(0.6, 0, 0.3);
+		Eigen::Matrix<double, 6, 1> des_force;
+		des_force.setZero();
+		des_force(0, 2) = 9.81;
+
+		std::vector<Eigen::Matrix<double, 6, 1>> desired_forces;
+		std::vector<Eigen::Vector3d> desired_positions;
+		for (int i = 0; i < 3000; i++) {
+			desired_positions.push_back(des_pos);
+			//des_pos(1) += 0.00005;
+			desired_forces.push_back(des_force);
+		}
 		std::cout << "Hybrid Force/ Position control in 1 second..." << std::endl;
 		std::this_thread::sleep_for(std::chrono::seconds(1));
-		h_controller.hybrid_control(data, 2.0, 5);
+		h_controller.hybrid_control(data, 2.0, 10, desired_positions, desired_forces);
 		
 	}
 	catch (const franka::Exception& e) {

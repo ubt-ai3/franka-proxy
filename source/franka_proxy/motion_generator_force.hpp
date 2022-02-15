@@ -101,7 +101,7 @@ class hybrid_control_motion_generator
 public:
 
 	hybrid_control_motion_generator
-	(franka::Robot& robot, double mass, double duration, csv_data &data);
+	(franka::Robot& robot, double mass, double duration, std::vector<Eigen::Vector3d> desired_positions, std::vector<Eigen::Matrix<double, 6, 1>> desired_forces, csv_data &data);
 
 	franka::Torques callback
 	(const franka::RobotState& robot_state,
@@ -121,8 +121,8 @@ private:
 	std::array<double, 6> k_i_f_ = { 0, 0, 5, 0, 0, 0 };
 	std::array<double, 6> k_d_f_ = { 100, 100, 1, 50, 50, 50 };
 
-	std::array<double, 6> k_p_p_ = { -200, -200, -200, -50, -50, -50 };
-	std::array<double, 6> k_i_p_ = { -200, -200, -200, -30, -30, -30 };
+	std::array<double, 6> k_p_p_ = { -150, -150, -150, -20, -20, -20 };
+	std::array<double, 6> k_i_p_ = { -150, -150, -150, -20, -20, -20 };
 	std::array<double, 6> k_d_p_ = { -1000, -1000, -1000, -100, -100, -100 };
 	
 	const size_t tau_command_filter_size_ = 5;
@@ -147,6 +147,9 @@ private:
 	//initial position and rotation values are desired values for the position control
 	Eigen::Vector3d position_desired_;
 	Eigen::Quaterniond orientation_desired_;
+
+	std::vector<Eigen::Vector3d> desired_positions_;
+	std::vector<Eigen::Matrix<double, 6, 1>> desired_forces_;
 
 
 	void update_tau_command_filter(Eigen::Matrix<double, 7, 1> tau_command);

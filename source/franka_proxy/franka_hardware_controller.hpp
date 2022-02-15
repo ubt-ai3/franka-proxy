@@ -95,9 +95,12 @@ public:
 		double duration);
 
 	void hybrid_control(
-		csv_data &data,
+		csv_data& data,
 		double mass,
-		double duration);
+		double duration,
+		std::vector<Eigen::Vector3d> desired_positions,
+		std::vector<Eigen::Matrix<double,6,1>> desired_forces
+		);
 
 	/**
 	 * Starts/Stops the recording callback.

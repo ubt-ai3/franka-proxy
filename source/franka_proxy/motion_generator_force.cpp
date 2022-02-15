@@ -147,6 +147,8 @@ hybrid_control_motion_generator::hybrid_control_motion_generator
 (franka::Robot& robot,
 	double mass,
 	double duration,
+	std::vector<Eigen::Vector3d> desired_positions,
+	std::vector<Eigen::Matrix<double, 6, 1>> desired_forces,
 	csv_data& data)
 	:
 	tau_command_buffer_(tau_command_filter_size_ * 7, 0),
@@ -158,6 +160,8 @@ hybrid_control_motion_generator::hybrid_control_motion_generator
 	stiffness_(6, 6),
 	damping_(6, 6),
 	dq_buffer_(dq_filter_size_, eigen_vector7d::Zero()),
+	desired_positions_(desired_positions),
+	desired_forces_(desired_forces),
 	data_(data)
 {
 	initial_state_ = robot.readOnce();
@@ -182,7 +186,7 @@ franka::Torques hybrid_control_motion_generator::callback
 {
 	time_ += period.toSec();
 
-	if (time_ > duration_) //Finished
+	if (count_loop_ > desired_positions_.size()) //Finished
 	{
 		// todo this may be wrong!
 		franka::Torques current_torques(robot_state.tau_J);
@@ -197,18 +201,21 @@ franka::Torques hybrid_control_motion_generator::callback
 	data_.o_F_ext_hat_K.push_back(force_existing);
 
 	//Set desired cartesian Position as the first measured position (initial)
-	if (count_loop_ == 0) {
+	/*if (count_loop_ == 0) {
 		data_.duration = duration_;
 
 		Eigen::Affine3d initial_transform(Eigen::Matrix4d::Map(initial_state_.O_T_EE.data()));
 		position_desired_ = initial_transform.translation();
+		position_desired_ = { 0.6, 0, 0.3 };
 		orientation_desired_ = initial_transform.linear();
-	}
+		orientation_desired_ = Eigen::Quaterniond(0.0, 1.0, 0.0, 0.0);
+		std::cout << "orientation_desired.w: " << orientation_desired_.w() << std::endl;
+		std::cout << "orientation_desired.vec: " << orientation_desired_.vec() << std::endl;
+		std::cout << "position_desired_: " << position_desired_ << std::endl;
+	}*/
 
 	//Set force_desired
-	Eigen::Matrix<double, 6, 1> force_desired;
-	force_desired.setZero();
-	force_desired(2, 0) = target_mass_ * -9.81;
+	Eigen::Matrix<double, 6, 1> force_desired = desired_forces_[count_loop_];
 	data_.force_desired.push_back(force_desired);
 
 	//force error
@@ -257,6 +264,10 @@ franka::Torques hybrid_control_motion_generator::callback
 
 	//Position control
 	update_dq_filter(robot_state);
+
+	//Set desired position
+	orientation_desired_ = Eigen::Quaterniond(0.0, 1.0, 0.0, 0.0);
+	position_desired_ = desired_positions_[count_loop_];
 
 	//Current position
 	auto current_pose = model_.pose(franka::Frame::kEndEffector, robot_state.q, robot_state.F_T_EE, robot_state.EE_T_K);
@@ -322,7 +333,7 @@ franka::Torques hybrid_control_motion_generator::callback
 
 	//Hybrid Control combines Force and Position commands
 	Eigen::Matrix< double, 6, 1> s;
-	s << 1, 1, 0, 1, 1, 1; //1 = Position controlled, 0 = force controlled
+	s << 1, 1, 1, 1, 1, 1; //1 = Position controlled, 0 = force controlled
 	Eigen::Matrix< double, 6, 6> compliance_selection_matrix = s.array().matrix().asDiagonal();
 	Eigen::Matrix< double, 6, 6> unit_matrix = Eigen::Matrix< double, 6, 6>::Identity();
 	
