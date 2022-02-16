@@ -145,18 +145,15 @@ double force_motion_generator::compute_dq_filtered(int j)
 //Constructor
 hybrid_control_motion_generator::hybrid_control_motion_generator
 (franka::Robot& robot,
-	double mass,
-	double duration,
 	std::vector<Eigen::Vector3d> desired_positions,
 	std::vector<Eigen::Matrix<double, 6, 1>> desired_forces,
 	std::vector<Eigen::Quaterniond> desired_orientations,
+	std::array<std::array<double, 6>, 6> control_parameters,
 	csv_data& data)
 	:
 	tau_command_buffer_(tau_command_filter_size_ * 7, 0),
 	force_error_diff_buffer_(force_error_diff_filter_size_ * 6, 0),
 	position_error_diff_buffer_(position_error_diff_filter_size_ * 6, 0),
-	target_mass_(mass),
-	duration_(duration),
 	model_(robot.loadModel()),
 	stiffness_(6, 6),
 	damping_(6, 6),
@@ -164,6 +161,12 @@ hybrid_control_motion_generator::hybrid_control_motion_generator
 	desired_positions_(desired_positions),
 	desired_forces_(desired_forces),
 	desired_orientations_(desired_orientations),
+	k_p_p_(control_parameters[0]),
+	k_i_p_(control_parameters[1]),
+	k_d_p_(control_parameters[2]),
+	k_p_f_(control_parameters[3]),
+	k_i_f_(control_parameters[4]),
+	k_d_f_(control_parameters[5]),
 	data_(data)
 {
 	initial_state_ = robot.readOnce();

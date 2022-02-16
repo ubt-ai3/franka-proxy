@@ -101,10 +101,11 @@ class hybrid_control_motion_generator
 public:
 
 	hybrid_control_motion_generator
-	(franka::Robot& robot, double mass, double duration,
+	(franka::Robot& robot,
 		std::vector<Eigen::Vector3d> desired_positions,
 		std::vector<Eigen::Matrix<double, 6, 1>> desired_forces, 
 		std::vector<Eigen::Quaterniond> desired_orientations,
+		std::array<std::array<double, 6>, 6> control_parameters,
 		csv_data &data);
 
 	franka::Torques callback
@@ -118,17 +119,15 @@ private:
 
 	int count_loop_ = 0;
 	double time_{ 0.0 };
-	double target_mass_;
-	double duration_;
 
-	std::array<double, 6> k_p_f_ = { 0.5, 0.5, 0.5, 0.05, 0.05, 0.05 }; //0.8 = k_p_krit -> k_p = 0.6 * k_p_krit
-	std::array<double, 6> k_i_f_ = { 5, 5, 5, 0.5, 0.5, 0.5 };
-	std::array<double, 6> k_d_f_ = { 0, 0, 0, 0, 0, 0 };
+	std::array<double, 6> k_p_p_;
+	std::array<double, 6> k_i_p_;
+	std::array<double, 6> k_d_p_;
 
-	std::array<double, 6> k_p_p_ = { -200, -200, -200, -30, -30, -20 };
-	std::array<double, 6> k_i_p_ = { -30, -30, -30, -5, -5, -5 };
-	std::array<double, 6> k_d_p_ = { 0, 0, 0, 0, 0, 0 };
-	
+	std::array<double, 6> k_p_f_;
+	std::array<double, 6> k_i_f_;
+	std::array<double, 6> k_d_f_;
+
 	const size_t tau_command_filter_size_ = 5;
 	size_t tau_command_current_filter_position_ = 0;
 	std::vector<double> tau_command_buffer_;

@@ -121,12 +121,12 @@ void apply_z_force(franka_proxy::franka_hardware_controller& h_controller) {
 	std::array<double, 7> pos_air = { 0.00808741, 0.224202, -0.0017594, -1.84288, -0.0287991, 2.03331, 0.807086 };
 
 	std::cout << "Applying z-force..." << std::endl;
-	try {
+	/*try {
 		h_controller.move_to(pos_air);
 	}
 	catch (const franka::Exception& e) {
 		std::cout << "catched Exception when moving to start position: " << e.what() << std::endl;
-	}
+	}*/
 	//Get start position
 	std::array<double, 16> o_T_EE = h_controller.robot_state().O_T_EE;
 	Eigen::Vector3d start_pos(o_T_EE[12], o_T_EE[13], o_T_EE[14]);
@@ -149,15 +149,35 @@ void apply_z_force(franka_proxy::franka_hardware_controller& h_controller) {
 		desired_positions.push_back(start_pos);
 		desired_forces.push_back(des_force);
 	}
+	
+	std::array<double, 6> k_p_f = { 0.5, 0.5, 0.5, 0.05, 0.05, 0.05 };
+	std::array<double, 6> k_i_f = { 5, 5, 5, 0.5, 0.5, 0.5 };
+	std::array<double, 6> k_d_f = { 0, 0, 0, 0, 0, 0 };
+
+	std::array<double, 6> k_p_p = { -200, -200, -200, -30, -30, -20 };
+	std::array<double, 6> k_i_p = { -30, -30, -30, -5, -5, -5 };
+	std::array<double, 6> k_d_p = { 0, 0, 0, 0, 0, 0 };
+
+	std::array<std::array<double, 6>, 6> control_parameters;
+	control_parameters = { k_p_p, k_i_p, k_d_p, k_p_f, k_i_f, k_d_f };
 
 	try {
 		std::cout << "Hybrid Force/ Position control in 1 second..." << std::endl;
 		std::this_thread::sleep_for(std::chrono::seconds(1));
 
-		h_controller.hybrid_control(data, 2.0, 10, desired_positions, desired_forces, desired_orientations);
+		h_controller.hybrid_control(data, desired_positions, desired_forces, desired_orientations, control_parameters);
 	}
 	catch (const franka::Exception& e) {
 		std::cout << "catched Exception: " << e.what() << std::endl;
+	}
+
+	std::cout << "Enter 'y' if you want to save the data in a csv file: " << std::endl;
+	std::string answer_string;
+	std::getline(std::cin, answer_string);
+	if (answer_string == "y") {
+		std::cout << "Writing the data to a csv file..." << std::endl;
+		csv_parser(data);
+		std::cout << "Writing in csv file finished." << std::endl;
 	}
 }
 
@@ -172,16 +192,9 @@ int main() {
 	std::cout << "Moving to start position in 2 seconds..." << std::endl;
 	std::this_thread::sleep_for(std::chrono::seconds(2));
 
-	
+	apply_z_force(h_controller);
 
-	std::cout << "Enter 'y' if you want to save the data in a csv file: " << std::endl;
-	std::string answer_string;
-	std::getline(std::cin, answer_string);
-	if (answer_string == "y") {
-		std::cout << "Writing the data to a csv file..." << std::endl;
-		csv_parser(data);
-		std::cout << "Writing in csv file finished." << std::endl;
-	}
+	
 	return 0;
 }
 
