@@ -116,17 +116,33 @@ void print_cur_cartesian_pos(franka_proxy::franka_hardware_controller& h_control
 	std::cout << "x= " << o_T_EE[12] << ", y= " << o_T_EE[13] << ", z= " << o_T_EE[14] << std::endl;
 }
 
-void apply_z_force(franka_proxy::franka_hardware_controller& h_controller) {
+std::array<double, 6> calculate_square_error_integral(std::vector<Eigen::Matrix<double, 6, 1>> values) {
+	std::array<double, 6> square_error_integral = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
+	for (int i = 0; i < 6; i++) {
+		for (int n = 0; n < values.size(); n++) {
+			square_error_integral[i] += pow((values[n](i, 0)), 2);
+		}
+	}
+	return square_error_integral;
+}
+
+void apply_z_force(franka_proxy::franka_hardware_controller& h_controller, std::array<std::array<double, 6>, 6> control_parameters) {
 	csv_data data = {};
-	std::array<double, 7> pos_air = { 0.00808741, 0.224202, -0.0017594, -1.84288, -0.0287991, 2.03331, 0.807086 };
+	std::array<double, 7> pos_30 = { 0.0141143, 0.744292, -0.0176676, -1.6264, 0.0207479, 2.41293, 0.724183 }; //30mm above wood plate with blue part
+	std::array<double, 7> pos_10 = { 0.0166511, 0.777224, -0.0173561, -1.61821, 0.020813, 2.45273, 0.724666 }; //10mm above wood plate with blue part
+	std::array<double, 7> pos_2 = { 0.0173603, 0.782011, -0.0172685, -1.61904, 0.0207746, 2.45505, 0.724928 }; //2mm above wood plate with blue part
+	std::array<double, 7> pos_0 = { 0.0159666, 0.784819, -0.0174431, -1.6166, 0.0208109, 2.45508, 0.724577 }; //0mm above wood plate with blue part
+
 
 	std::cout << "Applying z-force..." << std::endl;
-	/*try {
-		h_controller.move_to(pos_air);
+	try {
+		h_controller.move_to(pos_10);
+		h_controller.move_to(pos_0);
 	}
 	catch (const franka::Exception& e) {
 		std::cout << "catched Exception when moving to start position: " << e.what() << std::endl;
-	}*/
+	}
+
 	//Get start position
 	std::array<double, 16> o_T_EE = h_controller.robot_state().O_T_EE;
 	Eigen::Vector3d start_pos(o_T_EE[12], o_T_EE[13], o_T_EE[14]);
@@ -150,51 +166,53 @@ void apply_z_force(franka_proxy::franka_hardware_controller& h_controller) {
 		desired_forces.push_back(des_force);
 	}
 	
-	std::array<double, 6> k_p_f = { 0.5, 0.5, 0.5, 0.05, 0.05, 0.05 };
-	std::array<double, 6> k_i_f = { 5, 5, 5, 0.5, 0.5, 0.5 };
-	std::array<double, 6> k_d_f = { 0, 0, 0, 0, 0, 0 };
-
-	std::array<double, 6> k_p_p = { -200, -200, -200, -30, -30, -20 };
-	std::array<double, 6> k_i_p = { -30, -30, -30, -5, -5, -5 };
-	std::array<double, 6> k_d_p = { 0, 0, 0, 0, 0, 0 };
-
-	std::array<std::array<double, 6>, 6> control_parameters;
-	control_parameters = { k_p_p, k_i_p, k_d_p, k_p_f, k_i_f, k_d_f };
-
 	try {
-		std::cout << "Hybrid Force/ Position control in 1 second..." << std::endl;
-		std::this_thread::sleep_for(std::chrono::seconds(1));
-
 		h_controller.hybrid_control(data, desired_positions, desired_forces, desired_orientations, control_parameters);
 	}
 	catch (const franka::Exception& e) {
 		std::cout << "catched Exception: " << e.what() << std::endl;
 	}
 
-	std::cout << "Enter 'y' if you want to save the data in a csv file: " << std::endl;
+	csv_parser(data);
+
+	std::cout << "Square Error Integral force z: " << calculate_square_error_integral(data.force_error)[2] << std::endl;
+
+	/*std::cout << "Enter 'y' if you want to save the data in a csv file: " << std::endl;
 	std::string answer_string;
 	std::getline(std::cin, answer_string);
 	if (answer_string == "y") {
 		std::cout << "Writing the data to a csv file..." << std::endl;
 		csv_parser(data);
 		std::cout << "Writing in csv file finished." << std::endl;
-	}
+	}*/
 }
 
 int main() {
-	//Positionen
-	std::array<double, 7> pos_air = { 0.00808741, 0.224202, -0.0017594, -1.84288, -0.0287991, 2.03331, 0.807086 }; //in der luft bei (0.6, 0, 0.3)
-	std::array<double, 7> pos_contact = { -0.00684334, 0.832551, 0.0170616, -1.55377, -0.0087478, 2.47243, 0.742217 }; //mit blauem Teil knapp oberhalb Tischplatte
 	
 	franka_proxy::franka_hardware_controller h_controller("192.168.1.1");
 	csv_data data = {};
 
-	std::cout << "Moving to start position in 2 seconds..." << std::endl;
+	std::cout << "Starting in 2 seconds..." << std::endl;
 	std::this_thread::sleep_for(std::chrono::seconds(2));
 
-	apply_z_force(h_controller);
+	std::array<double, 6> k_i_p = { -30, -30, -30, -5, -5, -5 };
+	std::array<double, 6> k_d_p = { 0, 0, 0, 0, 0, 0 };
+	std::array<double, 6> k_p_p = { -200, -200, -200, -30, -30, -20 };
 
-	
+	std::array<double, 6> k_p_f = { 0.5, 0.5, 0.5, 0.05, 0.05, 0.05 };
+	std::array<double, 6> k_i_f = { 5, 5, 5, 0.5, 0.5, 0.5 };
+	std::array<double, 6> k_d_f = { 0, 0, 0, 0, 0, 0 };
+
+	std::array<std::array<double, 6>, 6> control_parameters;
+	control_parameters = { k_p_p, k_i_p, k_d_p, k_p_f, k_i_f, k_d_f };
+
+	for (int i = 0; i < 5; i++) {
+		apply_z_force(h_controller, control_parameters);
+	}
+
+
+	//print_cur_joint_pos(h_controller);
+
 	return 0;
 }
 
