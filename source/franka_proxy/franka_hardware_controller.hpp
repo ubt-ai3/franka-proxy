@@ -99,7 +99,8 @@ public:
 		double mass,
 		double duration,
 		std::vector<Eigen::Vector3d> desired_positions,
-		std::vector<Eigen::Matrix<double,6,1>> desired_forces
+		std::vector<Eigen::Matrix<double, 6, 1>> desired_forces,
+		std::vector<Eigen::Quaterniond> desired_orientations
 		);
 
 	/**

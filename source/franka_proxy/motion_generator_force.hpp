@@ -101,7 +101,11 @@ class hybrid_control_motion_generator
 public:
 
 	hybrid_control_motion_generator
-	(franka::Robot& robot, double mass, double duration, std::vector<Eigen::Vector3d> desired_positions, std::vector<Eigen::Matrix<double, 6, 1>> desired_forces, csv_data &data);
+	(franka::Robot& robot, double mass, double duration,
+		std::vector<Eigen::Vector3d> desired_positions,
+		std::vector<Eigen::Matrix<double, 6, 1>> desired_forces, 
+		std::vector<Eigen::Quaterniond> desired_orientations,
+		csv_data &data);
 
 	franka::Torques callback
 	(const franka::RobotState& robot_state,
@@ -117,13 +121,13 @@ private:
 	double target_mass_;
 	double duration_;
 
-	std::array<double, 6> k_p_f_ = { 3.0, 3.0, 0.5, 1.5, 1.5, 1.5 };
-	std::array<double, 6> k_i_f_ = { 0, 0, 5, 0, 0, 0 };
-	std::array<double, 6> k_d_f_ = { 100, 100, 1, 50, 50, 50 };
+	std::array<double, 6> k_p_f_ = { 0.5, 0.5, 0.5, 0.05, 0.05, 0.05 }; //0.8 = k_p_krit -> k_p = 0.6 * k_p_krit
+	std::array<double, 6> k_i_f_ = { 5, 5, 5, 0.5, 0.5, 0.5 };
+	std::array<double, 6> k_d_f_ = { 0, 0, 0, 0, 0, 0 };
 
-	std::array<double, 6> k_p_p_ = { -150, -150, -150, -20, -20, -20 };
-	std::array<double, 6> k_i_p_ = { -150, -150, -150, -20, -20, -20 };
-	std::array<double, 6> k_d_p_ = { -1000, -1000, -1000, -100, -100, -100 };
+	std::array<double, 6> k_p_p_ = { -200, -200, -200, -30, -30, -20 };
+	std::array<double, 6> k_i_p_ = { -30, -30, -30, -5, -5, -5 };
+	std::array<double, 6> k_d_p_ = { 0, 0, 0, 0, 0, 0 };
 	
 	const size_t tau_command_filter_size_ = 5;
 	size_t tau_command_current_filter_position_ = 0;
@@ -144,12 +148,14 @@ private:
 
 	Eigen::Matrix<double, 6, 1> desired_cartesian_pos_;
 
-	//initial position and rotation values are desired values for the position control
+	//current desired values are extracted from the value vectors
 	Eigen::Vector3d position_desired_;
 	Eigen::Quaterniond orientation_desired_;
 
+	//Desired value vectors
 	std::vector<Eigen::Vector3d> desired_positions_;
 	std::vector<Eigen::Matrix<double, 6, 1>> desired_forces_;
+	std::vector<Eigen::Quaterniond> desired_orientations_;
 
 
 	void update_tau_command_filter(Eigen::Matrix<double, 7, 1> tau_command);

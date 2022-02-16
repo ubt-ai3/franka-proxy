@@ -149,6 +149,7 @@ hybrid_control_motion_generator::hybrid_control_motion_generator
 	double duration,
 	std::vector<Eigen::Vector3d> desired_positions,
 	std::vector<Eigen::Matrix<double, 6, 1>> desired_forces,
+	std::vector<Eigen::Quaterniond> desired_orientations,
 	csv_data& data)
 	:
 	tau_command_buffer_(tau_command_filter_size_ * 7, 0),
@@ -162,6 +163,7 @@ hybrid_control_motion_generator::hybrid_control_motion_generator
 	dq_buffer_(dq_filter_size_, eigen_vector7d::Zero()),
 	desired_positions_(desired_positions),
 	desired_forces_(desired_forces),
+	desired_orientations_(desired_orientations),
 	data_(data)
 {
 	initial_state_ = robot.readOnce();
@@ -261,12 +263,13 @@ franka::Torques hybrid_control_motion_generator::callback
 	data_.force_command_i.push_back(force_command_i);
 	data_.force_command_d.push_back(force_command_d);
 
+	
 
 	//Position control
 	update_dq_filter(robot_state);
 
 	//Set desired position
-	orientation_desired_ = Eigen::Quaterniond(0.0, 1.0, 0.0, 0.0);
+	orientation_desired_ = desired_orientations_[count_loop_];
 	position_desired_ = desired_positions_[count_loop_];
 
 	//Current position
@@ -333,7 +336,7 @@ franka::Torques hybrid_control_motion_generator::callback
 
 	//Hybrid Control combines Force and Position commands
 	Eigen::Matrix< double, 6, 1> s;
-	s << 1, 1, 1, 1, 1, 1; //1 = Position controlled, 0 = force controlled
+	s << 1, 1, 0, 1, 1, 1; //1 = Position controlled, 0 = force controlled
 	Eigen::Matrix< double, 6, 6> compliance_selection_matrix = s.array().matrix().asDiagonal();
 	Eigen::Matrix< double, 6, 6> unit_matrix = Eigen::Matrix< double, 6, 6>::Identity();
 	

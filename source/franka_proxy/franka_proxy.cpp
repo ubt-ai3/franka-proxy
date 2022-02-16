@@ -104,61 +104,84 @@ void csv_parser(csv_data data) {
 
 
 
-void print_curent_joint_pos(franka_proxy::franka_hardware_controller& h_controller) {
+void print_cur_joint_pos(franka_proxy::franka_hardware_controller& h_controller) {
 	for (int i = 0; i < 7; i++) {
 		std::cout << h_controller.robot_state().q[i] << ", ";
 	}
 	std::cout << std::endl;
 }
 
-int main() {
-	
-	franka_proxy::franka_hardware_controller h_controller("192.168.1.1");
+void print_cur_cartesian_pos(franka_proxy::franka_hardware_controller& h_controller) {
+	std::array<double, 16> o_T_EE = h_controller.robot_state().O_T_EE;
+	std::cout << "x= " << o_T_EE[12] << ", y= " << o_T_EE[13] << ", z= " << o_T_EE[14] << std::endl;
+}
 
-	std::cout << "Moving to start position in 2 seconds..." << std::endl;
-
-	std::this_thread::sleep_for(std::chrono::seconds(2));
-
+void apply_z_force(franka_proxy::franka_hardware_controller& h_controller) {
 	csv_data data = {};
+	std::array<double, 7> pos_air = { 0.00808741, 0.224202, -0.0017594, -1.84288, -0.0287991, 2.03331, 0.807086 };
 
-	std::array<double, 7> pos1 = { -0.148474, 0.66516, 0.0542239, -1.97034, -0.0870424, 2.68921, 0.648864 }; //kontakt auf holzplatte mitte
-	std::array<double, 7> pos2 = { -0.149195, 0.657161, 0.0538761, -1.97476, -0.0856461, 2.68536, 0.664352 }; //knapp oberhalb der holzplatte mitte
-	std::array<double, 7> pos3 = { -0.538555, 0.570877, -0.182261, -2.12031, 0.223319, 2.70837, 0.762102 }; //knapp oberhalb der holzplatte rechts
-	std::array<double, 7> pos4 = { -0.542976, 0.596388, -0.182899, -2.11954, 0.222944, 2.70741, 0.74313 }; //knapp oberhalb der holzplatte rechts
+	std::cout << "Applying z-force..." << std::endl;
+	try {
+		h_controller.move_to(pos_air);
+	}
+	catch (const franka::Exception& e) {
+		std::cout << "catched Exception when moving to start position: " << e.what() << std::endl;
+	}
+	//Get start position
+	std::array<double, 16> o_T_EE = h_controller.robot_state().O_T_EE;
+	Eigen::Vector3d start_pos(o_T_EE[12], o_T_EE[13], o_T_EE[14]);
 
-	std::array<double, 7> posAir = { 0.00808741, 0.224202, -0.0017594, -1.84288, -0.0287991, 2.03331, 0.807086 }; //in der luft bei (0.6, 0, 0.3)
+	//Get start orientation
+	Eigen::Affine3d initial_transform(Eigen::Matrix4d::Map(h_controller.robot_state().O_T_EE.data()));
+	Eigen::Quaterniond start_orientation;
+	start_orientation = initial_transform.linear();
+
+	//Set forces
+	Eigen::Matrix<double, 6, 1> des_force;
+	des_force.setZero();
+	des_force(2) = -1.0 * 9.81;
+
+	std::vector<Eigen::Vector3d> desired_positions;
+	std::vector<Eigen::Matrix<double, 6, 1>> desired_forces;
+	std::vector<Eigen::Quaterniond> desired_orientations;
+	for (int i = 0; i < 5000; i++) {
+		desired_orientations.push_back(start_orientation);
+		desired_positions.push_back(start_pos);
+		desired_forces.push_back(des_force);
+	}
 
 	try {
-		//This function calls creates a pid_force_control_motion_generator which is defined in motion_generator_force.cpp
-		//In this function a force_motion_generator::export_data is created and filled with the measured values etc. and returns this data
-		//h_controller.move_to(pos1);
-		//h_controller.move_to_until_contact(pos2);
-		h_controller.move_to(posAir);
-		Eigen::Vector3d des_pos(0.6, 0, 0.3);
-		Eigen::Matrix<double, 6, 1> des_force;
-		des_force.setZero();
-		des_force(0, 2) = 9.81;
-
-		std::vector<Eigen::Matrix<double, 6, 1>> desired_forces;
-		std::vector<Eigen::Vector3d> desired_positions;
-		for (int i = 0; i < 3000; i++) {
-			desired_positions.push_back(des_pos);
-			//des_pos(1) += 0.00005;
-			desired_forces.push_back(des_force);
-		}
 		std::cout << "Hybrid Force/ Position control in 1 second..." << std::endl;
 		std::this_thread::sleep_for(std::chrono::seconds(1));
-		h_controller.hybrid_control(data, 2.0, 10, desired_positions, desired_forces);
-		
+
+		h_controller.hybrid_control(data, 2.0, 10, desired_positions, desired_forces, desired_orientations);
 	}
 	catch (const franka::Exception& e) {
 		std::cout << "catched Exception: " << e.what() << std::endl;
 	}
+}
 
-	std::cout << "Writing the data to a csv file..." << std::endl;
-	csv_parser(data);
-	std::cout << "Writing in csv file finished. Closing in 1 second..." << std::endl;
-	std::this_thread::sleep_for(std::chrono::seconds(1));
+int main() {
+	//Positionen
+	std::array<double, 7> pos_air = { 0.00808741, 0.224202, -0.0017594, -1.84288, -0.0287991, 2.03331, 0.807086 }; //in der luft bei (0.6, 0, 0.3)
+	std::array<double, 7> pos_contact = { -0.00684334, 0.832551, 0.0170616, -1.55377, -0.0087478, 2.47243, 0.742217 }; //mit blauem Teil knapp oberhalb Tischplatte
+	
+	franka_proxy::franka_hardware_controller h_controller("192.168.1.1");
+	csv_data data = {};
+
+	std::cout << "Moving to start position in 2 seconds..." << std::endl;
+	std::this_thread::sleep_for(std::chrono::seconds(2));
+
+	
+
+	std::cout << "Enter 'y' if you want to save the data in a csv file: " << std::endl;
+	std::string answer_string;
+	std::getline(std::cin, answer_string);
+	if (answer_string == "y") {
+		std::cout << "Writing the data to a csv file..." << std::endl;
+		csv_parser(data);
+		std::cout << "Writing in csv file finished." << std::endl;
+	}
 	return 0;
 }
 

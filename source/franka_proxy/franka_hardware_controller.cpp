@@ -107,14 +107,15 @@ void franka_hardware_controller::apply_z_force
 }
 
 void franka_hardware_controller::hybrid_control
-(csv_data &data, const double mass, const double duration, std::vector<Eigen::Vector3d> desired_positions, std::vector<Eigen::Matrix<double,6,1>> desired_forces)
+(csv_data &data, const double mass, const double duration, std::vector<Eigen::Vector3d> desired_positions,
+	std::vector<Eigen::Matrix<double,6,1>> desired_forces, std::vector<Eigen::Quaterniond> desired_orientations)
 {
 	initialize_parameters();
 
 
 	try
 	{
-		detail::hybrid_control_motion_generator fmg(robot_, mass, duration, desired_positions, desired_forces, data);
+		detail::hybrid_control_motion_generator fmg(robot_, mass, duration, desired_positions, desired_forces, desired_orientations, data);
 		set_control_loop_running(true);
 		{
 			// Lock the current_state_lock_ to wait for state_thread_ to finish.
