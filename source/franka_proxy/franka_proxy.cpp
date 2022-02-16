@@ -126,21 +126,20 @@ std::array<double, 6> calculate_square_error_integral(std::vector<Eigen::Matrix<
 	return square_error_integral;
 }
 
-void apply_z_force(franka_proxy::franka_hardware_controller& h_controller, std::array<std::array<double, 6>, 6> control_parameters) {
+bool apply_z_force(franka_proxy::franka_hardware_controller& h_controller, std::array<std::array<double, 6>, 6> control_parameters) {
 	csv_data data = {};
 	std::array<double, 7> pos_30 = { 0.0141143, 0.744292, -0.0176676, -1.6264, 0.0207479, 2.41293, 0.724183 }; //30mm above wood plate with blue part
 	std::array<double, 7> pos_10 = { 0.0166511, 0.777224, -0.0173561, -1.61821, 0.020813, 2.45273, 0.724666 }; //10mm above wood plate with blue part
 	std::array<double, 7> pos_2 = { 0.0173603, 0.782011, -0.0172685, -1.61904, 0.0207746, 2.45505, 0.724928 }; //2mm above wood plate with blue part
 	std::array<double, 7> pos_0 = { 0.0159666, 0.784819, -0.0174431, -1.6166, 0.0208109, 2.45508, 0.724577 }; //0mm above wood plate with blue part
 
-
-	std::cout << "Applying z-force..." << std::endl;
 	try {
 		h_controller.move_to(pos_10);
 		h_controller.move_to(pos_0);
 	}
 	catch (const franka::Exception& e) {
 		std::cout << "catched Exception when moving to start position: " << e.what() << std::endl;
+		return false;
 	}
 
 	//Get start position
@@ -171,12 +170,16 @@ void apply_z_force(franka_proxy::franka_hardware_controller& h_controller, std::
 	}
 	catch (const franka::Exception& e) {
 		std::cout << "catched Exception: " << e.what() << std::endl;
+		return false;
 	}
 
 	csv_parser(data);
 
+	std::cout << "P: " << control_parameters[3][2] << std::endl;
 	std::cout << "Square Error Integral force z: " << calculate_square_error_integral(data.force_error)[2] << std::endl;
+	std::cout << "Square Error Integral position z: " << calculate_square_error_integral(data.position_error)[2] << std::endl << std::endl;
 
+	return true;
 	/*std::cout << "Enter 'y' if you want to save the data in a csv file: " << std::endl;
 	std::string answer_string;
 	std::getline(std::cin, answer_string);
@@ -199,19 +202,18 @@ int main() {
 	std::array<double, 6> k_d_p = { 0, 0, 0, 0, 0, 0 };
 	std::array<double, 6> k_p_p = { -200, -200, -200, -30, -30, -20 };
 
-	std::array<double, 6> k_p_f = { 0.5, 0.5, 0.5, 0.05, 0.05, 0.05 };
-	std::array<double, 6> k_i_f = { 5, 5, 5, 0.5, 0.5, 0.5 };
+	std::array<double, 6> k_p_f = { 0.5, 0.5, 0.55, 0.05, 0.05, 0.05 };
+	std::array<double, 6> k_i_f = { 5, 5, 0, 0.5, 0.5, 0.5 };
 	std::array<double, 6> k_d_f = { 0, 0, 0, 0, 0, 0 };
 
 	std::array<std::array<double, 6>, 6> control_parameters;
 	control_parameters = { k_p_p, k_i_p, k_d_p, k_p_f, k_i_f, k_d_f };
 
-	for (int i = 0; i < 5; i++) {
-		apply_z_force(h_controller, control_parameters);
+	bool continue_control = true;
+	while (continue_control) {
+		continue_control = apply_z_force(h_controller, control_parameters);
+		control_parameters[3][2] += 0.005;
 	}
-
-
-	//print_cur_joint_pos(h_controller);
 
 	return 0;
 }
