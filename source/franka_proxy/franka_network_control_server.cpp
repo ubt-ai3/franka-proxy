@@ -39,42 +39,42 @@ namespace
 		}
 		catch (const franka::ControlException& exc)
 		{
-			std::cout << "franka_control_server::receive_requests(): " << "Encountered control exception." << std::endl;
+			std::cout << "franka_control_server::receive_requests(): " << "Encountered control exception." <<exc.what()<< std::endl;
 			return command_generic_response{ command_result::control_exception, exc.what() };
 		}
 		catch (const franka::CommandException& exc)
 		{
-			std::cout << "franka_control_server::receive_requests(): " << "Encountered command exception." << std::endl;
+			std::cout << "franka_control_server::receive_requests(): " << "Encountered command exception." << exc.what() << std::endl;
 			return command_generic_response{ command_result::command_exception, exc.what() };
 		}
 		catch (const franka::NetworkException& exc)
 		{
-			std::cout << "franka_control_server::receive_requests(): " << "Encountered network exception." << std::endl;
+			std::cout << "franka_control_server::receive_requests(): " << "Encountered network exception." << exc.what() << std::endl;
 			return command_generic_response{ command_result::network_exception, exc.what()};
 		}
 		catch (const franka::RealtimeException& exc)
 		{
-			std::cout << "franka_control_server::receive_requests(): " << "Encountered realtime exception." << std::endl;
+			std::cout << "franka_control_server::receive_requests(): " << "Encountered realtime exception." << exc.what() << std::endl;
 			return command_generic_response{ command_result::realtime_exception, exc.what() };
 		}
 		catch (const franka::ModelException& exc)
 		{
-			std::cout << "franka_control_server::receive_requests(): " << "Encountered model exception." << std::endl;
+			std::cout << "franka_control_server::receive_requests(): " << "Encountered model exception." << exc.what() << std::endl;
 			return command_generic_response{ command_result::model_exception, exc.what() };
 		}
 		catch (const franka::ProtocolException& exc)
 		{
-			std::cout << "franka_control_server::receive_requests(): " << "Encountered protocol exception." << std::endl;
+			std::cout << "franka_control_server::receive_requests(): " << "Encountered protocol exception." << exc.what() << std::endl;
 			return command_generic_response{ command_result::protocol_exception, exc.what() };
 		}
 		catch (const franka::IncompatibleVersionException& exc)
 		{
-			std::cout << "franka_control_server::receive_requests(): " << "Encountered incompatible version exception." << std::endl;
+			std::cout << "franka_control_server::receive_requests(): " << "Encountered incompatible version exception." << exc.what() << std::endl;
 			return command_generic_response{ command_result::incompatible_version, exc.what() };
 		}
 		catch (const franka::Exception& exc)
 		{
-			std::cout << "franka_control_server::receive_requests(): " << "Encountered generic franka exception." << std::endl;
+			std::cout << "franka_control_server::receive_requests(): " << "Encountered generic franka exception.: " << exc.what() << std::endl;
 			return command_generic_response{ command_result::franka_exception, exc.what() };
 		}
 	}

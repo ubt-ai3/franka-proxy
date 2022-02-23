@@ -11,6 +11,7 @@
 #include "franka_hardware_controller.hpp"
 
 #include <iostream>
+#include <fstream>
 
 #include <Eigen/Core>
 
@@ -120,9 +121,20 @@ void franka_hardware_controller::apply_z_force
 }
 
 
+
 void franka_hardware_controller::move_to(const robot_config_7dof& target)
 {
 	initialize_parameters();
+	
+
+	
+	{
+		// update robot_state to get the most current robot config for motion generation
+		std::lock_guard<std::mutex> state_guard(state_lock_);
+		robot_state_ = robot_.readOnce();
+	}
+	
+	auto robot_state_before = robot_state_;
 
 	detail::franka_joint_motion_generator motion_generator
 		(speed_factor_, target, state_lock_, robot_state_, stop_motion_, false);
@@ -140,14 +152,42 @@ void franka_hardware_controller::move_to(const robot_config_7dof& target)
 		robot_.control
 			(motion_generator,
 			 franka::ControllerMode::kJointImpedance,
-			 true, 20.);
+			 true, 100.);
 	}
 	catch (const detail::franka_joint_motion_generator::stop_motion_trigger&)
 	{
+		std::cout << "motion stop triggered\n";
 	}
-	catch (const franka::Exception&)
+	catch (const detail::franka_joint_motion_generator::contact_stop_trigger&)
 	{
+		std::cout << "contact occured\n";
+	}
+	catch (const franka::Exception& e)
+	{
+
 		set_control_loop_running(false);
+		std::cout << "Error in move_to control loop :" << e.what() << "\n";
+		//debug
+		/*std::fstream f("motion_log.csv", std::ios::app);
+		f << robot_state_before.q[0];
+		for (int i = 1; i < 7; i++)
+		{
+			f << "," << robot_state_before.q_d[i];
+		}
+		f << "\n";
+		auto new_state = robot_.readOnce();
+		f << new_state.q[0];
+		for (int i = 1; i < 7; i++)
+		{
+			f << "," << new_state.q[i];
+		}
+		f << "\n";
+		f << target[0];
+		for (int i = 1; i < 7; i++)
+		{
+			f << "," << target[i];
+		}
+		f << "\n";*/
 		throw;
 	}
 
@@ -174,23 +214,30 @@ bool franka_hardware_controller::move_to_until_contact
 			std::lock_guard<std::mutex> state_guard(state_lock_);
 		}
 
-		robot_.control
+		/*robot_.control
 			(motion_generator,
 			 franka::ControllerMode::kJointImpedance,
-			 true, 20.);
+			 true, 20.);*/
+		robot_.control
+		(motion_generator,
+			franka::ControllerMode::kCartesianImpedance,
+			true, 100.);
 	}
 	catch (const detail::franka_joint_motion_generator::stop_motion_trigger&)
 	{
+		std::cout << "motion stopped\n";
 	}
 	catch (const detail::franka_joint_motion_generator::contact_stop_trigger&)
 	{
 		set_control_loop_running(false);
 		set_default_collision_behaviour();
+		std::cout << "contact detected" << std::endl;
 		return false;
 	}
 	catch (const franka::Exception&)
 	{
 		set_control_loop_running(false);
+		std::cout << "error in move to until contact control loop\n";
 		throw;
 	}
 	
@@ -288,49 +335,59 @@ bool franka_hardware_controller::vacuum_gripper_drop(std::chrono::milliseconds t
 {
 	if(!vacuum_gripper_)
 		throw std::runtime_error("Tried to use non existent gripper, make sure you use the vacuum gripper");
-
-	bool success = vacuum_gripper_->dropOff(drop_timeout);
+	bool success = false;
+	try
+	{
+		success = vacuum_gripper_->dropOff(drop_timeout);
+	}
+	catch (const franka::CommandException& e)
+	{
+		//TODO
+		//for some reason dropoff always throws this
+		std::cout << "drop off failed\n";
+	}
+	if(success)
+		std::cout << "drop off successful\n";
 	{
 		std::scoped_lock<std::mutex> state_guard(state_lock_);
 		vacuum_gripper_state_ = vacuum_gripper_->readOnce();
 	}
-	std::cout << "dropping \n";
-
 	return success;
 }
 
 bool franka_hardware_controller::vacuum_gripper_vacuum(std::uint8_t vacuum_strength, std::chrono::milliseconds timeout)
 {
 	if (!vacuum_gripper_)
-		throw std::runtime_error("Tried to use non existent gripper, make sure you mounted the vacuum gripper");
+		throw std::runtime_error("vacuum gripper not found, make sure you mounted the vacuum gripper");
 
-	std::cout << "vacuum with strength :"<<(int)vacuum_strength<<" and timeout: "<<timeout.count()<<"ms\n" ;
+	//std::cout << "vacuum with strength :"<<(int)vacuum_strength<<" and timeout: "<<timeout.count()<<"ms\n" ;
 	bool success = false;
 	try {
 		success = vacuum_gripper_->vacuum(vacuum_strength, vacuum_timeout);
-		if (success)
-			std::cout << "established vacuum\n";
-		else
-			std::cout << "no vacuum established\n";
+		//if (success)
+		//	std::cout << "established vacuum\n";
+		//else
+		//	std::cout << "no vacuum established\n";
 	}
 	catch (const franka::CommandException& e)
 	{
-		std::cout << e.what()<<"\n";
-		std::cout << "error establishing vacuum\n";
+		//std::cout << e.what()<<"\n";
+		//std::cout << "error establishing vacuum\n";
 	}
 	{
 		std::scoped_lock<std::mutex> state_guard(state_lock_);
 		vacuum_gripper_state_ = vacuum_gripper_->readOnce();
 	}
-
-	if (vacuum_gripper_state_.in_control_range)
-		std::cout << "in control range\n";
-	if (vacuum_gripper_state_.part_detached)
-		std::cout << "part detached\n";
-	if (vacuum_gripper_state_.part_present)
-		std::cout << "part present\n";
-	std::cout << "vacuum level: " << vacuum_gripper_state_.vacuum << "\n\n";
-	return success;
+	if (success != vacuum_gripper_state_.part_present)
+		std::cout << "Failed vacuum but attached object\n";
+	//if (vacuum_gripper_state_.in_control_range)
+	//	std::cout << "in control range\n";
+	//if (vacuum_gripper_state_.part_detached)
+	//	std::cout << "part detached\n";
+	//if (vacuum_gripper_state_.part_present)
+	//	std::cout << "part present\n";
+	//std::cout << "vacuum level: " << vacuum_gripper_state_.vacuum << "\n\n";
+	return vacuum_gripper_state_.part_present;
 }
 
 bool franka_hardware_controller::vacuum_gripper_stop()

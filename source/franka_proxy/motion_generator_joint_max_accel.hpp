@@ -63,7 +63,7 @@ public:
 		 franka::RobotState& current_state,
 		 const std::atomic_bool& stop_motion_flag,
 		 bool stop_on_contact);
-
+	
 	/**
 	 * Sends joint position calculations
 	 *

@@ -63,6 +63,7 @@
     <Import Project="..\props\use_vcpkg.props" />
     <Import Project="..\..\..\..\..\tools\vc19\vs-props\build_common.props" />
     <Import Project="..\..\..\..\..\tools\vc19\vs-props\build_type_standalone.props" />
+    <Import Project="..\props\build_mode_debug.props" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
     <Import Project="..\props\build_type_standalone.props" />

@@ -27,6 +27,16 @@ namespace franka_proxy
 
 using robot_config_7dof = std::array<double, 7>;
 
+//values correspond to libfranka::VacuumGripperState
+struct vacuum_gripper_state
+{
+	uint8_t actual_power_;
+	uint8_t vacuum_level;
+	bool part_detached_;
+	bool part_present_;
+	bool in_control_range_;
+};
+
 class franka_remote_controller
 {
 public:
@@ -228,6 +238,10 @@ public:
 	 */
 	void update();
 
+	/*
+		returns the current vacuum gripper state
+	*/
+	vacuum_gripper_state get_vacuum_gripper_state();
 
 private:
 	
@@ -285,10 +299,14 @@ private:
 
 	mutable std::mutex state_lock_;
 	robot_config_7dof current_config_;
+
+	//jaw gripper
 	int current_gripper_pos_;
 	int max_gripper_pos_;
 	bool gripper_grasped_{false};
 
+	private:
+	vacuum_gripper_state vacuum_gripper_state_;
 
 	static constexpr unsigned short franka_control_port = 4711;
 	static constexpr unsigned short franka_state_port = 4712;
