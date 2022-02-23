@@ -91,24 +91,27 @@ void franka_state_client::clear_states() noexcept {
 
 void franka_state_client::update_messages_buffer()
 {
-	std::uint64_t content_length;
-	asio::read(*connection_, asio::buffer(&content_length, sizeof(std::uint64_t)));
-
-	std::string buffer;
-	buffer.resize(content_length);
-
-	asio::read(*connection_, asio::buffer(buffer));
-
-	try
+	while (connection_->available())
 	{
-		const auto state = nlohmann::json::parse(buffer).get<command_get_config_response>();
-		states_.push_back(state);
-	}
-	catch (...)
-	{
-		std::cerr << "franka_state_client::update_messages_buffer(): " 
-			<< "State message discarted due to bad JSON." 
-			<< std::endl;
+		std::uint64_t content_length;
+		asio::read(*connection_, asio::buffer(&content_length, sizeof(std::uint64_t)));
+
+		std::string buffer;
+		buffer.resize(content_length);
+
+		asio::read(*connection_, asio::buffer(buffer));
+
+		try
+		{
+			const auto state = nlohmann::json::parse(buffer).get<command_get_config_response>();
+			states_.push_back(state);
+		}
+		catch (...)
+		{
+			std::cerr << "franka_state_client::update_messages_buffer(): "
+				<< "State message discarted due to bad JSON."
+				<< std::endl;
+		}
 	}
 }
 
