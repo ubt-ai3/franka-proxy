@@ -234,7 +234,7 @@ franka::Torques hybrid_control_motion_generator::callback
 	//force Differential
 	Eigen::Matrix<double, 6, 1> force_error_diff_filtered;
 	if (count_loop_ != 0) { //if period.toMSec = 0.0 the error_diff is infinite
-		Eigen::Matrix<double, 6, 1> force_error_diff = (force_error - old_force_error_); //period.toMSec()
+		Eigen::Matrix<double, 6, 1> force_error_diff = (force_error - old_force_error_) * 1000.0; //period.toMSec()
 		update_force_error_diff_filter(force_error_diff);
 		for (int i = 0; i < 6; i++) {
 			force_error_diff_filtered(i, 0) = compute_force_error_diff_filtered(i);
@@ -304,7 +304,7 @@ franka::Torques hybrid_control_motion_generator::callback
 	//Position Differential
 	Eigen::Matrix<double, 6, 1> position_error_diff_filtered;
 	if (count_loop_ != 0) { //if period.toMSec = 0.0 the error_diff is infinite
-		Eigen::Matrix<double, 6, 1> position_error_diff = (position_error - old_position_error_); //period.toMSec()
+		Eigen::Matrix<double, 6, 1> position_error_diff = (position_error - old_position_error_) * 1000.0; //period.toMSec()
 		update_position_error_diff_filter(position_error_diff);
 		for (int i = 0; i < 6; i++) {
 			position_error_diff_filtered(i, 0) = compute_position_error_diff_filtered(i);

@@ -38,8 +38,6 @@ class franka_proxy
 
 public:
 
-	
-
 	franka_proxy();
 
 

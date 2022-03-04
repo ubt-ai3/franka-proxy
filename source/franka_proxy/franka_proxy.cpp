@@ -116,12 +116,13 @@ void print_cur_cartesian_pos(franka_proxy::franka_hardware_controller& h_control
 	std::cout << "x= " << o_T_EE[12] << ", y= " << o_T_EE[13] << ", z= " << o_T_EE[14] << std::endl;
 }
 
-std::array<double, 6> calculate_square_error_integral(std::vector<Eigen::Matrix<double, 6, 1>> values) {
+std::array<double, 6> calculate_square_error_integral_median(std::vector<Eigen::Matrix<double, 6, 1>> values) {
 	std::array<double, 6> square_error_integral = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
-	for (int i = 0; i < 6; i++) {
-		for (int n = 0; n < values.size(); n++) {
-			square_error_integral[i] += pow((values[n](i, 0)), 2);
+	for (int d = 0; d < 6; d++) { //Dimensions
+		for (int n = 0; n < values.size(); n++) { //Step
+			square_error_integral[d] += (values[n](d, 0)) * (values[n](d, 0));
 		}
+		square_error_integral[d] = square_error_integral[d] / values.size();
 	}
 	return square_error_integral;
 }
@@ -175,9 +176,10 @@ bool apply_z_force(franka_proxy::franka_hardware_controller& h_controller, std::
 
 	csv_parser(data);
 
-	std::cout << "P: " << control_parameters[3][2] << std::endl;
-	std::cout << "Square Error Integral force z: " << calculate_square_error_integral(data.force_error)[2] << std::endl;
-	std::cout << "Square Error Integral position z: " << calculate_square_error_integral(data.position_error)[2] << std::endl << std::endl;
+	//std::cout << "P: " << control_parameters[3][2] << std::endl;
+	//std::cout << "Square Error Integral median force z: " << calculate_square_error_integral_median(data.force_error)[2] << std::endl;
+	//std::cout << "Square Error Integral median position z: " << calculate_square_error_integral_median(data.position_error)[2] << std::endl << std::endl;
+	std::cout << calculate_square_error_integral_median(data.force_error)[2] << ", " << calculate_square_error_integral_median(data.position_error)[2] << std::endl;
 
 	return true;
 	/*std::cout << "Enter 'y' if you want to save the data in a csv file: " << std::endl;
@@ -198,22 +200,57 @@ int main() {
 	std::cout << "Starting in 2 seconds..." << std::endl;
 	std::this_thread::sleep_for(std::chrono::seconds(2));
 
+	std::array<double, 6> k_p_p = { -200, -200, -200, -30, -30, -20 };
 	std::array<double, 6> k_i_p = { -30, -30, -30, -5, -5, -5 };
 	std::array<double, 6> k_d_p = { 0, 0, 0, 0, 0, 0 };
-	std::array<double, 6> k_p_p = { -200, -200, -200, -30, -30, -20 };
 
-	std::array<double, 6> k_p_f = { 0.5, 0.5, 0.55, 0.05, 0.05, 0.05 };
-	std::array<double, 6> k_i_f = { 5, 5, 0, 0.5, 0.5, 0.5 };
-	std::array<double, 6> k_d_f = { 0, 0, 0, 0, 0, 0 };
+	
+	//Ziegler Nichols Method
+	std::array<double, 6> k_p_f = { 0.5, 0.5, 0.366, 0.05, 0.05, 0.05 };
+	std::array<double, 6> k_i_f = { 5, 5, 8.04, 0.5, 0.5, 0.5 };
+	std::array<double, 6> k_d_f = { 0, 0, 0.004163, 0, 0, 0 };
+
+	/*std::array<double, 6> k_p_f = { 0.5, 0.5, 0.5, 0.05, 0.05, 0.05 };
+	std::array<double, 6> k_i_f = { 5, 5, 5, 0.5, 0.5, 0.5 };
+	std::array<double, 6> k_d_f = { 0, 0, 0, 0, 0, 0 };*/
 
 	std::array<std::array<double, 6>, 6> control_parameters;
 	control_parameters = { k_p_p, k_i_p, k_d_p, k_p_f, k_i_f, k_d_f };
 
-	bool continue_control = true;
-	while (continue_control) {
-		continue_control = apply_z_force(h_controller, control_parameters);
-		control_parameters[3][2] += 0.005;
+	//bool continue_control = true;
+	//while (continue_control) {
+	//	control_parameters[3][2] = 0.8 * control_parameters[3][2]; //P in z
+	//	control_parameters[3][2] = 0.8 * control_parameters[4][2]; //I in z
+	//	control_parameters[3][2] = 0.8 * control_parameters[5][2]; //D in z
+	//	continue_control = apply_z_force(h_controller, control_parameters);
+	//}
+
+	std::vector<double> factorP = { 0.8, 1.0, 1.2 };
+	std::vector<double> factorI = { 0.8, 1.0, 1.2 };
+	std::vector<double> factorD = { 0.8, 1.0, 1.2 };
+
+	for (int i = 0; i < 3; i++) {
+		for (int j = 0; j < 3; j++) {
+			for (int k = 0; k < 3; k++) {
+				std::cout << std::endl << "p, i, d:\t" << factorP[i] << "\t" << factorI[j] << "\t" << factorD[k] << std::endl;
+				control_parameters[3][2] = factorP[i] * control_parameters[3][2]; //P in z
+				control_parameters[4][2] = factorI[j] * control_parameters[4][2]; //I in z
+				control_parameters[5][2] = factorD[k] * control_parameters[5][2]; //D in z
+				for (int i = 0; i < 5; i++) {
+					apply_z_force(h_controller, control_parameters);
+				}
+				std::array<double, 6> k_p_f = { 0.5, 0.5, 0.366, 0.05, 0.05, 0.05 };
+				std::array<double, 6> k_i_f = { 5, 5, 8.04, 0.5, 0.5, 0.5 };
+				std::array<double, 6> k_d_f = { 0, 0, 0.004163, 0, 0, 0 };
+
+				std::array<std::array<double, 6>, 6> control_parameters;
+				control_parameters = { k_p_p, k_i_p, k_d_p, k_p_f, k_i_f, k_d_f };
+			}
+		}
 	}
+	
+
+
 
 	return 0;
 }
