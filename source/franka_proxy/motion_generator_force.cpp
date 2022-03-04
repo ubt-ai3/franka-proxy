@@ -199,6 +199,15 @@ franka::Torques hybrid_control_motion_generator::callback
 		return current_torques;
 	}
 
+	if (count_loop_ == 0) {
+		data_.k_p_p = k_p_p_;
+		data_.k_i_p = k_i_p_;
+		data_.k_d_p = k_d_p_;
+		data_.k_p_f = k_p_f_;
+		data_.k_i_f = k_i_f_;
+		data_.k_d_f = k_d_f_;
+	}
+
 	std::array<double, 42> jacobian_array = model_.zeroJacobian(franka::Frame::kEndEffector, robot_state);
 	Eigen::Map<const Eigen::Matrix<double, 6, 7>> jacobian(jacobian_array.data());
 	data_.zero_jacobian.push_back(jacobian);
