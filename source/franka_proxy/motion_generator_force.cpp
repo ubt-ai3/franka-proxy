@@ -191,7 +191,7 @@ franka::Torques hybrid_control_motion_generator::callback
 {
 	time_ += period.toSec();
 
-	if (count_loop_ > desired_positions_.size()) //Finished
+	if (count_loop_ == desired_positions_.size()) //Finished
 	{
 		// todo this may be wrong!
 		franka::Torques current_torques(robot_state.tau_J);
@@ -308,7 +308,7 @@ franka::Torques hybrid_control_motion_generator::callback
 
 	//Position integral
 	position_error_integral_ += period.toSec() * position_error;
-	data_.position_error.push_back(position_error_integral_);
+	data_.position_error_integral.push_back(position_error_integral_);
 
 	//Position Differential
 	Eigen::Matrix<double, 6, 1> position_error_diff_filtered;

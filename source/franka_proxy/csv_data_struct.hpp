@@ -15,8 +15,8 @@ struct csv_data {
 	std::array<double, 6> k_i_p;
 	std::array<double, 6> k_d_p;
 
-	std::array<double, 6> square_error_integral_median_position;
-	std::array<double, 6> square_error_integral_median_force;
+	Eigen::Matrix<double, 6, 1> square_error_integral_median_position;;
+	Eigen::Matrix<double, 6, 1> square_error_integral_median_force;
 
 	std::vector<Eigen::Matrix<double, 6, 7 >> zero_jacobian;
 

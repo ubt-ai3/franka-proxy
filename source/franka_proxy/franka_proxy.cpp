@@ -132,14 +132,13 @@ void print_cur_cartesian_pos(franka_proxy::franka_hardware_controller& h_control
 	std::cout << "x= " << o_T_EE[12] << ", y= " << o_T_EE[13] << ", z= " << o_T_EE[14] << std::endl;
 }
 
-std::array<double, 6> calculate_square_error_integral_median(std::vector<Eigen::Matrix<double, 6, 1>> values) {
-	std::array<double, 6> square_error_integral_median = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
-	for (int d = 0; d < 6; d++) { //Dimensions
-		for (int n = 0; n < values.size(); n++) { //Step
-			square_error_integral_median[d] += ((values[n](d, 0)) * (values[n](d, 0)));
-		}
-		square_error_integral_median[d] = square_error_integral_median[d] / values.size();
+Eigen::Matrix<double, 6, 1> calculate_square_error_integral_median(std::vector<Eigen::Matrix<double, 6, 1>>& values) {
+	Eigen::Matrix<double, 6, 1> square_error_integral_median;
+	square_error_integral_median.setZero();
+	for (int n = 0; n < values.size(); n++) {
+		square_error_integral_median = square_error_integral_median + (values[n].array() * values[n].array()).matrix();
 	}
+	square_error_integral_median = square_error_integral_median / static_cast<double>(values.size());
 	return square_error_integral_median;
 }
 
@@ -169,7 +168,7 @@ csv_data apply_z_force(franka_proxy::franka_hardware_controller& h_controller, s
 	//Set forces
 	Eigen::Matrix<double, 6, 1> des_force;
 	des_force.setZero();
-	des_force(2) = 0 * -1.0 * 9.81;
+	des_force(2) = -10.0;
 
 	std::vector<Eigen::Vector3d> desired_positions;
 	std::vector<Eigen::Matrix<double, 6, 1>> desired_forces;
@@ -194,7 +193,24 @@ csv_data apply_z_force(franka_proxy::franka_hardware_controller& h_controller, s
 	return data;
 }
 
+
 void simulatedAnnnealing(franka_proxy::franka_hardware_controller& h_controller){
+	auto t = std::time(nullptr);
+	auto tm = *std::localtime(&t);
+	std::ostringstream oss;
+	oss << std::put_time(&tm, "%d-%m-%Y %H-%M-%S");
+	auto time_string = oss.str();
+
+	std::string path = "C:/Users/hecken/Desktop/BA_Hecken/SA/" + time_string + "/";
+	CreateDirectoryA(path.c_str(), NULL);
+	std::string filename = "C:/Users/hecken/Desktop/BA_Hecken/SA/" + time_string + "/sa_overview.csv";
+
+	std::ofstream sa_data_file;
+
+	sa_data_file.open(filename, std::ofstream::out | std::ofstream::app);
+	sa_data_file << "k,T,ISE,Kp,eta\n";
+	sa_data_file.close();
+
 	//Position Parameters
 	std::array<double, 6> k_p_p = { -200, -200, -200, -30, -30, -20 };
 	std::array<double, 6> k_i_p = { -30, -30, -30, -5, -5, -5 };
@@ -202,8 +218,8 @@ void simulatedAnnnealing(franka_proxy::franka_hardware_controller& h_controller)
 
 	//Ziegler Nichols Method Force Parameters
 	std::array<double, 6> k_p_f = { 0.5, 0.5, 0.366, 0.05, 0.05, 0.05 };
-	std::array<double, 6> k_i_f = { 5, 5, 8.04, 0.5, 0.5, 0.5 };
-	std::array<double, 6> k_d_f = { 0, 0, 0.004163, 0, 0, 0 };
+	std::array<double, 6> k_i_f = { 5, 5, 0, 0.5, 0.5, 0.5 };
+	std::array<double, 6> k_d_f = { 0, 0, 0, 0, 0, 0 };
 
 	std::array<std::array<double, 6>, 6> control_parameters;
 	control_parameters = { k_p_p, k_i_p, k_d_p, k_p_f, k_i_f, k_d_f };
@@ -215,88 +231,78 @@ void simulatedAnnnealing(franka_proxy::franka_hardware_controller& h_controller)
 
 	std::random_device rd;
 	std::mt19937 gen{ rd() };
-	std::normal_distribution<double> d(0, 1);
+	std::uniform_real_distribution<double> d(0, 1);
 	double kPr = d(gen); //kp Random [0,1]
 	double kIr = d(gen); //ki Random [0,1]
 	double kDr = d(gen); //kd Random [0,1]
 
-	Eigen::Vector3d parameterVector = { kPr * kPmax, kIr * kImax, kDr * kDmax};
-	std::cout << "Initial Parameters: " << parameterVector[0] << ", " << parameterVector[1] << ", " << parameterVector[2] << std::endl;
-	control_parameters[3][0] = kPr * kPmax;
+	Eigen::Vector3d parameter_vector = { kPr * kPmax, kIr * kImax, kDr * kDmax};
+	control_parameters[3][2] = kPr * kPmax;
 
 	//call hybrid control with parameterSet and calculate ISE
 	csv_data data{};
 	apply_z_force(h_controller, control_parameters, data);
-	double ISE;
-	if (!data.square_error_integral_median_force.empty()) {
-		ISE = data.square_error_integral_median_force[2];
-		std::cout << "Initial ISE = " << ISE << std::endl;
-	}
-	else {
-		return;
-	}
+	double best_ISE = data.square_error_integral_median_force(2);
 
 	//calculate (or choose) initial Temperature
-	double worst = 50; //TODO
-	double best = 0;
-	double Pr = 0.85;
-	double T = -(worst - best) / log(0.85); //~308
-
+	//double worst = 50; //TODO
+	//double best = 0;
+	//double Pr = 0.85;
+	//double T = -(worst - best) / log(0.85); //~308
+	double T = 1000;
 	double eta = 1.0; //initial eta
 
+	double target_ISE = 1.0; //This value of ISE will be accepted
+	double min_delta_ISE = 3.0; //
+	int c = 0;
+	int c_max = 10;
 	int k = 0;
-	int k_max = 20;
-	double minISE = 0.00001;
 
-	while (ISE > minISE && k < k_max){ // && Delta ISE did not change much in the last n iterations
+
+	while (best_ISE > target_ISE && c < c_max){ // && Delta ISE did not change much in the last n iterations
+
+		//write in sa_overview.csv
+		sa_data_file.open(filename, std::ofstream::out | std::ofstream::app);
+		sa_data_file << k << "," << T << "," << best_ISE << "," << parameter_vector(0) << "," << eta << "\n";
+		sa_data_file.close();
 
 		//calculate new parameter set (neighbour) based on current paramter set
-		std::random_device rd;
-		std::mt19937 gen{ rd() };
 		std::normal_distribution<double> d(0, 1);
-		double lambda1 = d(gen);
-		double lambda2 = d(gen);
-		double lambda3 = d(gen);
-		Eigen::Vector3d lambdaVector = { lambda1, lambda2, lambda3 };
-		Eigen::Vector3d newParameterVector = parameterVector + eta * lambdaVector;
+		double lambda = d(gen);
+		Eigen::Vector3d lambda_vector = { lambda, 0, 0 };
+		Eigen::Vector3d new_parameter_vector = parameter_vector + eta * lambda_vector;
 
-		//printing
-		std::cout << "lambdaVector: " << lambda1 << ", " << lambda2 << ", " << lambda3 << std::endl;
-		std::cout << "newParameterVector = " << newParameterVector(0) << ", " << newParameterVector(1) << ", " << newParameterVector(2) << std::endl;
+		//set newParameterVector in necessary boundaries
+		new_parameter_vector(0) = std::max(0.0, std::min(new_parameter_vector(0), kPmax));
 
 		//call hybrid_control with newParameterVector and calculate new ISE
-		control_parameters[3][0] = newParameterVector(0);
+		control_parameters[3][2] = new_parameter_vector(0);
 		csv_data data{};
 		apply_z_force(h_controller, control_parameters, data);
-		double newISE;
-		if (!data.square_error_integral_median_force.empty()) {
-			newISE = data.square_error_integral_median_force[2];
-			std::cout << "Initial ISE = " << ISE << std::endl;
+		double new_ISE = data.square_error_integral_median_force(2);
+
+		std::cout << "k=" << k << "\tT = " << T << "\tbest Kp=" << parameter_vector(0) << "\tnew Kp=" << new_parameter_vector(0) << "\tbest ISE=" << best_ISE << "\tnew_ISE=" << new_ISE << "\teta=" << eta << "\tc=" << c << std::endl;
+
+		//check if change in ISE was smaller than treshold
+		if (std::abs(best_ISE - new_ISE) < min_delta_ISE) {
+			c++;
 		}
 		else {
-			newISE = 10000000;
+			c = 0;
 		}
-		std::cout << "ISE = " << ISE << ", newISE = " << newISE << std::endl;
 
-		if (newISE < ISE) { //new parameterVector is better then accept always
-			ISE = newISE;
-			parameterVector = newParameterVector;
-			std::cout << "newParameterVector was better" << std::endl;
+		if (new_ISE < best_ISE) { //new parameterVector is better then accept always
+			best_ISE = new_ISE;
+			parameter_vector = new_parameter_vector;
 		}
 		else { //if old parameterVector was better, then only accept with boltzmann-related chance
-			std::random_device rd;
-			std::mt19937 gen{ rd() };
 			std::uniform_real_distribution<double> d(0, 1);
 			double r = d(gen); //rand[0,1]
 
-			std::cout << "r = " << r << " has to be smaller than: " << (exp(-(newISE - ISE) / T)) << std::endl;
-
-			if (r < exp(-(newISE-ISE)/T)) {
-				ISE = newISE;
-				parameterVector = newParameterVector;
-				std::cout << "newParameterVector was worse but accepted" << std::endl;
+			if (r < exp(-(new_ISE-best_ISE)/T)) {
+				best_ISE = new_ISE;
+				parameter_vector = new_parameter_vector;
 			}
-			std::cout << "newParameterVector was worse and not accepted" << std::endl;
 		}
 
 		//Decrease T and eta
@@ -305,7 +311,6 @@ void simulatedAnnnealing(franka_proxy::franka_hardware_controller& h_controller)
 		eta = l * eta;
 
 		k++;
-		std::cout << "T: " << T << ", k: " << k << std::endl << std::endl;
 	}
 
 }
