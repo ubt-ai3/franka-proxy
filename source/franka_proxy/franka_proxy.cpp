@@ -256,7 +256,9 @@ void simulatedAnnnealing(){
 			std::mt19937 gen{ rd() };
 			std::uniform_real_distribution<double> d(0, 1);
 			double r = d(gen); //rand[0,1]
-			
+
+			std::cout << "r = " << r << " has to be smaller than: " << (exp(-(newISE - ISE) / T)) << std::endl;
+
 			if (r < exp(-(newISE-ISE)/T)) {
 				ISE = newISE;
 				parameterVector = newParameterVector;
