@@ -143,8 +143,7 @@ std::array<double, 6> calculate_square_error_integral_median(std::vector<Eigen::
 	return square_error_integral_median;
 }
 
-bool apply_z_force(franka_proxy::franka_hardware_controller& h_controller, std::array<std::array<double, 6>, 6> control_parameters) {
-	csv_data data = {};
+csv_data apply_z_force(franka_proxy::franka_hardware_controller& h_controller, std::array<std::array<double, 6>, 6> control_parameters, csv_data& data) {
 	std::array<double, 7> pos_30 = { 0.0141143, 0.744292, -0.0176676, -1.6264, 0.0207479, 2.41293, 0.724183 }; //30mm above wood plate with blue part
 	std::array<double, 7> pos_10 = { 0.0166511, 0.777224, -0.0173561, -1.61821, 0.020813, 2.45273, 0.724666 }; //10mm above wood plate with blue part
 	std::array<double, 7> pos_2 = { 0.0173603, 0.782011, -0.0172685, -1.61904, 0.0207746, 2.45505, 0.724928 }; //2mm above wood plate with blue part
@@ -156,7 +155,6 @@ bool apply_z_force(franka_proxy::franka_hardware_controller& h_controller, std::
 	}
 	catch (const franka::Exception& e) {
 		std::cout << "catched Exception when moving to start position: " << e.what() << std::endl;
-		return false;
 	}
 
 	//Get start position
@@ -187,31 +185,56 @@ bool apply_z_force(franka_proxy::franka_hardware_controller& h_controller, std::
 	}
 	catch (const franka::Exception& e) {
 		std::cout << "catched Exception: " << e.what() << std::endl;
-		return false;
 	}
 
 	data.square_error_integral_median_position = calculate_square_error_integral_median(data.position_error);
 	data.square_error_integral_median_force = calculate_square_error_integral_median(data.force_error);
 	csv_parser(data);
 
-	return true;
+	return data;
 }
 
-void simulatedAnnnealing(){
-	//random initialization of parameter set
-	double kPmax = 10;
-	double kImax = 10;
-	double kDmax = 10;
+void simulatedAnnnealing(franka_proxy::franka_hardware_controller& h_controller){
+	//Position Parameters
+	std::array<double, 6> k_p_p = { -200, -200, -200, -30, -30, -20 };
+	std::array<double, 6> k_i_p = { -30, -30, -30, -5, -5, -5 };
+	std::array<double, 6> k_d_p = { 0, 0, 0, 0, 0, 0 };
 
-	double kPr = static_cast <double> (rand()) / static_cast <double> (RAND_MAX); //kp Random [0,1]
-	double kIr = static_cast <double> (rand()) / static_cast <double> (RAND_MAX); //ki random [0,1]
-	double kDr = static_cast <double> (rand()) / static_cast <double> (RAND_MAX); //kd random [0,1]
+	//Ziegler Nichols Method Force Parameters
+	std::array<double, 6> k_p_f = { 0.5, 0.5, 0.366, 0.05, 0.05, 0.05 };
+	std::array<double, 6> k_i_f = { 5, 5, 8.04, 0.5, 0.5, 0.5 };
+	std::array<double, 6> k_d_f = { 0, 0, 0.004163, 0, 0, 0 };
+
+	std::array<std::array<double, 6>, 6> control_parameters;
+	control_parameters = { k_p_p, k_i_p, k_d_p, k_p_f, k_i_f, k_d_f };
+
+	//random initialization of parameter set
+	double kPmax = 0.6;
+	double kImax = 0;
+	double kDmax = 0;
+
+	std::random_device rd;
+	std::mt19937 gen{ rd() };
+	std::normal_distribution<double> d(0, 1);
+	double kPr = d(gen); //kp Random [0,1]
+	double kIr = d(gen); //ki Random [0,1]
+	double kDr = d(gen); //kd Random [0,1]
 
 	Eigen::Vector3d parameterVector = { kPr * kPmax, kIr * kImax, kDr * kDmax};
+	std::cout << "Initial Parameters: " << parameterVector[0] << ", " << parameterVector[1] << ", " << parameterVector[2] << std::endl;
+	control_parameters[3][0] = kPr * kPmax;
 
 	//call hybrid control with parameterSet and calculate ISE
+	csv_data data{};
+	apply_z_force(h_controller, control_parameters, data);
 	double ISE;
-	ISE = static_cast <double> (rand()) / static_cast <double> (RAND_MAX) * 100; //TODO
+	if (!data.square_error_integral_median_force.empty()) {
+		ISE = data.square_error_integral_median_force[2];
+		std::cout << "Initial ISE = " << ISE << std::endl;
+	}
+	else {
+		return;
+	}
 
 	//calculate (or choose) initial Temperature
 	double worst = 50; //TODO
@@ -222,8 +245,8 @@ void simulatedAnnnealing(){
 	double eta = 1.0; //initial eta
 
 	int k = 0;
-	int k_max = 10;
-	double minISE = 0.1;
+	int k_max = 20;
+	double minISE = 0.00001;
 
 	while (ISE > minISE && k < k_max){ // && Delta ISE did not change much in the last n iterations
 
@@ -242,8 +265,17 @@ void simulatedAnnnealing(){
 		std::cout << "newParameterVector = " << newParameterVector(0) << ", " << newParameterVector(1) << ", " << newParameterVector(2) << std::endl;
 
 		//call hybrid_control with newParameterVector and calculate new ISE
+		control_parameters[3][0] = newParameterVector(0);
+		csv_data data{};
+		apply_z_force(h_controller, control_parameters, data);
 		double newISE;
-		newISE = static_cast <double> (rand()) / static_cast <double> (RAND_MAX) * 100; //TODO
+		if (!data.square_error_integral_median_force.empty()) {
+			newISE = data.square_error_integral_median_force[2];
+			std::cout << "Initial ISE = " << ISE << std::endl;
+		}
+		else {
+			newISE = 10000000;
+		}
 		std::cout << "ISE = " << ISE << ", newISE = " << newISE << std::endl;
 
 		if (newISE < ISE) { //new parameterVector is better then accept always
@@ -267,7 +299,7 @@ void simulatedAnnnealing(){
 			std::cout << "newParameterVector was worse and not accepted" << std::endl;
 		}
 
-		//Decrease T
+		//Decrease T and eta
 		double l = 0.9;
 		T = l * T;
 		eta = l * eta;
@@ -285,52 +317,7 @@ int main() {
 	std::cout << "Starting in 2 seconds..." << std::endl;
 	std::this_thread::sleep_for(std::chrono::seconds(2));
 
-	//Position Parameters
-	std::array<double, 6> k_p_p = { -200, -200, -200, -30, -30, -20 };
-	std::array<double, 6> k_i_p = { -30, -30, -30, -5, -5, -5 };
-	std::array<double, 6> k_d_p = { 0, 0, 0, 0, 0, 0 };
-	
-	//Ziegler Nichols Method Force Parameters
-	std::array<double, 6> k_p_f = { 0.5, 0.5, 0.366, 0.05, 0.05, 0.05 };
-	std::array<double, 6> k_i_f = { 5, 5, 8.04, 0.5, 0.5, 0.5 };
-	std::array<double, 6> k_d_f = { 0, 0, 0.004163, 0, 0, 0 };
-
-	/*std::array<double, 6> k_p_f = { 0.5, 0.5, 0.5, 0.05, 0.05, 0.05 };
-	std::array<double, 6> k_i_f = { 5, 5, 5, 0.5, 0.5, 0.5 };
-	std::array<double, 6> k_d_f = { 0, 0, 0, 0, 0, 0 };*/
-
-	std::array<std::array<double, 6>, 6> control_parameters;
-	control_parameters = { k_p_p, k_i_p, k_d_p, k_p_f, k_i_f, k_d_f };
-
-	bool continue_control = true;
-	while (continue_control) {
-		continue_control = apply_z_force(h_controller, control_parameters);
-		continue_control = false;
-	}
-
-	//std::vector<double> factorP = { 0.8, 1.0, 1.2 };
-	//std::vector<double> factorI = { 0.8, 1.0, 1.2 };
-	//std::vector<double> factorD = { 0.8, 1.0, 1.2 };
-
-	//for (int i = 0; i < 3; i++) {
-	//	for (int j = 0; j < 3; j++) {
-	//		for (int k = 0; k < 3; k++) {
-	//			std::cout << std::endl << "p, i, d:\t" << factorP[i] << "\t" << factorI[j] << "\t" << factorD[k] << std::endl;
-	//			control_parameters[3][2] = factorP[i] * control_parameters[3][2]; //P in z
-	//			control_parameters[4][2] = factorI[j] * control_parameters[4][2]; //I in z
-	//			control_parameters[5][2] = factorD[k] * control_parameters[5][2]; //D in z
-	//			for (int i = 0; i < 5; i++) {
-	//				apply_z_force(h_controller, control_parameters);
-	//			}
-	//			std::array<double, 6> k_p_f = { 0.5, 0.5, 0.366, 0.05, 0.05, 0.05 };
-	//			std::array<double, 6> k_i_f = { 5, 5, 8.04, 0.5, 0.5, 0.5 };
-	//			std::array<double, 6> k_d_f = { 0, 0, 0.004163, 0, 0, 0 };
-
-	//			std::array<std::array<double, 6>, 6> control_parameters;
-	//			control_parameters = { k_p_p, k_i_p, k_d_p, k_p_f, k_i_f, k_d_f };
-	//		}
-	//	}
-	//}
+	simulatedAnnnealing(h_controller);
 
 	return 0;
 }
