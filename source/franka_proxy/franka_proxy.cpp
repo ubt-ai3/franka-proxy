@@ -14,6 +14,7 @@
 
 #include <iostream>
 #include <iomanip>
+#include <random>
 
 
 namespace franka_proxy
@@ -149,14 +150,14 @@ bool apply_z_force(franka_proxy::franka_hardware_controller& h_controller, std::
 	std::array<double, 7> pos_2 = { 0.0173603, 0.782011, -0.0172685, -1.61904, 0.0207746, 2.45505, 0.724928 }; //2mm above wood plate with blue part
 	std::array<double, 7> pos_0 = { 0.0159666, 0.784819, -0.0174431, -1.6166, 0.0208109, 2.45508, 0.724577 }; //0mm above wood plate with blue part
 
-	/*try {
+	try {
 		h_controller.move_to(pos_10);
 		h_controller.move_to(pos_0);
 	}
 	catch (const franka::Exception& e) {
 		std::cout << "catched Exception when moving to start position: " << e.what() << std::endl;
 		return false;
-	}*/
+	}
 
 	//Get start position
 	std::array<double, 16> o_T_EE = h_controller.robot_state().O_T_EE;
@@ -194,30 +195,100 @@ bool apply_z_force(franka_proxy::franka_hardware_controller& h_controller, std::
 	csv_parser(data);
 
 	return true;
-	/*std::cout << "Enter 'y' if you want to save the data in a csv file: " << std::endl;
-	std::string answer_string;
-	std::getline(std::cin, answer_string);
-	if (answer_string == "y") {
-		std::cout << "Writing the data to a csv file..." << std::endl;
-		csv_parser(data);
-		std::cout << "Writing in csv file finished." << std::endl;
-	}*/
+}
+
+void simulatedAnnnealing(){
+	//random initialization of parameter set
+	double kPmax = 10;
+	double kImax = 10;
+	double kDmax = 10;
+
+	double kPr = static_cast <double> (rand()) / static_cast <double> (RAND_MAX); //kp Random [0,1]
+	double kIr = static_cast <double> (rand()) / static_cast <double> (RAND_MAX); //ki random [0,1]
+	double kDr = static_cast <double> (rand()) / static_cast <double> (RAND_MAX); //kd random [0,1]
+
+	Eigen::Vector3d parameterVector = { kPr * kPmax, kIr * kImax, kDr * kDmax};
+
+	//call hybrid control with parameterSet and calculate ISE
+	double ISE;
+	ISE = static_cast <double> (rand()) / static_cast <double> (RAND_MAX) * 100; //TODO
+
+	//calculate (or choose) initial Temperature
+	double worst = 50; //TODO
+	double best = 0;
+	double Pr = 0.85;
+	double T = -(worst - best) / log(0.85); //~308
+
+	double eta = 1.0; //initial eta
+
+	int k = 0;
+	int k_max = 10;
+	double minISE = 0.1;
+
+	while (ISE > minISE && k < k_max){ // && Delta ISE did not change much in the last n iterations
+
+		//calculate new parameter set (neighbour) based on current paramter set
+		std::random_device rd;
+		std::mt19937 gen{ rd() };
+		std::normal_distribution<double> d(0, 1);
+		double lambda1 = d(gen);
+		double lambda2 = d(gen);
+		double lambda3 = d(gen);
+		Eigen::Vector3d lambdaVector = { lambda1, lambda2, lambda3 };
+		Eigen::Vector3d newParameterVector = parameterVector + eta * lambdaVector;
+
+		//printing
+		std::cout << "lambdaVector: " << lambda1 << ", " << lambda2 << ", " << lambda3 << std::endl;
+		std::cout << "newParameterVector = " << newParameterVector(0) << ", " << newParameterVector(1) << ", " << newParameterVector(2) << std::endl;
+
+		//call hybrid_control with newParameterVector and calculate new ISE
+		double newISE;
+		newISE = static_cast <double> (rand()) / static_cast <double> (RAND_MAX) * 100; //TODO
+		std::cout << "ISE = " << ISE << ", newISE = " << newISE << std::endl;
+
+		if (newISE < ISE) { //new parameterVector is better then accept always
+			ISE = newISE;
+			parameterVector = newParameterVector;
+			std::cout << "newParameterVector was better" << std::endl;
+		}
+		else { //if old parameterVector was better, then only accept with boltzmann-related chance
+			std::random_device rd;
+			std::mt19937 gen{ rd() };
+			std::uniform_real_distribution<double> d(0, 1);
+			double r = d(gen); //rand[0,1]
+			
+			if (r < exp(-(newISE-ISE)/T)) {
+				ISE = newISE;
+				parameterVector = newParameterVector;
+				std::cout << "newParameterVector was worse but accepted" << std::endl;
+			}
+			std::cout << "newParameterVector was worse and not accepted" << std::endl;
+		}
+
+		//Decrease T
+		double l = 0.9;
+		T = l * T;
+		eta = l * eta;
+
+		k++;
+		std::cout << "T: " << T << ", k: " << k << std::endl << std::endl;
+	}
+
 }
 
 int main() {
 	
 	franka_proxy::franka_hardware_controller h_controller("192.168.1.1");
-	csv_data data = {};
 
 	std::cout << "Starting in 2 seconds..." << std::endl;
 	std::this_thread::sleep_for(std::chrono::seconds(2));
 
+	//Position Parameters
 	std::array<double, 6> k_p_p = { -200, -200, -200, -30, -30, -20 };
 	std::array<double, 6> k_i_p = { -30, -30, -30, -5, -5, -5 };
 	std::array<double, 6> k_d_p = { 0, 0, 0, 0, 0, 0 };
-
 	
-	//Ziegler Nichols Method
+	//Ziegler Nichols Method Force Parameters
 	std::array<double, 6> k_p_f = { 0.5, 0.5, 0.366, 0.05, 0.05, 0.05 };
 	std::array<double, 6> k_i_f = { 5, 5, 8.04, 0.5, 0.5, 0.5 };
 	std::array<double, 6> k_d_f = { 0, 0, 0.004163, 0, 0, 0 };
@@ -258,9 +329,6 @@ int main() {
 	//		}
 	//	}
 	//}
-	
-
-
 
 	return 0;
 }
