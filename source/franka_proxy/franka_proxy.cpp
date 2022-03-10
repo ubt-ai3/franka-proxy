@@ -248,7 +248,7 @@ void simulatedAnnnealing(franka_proxy::franka_hardware_controller& h_controller)
 	control_parameters = { k_p_p, k_i_p, k_d_p, k_p_f, k_i_f, k_d_f };
 
 	//random initialization of parameter set
-	Eigen::Vector3d max_parameters(1.0, 10.0, 20.0);
+	Eigen::Vector3d max_parameters(1.0, 15.0, 0.01);
 
 	std::random_device rd;
 	std::mt19937 gen{ rd() };
@@ -256,7 +256,6 @@ void simulatedAnnnealing(franka_proxy::franka_hardware_controller& h_controller)
 	Eigen::Vector3d rand_vector(d(gen), d(gen), d(gen));
 
 	Eigen::Vector3d best_parameter_vector = (rand_vector.array() * max_parameters.array()).matrix();
-	best_parameter_vector(2) = 0; //TODO ---------------------------
 	control_parameters[3][2] = best_parameter_vector(0);
 	control_parameters[4][2] = best_parameter_vector(1);
 	control_parameters[4][2] = best_parameter_vector(2);
@@ -276,7 +275,7 @@ void simulatedAnnnealing(franka_proxy::franka_hardware_controller& h_controller)
 	double eta = 1.0; //initial eta
 
 	double target_F = 0.1; //This value of F will be accepted
-	double min_delta_F = 0.2; //This value of F is the threshold for the acceptance counter
+	double min_delta_F = 0.05; //This value of F is the threshold for the acceptance counter
 	int c = 0; //consecutive falling below min_delta_F
 	int c_max = 10;
 	int k = 1;
@@ -292,8 +291,6 @@ void simulatedAnnnealing(franka_proxy::franka_hardware_controller& h_controller)
 		new_parameter_vector(0) = std::max(0.0, std::min(new_parameter_vector(0), max_parameters(0)));
 		new_parameter_vector(1) = std::max(0.0, std::min(new_parameter_vector(1), max_parameters(1)));
 		new_parameter_vector(2) = std::max(0.0, std::min(new_parameter_vector(2), max_parameters(2)));
-
-		new_parameter_vector(2) = 0; //TODO ----------------------------
 
 		//call hybrid_control with newParameterVector and calculate new F
 		control_parameters[3][2] = new_parameter_vector(0);
