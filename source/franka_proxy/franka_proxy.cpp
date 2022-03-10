@@ -71,13 +71,21 @@ void create_overview_csv(csv_data data, std::string file_name) {
 		data_file << "\tP Force: " << data.k_p_f[i] << "\tI Force: " << data.k_i_f[i] << "\tD Force: " << data.k_d_f[i] << "\n";
 	}
 
-	data_file << "\nSquare Error Integral Median from Position\n";
+	data_file << "\nISE from Position\n";
 	for (int i = 0; i < 6; i++) {
-		data_file << "Dimension: " << (i+1) << "\t" << data.square_error_integral_median_position[i] << "\n";
+		data_file << "Dimension: " << (i+1) << "\t" << data.ise_position[i] << "\n";
 	}
-	data_file << "\nSquare Error Integral Median from Force\n";
+	data_file << "\nISE from Force\n";
 	for (int i = 0; i < 6; i++) {
-		data_file << "Dimension: " << (i+1) << "\t" << data.square_error_integral_median_force[i] << "\n";
+		data_file << "Dimension: " << (i+1) << "\t" << data.ise_force[i] << "\n";
+	}
+	data_file << "\nITAE from Position\n";
+	for (int i = 0; i < 6; i++) {
+		data_file << "Dimension: " << (i + 1) << "\t" << data.itae_position[i] << "\n";
+	}
+	data_file << "\nITAE from Force\n";
+	for (int i = 0; i < 6; i++) {
+		data_file << "Dimension: " << (i + 1) << "\t" << data.itae_force[i] << "\n";
 	}
 
 }
@@ -132,14 +140,24 @@ void print_cur_cartesian_pos(franka_proxy::franka_hardware_controller& h_control
 	std::cout << "x= " << o_T_EE[12] << ", y= " << o_T_EE[13] << ", z= " << o_T_EE[14] << std::endl;
 }
 
-Eigen::Matrix<double, 6, 1> calculate_square_error_integral_median(std::vector<Eigen::Matrix<double, 6, 1>>& values) {
-	Eigen::Matrix<double, 6, 1> square_error_integral_median;
-	square_error_integral_median.setZero();
+//integral squared error: Force in [N^2 s] or Position in ?[m^2 s]?
+Eigen::Matrix<double, 6, 1> calculate_ISE(std::vector<Eigen::Matrix<double, 6, 1>>& values) {
+	Eigen::Matrix<double, 6, 1> ise;
+	ise.setZero();
 	for (int n = 0; n < values.size(); n++) {
-		square_error_integral_median = square_error_integral_median + (values[n].array() * values[n].array()).matrix();
+		ise += ((values[n].array() * values[n].array()) * 0.001).matrix(); //Integral(e(t)*e(t) dt)
 	}
-	square_error_integral_median = square_error_integral_median / static_cast<double>(values.size());
-	return square_error_integral_median;
+	return ise;
+}
+
+//integral time absolute error: Force in [N s^2] or Position in ?[m s^2]?
+Eigen::Matrix<double, 6, 1> calculate_ITAE(std::vector<Eigen::Matrix<double, 6, 1>>& values) {
+	Eigen::Matrix<double, 6, 1> itae;
+	itae.setZero();
+	for (int n = 0; n < values.size(); n++) {
+		itae += ((n / 1000.0) * values[n].array().abs() * 0.001).matrix();  //Integral(t*|e(t)| dt)
+	}
+	return itae;
 }
 
 csv_data apply_z_force(franka_proxy::franka_hardware_controller& h_controller, std::array<std::array<double, 6>, 6> control_parameters, csv_data& data) {
@@ -186,8 +204,11 @@ csv_data apply_z_force(franka_proxy::franka_hardware_controller& h_controller, s
 		std::cout << "catched Exception: " << e.what() << std::endl;
 	}
 
-	data.square_error_integral_median_position = calculate_square_error_integral_median(data.position_error);
-	data.square_error_integral_median_force = calculate_square_error_integral_median(data.force_error);
+	data.ise_position = calculate_ISE(data.position_error);
+	data.ise_force = calculate_ISE(data.force_error);
+	data.itae_position = calculate_ITAE(data.position_error);
+	data.itae_force = calculate_ITAE(data.force_error);
+
 	csv_parser(data);
 
 	return data;
@@ -239,10 +260,10 @@ void simulatedAnnnealing(franka_proxy::franka_hardware_controller& h_controller)
 	Eigen::Vector3d parameter_vector = { kPr * kPmax, kIr * kImax, kDr * kDmax};
 	control_parameters[3][2] = kPr * kPmax;
 
-	//call hybrid control with parameterSet and calculate ISE
+	//call hybrid control with parameterSet and calculate F
 	csv_data data{};
 	apply_z_force(h_controller, control_parameters, data);
-	double best_ISE = data.square_error_integral_median_force(2);
+	double best_F = data.itae_force(2); //cost Function
 
 	//calculate (or choose) initial Temperature
 	//double worst = 50; //TODO
@@ -252,18 +273,18 @@ void simulatedAnnnealing(franka_proxy::franka_hardware_controller& h_controller)
 	double T = 1000;
 	double eta = 1.0; //initial eta
 
-	double target_ISE = 1.0; //This value of ISE will be accepted
-	double min_delta_ISE = 3.0; //
+	double target_F = 1.0; //This value of F will be accepted
+	double min_delta_F = 3.5; //
 	int c = 0;
-	int c_max = 10;
+	int c_max = 5;
 	int k = 0;
 
 
-	while (best_ISE > target_ISE && c < c_max){ // && Delta ISE did not change much in the last n iterations
+	while (best_F > target_F && c < c_max){ // && Delta ISE did not change much in the last n iterations
 
 		//write in sa_overview.csv
 		sa_data_file.open(filename, std::ofstream::out | std::ofstream::app);
-		sa_data_file << k << "," << T << "," << best_ISE << "," << parameter_vector(0) << "," << eta << "\n";
+		sa_data_file << k << "," << T << "," << best_F << "," << parameter_vector(0) << "," << eta << "\n";
 		sa_data_file.close();
 
 		//calculate new parameter set (neighbour) based on current paramter set
@@ -279,28 +300,28 @@ void simulatedAnnnealing(franka_proxy::franka_hardware_controller& h_controller)
 		control_parameters[3][2] = new_parameter_vector(0);
 		csv_data data{};
 		apply_z_force(h_controller, control_parameters, data);
-		double new_ISE = data.square_error_integral_median_force(2);
+		double new_F = data.itae_force(2);
 
-		std::cout << "k=" << k << "\tT = " << T << "\tbest Kp=" << parameter_vector(0) << "\tnew Kp=" << new_parameter_vector(0) << "\tbest ISE=" << best_ISE << "\tnew_ISE=" << new_ISE << "\teta=" << eta << "\tc=" << c << std::endl;
+		std::cout << "k=" << k << "\tT = " << T << "\tbest Kp=" << parameter_vector(0) << "\tnew Kp=" << new_parameter_vector(0) << "\tbest F=" << best_F << "\tnew_F=" << new_F << "\teta=" << eta << "\tc=" << c << std::endl;
 
 		//check if change in ISE was smaller than treshold
-		if (std::abs(best_ISE - new_ISE) < min_delta_ISE) {
+		if (std::abs(best_F - new_F) < min_delta_F) {
 			c++;
 		}
 		else {
 			c = 0;
 		}
 
-		if (new_ISE < best_ISE) { //new parameterVector is better then accept always
-			best_ISE = new_ISE;
+		if (new_F < best_F) { //new parameterVector is better then accept always
+			best_F = new_F;
 			parameter_vector = new_parameter_vector;
 		}
 		else { //if old parameterVector was better, then only accept with boltzmann-related chance
 			std::uniform_real_distribution<double> d(0, 1);
 			double r = d(gen); //rand[0,1]
 
-			if (r < exp(-(new_ISE-best_ISE)/T)) {
-				best_ISE = new_ISE;
+			if (r < exp(-(new_F-best_F)/T)) {
+				best_F = new_F;
 				parameter_vector = new_parameter_vector;
 			}
 		}
