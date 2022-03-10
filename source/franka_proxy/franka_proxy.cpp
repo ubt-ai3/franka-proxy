@@ -19,22 +19,22 @@
 
 namespace franka_proxy
 {
-	
-
-//////////////////////////////////////////////////////////////////////////
-//
-// franka_proxy
-//
-//////////////////////////////////////////////////////////////////////////
 
 
-franka_proxy::franka_proxy()
-	:
-	controller_("192.168.1.1"),
+	//////////////////////////////////////////////////////////////////////////
+	//
+	// franka_proxy
+	//
+	//////////////////////////////////////////////////////////////////////////
 
-	control_server_(franka_control_port, controller_),
-	state_server_(franka_state_port, controller_)
-{}
+
+	franka_proxy::franka_proxy()
+		:
+		controller_("192.168.1.1"),
+
+		control_server_(franka_control_port, controller_),
+		state_server_(franka_state_port, controller_)
+	{}
 
 
 } /* namespace franka_proxy */
@@ -73,11 +73,11 @@ void create_overview_csv(csv_data data, std::string file_name) {
 
 	data_file << "\nISE from Position\n";
 	for (int i = 0; i < 6; i++) {
-		data_file << "Dimension: " << (i+1) << "\t" << data.ise_position[i] << "\n";
+		data_file << "Dimension: " << (i + 1) << "\t" << data.ise_position[i] << "\n";
 	}
 	data_file << "\nISE from Force\n";
 	for (int i = 0; i < 6; i++) {
-		data_file << "Dimension: " << (i+1) << "\t" << data.ise_force[i] << "\n";
+		data_file << "Dimension: " << (i + 1) << "\t" << data.ise_force[i] << "\n";
 	}
 	data_file << "\nITAE from Position\n";
 	for (int i = 0; i < 6; i++) {
@@ -196,7 +196,7 @@ csv_data apply_z_force(franka_proxy::franka_hardware_controller& h_controller, s
 		desired_positions.push_back(start_pos);
 		desired_forces.push_back(des_force);
 	}
-	
+
 	try {
 		h_controller.hybrid_control(data, desired_positions, desired_forces, desired_orientations, control_parameters);
 	}
@@ -215,7 +215,7 @@ csv_data apply_z_force(franka_proxy::franka_hardware_controller& h_controller, s
 }
 
 
-void simulatedAnnnealing(franka_proxy::franka_hardware_controller& h_controller){
+void simulatedAnnnealing(franka_proxy::franka_hardware_controller& h_controller) {
 	auto t = std::time(nullptr);
 	auto tm = *std::localtime(&t);
 	std::ostringstream oss;
@@ -229,7 +229,7 @@ void simulatedAnnnealing(franka_proxy::franka_hardware_controller& h_controller)
 	std::ofstream sa_data_file;
 
 	sa_data_file.open(filename, std::ofstream::out | std::ofstream::app);
-	sa_data_file << "k,T,ISE,Kp,eta\n";
+	sa_data_file << "k,T,eta,best_F,new_F,best_Kp,new_Kp,best_Ki,new_Ki,best_Kd,new_Kd\n";
 	sa_data_file.close();
 
 	//Position Parameters
@@ -238,7 +238,7 @@ void simulatedAnnnealing(franka_proxy::franka_hardware_controller& h_controller)
 	std::array<double, 6> k_d_p = { 0, 0, 0, 0, 0, 0 };
 
 	//Ziegler Nichols Method Force Parameters
-	std::array<double, 6> k_p_f = { 0.5, 0.5, 0.366, 0.05, 0.05, 0.05 };
+	std::array<double, 6> k_p_f = { 0.5, 0.5, 0 , 0.05, 0.05, 0.05 };
 	std::array<double, 6> k_i_f = { 5, 5, 0, 0.5, 0.5, 0.5 };
 	std::array<double, 6> k_d_f = { 0, 0, 0, 0, 0, 0 };
 
@@ -246,65 +246,70 @@ void simulatedAnnnealing(franka_proxy::franka_hardware_controller& h_controller)
 	control_parameters = { k_p_p, k_i_p, k_d_p, k_p_f, k_i_f, k_d_f };
 
 	//random initialization of parameter set
-	double kPmax = 0.6;
-	double kImax = 0;
-	double kDmax = 0;
+	Eigen::Vector3d max_parameters(0.6, 10.0, 20.0);
 
 	std::random_device rd;
 	std::mt19937 gen{ rd() };
 	std::uniform_real_distribution<double> d(0, 1);
-	double kPr = d(gen); //kp Random [0,1]
-	double kIr = d(gen); //ki Random [0,1]
-	double kDr = d(gen); //kd Random [0,1]
+	Eigen::Vector3d rand_vector(d(gen), d(gen), d(gen));
 
-	Eigen::Vector3d parameter_vector = { kPr * kPmax, kIr * kImax, kDr * kDmax};
-	control_parameters[3][2] = kPr * kPmax;
+	Eigen::Vector3d best_parameter_vector = (rand_vector.array() * max_parameters.array()).matrix();
+	best_parameter_vector(2) = 0; //TODO ---------------------------
+	control_parameters[3][2] = best_parameter_vector(0);
+	control_parameters[4][2] = best_parameter_vector(1);
+	control_parameters[4][2] = best_parameter_vector(2);
 
 	//call hybrid control with parameterSet and calculate F
 	csv_data data{};
 	apply_z_force(h_controller, control_parameters, data);
 	double best_F = data.itae_force(2); //cost Function
 
-	//calculate (or choose) initial Temperature
-	//double worst = 50; //TODO
-	//double best = 0;
-	//double Pr = 0.85;
-	//double T = -(worst - best) / log(0.85); //~308
-	double T = 1000;
+	double T = 1000; //initial T
 	double eta = 1.0; //initial eta
 
-	double target_F = 1.0; //This value of F will be accepted
-	double min_delta_F = 3.5; //
-	int c = 0;
-	int c_max = 5;
-	int k = 0;
+	double target_F = 0.01; //This value of F will be accepted
+	double min_delta_F = 0.2; //This value of F is the threshold for the acceptance counter
+	int c = 0; //consecutive falling below min_delta_F
+	int c_max = 10;
+	int k = 1;
 
-
-	while (best_F > target_F && c < c_max){ // && Delta ISE did not change much in the last n iterations
-
-		//write in sa_overview.csv
-		sa_data_file.open(filename, std::ofstream::out | std::ofstream::app);
-		sa_data_file << k << "," << T << "," << best_F << "," << parameter_vector(0) << "," << eta << "\n";
-		sa_data_file.close();
+	while (best_F > target_F && c < c_max) { // && Delta ISE did not change much in the last n iterations
 
 		//calculate new parameter set (neighbour) based on current paramter set
-		std::normal_distribution<double> d(0, 1);
-		double lambda = d(gen);
-		Eigen::Vector3d lambda_vector = { lambda, 0, 0 };
-		Eigen::Vector3d new_parameter_vector = parameter_vector + eta * lambda_vector;
+		std::normal_distribution<double> nd(0, 1);
+		Eigen::Vector3d lambda_vector = { nd(gen), nd(gen), nd(gen) };
+		Eigen::Vector3d new_parameter_vector = best_parameter_vector + eta * (lambda_vector.array() * max_parameters.array()).matrix();
 
 		//set newParameterVector in necessary boundaries
-		new_parameter_vector(0) = std::max(0.0, std::min(new_parameter_vector(0), kPmax));
+		new_parameter_vector(0) = std::max(0.0, std::min(new_parameter_vector(0), max_parameters(0)));
+		new_parameter_vector(1) = std::max(0.0, std::min(new_parameter_vector(1), max_parameters(1)));
+		new_parameter_vector(2) = std::max(0.0, std::min(new_parameter_vector(2), max_parameters(2)));
 
-		//call hybrid_control with newParameterVector and calculate new ISE
+		new_parameter_vector(2) = 0; //TODO ----------------------------
+
+		//call hybrid_control with newParameterVector and calculate new F
 		control_parameters[3][2] = new_parameter_vector(0);
+		control_parameters[4][2] = new_parameter_vector(1);
+		control_parameters[5][2] = new_parameter_vector(2);
+
 		csv_data data{};
 		apply_z_force(h_controller, control_parameters, data);
 		double new_F = data.itae_force(2);
 
-		std::cout << "k=" << k << "\tT = " << T << "\tbest Kp=" << parameter_vector(0) << "\tnew Kp=" << new_parameter_vector(0) << "\tbest F=" << best_F << "\tnew_F=" << new_F << "\teta=" << eta << "\tc=" << c << std::endl;
+		//write values in sa_overview.csv
+		sa_data_file.open(filename, std::ofstream::out | std::ofstream::app);
+		sa_data_file << k << "," << T << "," << eta << "," << best_F << "," << new_F << "," << best_parameter_vector(0) << "," << new_parameter_vector(0)
+			<< "," << best_parameter_vector(1) << "," << new_parameter_vector(1) << "," << best_parameter_vector(2) << "," << new_parameter_vector(2) << "\n";
+		sa_data_file.close();
 
-		//check if change in ISE was smaller than treshold
+		std::cout << std::fixed;
+		std::cout << std::setprecision(3);
+		std::cout << "k=" << k << "\tT = " << T <<  "\tbest F=" << best_F << "\tnew_F=" << new_F << "\tc=" << c
+			<< "\tbestParams = (" << best_parameter_vector(0) << "," << best_parameter_vector(1) << "," << best_parameter_vector(2) << ")"
+			<< "\tnewParams = (" << new_parameter_vector(0) << "," << new_parameter_vector(1) << "," << new_parameter_vector(2) << ")"
+			<< std::endl;
+
+		//check if change in F was smaller than treshold
 		if (std::abs(best_F - new_F) < min_delta_F) {
 			c++;
 		}
@@ -314,15 +319,14 @@ void simulatedAnnnealing(franka_proxy::franka_hardware_controller& h_controller)
 
 		if (new_F < best_F) { //new parameterVector is better then accept always
 			best_F = new_F;
-			parameter_vector = new_parameter_vector;
+			best_parameter_vector = new_parameter_vector;
 		}
 		else { //if old parameterVector was better, then only accept with boltzmann-related chance
-			std::uniform_real_distribution<double> d(0, 1);
 			double r = d(gen); //rand[0,1]
 
-			if (r < exp(-(new_F-best_F)/T)) {
+			if (r < exp(-(new_F - best_F) / T)) {
 				best_F = new_F;
-				parameter_vector = new_parameter_vector;
+				best_parameter_vector = new_parameter_vector;
 			}
 		}
 
@@ -337,7 +341,7 @@ void simulatedAnnnealing(franka_proxy::franka_hardware_controller& h_controller)
 }
 
 int main() {
-	
+
 	franka_proxy::franka_hardware_controller h_controller("192.168.1.1");
 
 	std::cout << "Starting in 2 seconds..." << std::endl;
