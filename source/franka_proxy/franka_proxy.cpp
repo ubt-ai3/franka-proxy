@@ -202,6 +202,8 @@ csv_data apply_z_force(franka_proxy::franka_hardware_controller& h_controller, s
 	}
 	catch (const franka::Exception& e) {
 		std::cout << "catched Exception: " << e.what() << std::endl;
+		h_controller.automatic_error_recovery();
+		throw;
 	}
 
 	data.ise_position = calculate_ISE(data.position_error);
@@ -246,7 +248,7 @@ void simulatedAnnnealing(franka_proxy::franka_hardware_controller& h_controller)
 	control_parameters = { k_p_p, k_i_p, k_d_p, k_p_f, k_i_f, k_d_f };
 
 	//random initialization of parameter set
-	Eigen::Vector3d max_parameters(0.6, 10.0, 20.0);
+	Eigen::Vector3d max_parameters(1.0, 10.0, 20.0);
 
 	std::random_device rd;
 	std::mt19937 gen{ rd() };
@@ -261,13 +263,19 @@ void simulatedAnnnealing(franka_proxy::franka_hardware_controller& h_controller)
 
 	//call hybrid control with parameterSet and calculate F
 	csv_data data{};
-	apply_z_force(h_controller, control_parameters, data);
-	double best_F = data.itae_force(2); //cost Function
+	double best_F;
+	try {
+		apply_z_force(h_controller, control_parameters, data);
+		best_F = data.itae_force(2); //cost Function
+	}
+	catch (const franka::Exception& e) {
+		best_F = 100000.0;
+	}
 
 	double T = 1000; //initial T
 	double eta = 1.0; //initial eta
 
-	double target_F = 0.01; //This value of F will be accepted
+	double target_F = 0.1; //This value of F will be accepted
 	double min_delta_F = 0.2; //This value of F is the threshold for the acceptance counter
 	int c = 0; //consecutive falling below min_delta_F
 	int c_max = 10;
@@ -293,8 +301,14 @@ void simulatedAnnnealing(franka_proxy::franka_hardware_controller& h_controller)
 		control_parameters[5][2] = new_parameter_vector(2);
 
 		csv_data data{};
-		apply_z_force(h_controller, control_parameters, data);
-		double new_F = data.itae_force(2);
+		double new_F;
+		try {
+			apply_z_force(h_controller, control_parameters, data);
+			new_F = data.itae_force(2);
+		}
+		catch (const franka::Exception& e) {
+			new_F = 100000.0;
+		}
 
 		//write values in sa_overview.csv
 		sa_data_file.open(filename, std::ofstream::out | std::ofstream::app);
@@ -307,7 +321,7 @@ void simulatedAnnnealing(franka_proxy::franka_hardware_controller& h_controller)
 		std::cout << "k=" << k << "\tT = " << T <<  "\tbest F=" << best_F << "\tnew_F=" << new_F << "\tc=" << c
 			<< "\tbestParams = (" << best_parameter_vector(0) << "," << best_parameter_vector(1) << "," << best_parameter_vector(2) << ")"
 			<< "\tnewParams = (" << new_parameter_vector(0) << "," << new_parameter_vector(1) << "," << new_parameter_vector(2) << ")"
-			<< std::endl;
+			<< "\n";
 
 		//check if change in F was smaller than treshold
 		if (std::abs(best_F - new_F) < min_delta_F) {
