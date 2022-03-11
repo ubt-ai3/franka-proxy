@@ -248,7 +248,7 @@ void simulatedAnnnealing(franka_proxy::franka_hardware_controller& h_controller)
 	control_parameters = { k_p_p, k_i_p, k_d_p, k_p_f, k_i_f, k_d_f };
 
 	//random initialization of parameter set
-	Eigen::Vector3d max_parameters(1.0, 15.0, 0.01);
+	Eigen::Vector3d max_parameters(0.6, 20.0, 0.01);
 
 	std::random_device rd;
 	std::mt19937 gen{ rd() };
@@ -263,6 +263,7 @@ void simulatedAnnnealing(franka_proxy::franka_hardware_controller& h_controller)
 	//call hybrid control with parameterSet and calculate F
 	csv_data data{};
 	double best_F;
+	double old_best_F; // Difference between to adjacent best F values
 	try {
 		apply_z_force(h_controller, control_parameters, data);
 		best_F = data.itae_force(2); //cost Function
@@ -270,20 +271,23 @@ void simulatedAnnnealing(franka_proxy::franka_hardware_controller& h_controller)
 	catch (const franka::Exception& e) {
 		best_F = 100000.0;
 	}
+	old_best_F = best_F;
 
-	double T = 1000; //initial T
+	double T = 20; //initial T
 	double eta = 1.0; //initial eta
 
 	double target_F = 0.1; //This value of F will be accepted
-	double min_delta_F = 0.05; //This value of F is the threshold for the acceptance counter
+	double epsilon = 0.05; //two adjacent best_F values have to be under this value for c_max consecutive steps. Then the SA Alg stops.
 	int c = 0; //consecutive falling below min_delta_F
 	int c_max = 10;
 	int k = 1;
+	double mu = 0.0;
+	double sigma = 0.25;
 
 	while (best_F > target_F && c < c_max) { // && Delta ISE did not change much in the last n iterations
 
 		//calculate new parameter set (neighbour) based on current paramter set
-		std::normal_distribution<double> nd(0, 1);
+		std::normal_distribution<double> nd(mu, sigma);
 		Eigen::Vector3d lambda_vector = { nd(gen), nd(gen), nd(gen) };
 		Eigen::Vector3d new_parameter_vector = best_parameter_vector + eta * (lambda_vector.array() * max_parameters.array()).matrix();
 
@@ -313,20 +317,13 @@ void simulatedAnnnealing(franka_proxy::franka_hardware_controller& h_controller)
 			<< "," << best_parameter_vector(1) << "," << new_parameter_vector(1) << "," << best_parameter_vector(2) << "," << new_parameter_vector(2) << "\n";
 		sa_data_file.close();
 
+		//K_D is printed with a factor 1000!
 		std::cout << std::fixed;
-		std::cout << std::setprecision(3);
+		std::cout << std::setprecision(4);
 		std::cout << "k=" << k << "\tT = " << T <<  "\tbest F=" << best_F << "\tnew_F=" << new_F << "\tc=" << c
-			<< "\tbestParams = (" << best_parameter_vector(0) << "," << best_parameter_vector(1) << "," << best_parameter_vector(2) << ")"
-			<< "\tnewParams = (" << new_parameter_vector(0) << "," << new_parameter_vector(1) << "," << new_parameter_vector(2) << ")"
+			<< "\tbestParams = (" << best_parameter_vector(0) << "," << best_parameter_vector(1) << "," << 1000 * best_parameter_vector(2) << ")"
+			<< "\tnewParams = (" << new_parameter_vector(0) << "," << new_parameter_vector(1) << "," << 1000.0 * new_parameter_vector(2) << ")"
 			<< "\n";
-
-		//check if change in F was smaller than treshold
-		if (std::abs(best_F - new_F) < min_delta_F) {
-			c++;
-		}
-		else {
-			c = 0;
-		}
 
 		if (new_F < best_F) { //new parameterVector is better then accept always
 			best_F = new_F;
@@ -341,8 +338,18 @@ void simulatedAnnnealing(franka_proxy::franka_hardware_controller& h_controller)
 			}
 		}
 
+		//check delta_best_F as acceptance criteria
+		if (std::abs(old_best_F - best_F) < epsilon) {
+			c++;
+		}
+		else {
+			c = 0;
+		}
+
+		old_best_F = best_F;
+
 		//Decrease T and eta
-		double l = 0.9;
+		double l = 0.95;
 		T = l * T;
 		eta = l * eta;
 
