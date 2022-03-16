@@ -101,9 +101,9 @@ robot_config_7dof franka_controller_remote::current_config() const
 
 
 int franka_controller_remote::current_gripper_pos() const
-	{ return controller_->current_gripper_pos(); }
+	{ return static_cast<int>( controller_->current_gripper_pos() * gripper_unit_per_m_); }
 int franka_controller_remote::max_gripper_pos() const
-	{ return controller_->max_gripper_pos(); }
+	{ return static_cast<int>(controller_->max_gripper_pos() * gripper_unit_per_m_); }
 void franka_controller_remote::update()
 	{ controller_->update(); }
 

@@ -162,8 +162,8 @@ public:
 
 
 	robot_config_7dof current_config() const;
-	int current_gripper_pos() const;
-	int max_gripper_pos() const;
+	double current_gripper_pos() const;
+	double max_gripper_pos() const;
 	bool gripper_grasped() const;
 
 
@@ -234,8 +234,8 @@ private:
 
 	mutable std::mutex state_lock_;
 	robot_config_7dof current_config_;
-	int current_gripper_pos_;
-	int max_gripper_pos_;
+	double current_gripper_pos_;
+	double max_gripper_pos_;
 	bool gripper_grasped_{false};
 
 
