@@ -126,7 +126,8 @@ public:
 	const Eigen::Affine3d j6_T_tcp;
 	const Eigen::Affine3d tcp_T_j6;
 
-
+	//used to convert internal double gripper width in meters into an int
+	static constexpr double gripper_unit_per_m_ = 1000.0;
 private:
 
 	Eigen::Affine3d build_j6_T_flange() const;

@@ -86,7 +86,6 @@ private:
 	int state_gripper_pos_;
 
 	static constexpr int max_gripper_pos_ = 50;
-	static constexpr int gripper_unit_per_m_ = 1000;
 	static constexpr double gripper_default_speed_mps_ = 0.025;
 };
 
