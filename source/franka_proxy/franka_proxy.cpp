@@ -203,11 +203,11 @@ csv_data apply_z_force(franka_proxy::franka_hardware_controller& h_controller, s
 	start_orientation = initial_transform.linear();
 
 	//Set forces
-	std::vector<std::vector<double>> m;
-	m = read_csv("C:/Users/hecken/Desktop/BA_Hecken/JohannesDaten/recording16457996444757387.csv");
+	//std::vector<std::vector<double>> m;
+	//m = read_csv("C:/Users/hecken/Desktop/BA_Hecken/JohannesDaten/recording16457996444757387.csv");
 	Eigen::Matrix<double, 6, 1> des_force;
 	des_force.setZero();
-	//des_force(2) = -10.0;
+	des_force(2) = -10.0;
 
 
 	std::vector<Eigen::Vector3d> desired_positions;
@@ -217,7 +217,7 @@ csv_data apply_z_force(franka_proxy::franka_hardware_controller& h_controller, s
 	for (int i = 0; i < 5000; i++) {
 		desired_orientations.push_back(start_orientation);
 		desired_positions.push_back(start_pos);
-		des_force(2) = -m[i][3];
+		//des_force(2) = -m[i][3];
 		desired_forces.push_back(des_force);
 	}
 
@@ -243,84 +243,85 @@ csv_data apply_z_force(franka_proxy::franka_hardware_controller& h_controller, s
 
 
 void simulatedAnnnealing(franka_proxy::franka_hardware_controller& h_controller) {
+	//create ccs file and write header line
 	auto t = std::time(nullptr);
 	auto tm = *std::localtime(&t);
 	std::ostringstream oss;
 	oss << std::put_time(&tm, "%d-%m-%Y %H-%M-%S");
 	auto time_string = oss.str();
-
 	std::string path = "C:/Users/hecken/Desktop/BA_Hecken/SA/" + time_string + "/";
 	CreateDirectoryA(path.c_str(), NULL);
 	std::string filename = "C:/Users/hecken/Desktop/BA_Hecken/SA/" + time_string + "/sa_overview.csv";
-
 	std::ofstream sa_data_file;
-
 	sa_data_file.open(filename, std::ofstream::out | std::ofstream::app);
 	sa_data_file << "k,T,eta,best_F,new_F,best_Kp,new_Kp,best_Ki,new_Ki,best_Kd,new_Kd\n";
 	sa_data_file.close();
 
-	//Position Parameters
+	//Position Parameters which are based on experience
 	std::array<double, 6> k_p_p = { -200, -200, -200, -30, -30, -20 };
 	std::array<double, 6> k_i_p = { -30, -30, -30, -5, -5, -5 };
 	std::array<double, 6> k_d_p = { 0, 0, 0, 0, 0, 0 };
 
-	//Ziegler Nichols Method Force Parameters
+	//Force Parameters which are based on experience - z-Dimension will be set by SA Alg
 	std::array<double, 6> k_p_f = { 0.5, 0.5, 0 , 0.05, 0.05, 0.05 };
 	std::array<double, 6> k_i_f = { 5, 5, 0, 0.5, 0.5, 0.5 };
 	std::array<double, 6> k_d_f = { 0, 0, 0, 0, 0, 0 };
 
+	//This array will be modified by SA Alg and is used by the robot
 	std::array<std::array<double, 6>, 6> control_parameters;
 	control_parameters = { k_p_p, k_i_p, k_d_p, k_p_f, k_i_f, k_d_f };
 
-	//random initialization of parameter set
+	//starting the simulated annealing algorithm
+	
+	//setting max values for the z-force parameters
 	Eigen::Vector3d max_parameters(0.6, 20.0, 0.01);
 
+	//random initialization of first parameter set
 	std::random_device rd;
 	std::mt19937 gen{ rd() };
 	std::uniform_real_distribution<double> d(0, 1);
 	Eigen::Vector3d rand_vector(d(gen), d(gen), d(gen));
-
 	Eigen::Vector3d best_parameter_vector = (rand_vector.array() * max_parameters.array()).matrix();
 	control_parameters[3][2] = best_parameter_vector(0);
 	control_parameters[4][2] = best_parameter_vector(1);
 	control_parameters[4][2] = best_parameter_vector(2);
 
-	//call hybrid control with parameterSet and calculate F
+	//call hybrid control with first random parameterSet and calculate start F
 	csv_data data{};
 	double best_F;
 	double old_best_F; // Difference between to adjacent best F values
+	std::cout << "Evaluating first random parameter set..." << std::endl;
 	try {
 		apply_z_force(h_controller, control_parameters, data);
 		best_F = data.itae_force(2); //cost Function
 	}
 	catch (const franka::Exception& e) {
-		best_F = 100000.0;
+		best_F = 100000.0; //TODO set this to something else, or do something else here
 	}
 	old_best_F = best_F;
 
 	double T = 5; //initial T
 	double eta = 1.0; //initial eta
 
-	double target_F = 0.1; //This value of F will be accepted
+	double target_F = 0.1; //If F is below this value the SA ALg. will accept
 	double epsilon = 0.05; //two adjacent best_F values have to be under this value for c_max consecutive steps. Then the SA Alg stops.
-	int c = 0; //consecutive falling below min_delta_F
+	int c = 0; //counter for consecutive differende in best_F < epsilon
 	int c_max = 10;
-	int k = 1;
+	int k = 1; //used in csv file
 	double mu = 0.0;
 	double sigma = 0.25;
 	double l = 0.95;
 
-	while (best_F > target_F && c < c_max) { // && Delta ISE did not change much in the last n iterations
+	while (best_F > target_F && c < c_max) {
 
 		//calculate new parameter set (neighbour) based on current paramter set
 		std::normal_distribution<double> nd(mu, sigma);
-		Eigen::Vector3d lambda_vector = { nd(gen), nd(gen), nd(gen) };
-		Eigen::Vector3d new_parameter_vector = best_parameter_vector + eta * (lambda_vector.array() * max_parameters.array()).matrix();
-
-		//set newParameterVector in necessary boundaries
-		new_parameter_vector(0) = std::max(0.0, std::min(new_parameter_vector(0), max_parameters(0)));
-		new_parameter_vector(1) = std::max(0.0, std::min(new_parameter_vector(1), max_parameters(1)));
-		new_parameter_vector(2) = std::max(0.0, std::min(new_parameter_vector(2), max_parameters(2)));
+		Eigen::Vector3d new_parameter_vector;
+		for (int i = 0; i < 3; i++) {
+			do {
+				new_parameter_vector(i) = best_parameter_vector(i) + eta * nd(gen) * max_parameters(i);
+			} while (new_parameter_vector(i) > max_parameters(i) || new_parameter_vector(i) < 0);
+		}
 
 		//call hybrid_control with newParameterVector and calculate new F
 		control_parameters[3][2] = new_parameter_vector(0);
@@ -334,7 +335,7 @@ void simulatedAnnnealing(franka_proxy::franka_hardware_controller& h_controller)
 			new_F = data.itae_force(2);
 		}
 		catch (const franka::Exception& e) {
-			new_F = 100000.0;
+			new_F = 100000.0; //TODO change to something else
 			c = 0;
 		}
 
@@ -344,7 +345,7 @@ void simulatedAnnnealing(franka_proxy::franka_hardware_controller& h_controller)
 			<< "," << best_parameter_vector(1) << "," << new_parameter_vector(1) << "," << best_parameter_vector(2) << "," << new_parameter_vector(2) << "\n";
 		sa_data_file.close();
 
-		//K_D is printed with a factor 1000!
+		//printing on console (K_D is printed on console with a factor 1000)
 		std::cout << std::fixed;
 		std::cout << std::setprecision(4);
 		std::cout << "k=" << k << "\tT = " << T << "\tbest F=" << best_F << "\tnew_F=" << new_F << "\tc=" << c
@@ -355,16 +356,17 @@ void simulatedAnnnealing(franka_proxy::franka_hardware_controller& h_controller)
 		}
 		std::cout << "\n";
 
+
 		if (new_F < best_F) { //new parameterVector is better then accept always
-			best_F = new_F;
 			best_parameter_vector = new_parameter_vector;
+			best_F = new_F;
 		}
 		else { //if old parameterVector was better, then only accept with boltzmann-related chance
 			double r = d(gen); //rand[0,1]
 
-			if (r < exp(-(new_F - best_F) / T)) {
-				best_F = new_F;
+			if (r < exp(-(new_F - best_F) / T)) { //Boltzmann
 				best_parameter_vector = new_parameter_vector;
+				best_F = new_F;
 			}
 		}
 
@@ -394,25 +396,25 @@ int main() {
 	std::cout << "Starting in 2 seconds..." << std::endl;
 	std::this_thread::sleep_for(std::chrono::seconds(2));
 
-	//simulatedAnnnealing(h_controller);
+	simulatedAnnnealing(h_controller);
 
 
-	//Position Parameters
-	std::array<double, 6> k_p_p = { -200, -200, -200, -30, -30, -20 };
-	std::array<double, 6> k_i_p = { -30, -30, -30, -5, -5, -5 };
-	std::array<double, 6> k_d_p = { 0, 0, 0, 0, 0, 0 };
+	////Position Parameters
+	//std::array<double, 6> k_p_p = { -200, -200, -200, -30, -30, -20 };
+	//std::array<double, 6> k_i_p = { -30, -30, -30, -5, -5, -5 };
+	//std::array<double, 6> k_d_p = { 0, 0, 0, 0, 0, 0 };
 
-	//Ziegler Nichols Method Force Parameters
-	std::array<double, 6> k_p_f = { 0.5, 0.5, 0.0731 , 0.05, 0.05, 0.05 };
-	std::array<double, 6> k_i_f = { 5, 5, 6.4264, 0.5, 0.5, 0.5 };
-	std::array<double, 6> k_d_f = { 0, 0, 0.009677, 0, 0, 0 };
+	////Ziegler Nichols Method Force Parameters
+	//std::array<double, 6> k_p_f = { 0.5, 0.5, 0.0731 , 0.05, 0.05, 0.05 };
+	//std::array<double, 6> k_i_f = { 5, 5, 6.4264, 0.5, 0.5, 0.5 };
+	//std::array<double, 6> k_d_f = { 0, 0, 0.009677, 0, 0, 0 };
 
-	std::array<std::array<double, 6>, 6> control_parameters;
-	control_parameters = { k_p_p, k_i_p, k_d_p, k_p_f, k_i_f, k_d_f };
+	//std::array<std::array<double, 6>, 6> control_parameters;
+	//control_parameters = { k_p_p, k_i_p, k_d_p, k_p_f, k_i_f, k_d_f };
 
-	csv_data data{};
+	//csv_data data{};
 
-	apply_z_force(h_controller, control_parameters, data);
+	//apply_z_force(h_controller, control_parameters, data);
 
 	return 0;
 }
