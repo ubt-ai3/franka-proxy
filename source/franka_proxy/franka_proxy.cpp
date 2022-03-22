@@ -296,23 +296,25 @@ void simulatedAnnnealing(franka_proxy::franka_hardware_controller& h_controller)
 		best_F = data.itae_force(2); //cost Function
 	}
 	catch (const franka::Exception& e) {
-		best_F = 100000.0; //TODO set this to something else, or do something else here
+		std::cout << "First random set of parameters caused exception..." << std::endl;
+		return;
 	}
 	old_best_F = best_F;
 
-	double T = 5; //initial T
-	double eta = 1.0; //initial eta
+	double T = 1; //initial T
+	double eta = 0.25; //initial eta
 
-	double target_F = 0.1; //If F is below this value the SA ALg. will accept
 	double epsilon = 0.05; //two adjacent best_F values have to be under this value for c_max consecutive steps. Then the SA Alg stops.
 	int c = 0; //counter for consecutive differende in best_F < epsilon
 	int c_max = 10;
+	int exc = 0; //number of consecutive exceptions
+	int exc_max = 5; //after five consecutive exceptions the programm will abort
 	int k = 1; //used in csv file
 	double mu = 0.0;
-	double sigma = 0.25;
-	double l = 0.95;
+	double sigma = 1.0;
+	double l = 0.99;
 
-	while (best_F > target_F && c < c_max) {
+	while (c < c_max && exc < exc_max) {
 
 		//calculate new parameter set (neighbour) based on current paramter set
 		std::normal_distribution<double> nd(mu, sigma);
@@ -333,10 +335,12 @@ void simulatedAnnnealing(franka_proxy::franka_hardware_controller& h_controller)
 		try {
 			apply_z_force(h_controller, control_parameters, data);
 			new_F = data.itae_force(2);
+			exc = 0;
 		}
 		catch (const franka::Exception& e) {
-			new_F = 100000.0; //TODO change to something else
 			c = 0;
+			exc++;
+			continue;
 		}
 
 		//write values in sa_overview.csv
