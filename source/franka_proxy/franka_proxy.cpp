@@ -214,6 +214,21 @@ csv_data apply_z_force(franka_proxy::franka_hardware_controller& h_controller, s
 	std::vector<Eigen::Matrix<double, 6, 1>> desired_forces;
 	std::vector<Eigen::Quaterniond> desired_orientations;
 
+	//desired x position
+	double a = 5; //[cm/s^2]
+	Eigen::Vector3d pos;
+	pos = start_pos;
+	std::vector<Eigen::Vector3d> des_pos;
+
+	for (int i = 0; i < 1000; i++) { // 1s linear increasing velocity
+		pos(0) += 0.5 * a * (i / 1000.0) * (i / 1000.0);
+		des_pos.push_back(pos);
+	}
+	for (int i = 0; i < 4000; i++) { // 4s constant velocity
+		pos(0) += (i / 1000.0) * a;
+	}
+
+
 	for (int i = 0; i < 5000; i++) {
 		desired_orientations.push_back(start_orientation);
 		desired_positions.push_back(start_pos);
@@ -242,7 +257,7 @@ csv_data apply_z_force(franka_proxy::franka_hardware_controller& h_controller, s
 }
 
 
-void simulatedAnnnealing(franka_proxy::franka_hardware_controller& h_controller) {
+Eigen::Vector3d simulatedAnnnealing(franka_proxy::franka_hardware_controller& h_controller) {
 	//create ccs file and write header line
 	auto t = std::time(nullptr);
 	auto tm = *std::localtime(&t);
@@ -281,38 +296,41 @@ void simulatedAnnnealing(franka_proxy::franka_hardware_controller& h_controller)
 	std::mt19937 gen{ rd() };
 	std::uniform_real_distribution<double> d(0, 1);
 	Eigen::Vector3d rand_vector(d(gen), d(gen), d(gen));
-	Eigen::Vector3d best_parameter_vector = (rand_vector.array() * max_parameters.array()).matrix();
-	control_parameters[3][2] = best_parameter_vector(0);
-	control_parameters[4][2] = best_parameter_vector(1);
-	control_parameters[4][2] = best_parameter_vector(2);
+	Eigen::Vector3d initial_parameter_vector = (rand_vector.array() * max_parameters.array()).matrix();
+	control_parameters[3][2] = initial_parameter_vector(0);
+	control_parameters[4][2] = initial_parameter_vector(1);
+	control_parameters[4][2] = initial_parameter_vector(2);
 
 	//call hybrid control with first random parameterSet and calculate start F
 	csv_data data{};
-	double best_F;
-	double old_best_F; // Difference between to adjacent best F values
+	double initial_F;
 	std::cout << "Evaluating first random parameter set..." << std::endl;
 	try {
 		apply_z_force(h_controller, control_parameters, data);
-		best_F = data.itae_force(2); //cost Function
+		initial_F = data.itae_force(2); //cost Function
 	}
 	catch (const franka::Exception& e) {
-		std::cout << "First random set of parameters caused exception..." << std::endl;
+		std::cout << "First random set of parameters (" << initial_parameter_vector(0) << ", " << initial_parameter_vector(1) << ", " 
+			<< initial_parameter_vector(2) << ") caused exception..." << std::endl;
 		return;
 	}
-	old_best_F = best_F;
+	double current_F = initial_F;
+	double best_F = initial_F;
+	Eigen::Vector3d current_parameter_vector = initial_parameter_vector;
+	Eigen::Vector3d best_parameter_vector = initial_parameter_vector;
 
-	double T = 1; //initial T
+	double T = 0.1; //initial T
 	double eta = 0.25; //initial eta
 
-	double epsilon = 0.05; //two adjacent best_F values have to be under this value for c_max consecutive steps. Then the SA Alg stops.
-	int c = 0; //counter for consecutive differende in best_F < epsilon
-	int c_max = 10;
+	//double epsilon = 0.005; //two adjacent best_F values have to be under this value for c_max consecutive steps. Then the SA Alg stops.
+	int c = 0; //counter for consecutive remaining parameterVector
+	int c_max = 20;
 	int exc = 0; //number of consecutive exceptions
 	int exc_max = 5; //after five consecutive exceptions the programm will abort
 	int k = 1; //used in csv file
 	double mu = 0.0;
 	double sigma = 1.0;
-	double l = 0.99;
+	double l = 0.995;
 
 	while (c < c_max && exc < exc_max) {
 
@@ -321,7 +339,7 @@ void simulatedAnnnealing(franka_proxy::franka_hardware_controller& h_controller)
 		Eigen::Vector3d new_parameter_vector;
 		for (int i = 0; i < 3; i++) {
 			do {
-				new_parameter_vector(i) = best_parameter_vector(i) + eta * nd(gen) * max_parameters(i);
+				new_parameter_vector(i) = current_parameter_vector(i) + eta * nd(gen) * max_parameters(i);
 			} while (new_parameter_vector(i) > max_parameters(i) || new_parameter_vector(i) < 0);
 		}
 
@@ -340,8 +358,17 @@ void simulatedAnnnealing(franka_proxy::franka_hardware_controller& h_controller)
 		catch (const franka::Exception& e) {
 			c = 0;
 			exc++;
+			std::cout << "The parameter set: (" << new_parameter_vector(0) << ", " << new_parameter_vector(1) << ", "
+				<< new_parameter_vector(2)*1000 << ") caused an exception!" << std::endl;
 			continue;
 		}
+		////check delta_best_F as acceptance criteria
+		//if (std::abs(current_F - new_F) < epsilon) {
+		//	c++;
+		//}
+		//else {
+		//	c = 0;
+		//}
 
 		//write values in sa_overview.csv
 		sa_data_file.open(filename, std::ofstream::out | std::ofstream::app);
@@ -352,37 +379,38 @@ void simulatedAnnnealing(franka_proxy::franka_hardware_controller& h_controller)
 		//printing on console (K_D is printed on console with a factor 1000)
 		std::cout << std::fixed;
 		std::cout << std::setprecision(4);
-		std::cout << "k=" << k << "\tT = " << T << "\tbest F=" << best_F << "\tnew_F=" << new_F << "\tc=" << c
-			<< "\tbestParams = (" << best_parameter_vector(0) << "," << best_parameter_vector(1) << "," << 1000 * best_parameter_vector(2) << ")"
+		std::cout << "k=" << k << "\tT = " << T << "\tcurrent F=" << current_F << "\tnew_F=" << new_F << "\tc=" << c
+			<< "\tcurrentParams = (" << current_parameter_vector(0) << "," << current_parameter_vector(1) << "," << 1000 * current_parameter_vector(2) << ")"
 			<< "\tnewParams = (" << new_parameter_vector(0) << "," << new_parameter_vector(1) << "," << 1000.0 * new_parameter_vector(2) << ")";
 		if ((exp(-(new_F - best_F) / T)) < 1.0) {
-			std::cout << "\tprop_worse = " << (exp(-(new_F - best_F) / T));
+			std::cout << "    prop_worse = " << (exp(-(new_F - best_F) / T));
 		}
 		std::cout << "\n";
 
 
-		if (new_F < best_F) { //new parameterVector is better then accept always
-			best_parameter_vector = new_parameter_vector;
-			best_F = new_F;
+		if (new_F < current_F) { //new parameterVector is better then change to this parameterVector
+			current_parameter_vector = new_parameter_vector;
+			current_F = new_F;
 		}
-		else { //if old parameterVector was better, then only accept with boltzmann-related chance
+		else { //if current parameterVector was better, then only accept with boltzmann-related chance
 			double r = d(gen); //rand[0,1]
 
 			if (r < exp(-(new_F - best_F) / T)) { //Boltzmann
-				best_parameter_vector = new_parameter_vector;
-				best_F = new_F;
+				current_parameter_vector = new_parameter_vector;
+				current_F = new_F;
 			}
+			else {
+				c++; // if nothing changes increase c for termination criterium
+			}
+			//else current_parameter is not changed
 		}
 
-		//check delta_best_F as acceptance criteria
-		if (std::abs(old_best_F - best_F) < epsilon) {
-			c++;
-		}
-		else {
-			c = 0;
-		}
 
-		old_best_F = best_F;
+		//Save the overall best value
+		if (new_F < best_F) {
+			best_F = new_F;
+			best_parameter_vector = new_parameter_vector;
+		}
 
 		//Decrease T and eta
 		T = l * T;
@@ -390,7 +418,7 @@ void simulatedAnnnealing(franka_proxy::franka_hardware_controller& h_controller)
 
 		k++;
 	}
-
+	return best_parameter_vector;
 }
 
 int main() {
@@ -400,7 +428,8 @@ int main() {
 	std::cout << "Starting in 2 seconds..." << std::endl;
 	std::this_thread::sleep_for(std::chrono::seconds(2));
 
-	simulatedAnnnealing(h_controller);
+	Eigen::Vector3d param_set = simulatedAnnnealing(h_controller);
+	std::cout << "SA Alg gives parameter set: " << param_set << std::endl;
 
 
 	////Position Parameters
