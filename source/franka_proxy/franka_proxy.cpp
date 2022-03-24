@@ -119,7 +119,7 @@ void csv_parser(csv_data data) {
 	oss << std::put_time(&tm, "%d-%m-%Y %H-%M-%S");
 	auto time_string = oss.str();
 
-	std::string path = "C:/Users/hecken/Desktop/BA_Hecken/csv_data_files/" + time_string + "/";
+	std::string path = "H:/DB_Forschung/flexPro/11.Unterprojekte/BA_Laurin_Hecken/05_Rohdaten/csv_output/" + time_string + "/";
 	CreateDirectoryA(path.c_str(), NULL);
 
 	create_overview_csv(data, path + "overview.csv");
@@ -264,12 +264,12 @@ Eigen::Vector3d simulatedAnnnealing(franka_proxy::franka_hardware_controller& h_
 	std::ostringstream oss;
 	oss << std::put_time(&tm, "%d-%m-%Y %H-%M-%S");
 	auto time_string = oss.str();
-	std::string path = "C:/Users/hecken/Desktop/BA_Hecken/SA/" + time_string + "/";
+	std::string path = "H:/DB_Forschung/flexPro/11.Unterprojekte/BA_Laurin_Hecken/05_Rohdaten/sa_overview_output/" + time_string + "/";
 	CreateDirectoryA(path.c_str(), NULL);
-	std::string filename = "C:/Users/hecken/Desktop/BA_Hecken/SA/" + time_string + "/sa_overview.csv";
+	std::string filename = "H:/DB_Forschung/flexPro/11.Unterprojekte/BA_Laurin_Hecken/05_Rohdaten/sa_overview_output/" + time_string + "/sa_overview.csv";
 	std::ofstream sa_data_file;
 	sa_data_file.open(filename, std::ofstream::out | std::ofstream::app);
-	sa_data_file << "k,T,eta,best_F,new_F,best_Kp,new_Kp,best_Ki,new_Ki,best_Kd,new_Kd\n";
+	sa_data_file << "k,T,eta,best_F,current_F,new_F,best_Kp,current_Kp,new_Kp,best_Ki,current_Ki,new_Ki,best_Kd,current_Kd,new_Kd,c\n";
 	sa_data_file.close();
 
 	//Position Parameters which are based on experience
@@ -312,7 +312,7 @@ Eigen::Vector3d simulatedAnnnealing(franka_proxy::franka_hardware_controller& h_
 	catch (const franka::Exception& e) {
 		std::cout << "First random set of parameters (" << initial_parameter_vector(0) << ", " << initial_parameter_vector(1) << ", " 
 			<< initial_parameter_vector(2) << ") caused exception..." << std::endl;
-		return;
+		throw;
 	}
 	double current_F = initial_F;
 	double best_F = initial_F;
@@ -321,16 +321,14 @@ Eigen::Vector3d simulatedAnnnealing(franka_proxy::franka_hardware_controller& h_
 
 	double T = 0.1; //initial T
 	double eta = 0.25; //initial eta
-
-	//double epsilon = 0.005; //two adjacent best_F values have to be under this value for c_max consecutive steps. Then the SA Alg stops.
 	int c = 0; //counter for consecutive remaining parameterVector
 	int c_max = 20;
 	int exc = 0; //number of consecutive exceptions
-	int exc_max = 5; //after five consecutive exceptions the programm will abort
+	int exc_max = 10; //after five consecutive exceptions the programm will abort
 	int k = 1; //used in csv file
 	double mu = 0.0;
 	double sigma = 1.0;
-	double l = 0.995;
+	double l = 0.999;
 
 	while (c < c_max && exc < exc_max) {
 
@@ -358,39 +356,39 @@ Eigen::Vector3d simulatedAnnnealing(franka_proxy::franka_hardware_controller& h_
 		catch (const franka::Exception& e) {
 			c = 0;
 			exc++;
-			std::cout << "The parameter set: (" << new_parameter_vector(0) << ", " << new_parameter_vector(1) << ", "
-				<< new_parameter_vector(2)*1000 << ") caused an exception!" << std::endl;
+			std::cout << "The parameter set: ("
+				<< new_parameter_vector(0) << ", " << new_parameter_vector(1) << ", " << new_parameter_vector(2)*1000
+				<< ") caused an exception!" << std::endl;
 			continue;
 		}
-		////check delta_best_F as acceptance criteria
-		//if (std::abs(current_F - new_F) < epsilon) {
-		//	c++;
-		//}
-		//else {
-		//	c = 0;
-		//}
-
-		//write values in sa_overview.csv
-		sa_data_file.open(filename, std::ofstream::out | std::ofstream::app);
-		sa_data_file << k << "," << T << "," << eta << "," << best_F << "," << new_F << "," << best_parameter_vector(0) << "," << new_parameter_vector(0)
-			<< "," << best_parameter_vector(1) << "," << new_parameter_vector(1) << "," << best_parameter_vector(2) << "," << new_parameter_vector(2) << "\n";
-		sa_data_file.close();
 
 		//printing on console (K_D is printed on console with a factor 1000)
 		std::cout << std::fixed;
 		std::cout << std::setprecision(4);
-		std::cout << "k=" << k << "\tT = " << T << "\tcurrent F=" << current_F << "\tnew_F=" << new_F << "\tc=" << c
-			<< "\tcurrentParams = (" << current_parameter_vector(0) << "," << current_parameter_vector(1) << "," << 1000 * current_parameter_vector(2) << ")"
-			<< "\tnewParams = (" << new_parameter_vector(0) << "," << new_parameter_vector(1) << "," << 1000.0 * new_parameter_vector(2) << ")";
-		if ((exp(-(new_F - best_F) / T)) < 1.0) {
-			std::cout << "    prop_worse = " << (exp(-(new_F - best_F) / T));
+		std::cout << "k=" << k << "\tT=" << T
+			<< "\tbestF=" << best_F << "\tcurrentF=" << current_F << "\tnewF=" << new_F
+			<< "\tcurrentParams=(" << current_parameter_vector(0) << "," << current_parameter_vector(1) << "," << 1000 * current_parameter_vector(2) << ")"
+			<< "\tnewParams=(" << new_parameter_vector(0) << "," << new_parameter_vector(1) << "," << 1000.0 * new_parameter_vector(2) << ")"
+			<< "    c=" << c;
+		if ((exp(-(new_F - current_F) / T)) < 1.0) {
+			std::cout << "    prop_worse = " << (exp(-(new_F - current_F) / T));
 		}
 		std::cout << "\n";
 
+		//write values in sa_overview.csv
+		sa_data_file.open(filename, std::ofstream::out | std::ofstream::app);
+		sa_data_file << k << "," << T << "," << eta << "," 
+			<< best_F << "," << current_F << "," << new_F << ","
+			<< best_parameter_vector(0) << "," << current_parameter_vector(0) << "," << new_parameter_vector(0)	<< ","
+			<< best_parameter_vector(1) << "," << current_parameter_vector(1) << "," << new_parameter_vector(1) << "," 
+			<< best_parameter_vector(2) << "," << current_parameter_vector(2) << "," << new_parameter_vector(2) << ","
+			<< c << "\n";
+		sa_data_file.close();
 
 		if (new_F < current_F) { //new parameterVector is better then change to this parameterVector
 			current_parameter_vector = new_parameter_vector;
 			current_F = new_F;
+			c = 0;
 		}
 		else { //if current parameterVector was better, then only accept with boltzmann-related chance
 			double r = d(gen); //rand[0,1]
@@ -398,19 +396,19 @@ Eigen::Vector3d simulatedAnnnealing(franka_proxy::franka_hardware_controller& h_
 			if (r < exp(-(new_F - best_F) / T)) { //Boltzmann
 				current_parameter_vector = new_parameter_vector;
 				current_F = new_F;
+				c = 0;
 			}
 			else {
 				c++; // if nothing changes increase c for termination criterium
 			}
-			//else current_parameter is not changed
 		}
-
 
 		//Save the overall best value
 		if (new_F < best_F) {
 			best_F = new_F;
 			best_parameter_vector = new_parameter_vector;
 		}
+
 
 		//Decrease T and eta
 		T = l * T;
