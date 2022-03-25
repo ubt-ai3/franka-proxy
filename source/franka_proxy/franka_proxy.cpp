@@ -403,8 +403,13 @@ Eigen::Vector3d simulatedAnnnealing(franka_proxy::franka_hardware_controller& h_
 
 			if (r < exp(-(new_F - current_F) / T)) { //Boltzmann
 				current_parameter_vector = new_parameter_vector;
+				if (std::abs(current_F - new_F) > delta_F) { //only set termination criteria c to zero if the change in F is significant
+					c = 0;
+				}
+				else {
+					c++;
+				}
 				current_F = new_F;
-				c = 0;
 			}
 			else {
 				c++; // if nothing changes increase c for termination criterium
