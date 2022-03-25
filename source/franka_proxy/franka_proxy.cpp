@@ -323,12 +323,14 @@ Eigen::Vector3d simulatedAnnnealing(franka_proxy::franka_hardware_controller& h_
 	double eta = 0.25; //initial eta
 	int c = 0; //counter for consecutive remaining parameterVector
 	int c_max = 20;
-	int exc = 0; //number of consecutive exceptions
-	int exc_max = 10; //after five consecutive exceptions the programm will abort
+	int exc = 0; //counter for consecutive exceptions
+	int exc_max = 10; //the programm will abort if this number of consecutive exceptions happen
 	int k = 1; //used in csv file
 	double mu = 0.0;
+
 	double sigma = 1.0;
-	double l = 0.999;
+	double l = 0.99;
+	double delta_F = 0.01;
 
 	while (c < c_max && exc < exc_max) {
 
@@ -387,13 +389,19 @@ Eigen::Vector3d simulatedAnnnealing(franka_proxy::franka_hardware_controller& h_
 
 		if (new_F < current_F) { //new parameterVector is better then change to this parameterVector
 			current_parameter_vector = new_parameter_vector;
+			if (std::abs(current_F - new_F) > delta_F) { //only set termination criteria c to zero if the change in F is significant
+				c = 0;
+			}
+			else {
+				c++;
+			}
 			current_F = new_F;
-			c = 0;
+			
 		}
 		else { //if current parameterVector was better, then only accept with boltzmann-related chance
 			double r = d(gen); //rand[0,1]
 
-			if (r < exp(-(new_F - best_F) / T)) { //Boltzmann
+			if (r < exp(-(new_F - current_F) / T)) { //Boltzmann
 				current_parameter_vector = new_parameter_vector;
 				current_F = new_F;
 				c = 0;
