@@ -135,6 +135,7 @@ void csv_parser(csv_data data) {
 	put_data_in_csv(data.force_command_i, path + "force_command_i.csv");
 	put_data_in_csv(data.force_command_d, path + "force_command_d.csv");
 
+	put_data_in_csv(data.position, path + "position.csv");
 	put_data_in_csv(data.position_error, path + "position_error.csv");
 	put_data_in_csv(data.position_error_integral, path + "position_error_integral.csv");
 	put_data_in_csv(data.position_error_diff_filtered, path + "position_error_diff_filtered.csv");
@@ -215,23 +216,29 @@ csv_data apply_z_force(franka_proxy::franka_hardware_controller& h_controller, s
 	std::vector<Eigen::Quaterniond> desired_orientations;
 
 	//desired x position
-	double a = 5; //[cm/s^2]
+	double a = -0.075; //[m/s^2]
 	Eigen::Vector3d pos;
 	pos = start_pos;
 	std::vector<Eigen::Vector3d> des_pos;
 
 	for (int i = 0; i < 1000; i++) { // 1s linear increasing velocity
-		pos(0) += 0.5 * a * (i / 1000.0) * (i / 1000.0);
+		pos(0) = 0.5 * a * (i / 1000.0) * (i / 1000.0) + start_pos(0);
 		des_pos.push_back(pos);
 	}
-	for (int i = 0; i < 4000; i++) { // 4s constant velocity
-		pos(0) += (i / 1000.0) * a;
+	for (int i = 0; i < 3000; i++) { // 3s constant velocity
+		pos(0) = a * (i / 1000.0) + 0.5 * a + start_pos(0); //s = a * t + s(t=1)
+		des_pos.push_back(pos);
+	}
+	for (int i = 0; i < 1000; i++) { // 1s linear decreasing velocity
+		pos(0) = -0.5 * a * (i / 1000.0) * (i / 1000.0) + a * (i/1000.0) + 3.5 * a + start_pos(0); // s = -a * t^2 + v(t=4) * t + s(t=4)
+		des_pos.push_back(pos);
 	}
 
 
 	for (int i = 0; i < 5000; i++) {
 		desired_orientations.push_back(start_orientation);
-		desired_positions.push_back(start_pos);
+		//desired_positions.push_back(start_pos);
+		desired_positions.push_back(des_pos[i]);
 		//des_force(2) = -m[i][3];
 		desired_forces.push_back(des_force);
 	}
@@ -439,26 +446,40 @@ int main() {
 	std::cout << "Starting in 2 seconds..." << std::endl;
 	std::this_thread::sleep_for(std::chrono::seconds(2));
 
-	Eigen::Vector3d param_set = simulatedAnnnealing(h_controller);
-	std::cout << "SA Alg gives parameter set: " << param_set << std::endl;
+	//Eigen::Vector3d param_set = simulatedAnnnealing(h_controller);
+	//std::cout << "SA Alg gives parameter set: " << param_set << std::endl;
 
 
-	////Position Parameters
-	//std::array<double, 6> k_p_p = { -200, -200, -200, -30, -30, -20 };
-	//std::array<double, 6> k_i_p = { -30, -30, -30, -5, -5, -5 };
-	//std::array<double, 6> k_d_p = { 0, 0, 0, 0, 0, 0 };
+	//Position Parameters
+	std::array<double, 6> k_p_p = { -50, -50, -50, -10, -30, -10 };
+	std::array<double, 6> k_i_p = { -20, -20, -20, -10, -20, -10 };
+	std::array<double, 6> k_d_p = { 0, 0, 0, 0, 0, 0 };
 
-	////Ziegler Nichols Method Force Parameters
-	//std::array<double, 6> k_p_f = { 0.5, 0.5, 0.0731 , 0.05, 0.05, 0.05 };
-	//std::array<double, 6> k_i_f = { 5, 5, 6.4264, 0.5, 0.5, 0.5 };
-	//std::array<double, 6> k_d_f = { 0, 0, 0.009677, 0, 0, 0 };
+	//Ziegler Nichols Method Force Parameters
+	std::array<double, 6> k_p_f = { 0.2, 0.2, 0.2, 0.02, 0.05, 0.05 };
+	std::array<double, 6> k_i_f = { 5, 5, 16, 0.5, 0.5, 0.5 };
+	std::array<double, 6> k_d_f = { 0, 0, 0.003, 0, 0, 0 };
 
-	//std::array<std::array<double, 6>, 6> control_parameters;
-	//control_parameters = { k_p_p, k_i_p, k_d_p, k_p_f, k_i_f, k_d_f };
+	std::array<std::array<double, 6>, 6> control_parameters;
+	control_parameters = { k_p_p, k_i_p, k_d_p, k_p_f, k_i_f, k_d_f };
+	
 
-	//csv_data data{};
+	csv_data data{};
+	apply_z_force(h_controller, control_parameters, data);
 
-	//apply_z_force(h_controller, control_parameters, data);
+	/*for (int i = 0; i < 20; i++) {
+		csv_data data{};
+		apply_z_force(h_controller, control_parameters, data);
+		std::cout << data.itae_force(2) << std::endl;
+	}*/
+
+	std::array<double, 7> pos_air_x = { 0.0445302, 0.157452, -0.0226488, -2.44288, 0.0199934, 2.7444, 0.778894 }; //in air (middle) for linear x movement
+	try {
+		h_controller.move_to(pos_air_x);
+	}
+	catch (const franka::Exception& e) {
+		std::cout << "catched Exception when moving to air position: " << e.what() << std::endl;
+	}
 
 	return 0;
 }

@@ -291,6 +291,18 @@ franka::Torques hybrid_control_motion_generator::callback
 	Eigen::Vector3d position(transform.translation());
 	Eigen::Quaterniond orientation(transform.linear());
 
+
+	Eigen::Matrix<double, 6, 1> pos;
+	pos(0, 0) = position(0);
+	pos(1, 0) = position(1);
+	pos(2, 0) = position(2);
+	pos(3, 0) = orientation.coeffs()(0);
+	pos(4, 0) = orientation.coeffs()(1);
+	pos(5, 0) = orientation.coeffs()(2);
+
+	data_.position.push_back(pos);
+
+
 	//Position error
 	Eigen::Matrix<double, 6, 1> position_error;
 	position_error.head(3) = position - position_desired_;
