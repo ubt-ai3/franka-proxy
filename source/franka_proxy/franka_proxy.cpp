@@ -217,26 +217,27 @@ csv_data apply_z_force(franka_proxy::franka_hardware_controller& h_controller, s
 	std::vector<Eigen::Quaterniond> desired_orientations;
 
 	//desired x position
-	double a = -0.05; //[m/s^2]
+	double a = -0.02; //[m/s^2]
+	double t = 8.0; // must be greater than 2.0
 	Eigen::Vector3d pos;
 	pos = start_pos;
 	std::vector<Eigen::Vector3d> des_pos;
 
-	for (int i = 0; i < 1000; i++) { // 1s linear increasing velocity
-		pos(0) = 0.5 * a * (i / 1000.0) * (i / 1000.0) + start_pos(0);
+	for (double i = 0; i < 1.0; i += 0.001) { // 1s linear increasing velocity
+		pos(0) = 0.5 * a * i * i + start_pos(0);
 		des_pos.push_back(pos);
 	}
-	for (int i = 0; i < 3000; i++) { // 3s constant velocity
-		pos(0) = a * (i / 1000.0) + 0.5 * a + start_pos(0); //s = a * t + s(t=1)
+	for (double i = 0; i < (t-2.0); i += 0.001) { // t - 2s constant velocity
+		pos(0) = a * i + 0.5 * a + start_pos(0); //s = a * t + s(t=1)
 		des_pos.push_back(pos);
 	}
-	for (int i = 0; i < 1000; i++) { // 1s linear decreasing velocity
-		pos(0) = -0.5 * a * (i / 1000.0) * (i / 1000.0) + a * (i/1000.0) + 3.5 * a + start_pos(0); // s = -a * t^2 + v(t=4) * t + s(t=4)
+	for (double i = 0; i < 1.0; i += 0.001) { // 1s linear decreasing velocity
+		pos(0) = -0.5 * a * i * i + a * i + 0.5 * a + (t-2.0) * a + start_pos(0); // s = -0.5 a * t^2 + v(t=4) * t + s(t=4)
 		des_pos.push_back(pos);
 	}
 
 
-	for (int i = 0; i < 5000; i++) {
+	for (int i = 0; i < (t*1000); i++) {
 		desired_orientations.push_back(start_orientation);
 		//desired_positions.push_back(start_pos);
 		desired_positions.push_back(des_pos[i]);
@@ -245,7 +246,7 @@ csv_data apply_z_force(franka_proxy::franka_hardware_controller& h_controller, s
 	}
 	for (int i = 0; i < 1000; i++) {
 		desired_orientations.push_back(start_orientation);
-		desired_positions.push_back(des_pos[4999]);
+		desired_positions.push_back(des_pos[(t*1000)-1]);
 		desired_forces.push_back(des_force);
 	}
 
@@ -457,8 +458,8 @@ int main() {
 
 
 	//Position Parameters
-	std::array<double, 6> k_p_p = { -3000, -50, -50, -10, -1500, -10 };
-	std::array<double, 6> k_i_p = { 0, -20, -20, -5, 0, -5 };
+	std::array<double, 6> k_p_p = { -3000, -100, -100, -100, -1500, -100 };
+	std::array<double, 6> k_i_p = { 0, 0, 0, 0, 0, 0 };
 	std::array<double, 6> k_d_p = { 0, 0, 0, 0, 0, 0 };
 
 	//Ziegler Nichols Method Force Parameters
