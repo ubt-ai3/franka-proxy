@@ -284,6 +284,17 @@ franka::Torques hybrid_control_motion_generator::callback
 	orientation_desired_ = desired_orientations_[count_loop_];
 	position_desired_ = desired_positions_[count_loop_];
 
+	Eigen::Matrix<double, 6, 1> des_pos;
+	des_pos(0, 0) = position_desired_(0);
+	des_pos(1, 0) = position_desired_(1);
+	des_pos(2, 0) = position_desired_(2);
+	des_pos(3, 0) = orientation_desired_.coeffs()(0);
+	des_pos(4, 0) = orientation_desired_.coeffs()(1);
+	des_pos(5, 0) = orientation_desired_.coeffs()(2);
+
+	data_.position_desired.push_back(des_pos);
+
+
 	//Current position
 	auto current_pose = model_.pose(franka::Frame::kEndEffector, robot_state.q, robot_state.F_T_EE, robot_state.EE_T_K);
 	Eigen::Affine3d transform(Eigen::Matrix4d::Map(current_pose.data())); //was used in new spring damper control

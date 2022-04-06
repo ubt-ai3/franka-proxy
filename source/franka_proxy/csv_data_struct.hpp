@@ -35,6 +35,7 @@ struct csv_data {
 	std::vector<Eigen::Matrix<double, 6, 1>> force_command_d;
 
 	std::vector<Eigen::Matrix<double, 6, 1>> position;
+	std::vector<Eigen::Matrix<double, 6, 1>> position_desired;
 	std::vector<Eigen::Matrix<double, 6, 1>> position_error;
 	std::vector<Eigen::Matrix<double, 6, 1>> position_error_integral;
 	std::vector<Eigen::Matrix<double, 6, 1>> position_error_diff_filtered;

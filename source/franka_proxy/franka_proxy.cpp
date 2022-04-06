@@ -136,6 +136,7 @@ void csv_parser(csv_data data) {
 	put_data_in_csv(data.force_command_d, path + "force_command_d.csv");
 
 	put_data_in_csv(data.position, path + "position.csv");
+	put_data_in_csv(data.position_desired, path + "position_desired.csv");
 	put_data_in_csv(data.position_error, path + "position_error.csv");
 	put_data_in_csv(data.position_error_integral, path + "position_error_integral.csv");
 	put_data_in_csv(data.position_error_diff_filtered, path + "position_error_diff_filtered.csv");
@@ -208,7 +209,7 @@ csv_data apply_z_force(franka_proxy::franka_hardware_controller& h_controller, s
 	//m = read_csv("C:/Users/hecken/Desktop/BA_Hecken/JohannesDaten/recording16457996444757387.csv");
 	Eigen::Matrix<double, 6, 1> des_force;
 	des_force.setZero();
-	des_force(2) = -10.0;
+	des_force(2) = -1.0;
 
 
 	std::vector<Eigen::Vector3d> desired_positions;
@@ -216,7 +217,7 @@ csv_data apply_z_force(franka_proxy::franka_hardware_controller& h_controller, s
 	std::vector<Eigen::Quaterniond> desired_orientations;
 
 	//desired x position
-	double a = -0.075; //[m/s^2]
+	double a = -0.05; //[m/s^2]
 	Eigen::Vector3d pos;
 	pos = start_pos;
 	std::vector<Eigen::Vector3d> des_pos;
@@ -240,6 +241,11 @@ csv_data apply_z_force(franka_proxy::franka_hardware_controller& h_controller, s
 		//desired_positions.push_back(start_pos);
 		desired_positions.push_back(des_pos[i]);
 		//des_force(2) = -m[i][3];
+		desired_forces.push_back(des_force);
+	}
+	for (int i = 0; i < 1000; i++) {
+		desired_orientations.push_back(start_orientation);
+		desired_positions.push_back(des_pos[4999]);
 		desired_forces.push_back(des_force);
 	}
 
@@ -451,14 +457,14 @@ int main() {
 
 
 	//Position Parameters
-	std::array<double, 6> k_p_p = { -50, -50, -50, -10, -30, -10 };
-	std::array<double, 6> k_i_p = { -20, -20, -20, -10, -20, -10 };
+	std::array<double, 6> k_p_p = { -3000, -50, -50, -10, -1500, -10 };
+	std::array<double, 6> k_i_p = { 0, -20, -20, -5, 0, -5 };
 	std::array<double, 6> k_d_p = { 0, 0, 0, 0, 0, 0 };
 
 	//Ziegler Nichols Method Force Parameters
-	std::array<double, 6> k_p_f = { 0.2, 0.2, 0.2, 0.02, 0.05, 0.05 };
-	std::array<double, 6> k_i_f = { 5, 5, 16, 0.5, 0.5, 0.5 };
-	std::array<double, 6> k_d_f = { 0, 0, 0.003, 0, 0, 0 };
+	std::array<double, 6> k_p_f = { 0.2, 0.2, 0.02, 0.02, 0.05, 0.05 };
+	std::array<double, 6> k_i_f = { 5, 5, 2, 0.5, 0.5, 0.5 };
+	std::array<double, 6> k_d_f = { 0, 0, 0, 0, 0, 0 };
 
 	std::array<std::array<double, 6>, 6> control_parameters;
 	control_parameters = { k_p_p, k_i_p, k_d_p, k_p_f, k_i_f, k_d_f };
