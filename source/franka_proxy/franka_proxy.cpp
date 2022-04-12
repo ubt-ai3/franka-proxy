@@ -217,39 +217,44 @@ csv_data apply_z_force(franka_proxy::franka_hardware_controller& h_controller, s
 	std::vector<Eigen::Quaterniond> desired_orientations;
 
 	//desired x position
-	double a = -0.02; //[m/s^2]
-	double t = 8.0; // must be greater than 2.0
-	Eigen::Vector3d pos;
-	pos = start_pos;
-	std::vector<Eigen::Vector3d> des_pos;
+	//double a = -0.02; //[m/s^2]
+	//double t = 8.0; // must be greater than 2.0
+	//Eigen::Vector3d pos;
+	//pos = start_pos;
+	//std::vector<Eigen::Vector3d> des_pos;
 
-	for (double i = 0; i < 1.0; i += 0.001) { // 1s linear increasing velocity
-		pos(0) = 0.5 * a * i * i + start_pos(0);
-		des_pos.push_back(pos);
-	}
-	for (double i = 0; i < (t-2.0); i += 0.001) { // t - 2s constant velocity
-		pos(0) = a * i + 0.5 * a + start_pos(0); //s = a * t + s(t=1)
-		des_pos.push_back(pos);
-	}
-	for (double i = 0; i < 1.0; i += 0.001) { // 1s linear decreasing velocity
-		pos(0) = -0.5 * a * i * i + a * i + 0.5 * a + (t-2.0) * a + start_pos(0); // s = -0.5 a * t^2 + v(t=4) * t + s(t=4)
-		des_pos.push_back(pos);
-	}
+	//for (double i = 0; i < 1.0; i += 0.001) { // 1s linear increasing velocity
+	//	pos(0) = 0.5 * a * i * i + start_pos(0);
+	//	des_pos.push_back(pos);
+	//}
+	//for (double i = 0; i < (t-2.0); i += 0.001) { // t - 2s constant velocity
+	//	pos(0) = a * i + 0.5 * a + start_pos(0); //s = a * t + s(t=1)
+	//	des_pos.push_back(pos);
+	//}
+	//for (double i = 0; i < 1.0; i += 0.001) { // 1s linear decreasing velocity
+	//	pos(0) = -0.5 * a * i * i + a * i + 0.5 * a + (t-2.0) * a + start_pos(0); // s = -0.5 a * t^2 + v(t=4) * t + s(t=4)
+	//	des_pos.push_back(pos);
+	//}
 
 
-	for (int i = 0; i < (t*1000); i++) {
+	//for (int i = 0; i < (t*1000); i++) {
+	//	desired_orientations.push_back(start_orientation);
+	//	//desired_positions.push_back(start_pos);
+	//	desired_positions.push_back(des_pos[i]);
+	//	//des_force(2) = -m[i][3];
+	//	desired_forces.push_back(des_force);
+	//}
+	//for (int i = 0; i < 1000; i++) {
+	//	desired_orientations.push_back(start_orientation);
+	//	desired_positions.push_back(des_pos[(t*1000)-1]);
+	//	desired_forces.push_back(des_force);
+	//}
+
+	for (int i = 0; i < 5000; i++) {
 		desired_orientations.push_back(start_orientation);
-		//desired_positions.push_back(start_pos);
-		desired_positions.push_back(des_pos[i]);
-		//des_force(2) = -m[i][3];
+		desired_positions.push_back(start_pos);
 		desired_forces.push_back(des_force);
 	}
-	for (int i = 0; i < 1000; i++) {
-		desired_orientations.push_back(start_orientation);
-		desired_positions.push_back(des_pos[(t*1000)-1]);
-		desired_forces.push_back(des_force);
-	}
-
 
 	try {
 		h_controller.hybrid_control(data, desired_positions, desired_forces, desired_orientations, control_parameters);
@@ -336,15 +341,17 @@ Eigen::Vector3d simulatedAnnnealing(franka_proxy::franka_hardware_controller& h_
 	double T = 0.1; //initial T
 	double eta = 0.25; //initial eta
 	int c = 0; //counter for consecutive remaining parameterVector
-	int c_max = 20;
+	int c_max = 10;
 	int exc = 0; //counter for consecutive exceptions
 	int exc_max = 10; //the programm will abort if this number of consecutive exceptions happen
 	int k = 1; //used in csv file
 	double mu = 0.0;
 
 	double sigma = 1.0;
-	double l = 0.99;
+	double l = 0.95;
 	double delta_F = 0.01;
+
+	int m = 5; //the median of m F values will be used
 
 	while (c < c_max && exc < exc_max) {
 
@@ -363,20 +370,33 @@ Eigen::Vector3d simulatedAnnnealing(franka_proxy::franka_hardware_controller& h_
 		control_parameters[5][2] = new_parameter_vector(2);
 
 		csv_data data{};
-		double new_F;
-		try {
-			apply_z_force(h_controller, control_parameters, data);
-			new_F = data.itae_force(2);
-			exc = 0;
+		bool catched_e = false;
+		double new_F_sum = 0.0;
+
+		for (int i = 0; i < m; i++) {
+			try {
+				apply_z_force(h_controller, control_parameters, data);
+				new_F_sum += data.itae_force(2);
+				exc = 0;
+			}
+			catch (const franka::Exception& e) {
+				c = 0;
+				exc++;
+				std::cout << "The parameter set: ("
+					<< new_parameter_vector(0) << ", " << new_parameter_vector(1) << ", " << new_parameter_vector(2) * 1000
+					<< ") caused an exception!" << std::endl;
+				std::cout << "break" << std::endl;
+				break;
+			}
 		}
-		catch (const franka::Exception& e) {
-			c = 0;
-			exc++;
-			std::cout << "The parameter set: ("
-				<< new_parameter_vector(0) << ", " << new_parameter_vector(1) << ", " << new_parameter_vector(2)*1000
-				<< ") caused an exception!" << std::endl;
+		if (catched_e) {
+			std::cout << "continue" << std::endl;
 			continue;
 		}
+
+		double new_F = new_F_sum / m;
+
+		
 
 		//printing on console (K_D is printed on console with a factor 1000)
 		std::cout << std::fixed;
@@ -453,26 +473,26 @@ int main() {
 	std::cout << "Starting in 2 seconds..." << std::endl;
 	std::this_thread::sleep_for(std::chrono::seconds(2));
 
-	//Eigen::Vector3d param_set = simulatedAnnnealing(h_controller);
-	//std::cout << "SA Alg gives parameter set: " << param_set << std::endl;
+	Eigen::Vector3d param_set = simulatedAnnnealing(h_controller);
+	std::cout << "SA Alg gives parameter set: " << param_set << std::endl;
 
 
-	//Position Parameters
-	std::array<double, 6> k_p_p = { -3000, -100, -100, -100, -1500, -100 };
-	std::array<double, 6> k_i_p = { 0, 0, 0, 0, 0, 0 };
-	std::array<double, 6> k_d_p = { 0, 0, 0, 0, 0, 0 };
+	////Position Parameters
+	//std::array<double, 6> k_p_p = { -3000, -100, -100, -100, -1500, -100 };
+	//std::array<double, 6> k_i_p = { 0, 0, 0, 0, 0, 0 };
+	//std::array<double, 6> k_d_p = { 0, 0, 0, 0, 0, 0 };
 
-	//Ziegler Nichols Method Force Parameters
-	std::array<double, 6> k_p_f = { 0.2, 0.2, 0.02, 0.02, 0.05, 0.05 };
-	std::array<double, 6> k_i_f = { 5, 5, 2, 0.5, 0.5, 0.5 };
-	std::array<double, 6> k_d_f = { 0, 0, 0, 0, 0, 0 };
+	////Ziegler Nichols Method Force Parameters
+	//std::array<double, 6> k_p_f = { 0.2, 0.2, 0.02, 0.02, 0.05, 0.05 };
+	//std::array<double, 6> k_i_f = { 5, 5, 2, 0.5, 0.5, 0.5 };
+	//std::array<double, 6> k_d_f = { 0, 0, 0, 0, 0, 0 };
 
-	std::array<std::array<double, 6>, 6> control_parameters;
-	control_parameters = { k_p_p, k_i_p, k_d_p, k_p_f, k_i_f, k_d_f };
-	
+	//std::array<std::array<double, 6>, 6> control_parameters;
+	//control_parameters = { k_p_p, k_i_p, k_d_p, k_p_f, k_i_f, k_d_f };
+	//
 
-	csv_data data{};
-	apply_z_force(h_controller, control_parameters, data);
+	//csv_data data{};
+	//apply_z_force(h_controller, control_parameters, data);
 
 	/*for (int i = 0; i < 20; i++) {
 		csv_data data{};
@@ -480,13 +500,13 @@ int main() {
 		std::cout << data.itae_force(2) << std::endl;
 	}*/
 
-	std::array<double, 7> pos_air_x = { 0.0445302, 0.157452, -0.0226488, -2.44288, 0.0199934, 2.7444, 0.778894 }; //in air (middle) for linear x movement
-	try {
-		h_controller.move_to(pos_air_x);
-	}
-	catch (const franka::Exception& e) {
-		std::cout << "catched Exception when moving to air position: " << e.what() << std::endl;
-	}
+	//std::array<double, 7> pos_air_x = { 0.0445302, 0.157452, -0.0226488, -2.44288, 0.0199934, 2.7444, 0.778894 }; //in air (middle) for linear x movement
+	//try {
+	//	h_controller.move_to(pos_air_x);
+	//}
+	//catch (const franka::Exception& e) {
+	//	std::cout << "catched Exception when moving to air position: " << e.what() << std::endl;
+	//}
 
 	return 0;
 }
