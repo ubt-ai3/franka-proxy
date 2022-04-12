@@ -182,34 +182,10 @@ std::vector<Eigen::Vector3d> give_circle_positions(Eigen::Vector3d start_pos) {
 	std::vector<Eigen::Vector3d> desired_positions;
 	Eigen::Vector3d des_pos = start_pos;
 	for (int i = 0; i < 5000; i++) {
-		des_pos(0) = (cos(i / 5000.0 * 2 * 3.14159265) - 1.0) * r;
-		des_pos(1) = sin(i / 5000.0 * 2 * 3.14159265) * r;
-		desired_positions.push_back(des_pos);
+		//des_pos 
+		//esired_positions.push_back();
 	}
 }
-
-std::vector<Eigen::Vector3d> give_triangle_positions(Eigen::Vector3d start_pos) {
-	std::vector<Eigen::Vector3d> desired_positions;
-	Eigen::Vector3d pos = start_pos;
-	double a = 0.01;
-
-	for (int i = 0; i < 1000; i++) {
-		pos(0) += 0.0001; //10cm
-		pos(1) += 0.0001;
-		desired_positions.push_back(pos);
-	}
-	for (int i = 0; i < 2000; i++) {
-		pos(0) -= 0.0001;
-		desired_positions.push_back(pos);
-	}
-	for (int i = 0; i < 1000; i++) {
-		pos(0) += 0.0001;
-		pos(1) -= 0.0001;
-		desired_positions.push_back(pos);
-	}
-	return desired_positions;
-}
-
 
 void print_cur_joint_pos(franka_proxy::franka_hardware_controller& h_controller) {
 	for (int i = 0; i < 7; i++) {
