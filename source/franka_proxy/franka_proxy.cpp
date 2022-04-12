@@ -147,7 +147,35 @@ void csv_parser(csv_data data) {
 	put_data_in_csv(data.position_command_d, path + "position_command_d.csv");
 }
 
+std::vector<Eigen::Vector3d> give_x_Axis_Positions(Eigen::Vector3d start_pos) {
+	//desired x position
+	double a = -0.02; //[m/s^2]
+	double t = 8.0; // must be greater than 2.0
+	Eigen::Vector3d pos;
+	pos = start_pos;
+	std::vector<Eigen::Vector3d> des_pos;
+	std::vector<Eigen::Vector3d> desired_positions;
 
+	for (double i = 0; i < 1.0; i += 0.001) { // 1s linear increasing velocity
+		pos(0) = 0.5 * a * i * i + start_pos(0);
+		des_pos.push_back(pos);
+	}
+	for (double i = 0; i < (t-2.0); i += 0.001) { // t - 2s constant velocity
+		pos(0) = a * i + 0.5 * a + start_pos(0); //s = a * t + s(t=1)
+		des_pos.push_back(pos);
+	}
+	for (double i = 0; i < 1.0; i += 0.001) { // 1s linear decreasing velocity
+		pos(0) = -0.5 * a * i * i + a * i + 0.5 * a + (t-2.0) * a + start_pos(0); // s = -0.5 a * t^2 + v(t=4) * t + s(t=4)
+		des_pos.push_back(pos);
+	}
+
+	for (int i = 0; i < (t*1000); i++) {
+		desired_positions.push_back(des_pos[i]);
+	}
+	for (int i = 0; i < 1000; i++) {
+		desired_positions.push_back(des_pos[(t*1000)-1]);
+	}
+}
 
 void print_cur_joint_pos(franka_proxy::franka_hardware_controller& h_controller) {
 	for (int i = 0; i < 7; i++) {
@@ -216,40 +244,6 @@ csv_data apply_z_force(franka_proxy::franka_hardware_controller& h_controller, s
 	std::vector<Eigen::Matrix<double, 6, 1>> desired_forces;
 	std::vector<Eigen::Quaterniond> desired_orientations;
 
-	//desired x position
-	//double a = -0.02; //[m/s^2]
-	//double t = 8.0; // must be greater than 2.0
-	//Eigen::Vector3d pos;
-	//pos = start_pos;
-	//std::vector<Eigen::Vector3d> des_pos;
-
-	//for (double i = 0; i < 1.0; i += 0.001) { // 1s linear increasing velocity
-	//	pos(0) = 0.5 * a * i * i + start_pos(0);
-	//	des_pos.push_back(pos);
-	//}
-	//for (double i = 0; i < (t-2.0); i += 0.001) { // t - 2s constant velocity
-	//	pos(0) = a * i + 0.5 * a + start_pos(0); //s = a * t + s(t=1)
-	//	des_pos.push_back(pos);
-	//}
-	//for (double i = 0; i < 1.0; i += 0.001) { // 1s linear decreasing velocity
-	//	pos(0) = -0.5 * a * i * i + a * i + 0.5 * a + (t-2.0) * a + start_pos(0); // s = -0.5 a * t^2 + v(t=4) * t + s(t=4)
-	//	des_pos.push_back(pos);
-	//}
-
-
-	//for (int i = 0; i < (t*1000); i++) {
-	//	desired_orientations.push_back(start_orientation);
-	//	//desired_positions.push_back(start_pos);
-	//	desired_positions.push_back(des_pos[i]);
-	//	//des_force(2) = -m[i][3];
-	//	desired_forces.push_back(des_force);
-	//}
-	//for (int i = 0; i < 1000; i++) {
-	//	desired_orientations.push_back(start_orientation);
-	//	desired_positions.push_back(des_pos[(t*1000)-1]);
-	//	desired_forces.push_back(des_force);
-	//}
-
 	for (int i = 0; i < 5000; i++) {
 		desired_orientations.push_back(start_orientation);
 		desired_positions.push_back(start_pos);
@@ -276,8 +270,9 @@ csv_data apply_z_force(franka_proxy::franka_hardware_controller& h_controller, s
 }
 
 
-Eigen::Vector3d simulatedAnnnealing(franka_proxy::franka_hardware_controller& h_controller) {
-	//create ccs file and write header line
+void simulatedAnnnealing(franka_proxy::franka_hardware_controller& h_controller, int dim[12]) {
+
+	//create csv files and write header lines
 	auto t = std::time(nullptr);
 	auto tm = *std::localtime(&t);
 	std::ostringstream oss;
@@ -285,58 +280,100 @@ Eigen::Vector3d simulatedAnnnealing(franka_proxy::franka_hardware_controller& h_
 	auto time_string = oss.str();
 	std::string path = "H:/DB_Forschung/flexPro/11.Unterprojekte/BA_Laurin_Hecken/05_Rohdaten/sa_overview_output/" + time_string + "/";
 	CreateDirectoryA(path.c_str(), NULL);
-	std::string filename = "H:/DB_Forschung/flexPro/11.Unterprojekte/BA_Laurin_Hecken/05_Rohdaten/sa_overview_output/" + time_string + "/sa_overview.csv";
-	std::ofstream sa_data_file;
-	sa_data_file.open(filename, std::ofstream::out | std::ofstream::app);
-	sa_data_file << "k,T,eta,best_F,current_F,new_F,best_Kp,current_Kp,new_Kp,best_Ki,current_Ki,new_Ki,best_Kd,current_Kd,new_Kd,c\n";
-	sa_data_file.close();
-
-	//Position Parameters which are based on experience
-	std::array<double, 6> k_p_p = { -200, -200, -200, -30, -30, -20 };
-	std::array<double, 6> k_i_p = { -30, -30, -30, -5, -5, -5 };
-	std::array<double, 6> k_d_p = { 0, 0, 0, 0, 0, 0 };
-
-	//Force Parameters which are based on experience - z-Dimension will be set by SA Alg
-	std::array<double, 6> k_p_f = { 0.5, 0.5, 0 , 0.05, 0.05, 0.05 };
-	std::array<double, 6> k_i_f = { 5, 5, 0, 0.5, 0.5, 0.5 };
-	std::array<double, 6> k_d_f = { 0, 0, 0, 0, 0, 0 };
-
-	//This array will be modified by SA Alg and is used by the robot
-	std::array<std::array<double, 6>, 6> control_parameters;
-	control_parameters = { k_p_p, k_i_p, k_d_p, k_p_f, k_i_f, k_d_f };
+	std::string filenames[12];
+	std::ofstream sa_data_files[12];
+	for (int d = 0; d < 6; d++) {
+		if (d != 1) continue;
+		filenames[d] = "H:/DB_Forschung/flexPro/11.Unterprojekte/BA_Laurin_Hecken/05_Rohdaten/sa_overview_output/" + time_string + "/sa_overview_" + std::to_string(d) + ".csv";
+		sa_data_files[d].open(filenames[d], std::ofstream::out | std::ofstream::app);
+		sa_data_files[d] << "k,T,eta,best_F,current_F,new_F,best_Kp,current_Kp,new_Kp,best_Ki,current_Ki,new_Ki,best_Kd,current_Kd,new_Kd,c\n";
+		sa_data_files[d].close();
+	}
+	
 
 	//starting the simulated annealing algorithm
-	
-	//setting max values for the z-force parameters
-	Eigen::Vector3d max_parameters(0.6, 20.0, 0.01);
 
-	//random initialization of first parameter set
+	std::vector<Eigen::Vector3d> initial_parameters = {
+		{-200, -30, 0}, //x_pos
+		{-200, -30, 0}, //y_pos
+		{-200, -30, 0}, //z_pos
+		{-30, -5, 0}, //mx_pos
+		{-30, -5, 0}, //my_pos
+		{-20, -5, 0}, //mz_pos
+		{0.5, 5, 0}, //x_f
+		{0.5, 5, 0}, //y_f
+		{0.3, 10, 0}, //z_f
+		{0.05, 0.5, 0}, //mx_f
+		{0.05, 0.5, 0}, //my_f
+		{0.05, 0.5, 0} //mz_f
+	};
+
+	std::vector<Eigen::Vector3d> max_parameters = {
+		{-200, -30, 0}, //x_pos
+		{-200, -30, 0}, //y_pos
+		{-200, -30, 0}, //z_pos
+		{-30, -5, 0}, //mx_pos
+		{-30, -5, 0}, //my_pos
+		{-20, -5, 0}, //mz_pos
+		{0.5, 5, 0}, //x_f
+		{0.5, 5, 0}, //y_f
+		{0.6, 20.0, 0.01}, //z_f
+		{0.05, 0.5, 0}, //mx_f
+		{0.05, 0.5, 0}, //my_f
+		{0.05, 0.5, 0} //mz_f
+	};
+	
+	//random initialization of first parameters
 	std::random_device rd;
 	std::mt19937 gen{ rd() };
 	std::uniform_real_distribution<double> d(0, 1);
-	Eigen::Vector3d rand_vector(d(gen), d(gen), d(gen));
-	Eigen::Vector3d initial_parameter_vector = (rand_vector.array() * max_parameters.array()).matrix();
-	control_parameters[3][2] = initial_parameter_vector(0);
-	control_parameters[4][2] = initial_parameter_vector(1);
-	control_parameters[4][2] = initial_parameter_vector(2);
+
+	for (int i = 0; i < 12; i++) {
+		if (dim[i] != 1) continue;
+
+		Eigen::Vector3d rand = { d(gen), d(gen), d(gen) };
+		initial_parameters[i] = rand.array() * max_parameters[i].array();
+	}
 
 	//call hybrid control with first random parameterSet and calculate start F
 	csv_data data{};
-	double initial_F;
+
+	double initial_F = 0.0;
+	double p_factor = 1.0;
+	double f_factor = 1.0;
+
 	std::cout << "Evaluating first random parameter set..." << std::endl;
 	try {
+		//This 2d array is used by the robot
+		std::array<std::array<double, 6>, 6> control_parameters;
+		control_parameters[0] = { initial_parameters[0](0), initial_parameters[1](0), initial_parameters[2](0), initial_parameters[3](0), initial_parameters[4](0), initial_parameters[5](0) };
+		control_parameters[1] = { initial_parameters[0](1), initial_parameters[1](1), initial_parameters[2](1), initial_parameters[3](1), initial_parameters[4](1), initial_parameters[5](1) };
+		control_parameters[2] = { initial_parameters[0](2), initial_parameters[1](2), initial_parameters[2](2), initial_parameters[3](2), initial_parameters[4](2), initial_parameters[5](2) };
+		control_parameters[3] = { initial_parameters[6](0), initial_parameters[7](0), initial_parameters[8](0), initial_parameters[9](0), initial_parameters[10](0), initial_parameters[11](0) };
+		control_parameters[4] = { initial_parameters[6](1), initial_parameters[7](1), initial_parameters[8](1), initial_parameters[9](1), initial_parameters[10](1), initial_parameters[11](1) };
+		control_parameters[5] = { initial_parameters[6](2), initial_parameters[7](2), initial_parameters[8](2), initial_parameters[9](2), initial_parameters[10](2), initial_parameters[11](2) };
+
 		apply_z_force(h_controller, control_parameters, data);
-		initial_F = data.itae_force(2); //cost Function
+		for (int d = 0; d < 12; d++) {
+			if (dim[d] != 1) continue;
+
+			if (d < 6) {
+				initial_F += p_factor * data.itae_position(d);
+			}
+			else {
+				initial_F += f_factor * data.itae_force(d - 6);
+			}
+		}
 	}
 	catch (const franka::Exception& e) {
-		std::cout << "First random set of parameters (" << initial_parameter_vector(0) << ", " << initial_parameter_vector(1) << ", " 
-			<< initial_parameter_vector(2) << ") caused exception..." << std::endl;
+		std::cout << "First random set of parameters () caused exception..." << std::endl;
 		throw;
 	}
+
 	double current_F = initial_F;
 	double best_F = initial_F;
-	Eigen::Vector3d current_parameter_vector = initial_parameter_vector;
-	Eigen::Vector3d best_parameter_vector = initial_parameter_vector;
+	std::vector<Eigen::Vector3d> current_parameters = initial_parameters;
+	std::vector<Eigen::Vector3d> best_parameters = initial_parameters;
 
 	double T = 0.1; //initial T
 	double eta = 0.25; //initial eta
@@ -344,7 +381,7 @@ Eigen::Vector3d simulatedAnnnealing(franka_proxy::franka_hardware_controller& h_
 	int c_max = 10;
 	int exc = 0; //counter for consecutive exceptions
 	int exc_max = 10; //the programm will abort if this number of consecutive exceptions happen
-	int k = 1; //used in csv file
+	int k = 1; //only used in csv file
 	double mu = 0.0;
 
 	double sigma = 1.0;
@@ -357,17 +394,17 @@ Eigen::Vector3d simulatedAnnnealing(franka_proxy::franka_hardware_controller& h_
 
 		//calculate new parameter set (neighbour) based on current paramter set
 		std::normal_distribution<double> nd(mu, sigma);
-		Eigen::Vector3d new_parameter_vector;
-		for (int i = 0; i < 3; i++) {
-			do {
-				new_parameter_vector(i) = current_parameter_vector(i) + eta * nd(gen) * max_parameters(i);
-			} while (new_parameter_vector(i) > max_parameters(i) || new_parameter_vector(i) < 0);
-		}
+		std::vector<Eigen::Vector3d> new_parameters = current_parameters;
 
-		//call hybrid_control with newParameterVector and calculate new F
-		control_parameters[3][2] = new_parameter_vector(0);
-		control_parameters[4][2] = new_parameter_vector(1);
-		control_parameters[5][2] = new_parameter_vector(2);
+		for (int d = 0; d < 12; d++) {
+			if (dim[d] != 1) continue;
+
+			for (int j = 0; j < 3; j++) {
+				do {
+					new_parameters[d](j) = current_parameters[d](j) + eta * nd(gen) * max_parameters[d](j);
+				} while (new_parameters[d](j) > max_parameters[d](j) || new_parameters[d](j) < 0);
+			}
+		}
 
 		csv_data data{};
 		bool catched_e = false;
@@ -375,16 +412,34 @@ Eigen::Vector3d simulatedAnnnealing(franka_proxy::franka_hardware_controller& h_
 
 		for (int i = 0; i < m; i++) {
 			try {
+				//This 2d array is used by the robot
+				std::array<std::array<double, 6>, 6> control_parameters;
+				control_parameters[0] = { new_parameters[0](0), new_parameters[1](0), new_parameters[2](0), new_parameters[3](0), new_parameters[4](0), new_parameters[5](0) };
+				control_parameters[1] = { new_parameters[0](1), new_parameters[1](1), new_parameters[2](1), new_parameters[3](1), new_parameters[4](1), new_parameters[5](1) };
+				control_parameters[2] = { new_parameters[0](2), new_parameters[1](2), new_parameters[2](2), new_parameters[3](2), new_parameters[4](2), new_parameters[5](2) };
+				control_parameters[3] = { new_parameters[6](0), new_parameters[7](0), new_parameters[8](0), new_parameters[9](0), new_parameters[10](0), new_parameters[11](0) };
+				control_parameters[4] = { new_parameters[6](1), new_parameters[7](1), new_parameters[8](1), new_parameters[9](1), new_parameters[10](1), new_parameters[11](1) };
+				control_parameters[5] = { new_parameters[6](2), new_parameters[7](2), new_parameters[8](2), new_parameters[9](2), new_parameters[10](2), new_parameters[11](2) };
+
 				apply_z_force(h_controller, control_parameters, data);
-				new_F_sum += data.itae_force(2);
+
+				for (int d = 0; d < 12; d++) {
+					if (dim[d] != 1) continue;
+
+					if (d < 6) {
+						new_F_sum += p_factor * data.itae_position(d);
+					}
+					else {
+						new_F_sum += f_factor * data.itae_force(d - 6);
+					}
+				}
 				exc = 0;
 			}
 			catch (const franka::Exception& e) {
 				c = 0;
 				exc++;
-				std::cout << "The parameter set: ("
-					<< new_parameter_vector(0) << ", " << new_parameter_vector(1) << ", " << new_parameter_vector(2) * 1000
-					<< ") caused an exception!" << std::endl;
+				std::cout << "The parameter set: () caused an exception!" << std::endl;
+				catched_e = true;
 				std::cout << "break" << std::endl;
 				break;
 			}
@@ -394,35 +449,45 @@ Eigen::Vector3d simulatedAnnnealing(franka_proxy::franka_hardware_controller& h_
 			continue;
 		}
 
-		double new_F = new_F_sum / m;
+		double new_F = new_F_sum / m;		
 
-		
 
 		//printing on console (K_D is printed on console with a factor 1000)
 		std::cout << std::fixed;
 		std::cout << std::setprecision(4);
-		std::cout << "k=" << k << "\tT=" << T
-			<< "\tbestF=" << best_F << "\tcurrentF=" << current_F << "\tnewF=" << new_F
-			<< "\tcurrentParams=(" << current_parameter_vector(0) << "," << current_parameter_vector(1) << "," << 1000 * current_parameter_vector(2) << ")"
-			<< "\tnewParams=(" << new_parameter_vector(0) << "," << new_parameter_vector(1) << "," << 1000.0 * new_parameter_vector(2) << ")"
-			<< "    c=" << c;
-		if ((exp(-(new_F - current_F) / T)) < 1.0) {
-			std::cout << "    prop_worse = " << (exp(-(new_F - current_F) / T));
+		for (int d = 0; d < 12; d++) {
+			if (dim[d] != 1) continue;
+
+			std::cout << "Dimension: " << d << std::endl;
+			std::cout << "k=" << k << "\tT=" << T
+				<< "\tbestF=" << best_F << "\tcurrentF=" << current_F << "\tnewF=" << new_F
+				<< "\tcurrentParams=(" << current_parameters[d](0) << "," << current_parameters[d](1) << "," << 1000 * current_parameters[d](2) << ")"
+				<< "\tnewParams=(" << new_parameters[d](0) << "," << new_parameters[d](1) << "," << 1000.0 * new_parameters[d](2) << ")"
+				<< "    c=" << c;
+			if ((exp(-(new_F - current_F) / T)) < 1.0) {
+				std::cout << "    prop_worse = " << (exp(-(new_F - current_F) / T));
+			}
+			std::cout << "\n";
 		}
-		std::cout << "\n";
+		
 
 		//write values in sa_overview.csv
-		sa_data_file.open(filename, std::ofstream::out | std::ofstream::app);
-		sa_data_file << k << "," << T << "," << eta << "," 
-			<< best_F << "," << current_F << "," << new_F << ","
-			<< best_parameter_vector(0) << "," << current_parameter_vector(0) << "," << new_parameter_vector(0)	<< ","
-			<< best_parameter_vector(1) << "," << current_parameter_vector(1) << "," << new_parameter_vector(1) << "," 
-			<< best_parameter_vector(2) << "," << current_parameter_vector(2) << "," << new_parameter_vector(2) << ","
-			<< c << "\n";
-		sa_data_file.close();
+		for (int d = 0; d < 12; d++) {
+			if (d != 1) continue;
+
+			sa_data_files[d].open(filenames[d], std::ofstream::out | std::ofstream::app);
+			sa_data_files[d] << k << "," << T << "," << eta << ","
+				<< best_F << "," << current_F << "," << new_F << ","
+				<< best_parameters[d](0) << "," << current_parameters[d](0) << "," << new_parameters[d](0) << ","
+				<< best_parameters[d](1) << "," << current_parameters[d](1) << "," << new_parameters[d](1) << ","
+				<< best_parameters[d](2) << "," << current_parameters[d](2) << "," << new_parameters[d](2) << ","
+				<< c << "\n";
+			sa_data_files[d].close();
+		}
+		
 
 		if (new_F < current_F) { //new parameterVector is better then change to this parameterVector
-			current_parameter_vector = new_parameter_vector;
+			current_parameters = new_parameters;
 			if (std::abs(current_F - new_F) > delta_F) { //only set termination criteria c to zero if the change in F is significant
 				c = 0;
 			}
@@ -436,7 +501,7 @@ Eigen::Vector3d simulatedAnnnealing(franka_proxy::franka_hardware_controller& h_
 			double r = d(gen); //rand[0,1]
 
 			if (r < exp(-(new_F - current_F) / T)) { //Boltzmann
-				current_parameter_vector = new_parameter_vector;
+				current_parameters = new_parameters;
 				if (std::abs(current_F - new_F) > delta_F) { //only set termination criteria c to zero if the change in F is significant
 					c = 0;
 				}
@@ -453,7 +518,7 @@ Eigen::Vector3d simulatedAnnnealing(franka_proxy::franka_hardware_controller& h_
 		//Save the overall best value
 		if (new_F < best_F) {
 			best_F = new_F;
-			best_parameter_vector = new_parameter_vector;
+			best_parameters = new_parameters;
 		}
 
 
@@ -463,7 +528,6 @@ Eigen::Vector3d simulatedAnnnealing(franka_proxy::franka_hardware_controller& h_
 
 		k++;
 	}
-	return best_parameter_vector;
 }
 
 int main() {
@@ -473,8 +537,11 @@ int main() {
 	std::cout << "Starting in 2 seconds..." << std::endl;
 	std::this_thread::sleep_for(std::chrono::seconds(2));
 
-	Eigen::Vector3d param_set = simulatedAnnnealing(h_controller);
-	std::cout << "SA Alg gives parameter set: " << param_set << std::endl;
+	int dim[12] = {
+		0,0,0,0,0,0, //position (x, y, z, mx, my, mz)
+		0,0,1,0,0,0 //force (x, y, z, mx, my, mz)
+	};
+	simulatedAnnnealing(h_controller, dim);
 
 
 	////Position Parameters
