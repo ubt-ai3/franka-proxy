@@ -237,7 +237,7 @@ csv_data apply_z_force(franka_proxy::franka_hardware_controller& h_controller, s
 	//m = read_csv("C:/Users/hecken/Desktop/BA_Hecken/JohannesDaten/recording16457996444757387.csv");
 	Eigen::Matrix<double, 6, 1> des_force;
 	des_force.setZero();
-	des_force(2) = -1.0;
+	des_force(2) = -10.0;
 
 
 	std::vector<Eigen::Vector3d> desired_positions;
@@ -269,6 +269,15 @@ csv_data apply_z_force(franka_proxy::franka_hardware_controller& h_controller, s
 	return data;
 }
 
+void print_2d_array(std::array<std::array<double, 6>, 6> a) {
+	for (int i = 0; i < 6; i++) {
+		for (int j = 0; j < 6; j++) {
+			std::cout << a[i][j] << "\t";
+		}
+		std::cout << std::endl;
+	}
+	std::cout << std::endl;
+}
 
 void simulatedAnnnealing(franka_proxy::franka_hardware_controller& h_controller, int dim[12]) {
 
@@ -282,8 +291,9 @@ void simulatedAnnnealing(franka_proxy::franka_hardware_controller& h_controller,
 	CreateDirectoryA(path.c_str(), NULL);
 	std::string filenames[12];
 	std::ofstream sa_data_files[12];
-	for (int d = 0; d < 6; d++) {
-		if (d != 1) continue;
+	for (int d = 0; d < 12; d++) {
+		if (dim[d] != 1) continue;
+
 		filenames[d] = "H:/DB_Forschung/flexPro/11.Unterprojekte/BA_Laurin_Hecken/05_Rohdaten/sa_overview_output/" + time_string + "/sa_overview_" + std::to_string(d) + ".csv";
 		sa_data_files[d].open(filenames[d], std::ofstream::out | std::ofstream::app);
 		sa_data_files[d] << "k,T,eta,best_F,current_F,new_F,best_Kp,current_Kp,new_Kp,best_Ki,current_Ki,new_Ki,best_Kd,current_Kd,new_Kd,c\n";
@@ -292,35 +302,40 @@ void simulatedAnnnealing(franka_proxy::franka_hardware_controller& h_controller,
 	
 
 	//starting the simulated annealing algorithm
+	Eigen::Vector3d x_pos (-200, -30, 0);
+	Eigen::Vector3d y_pos(-200, -30, 0);
+	Eigen::Vector3d z_pos(-200, -30, 0);
+	Eigen::Vector3d mx_pos(-30, -5, 0);
+	Eigen::Vector3d my_pos(-30, -5, 0);
+	Eigen::Vector3d mz_pos(-20, -5, 0);
+	Eigen::Vector3d x_f(0.5, 5, 0);
+	Eigen::Vector3d y_f(0.5, 5, 0);
+	Eigen::Vector3d z_f(0.3, 10, 0);
+	Eigen::Vector3d mx_f(0.05, 0.5, 0);
+	Eigen::Vector3d my_f(0.05, 0.5, 0);
+	Eigen::Vector3d mz_f(0.05, 0.5, 0);
 
-	std::vector<Eigen::Vector3d> initial_parameters = {
-		{-200, -30, 0}, //x_pos
-		{-200, -30, 0}, //y_pos
-		{-200, -30, 0}, //z_pos
-		{-30, -5, 0}, //mx_pos
-		{-30, -5, 0}, //my_pos
-		{-20, -5, 0}, //mz_pos
-		{0.5, 5, 0}, //x_f
-		{0.5, 5, 0}, //y_f
-		{0.3, 10, 0}, //z_f
-		{0.05, 0.5, 0}, //mx_f
-		{0.05, 0.5, 0}, //my_f
-		{0.05, 0.5, 0} //mz_f
+
+	std::array<Eigen::Vector3d, 12> initial_parameters = {
+	x_pos, y_pos, z_pos, mx_pos, my_pos, mz_pos, x_f, y_f, z_f, mx_f, my_f, mz_f
 	};
 
-	std::vector<Eigen::Vector3d> max_parameters = {
-		{-200, -30, 0}, //x_pos
-		{-200, -30, 0}, //y_pos
-		{-200, -30, 0}, //z_pos
-		{-30, -5, 0}, //mx_pos
-		{-30, -5, 0}, //my_pos
-		{-20, -5, 0}, //mz_pos
-		{0.5, 5, 0}, //x_f
-		{0.5, 5, 0}, //y_f
-		{0.6, 20.0, 0.01}, //z_f
-		{0.05, 0.5, 0}, //mx_f
-		{0.05, 0.5, 0}, //my_f
-		{0.05, 0.5, 0} //mz_f
+	Eigen::Vector3d x_pos_max(-200, -30, 0);
+	Eigen::Vector3d y_pos_max(-200, -30, 0);
+	Eigen::Vector3d z_pos_max(-200, -30, 0);
+	Eigen::Vector3d mx_pos_max(-30, -5, 0);
+	Eigen::Vector3d my_pos_max(-30, -5, 0);
+	Eigen::Vector3d mz_pos_max(-20, -5, 0);
+	Eigen::Vector3d x_f_max(0.5, 5, 0);
+	Eigen::Vector3d y_f_max(0.5, 5, 0);
+	Eigen::Vector3d z_f_max(0.6, 20, 0.01);
+	Eigen::Vector3d mx_f_max(0.05, 0.5, 0);
+	Eigen::Vector3d my_f_max(0.05, 0.5, 0);
+	Eigen::Vector3d mz_f_max(0.05, 0.5, 0);
+
+
+	std::array<Eigen::Vector3d, 12> max_parameters = {
+	x_pos_max, y_pos_max, z_pos_max, mx_pos_max, my_pos_max, mz_pos_max, x_f_max, y_f_max, z_f_max, mx_f_max, my_f_max, mz_f_max
 	};
 	
 	//random initialization of first parameters
@@ -331,8 +346,8 @@ void simulatedAnnnealing(franka_proxy::franka_hardware_controller& h_controller,
 	for (int i = 0; i < 12; i++) {
 		if (dim[i] != 1) continue;
 
-		Eigen::Vector3d rand = { d(gen), d(gen), d(gen) };
-		initial_parameters[i] = rand.array() * max_parameters[i].array();
+		Eigen::Vector3d rand (d(gen), d(gen), d(gen));
+		initial_parameters[i] = (rand.array() * max_parameters[i].array()).matrix();
 	}
 
 	//call hybrid control with first random parameterSet and calculate start F
@@ -353,27 +368,28 @@ void simulatedAnnnealing(franka_proxy::franka_hardware_controller& h_controller,
 		control_parameters[4] = { initial_parameters[6](1), initial_parameters[7](1), initial_parameters[8](1), initial_parameters[9](1), initial_parameters[10](1), initial_parameters[11](1) };
 		control_parameters[5] = { initial_parameters[6](2), initial_parameters[7](2), initial_parameters[8](2), initial_parameters[9](2), initial_parameters[10](2), initial_parameters[11](2) };
 
+
 		apply_z_force(h_controller, control_parameters, data);
 		for (int d = 0; d < 12; d++) {
 			if (dim[d] != 1) continue;
 
 			if (d < 6) {
-				initial_F += p_factor * data.itae_position(d);
+				initial_F += p_factor * data.itae_position(d, 0);
 			}
 			else {
-				initial_F += f_factor * data.itae_force(d - 6);
+				initial_F += f_factor * data.itae_force(d - 6, 0);
 			}
 		}
 	}
 	catch (const franka::Exception& e) {
-		std::cout << "First random set of parameters () caused exception..." << std::endl;
+		std::cout << "First random set of parameters caused an exception..." << std::endl;
 		throw;
 	}
 
 	double current_F = initial_F;
 	double best_F = initial_F;
-	std::vector<Eigen::Vector3d> current_parameters = initial_parameters;
-	std::vector<Eigen::Vector3d> best_parameters = initial_parameters;
+	std::array<Eigen::Vector3d, 12> current_parameters = initial_parameters;
+	std::array<Eigen::Vector3d, 12> best_parameters = initial_parameters;
 
 	double T = 0.1; //initial T
 	double eta = 0.25; //initial eta
@@ -385,7 +401,7 @@ void simulatedAnnnealing(franka_proxy::franka_hardware_controller& h_controller,
 	double mu = 0.0;
 
 	double sigma = 1.0;
-	double l = 0.95;
+	double l = 0.98;
 	double delta_F = 0.01;
 
 	int m = 5; //the median of m F values will be used
@@ -394,7 +410,7 @@ void simulatedAnnnealing(franka_proxy::franka_hardware_controller& h_controller,
 
 		//calculate new parameter set (neighbour) based on current paramter set
 		std::normal_distribution<double> nd(mu, sigma);
-		std::vector<Eigen::Vector3d> new_parameters = current_parameters;
+		std::array<Eigen::Vector3d, 12> new_parameters = current_parameters;
 
 		for (int d = 0; d < 12; d++) {
 			if (dim[d] != 1) continue;
@@ -405,12 +421,12 @@ void simulatedAnnnealing(franka_proxy::franka_hardware_controller& h_controller,
 				} while (new_parameters[d](j) > max_parameters[d](j) || new_parameters[d](j) < 0);
 			}
 		}
-
-		csv_data data{};
+				
 		bool catched_e = false;
 		double new_F_sum = 0.0;
 
 		for (int i = 0; i < m; i++) {
+			csv_data data{};
 			try {
 				//This 2d array is used by the robot
 				std::array<std::array<double, 6>, 6> control_parameters;
@@ -427,10 +443,10 @@ void simulatedAnnnealing(franka_proxy::franka_hardware_controller& h_controller,
 					if (dim[d] != 1) continue;
 
 					if (d < 6) {
-						new_F_sum += p_factor * data.itae_position(d);
+						new_F_sum += p_factor * data.itae_position(d, 0);
 					}
 					else {
-						new_F_sum += f_factor * data.itae_force(d - 6);
+						new_F_sum += f_factor * data.itae_force(d - 6, 0);
 					}
 				}
 				exc = 0;
@@ -438,14 +454,18 @@ void simulatedAnnnealing(franka_proxy::franka_hardware_controller& h_controller,
 			catch (const franka::Exception& e) {
 				c = 0;
 				exc++;
-				std::cout << "The parameter set: () caused an exception!" << std::endl;
+				std::cout << "The following parameter set caused an exception! ";
+				for (int d = 0; d < 12; d++) {
+					if (dim[d] != 1) continue;
+					std::cout << " Dim: " << d << " (" <<
+						new_parameters[d](0) << ", " << new_parameters[d](1) << ", " << new_parameters[d](2) << ")";
+				}
+				std::cout << std::endl;
 				catched_e = true;
-				std::cout << "break" << std::endl;
 				break;
 			}
 		}
 		if (catched_e) {
-			std::cout << "continue" << std::endl;
 			continue;
 		}
 
@@ -473,7 +493,7 @@ void simulatedAnnnealing(franka_proxy::franka_hardware_controller& h_controller,
 
 		//write values in sa_overview.csv
 		for (int d = 0; d < 12; d++) {
-			if (d != 1) continue;
+			if (dim[d] != 1) continue;
 
 			sa_data_files[d].open(filenames[d], std::ofstream::out | std::ofstream::app);
 			sa_data_files[d] << k << "," << T << "," << eta << ","
