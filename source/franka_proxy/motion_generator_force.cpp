@@ -328,6 +328,7 @@ franka::Torques hybrid_control_motion_generator::callback
 	position_error.tail(3) = -transform.linear() * position_error.tail(3); //-transform_d.linear() * error.tail(3);
 	data_.position_error.push_back(position_error);
 
+	position_error = (position_error.array() * -1).matrix();
 
 	//Position integral
 	position_error_integral_ += period.toSec() * position_error;

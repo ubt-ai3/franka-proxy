@@ -15,6 +15,7 @@
 #include <iostream>
 #include <iomanip>
 #include <random>
+#include<Eigen/StdVector>
 
 
 namespace franka_proxy
@@ -147,14 +148,14 @@ void csv_parser(csv_data data) {
 	put_data_in_csv(data.position_command_d, path + "position_command_d.csv");
 }
 
-std::vector<Eigen::Vector3d> give_x_movement_positions(Eigen::Vector3d start_pos) {
+std::vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d>> give_x_movement_positions(Eigen::Vector3d start_pos) {
 	//desired x position
 	double a = -0.02; //[m/s^2]
 	double t = 8.0; // must be greater than 2.0
 	Eigen::Vector3d pos;
 	pos = start_pos;
 	std::vector<Eigen::Vector3d> des_pos;
-	std::vector<Eigen::Vector3d> desired_positions;
+	std::vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d>> desired_positions;
 
 	for (double i = 0; i < 1.0; i += 0.001) { // 1s linear increasing velocity
 		pos(0) = 0.5 * a * i * i + start_pos(0);
@@ -175,6 +176,7 @@ std::vector<Eigen::Vector3d> give_x_movement_positions(Eigen::Vector3d start_pos
 	for (int i = 0; i < 1000; i++) {
 		desired_positions.push_back(des_pos[(t*1000)-1]);
 	}
+	return desired_positions;
 }
 
 std::vector<Eigen::Vector3d> give_circle_positions(Eigen::Vector3d start_pos) {
@@ -249,6 +251,14 @@ csv_data apply_z_force(franka_proxy::franka_hardware_controller& h_controller, s
 	std::array<double, 7> pos_2 = { 0.0173603, 0.782011, -0.0172685, -1.61904, 0.0207746, 2.45505, 0.724928 }; //2mm above wood plate with blue part
 	std::array<double, 7> pos_0 = { 0.0159666, 0.784819, -0.0174431, -1.6166, 0.0208109, 2.45508, 0.724577 }; //0mm above wood plate with blue part
 
+	std::array<double, 7> pos_air_x = { 0.0445302, 0.157452, -0.0226488, -2.44288, 0.0199934, 2.7444, 0.778894 }; //in air (middle) for linear x movement
+	try {
+		h_controller.move_to(pos_air_x);
+	}
+	catch (const franka::Exception& e) {
+		std::cout << "catched Exception when moving to air position: " << e.what() << std::endl;
+	}
+
 	try {
 		h_controller.move_to(pos_10);
 		h_controller.move_to(pos_0);
@@ -274,15 +284,24 @@ csv_data apply_z_force(franka_proxy::franka_hardware_controller& h_controller, s
 	des_force(2) = -10.0;
 
 
+	std::vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d>> desired_positions_all;
 	std::vector<Eigen::Vector3d> desired_positions;
 	std::vector<Eigen::Matrix<double, 6, 1>> desired_forces;
 	std::vector<Eigen::Quaterniond> desired_orientations;
 
-	for (int i = 0; i < 5000; i++) {
+	desired_positions_all = give_x_movement_positions(start_pos);
+
+	for (int i = 0; i < desired_positions_all.size(); i++) {
+		desired_forces.push_back(des_force);
+		desired_orientations.push_back(start_orientation);
+		desired_positions.push_back(desired_positions_all[i]);
+	}
+
+	/*for (int i = 0; i < 5000; i++) {
 		desired_orientations.push_back(start_orientation);
 		desired_positions.push_back(start_pos);
 		desired_forces.push_back(des_force);
-	}
+	}*/
 
 	try {
 		h_controller.hybrid_control(data, desired_positions, desired_forces, desired_orientations, control_parameters);
@@ -336,12 +355,12 @@ void simulatedAnnnealing(franka_proxy::franka_hardware_controller& h_controller,
 	
 
 	//starting the simulated annealing algorithm
-	Eigen::Vector3d x_pos (-200, -30, 0);
-	Eigen::Vector3d y_pos(-200, -30, 0);
-	Eigen::Vector3d z_pos(-200, -30, 0);
-	Eigen::Vector3d mx_pos(-30, -5, 0);
-	Eigen::Vector3d my_pos(-30, -5, 0);
-	Eigen::Vector3d mz_pos(-20, -5, 0);
+	Eigen::Vector3d x_pos (200, 30, 0);
+	Eigen::Vector3d y_pos(200, 30, 0);
+	Eigen::Vector3d z_pos(200, 30, 0);
+	Eigen::Vector3d mx_pos(30, 5, 0);
+	Eigen::Vector3d my_pos(30, 5, 0);
+	Eigen::Vector3d mz_pos(20, 5, 0);
 	Eigen::Vector3d x_f(0.5, 5, 0);
 	Eigen::Vector3d y_f(0.5, 5, 0);
 	Eigen::Vector3d z_f(0.3, 10, 0);
@@ -354,12 +373,12 @@ void simulatedAnnnealing(franka_proxy::franka_hardware_controller& h_controller,
 	x_pos, y_pos, z_pos, mx_pos, my_pos, mz_pos, x_f, y_f, z_f, mx_f, my_f, mz_f
 	};
 
-	Eigen::Vector3d x_pos_max(-200, -30, 0);
-	Eigen::Vector3d y_pos_max(-200, -30, 0);
-	Eigen::Vector3d z_pos_max(-200, -30, 0);
-	Eigen::Vector3d mx_pos_max(-30, -5, 0);
-	Eigen::Vector3d my_pos_max(-30, -5, 0);
-	Eigen::Vector3d mz_pos_max(-20, -5, 0);
+	Eigen::Vector3d x_pos_max(500, 50, 0.01);
+	Eigen::Vector3d y_pos_max(200, 30, 0);
+	Eigen::Vector3d z_pos_max(200, 30, 0);
+	Eigen::Vector3d mx_pos_max(30, 5, 0);
+	Eigen::Vector3d my_pos_max(30, 5, 0);
+	Eigen::Vector3d mz_pos_max(20, 5, 0);
 	Eigen::Vector3d x_f_max(0.5, 5, 0);
 	Eigen::Vector3d y_f_max(0.5, 5, 0);
 	Eigen::Vector3d z_f_max(0.6, 20, 0.01);
@@ -438,7 +457,7 @@ void simulatedAnnnealing(franka_proxy::franka_hardware_controller& h_controller,
 	double l = 0.99;
 	double delta_F = 0.01;
 
-	int m = 5; //the median of m F values will be used
+	int m = 1; //the median of m F values will be used
 
 	while (c < c_max && exc < exc_max) {
 
@@ -446,12 +465,15 @@ void simulatedAnnnealing(franka_proxy::franka_hardware_controller& h_controller,
 		std::normal_distribution<double> nd(mu, sigma);
 		std::array<Eigen::Vector3d, 12> new_parameters = current_parameters;
 
+		std::cout << new_parameters[0](0) << ", " << new_parameters[0](1) << ", " << new_parameters[0](2) << std::endl;
+
 		for (int d = 0; d < 12; d++) {
 			if (dim[d] != 1) continue;
 
 			for (int j = 0; j < 3; j++) {
 				do {
 					new_parameters[d](j) = current_parameters[d](j) + eta * nd(gen) * max_parameters[d](j);
+					std::cout << "trying to find a new parameter set: " << j << std::endl;
 				} while (new_parameters[d](j) > max_parameters[d](j) || new_parameters[d](j) < 0);
 			}
 		}
@@ -592,7 +614,7 @@ int main() {
 	std::this_thread::sleep_for(std::chrono::seconds(2));
 
 	int dim[12] = {
-		0,0,0,0,0,0, //position (x, y, z, mx, my, mz)
+		1,0,0,0,0,0, //position (x, y, z, mx, my, mz)
 		0,0,1,0,0,0 //force (x, y, z, mx, my, mz)
 	};
 	simulatedAnnnealing(h_controller, dim);
