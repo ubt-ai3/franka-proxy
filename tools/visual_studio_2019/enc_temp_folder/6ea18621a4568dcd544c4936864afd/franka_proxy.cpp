@@ -545,14 +545,7 @@ void simulatedAnnnealing(franka_proxy::franka_hardware_controller& h_controller,
 		for (int d = 0; d < 12; d++) {
 			if (dim[d] != 1) continue;
 
-			std::cout << "Dim=" << d;
-			if (d < 6) {
-				std::cout << "\tF_part=" << (p_factor * data.itae_position(d, 0));
-			}
-			else {
-				std::cout << "\tF_part=" << (f_factor * data.itae_force(d - 6, 0));
-			}
-			std::cout << "\tcurrentParams=(" << current_parameters[d](0) << "," << current_parameters[d](1) << "," << 1000 * current_parameters[d](2) << ")"
+			std::cout << "Dim=" << d << "\tcurrentParams=(" << current_parameters[d](0) << "," << current_parameters[d](1) << "," << 1000 * current_parameters[d](2) << ")"
 				<< "\tnewParams=(" << new_parameters[d](0) << "," << new_parameters[d](1) << "," << 1000.0 * new_parameters[d](2) << ")\n";
 		}
 		std::cout << "\n";
