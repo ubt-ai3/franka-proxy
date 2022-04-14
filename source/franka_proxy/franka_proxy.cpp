@@ -516,11 +516,11 @@ void simulatedAnnnealing(franka_proxy::franka_hardware_controller& h_controller,
 			catch (const franka::Exception& e) {
 				c = 0;
 				exc++;
-				std::cout << "The following parameter set caused an exception! ";
+				std::cout << "The following parameter set caused an exception!\n";
 				for (int d = 0; d < 12; d++) {
 					if (dim[d] != 1) continue;
 					std::cout << " Dim: " << d << " (" <<
-						new_parameters[d](0) << ", " << new_parameters[d](1) << ", " << new_parameters[d](2) << ")";
+						new_parameters[d](0) << ", " << new_parameters[d](1) << ", " << new_parameters[d](2) << ")\n";
 				}
 				std::cout << std::endl;
 				catched_e = true;
@@ -617,6 +617,56 @@ void simulatedAnnnealing(franka_proxy::franka_hardware_controller& h_controller,
 	}
 }
 
+void validate_params(franka_proxy::franka_hardware_controller& h_controller) {
+	Eigen::Vector3d x_pos(6206.2, 3157.18, 35.8264);
+	Eigen::Vector3d y_pos(200, 30, 0);
+	Eigen::Vector3d z_pos(200, 30, 0);
+	Eigen::Vector3d mx_pos(30, 5, 0);
+	Eigen::Vector3d my_pos(30, 5, 0);
+	Eigen::Vector3d mz_pos(20, 5, 0);
+	Eigen::Vector3d x_f(0.5, 5, 0);
+	Eigen::Vector3d y_f(0.5, 5, 0);
+	Eigen::Vector3d z_f(0.145238, 5.52166, 0.00342567);
+	Eigen::Vector3d mx_f(0.05, 0.5, 0);
+	Eigen::Vector3d my_f(0.05, 0.5, 0);
+	Eigen::Vector3d mz_f(0.05, 0.5, 0);
+
+	std::array<Eigen::Vector3d, 12> parameters = {
+	x_pos, y_pos, z_pos, mx_pos, my_pos, mz_pos, x_f, y_f, z_f, mx_f, my_f, mz_f
+	};
+	std::array<std::array<double, 6>, 6> control_parameters;
+	control_parameters[0] = { parameters[0](0), parameters[1](0), parameters[2](0), parameters[3](0), parameters[4](0), parameters[5](0) };
+	control_parameters[1] = { parameters[0](1), parameters[1](1), parameters[2](1), parameters[3](1), parameters[4](1), parameters[5](1) };
+	control_parameters[2] = { parameters[0](2), parameters[1](2), parameters[2](2), parameters[3](2), parameters[4](2), parameters[5](2) };
+	control_parameters[3] = { parameters[6](0), parameters[7](0), parameters[8](0), parameters[9](0), parameters[10](0), parameters[11](0) };
+	control_parameters[4] = { parameters[6](1), parameters[7](1), parameters[8](1), parameters[9](1), parameters[10](1), parameters[11](1) };
+	control_parameters[5] = { parameters[6](2), parameters[7](2), parameters[8](2), parameters[9](2), parameters[10](2), parameters[11](2) };
+
+
+	auto t = std::time(nullptr);
+	auto tm = *std::localtime(&t);
+	std::ostringstream oss;
+	oss << std::put_time(&tm, "%d-%m-%Y %H-%M-%S");
+	auto time_string = oss.str();
+	std::string filename = "H:/DB_Forschung/flexPro/11.Unterprojekte/BA_Laurin_Hecken/05_Rohdaten/validation/" + time_string + ".csv";
+	std::ofstream sa_data_file;
+	sa_data_file.open(filename, std::ofstream::out | std::ofstream::app);
+	sa_data_file << "k,F\n";
+	sa_data_file.close();
+	
+	int l = 20;
+	double f_factor = 1.0;
+	double p_factor = 100.0;
+
+	for (int i = 0; i < l; i++) {
+		csv_data data{};
+		apply_z_force(h_controller, control_parameters, data);
+		sa_data_file.open(filename, std::ofstream::out | std::ofstream::app);
+		sa_data_file << (i+1) << "," << (p_factor * data.itae_position(0, 0) + f_factor * data.itae_force(2, 0)) << "\n";
+		sa_data_file.close();
+	}
+}
+
 int main() {
 
 	franka_proxy::franka_hardware_controller h_controller("192.168.1.1");
@@ -628,8 +678,8 @@ int main() {
 		1,0,0,0,0,0, //position (x, y, z, mx, my, mz)
 		0,0,1,0,0,0 //force (x, y, z, mx, my, mz)
 	};
-	simulatedAnnnealing(h_controller, dim);
-
+	//simulatedAnnnealing(h_controller, dim);
+	validate_params(h_controller);
 	//print_cur_joint_pos(h_controller);
 
 	return 0;
