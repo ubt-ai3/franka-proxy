@@ -179,15 +179,21 @@ std::vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d>> give_x_m
 	return desired_positions;
 }
 
-std::vector<Eigen::Vector3d> give_circle_positions(Eigen::Vector3d start_pos) {
+std::vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d>> give_circle_positions(Eigen::Vector3d start_pos) {
 	double r = 0.1; //radius of circle
-	std::vector<Eigen::Vector3d> desired_positions;
+	std::vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d>> desired_positions;
 	Eigen::Vector3d des_pos = start_pos;
-	for (int i = 0; i < 5000; i++) {
-		des_pos(0) = (cos(i / 5000.0 * 2 * 3.14159265) - 1.0) * r;
-		des_pos(1) = sin(i / 5000.0 * 2 * 3.14159265) * r;
+	int m = 10000;
+	for (int i = 0; i < m; i++) {
+		des_pos(0) = (cos((double)i / (double)m * 2 * 3.14159265) - 1.0) * r + start_pos(0);
+		des_pos(1) = sin((double)i / (double)m * 2 * 3.14159265) * r + start_pos(1);
 		desired_positions.push_back(des_pos);
 	}
+	for (int i = 0; i < 1000; i++) {
+		desired_positions.push_back(des_pos);
+	}
+
+	return desired_positions;
 }
 
 std::vector<Eigen::Vector3d> give_triangle_positions(Eigen::Vector3d start_pos) {
@@ -286,7 +292,7 @@ csv_data apply_z_force(franka_proxy::franka_hardware_controller& h_controller, s
 	std::vector<Eigen::Matrix<double, 6, 1>> desired_forces;
 	std::vector<Eigen::Quaterniond> desired_orientations;
 
-	desired_positions_all = give_x_movement_positions(start_pos);
+	desired_positions_all = give_circle_positions(start_pos);
 
 	for (int i = 0; i < desired_positions_all.size(); i++) {
 		desired_forces.push_back(des_force);
@@ -309,12 +315,12 @@ csv_data apply_z_force(franka_proxy::franka_hardware_controller& h_controller, s
 		throw;
 	}
 
-	try {
-		h_controller.move_to(pos_air_x_b);
-	}
-	catch (const franka::Exception& e) {
-		std::cout << "catched Exception when moving to air position: " << e.what() << std::endl;
-	}
+	//try {
+	//	h_controller.move_to(pos_air_x_b);
+	//}
+	//catch (const franka::Exception& e) {
+	//	std::cout << "catched Exception when moving to air position: " << e.what() << std::endl;
+	//}
 
 	data.ise_position = calculate_ISE(data.position_error);
 	data.ise_force = calculate_ISE(data.force_error);
@@ -618,7 +624,7 @@ void simulatedAnnnealing(franka_proxy::franka_hardware_controller& h_controller,
 }
 
 void validate_params(franka_proxy::franka_hardware_controller& h_controller) {
-	Eigen::Vector3d x_pos(6206.2, 3157.18, 35.8264);
+	Eigen::Vector3d x_pos(12000, 0, 0);
 	Eigen::Vector3d y_pos(200, 30, 0);
 	Eigen::Vector3d z_pos(200, 30, 0);
 	Eigen::Vector3d mx_pos(30, 5, 0);
@@ -626,7 +632,7 @@ void validate_params(franka_proxy::franka_hardware_controller& h_controller) {
 	Eigen::Vector3d mz_pos(20, 5, 0);
 	Eigen::Vector3d x_f(0.5, 5, 0);
 	Eigen::Vector3d y_f(0.5, 5, 0);
-	Eigen::Vector3d z_f(0.145238, 5.52166, 0.00342567);
+	Eigen::Vector3d z_f(0, 9, 0);
 	Eigen::Vector3d mx_f(0.05, 0.5, 0);
 	Eigen::Vector3d my_f(0.05, 0.5, 0);
 	Eigen::Vector3d mz_f(0.05, 0.5, 0);
@@ -667,6 +673,58 @@ void validate_params(franka_proxy::franka_hardware_controller& h_controller) {
 	}
 }
 
+void manual_testing(franka_proxy::franka_hardware_controller& h_controller) {
+	Eigen::Vector3d x_pos(800, 0, 0);
+	Eigen::Vector3d y_pos(800, 0, 0);
+	Eigen::Vector3d z_pos(200, 30, 0);
+	Eigen::Vector3d mx_pos(30, 5, 0);
+	Eigen::Vector3d my_pos(30, 5, 0);
+	Eigen::Vector3d mz_pos(20, 5, 0);
+	Eigen::Vector3d x_f(0.5, 5, 0);
+	Eigen::Vector3d y_f(0.5, 5, 0);
+	Eigen::Vector3d z_f(0, 9, 0);
+	Eigen::Vector3d mx_f(0.05, 0.5, 0);
+	Eigen::Vector3d my_f(0.05, 0.5, 0);
+	Eigen::Vector3d mz_f(0.05, 0.5, 0);
+
+	std::array<Eigen::Vector3d, 12> parameters = {
+	x_pos, y_pos, z_pos, mx_pos, my_pos, mz_pos, x_f, y_f, z_f, mx_f, my_f, mz_f
+	};
+	std::array<std::array<double, 6>, 6> control_parameters;
+	control_parameters[0] = { parameters[0](0), parameters[1](0), parameters[2](0), parameters[3](0), parameters[4](0), parameters[5](0) };
+	control_parameters[1] = { parameters[0](1), parameters[1](1), parameters[2](1), parameters[3](1), parameters[4](1), parameters[5](1) };
+	control_parameters[2] = { parameters[0](2), parameters[1](2), parameters[2](2), parameters[3](2), parameters[4](2), parameters[5](2) };
+	control_parameters[3] = { parameters[6](0), parameters[7](0), parameters[8](0), parameters[9](0), parameters[10](0), parameters[11](0) };
+	control_parameters[4] = { parameters[6](1), parameters[7](1), parameters[8](1), parameters[9](1), parameters[10](1), parameters[11](1) };
+	control_parameters[5] = { parameters[6](2), parameters[7](2), parameters[8](2), parameters[9](2), parameters[10](2), parameters[11](2) };
+
+	double f_factor = 1.0;
+	double p_factor = 100.0;
+
+	
+	double F_p = 0.0;
+	double F_f = 0.0;
+
+	int m = 5;
+
+	for (int i = 0; i < m; i++) {
+		std::cout << "Durchlauf: " << i+1 << "/" << m << std::endl;
+		csv_data data{};
+		try {
+			apply_z_force(h_controller, control_parameters, data);
+		}
+		catch (const franka::Exception& e) {
+			std::cout << e.what() << std::endl;
+		}
+		F_p += p_factor * data.itae_position(0, 0);
+		F_f += f_factor * data.itae_force(2, 0);
+	}
+	F_p = F_p / m;
+	F_f = F_f / m;
+
+	std::cout << "ITAE=" << (F_p + F_f) << "\tITAE_p=" << F_p << "\tITAE_f=" << F_f << std::endl;
+}
+
 int main() {
 
 	franka_proxy::franka_hardware_controller h_controller("192.168.1.1");
@@ -679,8 +737,10 @@ int main() {
 		0,0,1,0,0,0 //force (x, y, z, mx, my, mz)
 	};
 	//simulatedAnnnealing(h_controller, dim);
-	validate_params(h_controller);
+	//validate_params(h_controller);
 	//print_cur_joint_pos(h_controller);
+
+	manual_testing(h_controller);
 
 	return 0;
 }
