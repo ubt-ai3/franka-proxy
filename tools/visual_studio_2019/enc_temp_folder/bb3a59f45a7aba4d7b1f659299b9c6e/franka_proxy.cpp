@@ -665,7 +665,6 @@ void validate_params(franka_proxy::franka_hardware_controller& h_controller, int
 	double f_factor = 1.0;
 
 	for (int i = 0; i < l; i++) {
-		std::cout << "Durchlauf: " << i << "/" << l << std::endl;
 		csv_data data{};
 		apply_z_force(h_controller, control_parameters, data);
 		sa_data_file.open(filename, std::ofstream::out | std::ofstream::app);
