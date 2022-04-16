@@ -373,7 +373,7 @@ void simulatedAnnnealing(franka_proxy::franka_hardware_controller& h_controller,
 	Eigen::Vector3d mz_pos(20, 5, 0);
 	Eigen::Vector3d x_f(0.5, 5, 0);
 	Eigen::Vector3d y_f(0.5, 5, 0);
-	Eigen::Vector3d z_f(0.3, 10, 0);
+	Eigen::Vector3d z_f(0.2, 10, 0);
 	Eigen::Vector3d mx_f(0.05, 0.5, 0);
 	Eigen::Vector3d my_f(0.05, 0.5, 0);
 	Eigen::Vector3d mz_f(0.05, 0.5, 0);
@@ -383,8 +383,8 @@ void simulatedAnnnealing(franka_proxy::franka_hardware_controller& h_controller,
 	x_pos, y_pos, z_pos, mx_pos, my_pos, mz_pos, x_f, y_f, z_f, mx_f, my_f, mz_f
 	};
 
-	Eigen::Vector3d x_pos_max(7500, 5000, 50.0);
-	Eigen::Vector3d y_pos_max(200, 30, 0);
+	Eigen::Vector3d x_pos_max(5000, 2500, 100);
+	Eigen::Vector3d y_pos_max(5000, 2500, 100);
 	Eigen::Vector3d z_pos_max(200, 30, 0);
 	Eigen::Vector3d mx_pos_max(30, 5, 0);
 	Eigen::Vector3d my_pos_max(30, 5, 0);
@@ -470,9 +470,9 @@ void simulatedAnnnealing(franka_proxy::franka_hardware_controller& h_controller,
 
 	double sigma = 1.0;
 	double l = 0.97;
-	double delta_F = 0.1;
+	double delta_F = 1.0;
 
-	int m = 3; //the median of m F values will be used
+	int m = 5; //the median of m F values will be used
 
 	while (c < c_max && exc < exc_max) {
 
@@ -624,15 +624,15 @@ void simulatedAnnnealing(franka_proxy::franka_hardware_controller& h_controller,
 }
 
 void validate_params(franka_proxy::franka_hardware_controller& h_controller, int dim[12]) {
-	Eigen::Vector3d x_pos(1500, 500, 0);
-	Eigen::Vector3d y_pos(1500, 0, 0);
+	Eigen::Vector3d x_pos(568, 1290, 75);
+	Eigen::Vector3d y_pos(3390, 2220, 73);
 	Eigen::Vector3d z_pos(200, 30, 0);
 	Eigen::Vector3d mx_pos(30, 5, 0);
 	Eigen::Vector3d my_pos(30, 5, 0);
 	Eigen::Vector3d mz_pos(20, 5, 0);
 	Eigen::Vector3d x_f(0.5, 5, 0);
 	Eigen::Vector3d y_f(0.5, 5, 0);
-	Eigen::Vector3d z_f(0.2, 15, 0);
+	Eigen::Vector3d z_f(0.0712, 10.3, 0.000327);
 	Eigen::Vector3d mx_f(0.05, 0.5, 0);
 	Eigen::Vector3d my_f(0.05, 0.5, 0);
 	Eigen::Vector3d mz_f(0.05, 0.5, 0);
