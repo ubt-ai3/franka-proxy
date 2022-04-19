@@ -383,15 +383,15 @@ void simulatedAnnnealing(franka_proxy::franka_hardware_controller& h_controller,
 	x_pos, y_pos, z_pos, mx_pos, my_pos, mz_pos, x_f, y_f, z_f, mx_f, my_f, mz_f
 	};
 
-	Eigen::Vector3d x_pos_max(5000, 2500, 100);
-	Eigen::Vector3d y_pos_max(5000, 2500, 100);
+	Eigen::Vector3d x_pos_max(1000, 2000, 0);
+	Eigen::Vector3d y_pos_max(1000, 2000, 0);
 	Eigen::Vector3d z_pos_max(200, 30, 0);
-	Eigen::Vector3d mx_pos_max(30, 5, 0);
-	Eigen::Vector3d my_pos_max(30, 5, 0);
-	Eigen::Vector3d mz_pos_max(20, 5, 0);
+	Eigen::Vector3d mx_pos_max(100, 20, 0);
+	Eigen::Vector3d my_pos_max(100, 20, 0);
+	Eigen::Vector3d mz_pos_max(100, 20, 0);
 	Eigen::Vector3d x_f_max(0.5, 5, 0);
 	Eigen::Vector3d y_f_max(0.5, 5, 0);
-	Eigen::Vector3d z_f_max(0.6, 20, 0.01);
+	Eigen::Vector3d z_f_max(0.4, 20, 0.01);
 	Eigen::Vector3d mx_f_max(0.05, 0.5, 0);
 	Eigen::Vector3d my_f_max(0.05, 0.5, 0);
 	Eigen::Vector3d mz_f_max(0.05, 0.5, 0);
@@ -414,7 +414,7 @@ void simulatedAnnnealing(franka_proxy::franka_hardware_controller& h_controller,
 	}
 
 	//call hybrid control with first random parameterSet and calculate start F
-	csv_data data{};
+	csv_data initial_data{};
 
 	double initial_F = 0.0;
 	double p_factor = 100.0;
@@ -432,15 +432,17 @@ void simulatedAnnnealing(franka_proxy::franka_hardware_controller& h_controller,
 		control_parameters[5] = { initial_parameters[6](2), initial_parameters[7](2), initial_parameters[8](2), initial_parameters[9](2), initial_parameters[10](2), initial_parameters[11](2) };
 
 
-		apply_z_force(h_controller, control_parameters, data);
+		apply_z_force(h_controller, control_parameters, initial_data);
 		for (int d = 0; d < 12; d++) {
 			if (dim[d] != 1) continue;
-
-			if (d < 6) {
-				initial_F += p_factor * data.itae_position(d, 0);
+			if (d <= 2) {
+				initial_F += p_factor * initial_data.itae_position(d, 0);
+			}
+			else if (d > 2 && d < 6) {
+				initial_F += p_factor/10.0 * initial_data.itae_position(d, 0);
 			}
 			else {
-				initial_F += f_factor * data.itae_force(d - 6, 0);
+				initial_F += f_factor * initial_data.itae_force(d - 6, 0);
 			}
 		}
 	}
@@ -449,9 +451,9 @@ void simulatedAnnnealing(franka_proxy::franka_hardware_controller& h_controller,
 		for (int d = 0; d < 12; d++) {
 			if (dim[d] != 1) continue;
 			std::cout << " Dim: " << d << " (" <<
-				initial_parameters[d](0) << ", " << initial_parameters[d](1) << ", " << initial_parameters[d](2) << ")";
+				initial_parameters[d](0) << ", " << initial_parameters[d](1) << ", " << initial_parameters[d](2) << ")\n";
 		}
-		throw;
+		return;
 	}
 
 	double current_F = initial_F;
@@ -459,7 +461,7 @@ void simulatedAnnnealing(franka_proxy::franka_hardware_controller& h_controller,
 	std::array<Eigen::Vector3d, 12> current_parameters = initial_parameters;
 	std::array<Eigen::Vector3d, 12> best_parameters = initial_parameters;
 
-	double T = 5.0; //initial T
+	double T = 20.0; //initial T
 	double eta = 0.25; //initial eta
 	int c = 0; //counter for consecutive remaining parameterVector
 	int c_max = 10;
@@ -470,7 +472,7 @@ void simulatedAnnnealing(franka_proxy::franka_hardware_controller& h_controller,
 
 	double sigma = 1.0;
 	double l = 0.97;
-	double delta_F = 1.0;
+	double delta_F = 2.0;
 
 	int m = 5; //the median of m F values will be used
 
@@ -492,6 +494,7 @@ void simulatedAnnnealing(franka_proxy::franka_hardware_controller& h_controller,
 				
 		bool catched_e = false;
 		double new_F_sum = 0.0;
+		double F_parts[12] = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
 
 		for (int i = 0; i < m; i++) {
 			csv_data data{};
@@ -509,12 +512,17 @@ void simulatedAnnnealing(franka_proxy::franka_hardware_controller& h_controller,
 
 				for (int d = 0; d < 12; d++) {
 					if (dim[d] != 1) continue;
-
-					if (d < 6) {
+					if (d <= 2) {
 						new_F_sum += p_factor * data.itae_position(d, 0);
+						F_parts[d] += p_factor * data.itae_position(d, 0); // only relevant for console
+					}
+					else if (d > 2 && d < 6) {
+						new_F_sum += p_factor/10.0 * data.itae_position(d, 0);
+						F_parts[d] += p_factor/10.0 * data.itae_position(d, 0); // only relevant for console
 					}
 					else {
 						new_F_sum += f_factor * data.itae_force(d - 6, 0);
+						F_parts[d] += f_factor * data.itae_force(d - 6, 0); // only relevant for console
 					}
 				}
 				exc = 0;
@@ -537,7 +545,11 @@ void simulatedAnnnealing(franka_proxy::franka_hardware_controller& h_controller,
 			continue;
 		}
 
-		double new_F = new_F_sum / m;		
+		double new_F = new_F_sum / m;
+
+		for (int d = 0; d < 12; d++) {
+			F_parts[d] = F_parts[d] / m;
+		}
 
 
 		//printing on console (K_D is printed on console with a factor 1000)
@@ -553,10 +565,10 @@ void simulatedAnnnealing(franka_proxy::franka_hardware_controller& h_controller,
 
 			std::cout << "Dim=" << d;
 			if (d < 6) {
-				std::cout << "\tF_part=" << (p_factor * data.itae_position(d, 0));
+				std::cout << "\tF_part=" << F_parts[d];
 			}
 			else {
-				std::cout << "\tF_part=" << (f_factor * data.itae_force(d - 6, 0));
+				std::cout << "\tF_part=" << F_parts[d];
 			}
 			std::cout << "\tcurrentParams=(" << current_parameters[d](0) << "," << current_parameters[d](1) << "," << 1000 * current_parameters[d](2) << ")"
 				<< "\tnewParams=(" << new_parameters[d](0) << "," << new_parameters[d](1) << "," << 1000.0 * new_parameters[d](2) << ")\n";
@@ -686,15 +698,15 @@ void validate_params(franka_proxy::franka_hardware_controller& h_controller, int
 }
 
 void manual_testing(franka_proxy::franka_hardware_controller& h_controller, int dim[12]) {
-	Eigen::Vector3d x_pos(1500, 500, 0);
-	Eigen::Vector3d y_pos(1500, 0, 0);
+	Eigen::Vector3d x_pos(568, 1290, 75);
+	Eigen::Vector3d y_pos(3390, 2220, 73);
 	Eigen::Vector3d z_pos(200, 30, 0);
-	Eigen::Vector3d mx_pos(30, 5, 0);
-	Eigen::Vector3d my_pos(30, 5, 0);
-	Eigen::Vector3d mz_pos(20, 5, 0);
+	Eigen::Vector3d mx_pos(3500, 3500, 50);
+	Eigen::Vector3d my_pos(1000, 1000, 10);
+	Eigen::Vector3d mz_pos(200, 200, 10);
 	Eigen::Vector3d x_f(0.5, 5, 0);
 	Eigen::Vector3d y_f(0.5, 5, 0);
-	Eigen::Vector3d z_f(0.2, 15, 0);
+	Eigen::Vector3d z_f(0.0712, 10.3, 0.000327);
 	Eigen::Vector3d mx_f(0.05, 0.5, 0);
 	Eigen::Vector3d my_f(0.05, 0.5, 0);
 	Eigen::Vector3d mz_f(0.05, 0.5, 0);
@@ -717,7 +729,7 @@ void manual_testing(franka_proxy::franka_hardware_controller& h_controller, int 
 	double F_p = 0.0;
 	double F_f = 0.0;
 
-	int m = 5;
+	int m = 1;
 
 	for (int i = 0; i < m; i++) {
 		std::cout << "Durchlauf: " << i+1 << "/" << m << std::endl;
@@ -752,7 +764,7 @@ int main() {
 	std::this_thread::sleep_for(std::chrono::seconds(2));
 
 	int dim[12] = {
-		1,1,0,0,0,0, //position (x, y, z, mx, my, mz)
+		1,1,0,1,1,1, //position (x, y, z, mx, my, mz)
 		0,0,1,0,0,0 //force (x, y, z, mx, my, mz)
 	};
 
@@ -762,8 +774,8 @@ int main() {
 			return 0;
 		}
 	}
-	//simulatedAnnnealing(h_controller, dim);
-	validate_params(h_controller, dim);
+	simulatedAnnnealing(h_controller, dim);
+	//validate_params(h_controller, dim);
 	//print_cur_joint_pos(h_controller);
 
 	//manual_testing(h_controller, dim);
