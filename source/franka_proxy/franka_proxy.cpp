@@ -383,8 +383,8 @@ void simulatedAnnnealing(franka_proxy::franka_hardware_controller& h_controller,
 	x_pos, y_pos, z_pos, mx_pos, my_pos, mz_pos, x_f, y_f, z_f, mx_f, my_f, mz_f
 	};
 
-	Eigen::Vector3d x_pos_max(1000, 2000, 0);
-	Eigen::Vector3d y_pos_max(1000, 2000, 0);
+	Eigen::Vector3d x_pos_max(1000, 1000, 0);
+	Eigen::Vector3d y_pos_max(1000, 1000, 0);
 	Eigen::Vector3d z_pos_max(200, 30, 0);
 	Eigen::Vector3d mx_pos_max(100, 20, 0);
 	Eigen::Vector3d my_pos_max(100, 20, 0);
@@ -461,7 +461,7 @@ void simulatedAnnnealing(franka_proxy::franka_hardware_controller& h_controller,
 	std::array<Eigen::Vector3d, 12> current_parameters = initial_parameters;
 	std::array<Eigen::Vector3d, 12> best_parameters = initial_parameters;
 
-	double T = 20.0; //initial T
+	double T = 30.0; //initial T
 	double eta = 0.25; //initial eta
 	int c = 0; //counter for consecutive remaining parameterVector
 	int c_max = 10;
@@ -471,7 +471,7 @@ void simulatedAnnnealing(franka_proxy::franka_hardware_controller& h_controller,
 	double mu = 0.0;
 
 	double sigma = 1.0;
-	double l = 0.97;
+	double l = 0.98;
 	double delta_F = 2.0;
 
 	int m = 5; //the median of m F values will be used
@@ -538,6 +538,7 @@ void simulatedAnnnealing(franka_proxy::franka_hardware_controller& h_controller,
 				}
 				std::cout << std::endl;
 				catched_e = true;
+				std::this_thread::sleep_for(std::chrono::seconds(5));
 				break;
 			}
 		}
