@@ -61,16 +61,27 @@ public:
 
 	void update() override;
 
-
 	void start_recording() override;
+
+	/**
+	* Stop recording playback data, assumes that start_recording() has been called bevore.
+	* 
+	* This returns a motion sampled at 1kHz, but the robot always remains in the position
+	* it was in when stop_playback() was called.
+	**/
 	std::pair<std::vector<std::array<double, 7>>, std::vector<std::array<double, 6>>>
 		stop_recording() override;
+
+	/**
+	* Simulates a playback movement, but ignores force and selection values.
+	**/
 	void move_sequence
 		(std::vector<std::array<double, 7>> q_sequence,
-		 std::vector<std::array<double, 6>> f_sequence,
-		 std::vector<std::array<double, 6>> selection_vector_sequence) override;
+		 std::vector<std::array<double, 6>>,
+		 std::vector<std::array<double, 6>>) override;
 	
 private:
+	std::chrono::time_point<std::chrono::steady_clock> recording_start_;
 
 	void move_gripper(int target, double speed_mps);
 

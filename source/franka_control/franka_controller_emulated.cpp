@@ -191,7 +191,6 @@ void franka_controller_emulated::automatic_error_recovery() {}
 
 robot_config_7dof franka_controller_emulated::current_config() const
 {
-	std::lock_guard<std::mutex> lk(controller_mutex_);
 	return state_joint_values_;
 }
 
@@ -214,26 +213,66 @@ void franka_controller_emulated::update() {}
 	
 void franka_controller_emulated::start_recording()
 {
-	std::cerr << "franka_controller_emulated::start_recording(): Not implemented.";
-	throw not_implemented();
+	std::lock_guard<std::mutex> lk(controller_mutex_);
+	recording_start_ = std::chrono::steady_clock::now();
 }
 
 	
 std::pair<std::vector<std::array<double, 7>>, std::vector<std::array<double, 6>>>
 	franka_controller_emulated::stop_recording()
 {
-	std::cerr << "franka_controller_emulated::stop_recording(): Not implemented.";
-	throw not_implemented();
+	std::unique_lock<std::mutex> lk(controller_mutex_);
+	const auto recording_start = recording_start_;
+	const auto jc = state_joint_values_;
+	lk.unlock();
+
+	const auto duration = std::chrono::steady_clock::now() - recording_start;
+	const auto dur_ms = static_cast<size_t>(std::chrono::duration_cast<std::chrono::milliseconds>(duration).count());
+
+	std::pair<std::vector<std::array<double, 7>>, std::vector<std::array<double, 6>>> result;
+
+	result.first = std::vector<std::array<double, 7>>(dur_ms, {jc[0], jc[1],jc[2],jc[3],jc[4],jc[5],jc[6]});
+	result.second = std::vector<std::array<double, 6>>(dur_ms, {0,0,0 ,0,0,0});
+
+	return result;
 }
 
 	
 void franka_controller_emulated::move_sequence
 	(std::vector<std::array<double, 7>> q_sequence,
-	 std::vector<std::array<double, 6>> f_sequence,
-	 std::vector<std::array<double, 6>> selection_vector_sequence)
+	 std::vector<std::array<double, 6>>,
+	 std::vector<std::array<double, 6>>)
 {
-	std::cerr << "franka_controller_emulated::move_sequence(): Not implemented.";
-	throw not_implemented();
+	const auto start_time = std::chrono::steady_clock::now();
+	
+	//passed milliseconds since call of function
+	unsigned long long ticks_passed = 0;
+
+	for (;;)
+	{
+		//calculate timepoint in sequence
+		auto now = std::chrono::steady_clock::now();
+		const auto next_timepoint = now +
+			std::chrono::duration_cast<std::chrono::milliseconds>
+				(std::chrono::duration<double>(move_update_rate_));
+		 ticks_passed = std::max(std::chrono::duration_cast<std::chrono::milliseconds>(now - start_time).count(), 0ll);
+
+
+		 //stop after sequence is finished
+		 if( ticks_passed >= q_sequence.size())
+			 break;
+
+		// Copy from process variables to exposed state.
+		{
+			std::lock_guard<std::mutex> lk(controller_mutex_);
+			state_joint_values_ = Eigen::Map<const Eigen::Matrix<double, 7,1>>(q_sequence[ticks_passed].data());
+		}
+
+		std::this_thread::sleep_until(next_timepoint);
+	}
+
+	std::lock_guard<std::mutex> lk(controller_mutex_);
+	state_joint_values_ = Eigen::Map<const Eigen::Matrix<double, 7,1>>(q_sequence.back().data());
 }
 
 
