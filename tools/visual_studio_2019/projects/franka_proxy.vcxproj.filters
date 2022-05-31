@@ -28,6 +28,9 @@
     <ClCompile Include="..\..\..\source\franka_proxy\motion_generator_seq_cart_vel_tau.cpp">
       <Filter>Source</Filter>
     </ClCompile>
+    <ClCompile Include="simulated_annealing.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\source\jr3_ft_sensor\force_torque_sensor.hpp">
