@@ -91,24 +91,6 @@ void create_overview_csv(csv_data data, std::string file_name) {
 
 }
 
-std::vector<std::vector<double>> read_csv(std::string filename) {
-	std::vector<std::vector<double>> m;
-	std::ifstream in(filename);
-	std::string line;
-	while (std::getline(in, line)) {
-		std::stringstream ss(line);
-		std::vector<double> row;
-		std::string data;
-		while (std::getline(ss, data, ',')) {
-			row.push_back(std::stod(data));
-		}
-		if (row.size() > 0) {
-			m.push_back(row);
-		}
-	}
-	return m;
-}
-
 
 //This function parses the force_motion_generator::export_data (which is returned from the apply_z_force_pid call in the main function) to a csv file
 void csv_parser(csv_data data) {
@@ -196,42 +178,7 @@ std::vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d>> give_cir
 	return desired_positions;
 }
 
-std::vector<Eigen::Vector3d> give_triangle_positions(Eigen::Vector3d start_pos) {
-	std::vector<Eigen::Vector3d> desired_positions;
-	Eigen::Vector3d pos = start_pos;
-	double a = 0.01;
-
-	for (int i = 0; i < 1000; i++) {
-		pos(0) += 0.0001; //10cm
-		pos(1) += 0.0001;
-		desired_positions.push_back(pos);
-	}
-	for (int i = 0; i < 2000; i++) {
-		pos(0) -= 0.0001;
-		desired_positions.push_back(pos);
-	}
-	for (int i = 0; i < 1000; i++) {
-		pos(0) += 0.0001;
-		pos(1) -= 0.0001;
-		desired_positions.push_back(pos);
-	}
-	return desired_positions;
-}
-
-
-void print_cur_joint_pos(franka_proxy::franka_hardware_controller& h_controller) {
-	for (int i = 0; i < 7; i++) {
-		std::cout << h_controller.robot_state().q[i] << ", ";
-	}
-	std::cout << std::endl;
-}
-
-void print_cur_cartesian_pos(franka_proxy::franka_hardware_controller& h_controller) {
-	std::array<double, 16> o_T_EE = h_controller.robot_state().O_T_EE;
-	std::cout << "x= " << o_T_EE[12] << ", y= " << o_T_EE[13] << ", z= " << o_T_EE[14] << std::endl;
-}
-
-//integral squared error: Force in [N^2 s] or Position in ?[m^2 s]?
+//integral squared error: Force in [N^2 s] or Position in [m^2 s]
 Eigen::Matrix<double, 6, 1> calculate_ISE(std::vector<Eigen::Matrix<double, 6, 1>>& values) {
 	Eigen::Matrix<double, 6, 1> ise;
 	ise.setZero();
@@ -332,15 +279,6 @@ csv_data apply_z_force(franka_proxy::franka_hardware_controller& h_controller, s
 	return data;
 }
 
-void print_2d_array(std::array<std::array<double, 6>, 6> a) {
-	for (int i = 0; i < 6; i++) {
-		for (int j = 0; j < 6; j++) {
-			std::cout << a[i][j] << "\t";
-		}
-		std::cout << std::endl;
-	}
-	std::cout << std::endl;
-}
 
 void simulatedAnnnealing(franka_proxy::franka_hardware_controller& h_controller, int dim[12]) {
 
@@ -636,126 +574,6 @@ void simulatedAnnnealing(franka_proxy::franka_hardware_controller& h_controller,
 	}
 }
 
-void validate_params(franka_proxy::franka_hardware_controller& h_controller, int dim[12]) {
-	Eigen::Vector3d x_pos(568, 1290, 75);
-	Eigen::Vector3d y_pos(3390, 2220, 73);
-	Eigen::Vector3d z_pos(200, 30, 0);
-	Eigen::Vector3d mx_pos(30, 5, 0);
-	Eigen::Vector3d my_pos(30, 5, 0);
-	Eigen::Vector3d mz_pos(20, 5, 0);
-	Eigen::Vector3d x_f(0.5, 5, 0);
-	Eigen::Vector3d y_f(0.5, 5, 0);
-	Eigen::Vector3d z_f(0.0712, 10.3, 0.000327);
-	Eigen::Vector3d mx_f(0.05, 0.5, 0);
-	Eigen::Vector3d my_f(0.05, 0.5, 0);
-	Eigen::Vector3d mz_f(0.05, 0.5, 0);
-
-	std::array<Eigen::Vector3d, 12> parameters = {
-	x_pos, y_pos, z_pos, mx_pos, my_pos, mz_pos, x_f, y_f, z_f, mx_f, my_f, mz_f
-	};
-	std::array<std::array<double, 6>, 6> control_parameters;
-	control_parameters[0] = { parameters[0](0), parameters[1](0), parameters[2](0), parameters[3](0), parameters[4](0), parameters[5](0) };
-	control_parameters[1] = { parameters[0](1), parameters[1](1), parameters[2](1), parameters[3](1), parameters[4](1), parameters[5](1) };
-	control_parameters[2] = { parameters[0](2), parameters[1](2), parameters[2](2), parameters[3](2), parameters[4](2), parameters[5](2) };
-	control_parameters[3] = { parameters[6](0), parameters[7](0), parameters[8](0), parameters[9](0), parameters[10](0), parameters[11](0) };
-	control_parameters[4] = { parameters[6](1), parameters[7](1), parameters[8](1), parameters[9](1), parameters[10](1), parameters[11](1) };
-	control_parameters[5] = { parameters[6](2), parameters[7](2), parameters[8](2), parameters[9](2), parameters[10](2), parameters[11](2) };
-
-
-	auto t = std::time(nullptr);
-	auto tm = *std::localtime(&t);
-	std::ostringstream oss;
-	oss << std::put_time(&tm, "%d-%m-%Y %H-%M-%S");
-	auto time_string = oss.str();
-	std::string filename = "H:/DB_Forschung/flexPro/11.Unterprojekte/BA_Laurin_Hecken/05_Rohdaten/validation/" + time_string + ".csv";
-	std::ofstream sa_data_file;
-	sa_data_file.open(filename, std::ofstream::out | std::ofstream::app);
-	sa_data_file << "k,F\n";
-	sa_data_file.close();
-	
-	int l = 20;
-	double p_factor = 100.0;
-	double f_factor = 1.0;
-
-	for (int i = 0; i < l; i++) {
-		std::cout << "Durchlauf: " << i << "/" << l << std::endl;
-		csv_data data{};
-		apply_z_force(h_controller, control_parameters, data);
-		sa_data_file.open(filename, std::ofstream::out | std::ofstream::app);
-		double F_p = 0.0;
-		double F_f = 0.0;
-		for (int d = 0; d < 12; d++) {
-			if (dim[d] != 1) continue;
-			if (d < 6) {
-				F_p += p_factor * data.itae_position(d, 0);
-			}
-			else {
-				F_f += f_factor * data.itae_force(d - 6, 0);
-			}
-		}
-		sa_data_file << (i+1) << "," << (F_p + F_f) << "\n";
-		sa_data_file.close();
-	}
-}
-
-void manual_testing(franka_proxy::franka_hardware_controller& h_controller, int dim[12]) {
-	Eigen::Vector3d x_pos(568, 1290, 75);
-	Eigen::Vector3d y_pos(3390, 2220, 73);
-	Eigen::Vector3d z_pos(200, 30, 0);
-	Eigen::Vector3d mx_pos(3500, 3500, 50);
-	Eigen::Vector3d my_pos(1000, 1000, 10);
-	Eigen::Vector3d mz_pos(200, 200, 10);
-	Eigen::Vector3d x_f(0.5, 5, 0);
-	Eigen::Vector3d y_f(0.5, 5, 0);
-	Eigen::Vector3d z_f(0.0712, 10.3, 0.000327);
-	Eigen::Vector3d mx_f(0.05, 0.5, 0);
-	Eigen::Vector3d my_f(0.05, 0.5, 0);
-	Eigen::Vector3d mz_f(0.05, 0.5, 0);
-
-	std::array<Eigen::Vector3d, 12> parameters = {
-	x_pos, y_pos, z_pos, mx_pos, my_pos, mz_pos, x_f, y_f, z_f, mx_f, my_f, mz_f
-	};
-	std::array<std::array<double, 6>, 6> control_parameters;
-	control_parameters[0] = { parameters[0](0), parameters[1](0), parameters[2](0), parameters[3](0), parameters[4](0), parameters[5](0) };
-	control_parameters[1] = { parameters[0](1), parameters[1](1), parameters[2](1), parameters[3](1), parameters[4](1), parameters[5](1) };
-	control_parameters[2] = { parameters[0](2), parameters[1](2), parameters[2](2), parameters[3](2), parameters[4](2), parameters[5](2) };
-	control_parameters[3] = { parameters[6](0), parameters[7](0), parameters[8](0), parameters[9](0), parameters[10](0), parameters[11](0) };
-	control_parameters[4] = { parameters[6](1), parameters[7](1), parameters[8](1), parameters[9](1), parameters[10](1), parameters[11](1) };
-	control_parameters[5] = { parameters[6](2), parameters[7](2), parameters[8](2), parameters[9](2), parameters[10](2), parameters[11](2) };
-
-	double f_factor = 1.0;
-	double p_factor = 100.0;
-
-	
-	double F_p = 0.0;
-	double F_f = 0.0;
-
-	int m = 1;
-
-	for (int i = 0; i < m; i++) {
-		std::cout << "Durchlauf: " << i+1 << "/" << m << std::endl;
-		csv_data data{};
-		try {
-			apply_z_force(h_controller, control_parameters, data);
-		}
-		catch (const franka::Exception& e) {
-			std::cout << e.what() << std::endl;
-		}
-		for (int d = 0; d < 12; d++) {
-			if (dim[d] != 1) continue;
-			if (d < 6) {
-				F_p += p_factor * data.itae_position(d, 0);
-			}
-			else {
-				F_f += f_factor * data.itae_force(d - 6, 0);
-			}
-		}
-	}
-	F_p = F_p / m;
-	F_f = F_f / m;
-
-	std::cout << "ITAE=" << (F_p + F_f) << "\tITAE_p=" << F_p << "\tITAE_f=" << F_f << std::endl;
-}
 
 int main() {
 
@@ -776,10 +594,6 @@ int main() {
 		}
 	}
 	simulatedAnnnealing(h_controller, dim);
-	//validate_params(h_controller, dim);
-	//print_cur_joint_pos(h_controller);
-
-	//manual_testing(h_controller, dim);
 
 	return 0;
 }

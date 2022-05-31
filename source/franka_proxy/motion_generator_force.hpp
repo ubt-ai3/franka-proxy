@@ -166,6 +166,10 @@ private:
 	void update_position_error_diff_filter(Eigen::Matrix<double, 6, 1> position_error_diff);
 	double compute_position_error_diff_filtered(int j);
 
+	Eigen::Matrix<double, 6, 1> pid_force_control(double period, Eigen::Matrix<double, 6, 1> force_existing);
+	Eigen::Matrix<double, 6, 1> pid_position_control(double period, Eigen::Affine3d transform);
+	Eigen::Matrix<double, 6, 1> formatting_position(Eigen::Vector3d position, Eigen::Quaterniond orientation);
+
 	//Spring Damping System Position related
 	using eigen_vector7d = Eigen::Matrix<double, 7, 1>;
 
@@ -173,11 +177,6 @@ private:
 
 	void update_dq_filter(const franka::RobotState& robot_state);
 	Eigen::Matrix<double, 7, 1> compute_dq_filtered();
-
-	Eigen::MatrixXd stiffness_;
-	Eigen::MatrixXd damping_;
-	const double translational_stiffness_{ 1000.0 };
-	const double rotational_stiffness_{ 100.0 };
 
 	size_t dq_current_filter_position_ = 0;
 	size_t dq_filter_size_ = 10;
