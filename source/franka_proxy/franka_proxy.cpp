@@ -11,6 +11,7 @@
 #include "franka_proxy.hpp"
 #include "motion_generator_force.hpp"
 #include "csv_data_struct.hpp"
+#include "simulated_annealing.hpp"
 
 #include <iostream>
 #include <iomanip>
@@ -51,19 +52,11 @@ int main() {
 	std::cout << "Starting in 2 seconds..." << std::endl;
 	std::this_thread::sleep_for(std::chrono::seconds(2));
 
+	franka_proxy::hyb_con_pid_optimizer params_optimizer(h_controller);
 
-	int dim[12] = {
-		1,1,0,1,1,1, //position (x, y, z, mx, my, mz)
-		0,0,1,0,0,0 //force (x, y, z, mx, my, mz)
-	};
+	std::thread t = params_optimizer.start(h_controller);
 
-	for (int i = 0; i < 6; i++) {
-		if (dim[i] + dim[i + 6] > 1) {
-			std::cout << "Invalid Dimension Array!" << std::endl;
-			return 0;
-		}
-	}
-	//simulatedAnnnealing(h_controller, dim);
+	t.join();
 
 	return 0;
 }
