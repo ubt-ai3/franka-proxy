@@ -170,12 +170,24 @@ namespace franka_proxy
 	//___________________________________public____________________________________________________________________________
 
 	hyb_con_pid_optimizer::hyb_con_pid_optimizer(franka_proxy::franka_hardware_controller& h_controller) {
-		run_ = true;
+		hc_ = h_controller;
 	}
 
-	std::thread hyb_con_pid_optimizer::start(franka_proxy::franka_hardware_controller& h_controller) {
-		std::thread t = std::thread(&hyb_con_pid_optimizer::simulated_annealing, this, h_controller);
-		return t;
+	hyb_con_pid_optimizer::~hyb_con_pid_optimizer() noexcept{
+		run_ = false; //notwendig?
+		sa_thread_.join();
+	}
+
+	void hyb_con_pid_optimizer::start() {
+		sa_thread_ = std::thread(&hyb_con_pid_optimizer::simulated_annealing, this, hyb_con_pid_optimizer::hc_);
+	}
+
+	void hyb_con_pid_optimizer::stop() {
+		run_ = false;
+	}
+
+	bool hyb_con_pid_optimizer::is_running() {
+		return run_;
 	}
 
 	
@@ -426,9 +438,7 @@ namespace franka_proxy
 		}
 	}
 
-	void hyb_con_pid_optimizer::stop() {
-		run_ = false;
-	}
+	
 
 
 	//___________________________________private____________________________________________________________________________
@@ -502,6 +512,12 @@ namespace franka_proxy
 		csv_parser(data);
 
 		return data;
+	}
+
+	void hyb_con_pid_optimizer::set_sa_params(double T, double l, double eta) {
+		hyb_con_pid_optimizer::T_start_ = T;
+		hyb_con_pid_optimizer::l_start_ = l;
+		hyb_con_pid_optimizer::eta_start_ = eta;
 	}
 
 	std::array<std::array<double, 6>, 6> hyb_con_pid_optimizer::format_control_parameters(std::array<Eigen::Vector3d, 12> eigen_parameters) {

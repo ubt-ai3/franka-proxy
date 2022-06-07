@@ -53,10 +53,10 @@ int main() {
 	std::this_thread::sleep_for(std::chrono::seconds(2));
 
 	franka_proxy::hyb_con_pid_optimizer params_optimizer(h_controller);
+	params_optimizer.start();
 
-	std::thread t = params_optimizer.start(h_controller);
-
-	t.join();
+	params_optimizer.stop();
+	
 
 	return 0;
 }
