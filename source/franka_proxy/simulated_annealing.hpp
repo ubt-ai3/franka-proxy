@@ -31,7 +31,7 @@ class hyb_con_pid_optimizer {
 
 public:
 
-	hyb_con_pid_optimizer(franka_hardware_controller& h_controller);
+	hyb_con_pid_optimizer(franka_hardware_controller& h_controller, std::array<int, 12> dim);
 	~hyb_con_pid_optimizer() noexcept;	
 
 	void start();
@@ -42,18 +42,12 @@ public:
 
 private:
 
-
 	std::atomic_bool run_;
 	std::thread sa_thread_;
 
 	franka_hardware_controller& hc_;
 
-
-	// the int dim_[12] array indicated which pid controllers of which dimension are optimized (0 not to be optimized || 1 to be optimized):
-	int dim_[12] = {
-		1,1,0,1,1,1, //position (x, y, z, mx, my, mz)
-		0,0,1,0,0,0 //force (x, y, z, mx, my, mz)
-	};
+	std::array<int, 12> dim_; // the int dim_[12] array indicated which pid controllers of which dimension are optimized (0 not to be optimized || 1 to be optimized):
 
 	double T_start_ = 30.0; //starting Temperature
 	double l_start_ = 0.98; //starting cooling factor
@@ -79,7 +73,7 @@ private:
 
 	
 	csv_data evaluate_params(franka_hardware_controller& h_controller, std::array<std::array<double, 6>, 6> control_parameters, csv_data& data);
-	double calculate_F(int dim[12], csv_data& data);
+	double calculate_F(std::array<int, 12> dim, csv_data& data);
 	void set_sa_params(double T, double l, double eta);
 	std::array<std::array<double, 6>, 6> format_control_parameters(std::array<Eigen::Vector3d, 12> eigen_parameters);
 	Eigen::Matrix<double, 6, 1> calculate_ISE(std::vector<Eigen::Matrix<double, 6, 1>>& values);

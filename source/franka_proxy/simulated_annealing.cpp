@@ -109,6 +109,9 @@ namespace franka_proxy
 	}
 
 
+
+	//This function is only needed for temporary reasons
+
 	std::vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d>> give_x_movement_positions(Eigen::Vector3d start_pos) {
 		//desired x position
 		double a = -0.025; //[m/s^2]
@@ -141,6 +144,9 @@ namespace franka_proxy
 	}
 
 
+
+	//This function is only needed for temporary reasons
+
 	std::vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d>> give_circle_positions(Eigen::Vector3d start_pos) {
 		double r = 0.1; //radius of circle
 		std::vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d>> desired_positions;
@@ -158,43 +164,54 @@ namespace franka_proxy
 	}
 
 
-	
+
+
 
 	
-
-	
-	//------------------------------------------hyb_con_pid_optimizer class------------------------------------------------
+	//------------------------------------------HYB_CON_PID_OPTIMIZER CLASS------------------------------------------------
 	// 
 	//optimizes pid control parameters for the hybrid control of the franka via an automatic simulated annealing algorithm
 
-	//___________________________________public____________________________________________________________________________
+	//___________________________________PUBLIC____________________________________________________________________________
 
-	hyb_con_pid_optimizer::hyb_con_pid_optimizer(franka_hardware_controller& h_controller):
-	hc_(h_controller)
-	{
-	}
+	hyb_con_pid_optimizer::hyb_con_pid_optimizer(franka_hardware_controller& h_controller, std::array<int, 12> dim) :
+		hc_(h_controller),
+		dim_(dim)
+	{}
 
 	hyb_con_pid_optimizer::~hyb_con_pid_optimizer() noexcept{
-		run_ = false; //notwendig?
+		run_ = false;
 		sa_thread_.join();
 	}
 
+	//checks for a correct optimization dimension vector and then starts the sa_thread
 	void hyb_con_pid_optimizer::start() {
+		for (int i = 0; i <= 5; i++) {
+			if (dim_[i] == 1 && dim_[i + 6]) {
+				throw std::invalid_argument("invalid optimization dimension vector!");
+			}
+		}
 		run_ = true;
 		sa_thread_ = std::thread(&hyb_con_pid_optimizer::simulated_annealing, this);
 		std::cout << "start" << std::endl;
 	}
+
 
 	void hyb_con_pid_optimizer::stop() {
 		run_ = false;
 		std::cout << "stop" << std::endl;
 	}
 
+
 	bool hyb_con_pid_optimizer::is_running() {
 		return run_;
 	}
 
 	
+	//Basic framework for the optimization of the hybrid pid control.
+	//This prodecure is based on the simulated annealing algorithm, which tries to find the global optimum of an optimization problem
+	//A Simulated annnealing algorithm accepts worse solutions with a certain propability based on the current Temperature.
+	//The Temperature cools down after every loop pass
 
 	void hyb_con_pid_optimizer::simulated_annealing() {
 
@@ -445,8 +462,10 @@ namespace franka_proxy
 	
 
 
-	//___________________________________private____________________________________________________________________________
+	//___________________________________PRIVATE____________________________________________________________________________
 
+	//This function assigns a cost value to a parameter set, by executing the hybrid control with the given parameter set
+	//The cost value put into the csv_data struct and then this struct is returned
 	csv_data hyb_con_pid_optimizer::evaluate_params(franka_proxy::franka_hardware_controller& h_controller, std::array<std::array<double, 6>, 6> control_parameters, csv_data& data) {
 
 		//move to starting position
@@ -518,12 +537,17 @@ namespace franka_proxy
 		return data;
 	}
 
+
+
+	//change the current Simulated Annealing parameter
 	void hyb_con_pid_optimizer::set_sa_params(double T, double l, double eta) {
 		hyb_con_pid_optimizer::T_start_ = T;
 		hyb_con_pid_optimizer::l_start_ = l;
 		hyb_con_pid_optimizer::eta_start_ = eta;
 	}
 
+
+	//Auxiliary function
 	std::array<std::array<double, 6>, 6> hyb_con_pid_optimizer::format_control_parameters(std::array<Eigen::Vector3d, 12> eigen_parameters) {
 		std::array<std::array<double, 6>, 6> array_parameters;
 		array_parameters[0] = { eigen_parameters[0](0), eigen_parameters[1](0), eigen_parameters[2](0), eigen_parameters[3](0), eigen_parameters[4](0), eigen_parameters[5](0) };
@@ -536,8 +560,8 @@ namespace franka_proxy
 		return array_parameters;
 	}
 
-
-	double hyb_con_pid_optimizer::calculate_F(int dim[12], csv_data& data) {
+	//Auxiliary function
+	double hyb_con_pid_optimizer::calculate_F(std::array<int,12> dim, csv_data& data) {
 		double F = 0.0;
 		double p_factor = 100.0; //increase the impact of the position dimension errors on the final cost value F
 		double phi_factor = 10.0; //increase the impact of the position rotation errors on the final cost value F

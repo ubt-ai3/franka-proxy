@@ -53,8 +53,22 @@ int main() {
 	std::cout << "Starting in 2 seconds..." << std::endl;
 	std::this_thread::sleep_for(std::chrono::seconds(2));
 
-	franka_proxy::hyb_con_pid_optimizer params_optimizer(h_controller);
-	params_optimizer.start();
+	std::array<int, 12> dim = {
+		1,1,0,1,1,1, //position (x, y, z, mx, my, mz)
+		0,0,1,0,0,0 //force (x, y, z, mx, my, mz)
+	};
+
+	franka_proxy::hyb_con_pid_optimizer params_optimizer(h_controller, dim);
+
+	try {		
+		params_optimizer.start();
+	}
+	catch (std::invalid_argument const& e) {
+		std::cout << e.what() << std::endl;
+		return 0;
+	}
+	
+	
 
 	std::cout << "Press Esc to abort the the optimization early!" << std::endl;
 	while (params_optimizer.is_running()) {
