@@ -38,9 +38,10 @@ public:
 	void stop();
 	bool is_running();
 
-	void simulated_annealing(franka_hardware_controller& h_controller);
+	void simulated_annealing();
 
 private:
+
 
 	std::atomic_bool run_;
 	std::thread sa_thread_;

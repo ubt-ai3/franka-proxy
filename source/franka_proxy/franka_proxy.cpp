@@ -13,6 +13,7 @@
 #include "csv_data_struct.hpp"
 #include "simulated_annealing.hpp"
 
+
 #include <iostream>
 #include <iomanip>
 #include <random>
@@ -55,8 +56,14 @@ int main() {
 	franka_proxy::hyb_con_pid_optimizer params_optimizer(h_controller);
 	params_optimizer.start();
 
-	params_optimizer.stop();
-	
+	std::cout << "Press Esc to abort the the optimization early!" << std::endl;
+	while (params_optimizer.is_running()) {
+		if (GetAsyncKeyState(0x1B)) {
+			params_optimizer.stop();
+			break;
+		}
+		std::this_thread::sleep_for(std::chrono::milliseconds(100));
+	}
 
 	return 0;
 }

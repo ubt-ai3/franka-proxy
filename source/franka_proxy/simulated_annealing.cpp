@@ -169,8 +169,9 @@ namespace franka_proxy
 
 	//___________________________________public____________________________________________________________________________
 
-	hyb_con_pid_optimizer::hyb_con_pid_optimizer(franka_proxy::franka_hardware_controller& h_controller) {
-		hc_ = h_controller;
+	hyb_con_pid_optimizer::hyb_con_pid_optimizer(franka_hardware_controller& h_controller):
+	hc_(h_controller)
+	{
 	}
 
 	hyb_con_pid_optimizer::~hyb_con_pid_optimizer() noexcept{
@@ -179,11 +180,14 @@ namespace franka_proxy
 	}
 
 	void hyb_con_pid_optimizer::start() {
-		sa_thread_ = std::thread(&hyb_con_pid_optimizer::simulated_annealing, this, hyb_con_pid_optimizer::hc_);
+		run_ = true;
+		sa_thread_ = std::thread(&hyb_con_pid_optimizer::simulated_annealing, this);
+		std::cout << "start" << std::endl;
 	}
 
 	void hyb_con_pid_optimizer::stop() {
 		run_ = false;
+		std::cout << "stop" << std::endl;
 	}
 
 	bool hyb_con_pid_optimizer::is_running() {
@@ -192,7 +196,7 @@ namespace franka_proxy
 
 	
 
-	void hyb_con_pid_optimizer::simulated_annealing(franka_proxy::franka_hardware_controller& h_controller) {
+	void hyb_con_pid_optimizer::simulated_annealing() {
 
 		//create csv files and write header lines
 		auto t = std::time(nullptr);
@@ -272,7 +276,7 @@ namespace franka_proxy
 		try {
 			std::array<std::array<double, 6>, 6> control_parameters = format_control_parameters(initial_parameters); //This 2d array is used by the robot
 
-			evaluate_params(h_controller, control_parameters, initial_data);
+			evaluate_params(hc_, control_parameters, initial_data);
 		}
 		catch (const franka::Exception& e) {
 			std::cout << "First random set of parameters caused an exception..." << std::endl;
@@ -328,7 +332,7 @@ namespace franka_proxy
 				try {
 					std::array<std::array<double, 6>, 6> control_parameters = format_control_parameters(new_parameters); //This 2d array is used by the robot
 
-					evaluate_params(h_controller, control_parameters, data);
+					evaluate_params(hc_, control_parameters, data);
 
 					new_F_sum += calculate_F(dim_, data);
 
