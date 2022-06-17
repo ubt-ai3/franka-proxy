@@ -10,7 +10,6 @@
 
 #include "franka_proxy.hpp"
 #include "motion_generator_force.hpp"
-#include "csv_data_struct.hpp"
 #include "simulated_annealing.hpp"
 
 
@@ -58,7 +57,7 @@ int main() {
 		0,0,1,0,0,0 //force (x, y, z, mx, my, mz)
 	};
 
-	franka_proxy::hyb_con_pid_optimizer params_optimizer(h_controller, dim);
+	franka_proxy::hyb_con_pid_optimizer params_optimizer(h_controller, dim, false);
 
 	try {		
 		params_optimizer.start();

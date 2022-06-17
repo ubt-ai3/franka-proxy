@@ -15,6 +15,7 @@
 #include "franka_hardware_controller.hpp"
 #include "franka_network_control_server.hpp"
 #include "franka_network_state_server.hpp"
+#include "csv_parser.hpp"
 #include <atomic>
 #include <thread>
 
@@ -31,7 +32,7 @@ class hyb_con_pid_optimizer {
 
 public:
 
-	hyb_con_pid_optimizer(franka_hardware_controller& h_controller, std::array<int, 12> dim);
+	hyb_con_pid_optimizer(franka_hardware_controller& h_controller, std::array<int, 12> dim, bool data_tracking);
 	~hyb_con_pid_optimizer() noexcept;	
 
 	void start();
@@ -46,6 +47,14 @@ private:
 	std::thread sa_thread_;
 
 	franka_hardware_controller& hc_;
+	
+	csv_parser& csv_parser_;
+
+	std::array<std::ofstream,12> sa_data_files_;
+	std::array<std::string, 12> sa_filenames_;
+
+	bool data_tracking_ = false;
+	
 
 	std::array<int, 12> dim_; // the int dim_[12] array indicated which pid controllers of which dimension are optimized (0 not to be optimized || 1 to be optimized):
 

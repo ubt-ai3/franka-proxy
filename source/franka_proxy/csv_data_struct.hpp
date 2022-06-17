@@ -2,13 +2,7 @@
 #define CSV_DATA_STRUCT
 
 
-class data_tracker {
 
-public:
-
-private:
-
-};
 
 struct csv_data {
 	double duration;
