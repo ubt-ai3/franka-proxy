@@ -86,15 +86,17 @@ namespace franka_proxy
 
 	//___________________________________PUBLIC____________________________________________________________________________
 
-	hyb_con_pid_optimizer::hyb_con_pid_optimizer(franka_hardware_controller& h_controller, std::array<int, 12> dim, bool data_tracking) :
+	hyb_con_pid_optimizer::hyb_con_pid_optimizer(franka_hardware_controller& h_controller, std::array<int, 12> dim, bool data_tracking, std::string base_path) :
 		hc_(h_controller),
 		dim_(dim),
-		csv_parser_(csv_parser())
+		csv_parser_(base_path),
+		data_tracking_(data_tracking)
 	{}
 
 	hyb_con_pid_optimizer::~hyb_con_pid_optimizer() noexcept{
 		run_ = false;
-		sa_thread_.join();
+		if (sa_thread_.joinable())
+			sa_thread_.join();
 	}
 
 	//checks for a correct optimization dimension vector and then starts the sa_thread
@@ -112,6 +114,9 @@ namespace franka_proxy
 
 	void hyb_con_pid_optimizer::stop() {
 		run_ = false;
+		std::cout << "stop.. waiting for join" << std::endl;
+		if (sa_thread_.joinable())
+			sa_thread_.join();
 		std::cout << "stop" << std::endl;
 	}
 
@@ -129,7 +134,10 @@ namespace franka_proxy
 	void hyb_con_pid_optimizer::simulated_annealing() {
 
 		//create csv files and write header lines
-		csv_parser_.create_header(dim_);
+		if (data_tracking_) {
+			csv_parser_.create_header(dim_);
+		}
+		
 
 
 		//starting the simulated annealing algorithm
@@ -294,9 +302,12 @@ namespace franka_proxy
 			}
 			std::cout << "\n";
 
-
+			
 			//write values in sa_overview.csv
-			csv_parser_.write_in_overview(dim_, k, c, T, eta, best_F, current_F, new_F, best_parameters, current_parameters, new_parameters);
+			if (data_tracking_) {
+				csv_parser_.write_in_overview(dim_, k, c, T, eta, best_F, current_F, new_F, best_parameters, current_parameters, new_parameters);
+			}
+			
 			
 
 

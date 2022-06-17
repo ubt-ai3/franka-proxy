@@ -53,11 +53,12 @@ int main() {
 	std::this_thread::sleep_for(std::chrono::seconds(2));
 
 	std::array<int, 12> dim = {
-		1,1,0,1,1,1, //position (x, y, z, mx, my, mz)
+		0,0,0,0,0,0, //position (x, y, z, mx, my, mz)
 		0,0,1,0,0,0 //force (x, y, z, mx, my, mz)
 	};
+	std::string path = "H:/DB_Forschung/flexPro/11.Unterprojekte/BA_Laurin_Hecken/05_Rohdaten/sa_overview_output/";
 
-	franka_proxy::hyb_con_pid_optimizer params_optimizer(h_controller, dim, false);
+	franka_proxy::hyb_con_pid_optimizer params_optimizer(h_controller, dim, true, path);
 
 	try {		
 		params_optimizer.start();

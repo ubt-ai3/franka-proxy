@@ -30,17 +30,19 @@ namespace franka_proxy
 	class csv_parser {
 
 	public:
+
+		csv_parser(std::string base_path);
 		
-		void parsing(csv_data data);
-		void write_in_overview(std::array<int, 12> dim, int k, int c, double T, double eta, double best_F, double current_F, double new_F, std::array<Eigen::Vector3d, 12> best_parameters, std::array<Eigen::Vector3d, 12> current_parameters, std::array<Eigen::Vector3d, 12> new_parameters);
-		void create_header(std::array<int, 12> dim);
+		void parsing(csv_data& data);
+		void write_in_overview(std::array<int, 12> dim, int k, int c, double T, double eta, double best_F, double current_F, double new_F, std::array<Eigen::Vector3d, 12>& best_parameters, std::array<Eigen::Vector3d, 12>& current_parameters, std::array<Eigen::Vector3d, 12>& new_parameters);
+		void create_header(std::array<int, 12>& dim);
 
 	private:
 		void put_data_in_csv(std::vector<Eigen::Matrix<double, 6, 1>> data, std::string file_name);
-		void create_overview_csv(csv_data data, std::string file_name);
+		void create_overview_csv(csv_data& data, std::string file_name);
 
-		std::array<std::string, 12> filenames_;
-		std::array<std::ofstream, 12> sa_data_files_;
+		std::string base_path_;
+		std::string path_;
 
 	};
 

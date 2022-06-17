@@ -32,7 +32,7 @@ class hyb_con_pid_optimizer {
 
 public:
 
-	hyb_con_pid_optimizer(franka_hardware_controller& h_controller, std::array<int, 12> dim, bool data_tracking);
+	hyb_con_pid_optimizer(franka_hardware_controller& h_controller, std::array<int, 12> dim, bool data_tracking, std::string base_path);
 	~hyb_con_pid_optimizer() noexcept;	
 
 	void start();
@@ -48,12 +48,12 @@ private:
 
 	franka_hardware_controller& hc_;
 	
-	csv_parser& csv_parser_;
+	csv_parser csv_parser_;
 
 	std::array<std::ofstream,12> sa_data_files_;
 	std::array<std::string, 12> sa_filenames_;
 
-	bool data_tracking_ = false;
+	bool data_tracking_;
 	
 
 	std::array<int, 12> dim_; // the int dim_[12] array indicated which pid controllers of which dimension are optimized (0 not to be optimized || 1 to be optimized):
@@ -62,7 +62,7 @@ private:
 	double l_start_ = 0.98; //starting cooling factor
 	double eta_start_ = 0.25; //starting scaling factor
 
-	int m_ = 5; //the median of m-times of the F values will be used
+	int m_ = 1; //the median of m-times of the F values will be used
 
 	int c_max_ = 10; //the programm will abort if this number of consecutive steps result in none or minor changes in F
 	int exc_max_ = 10; //the programm will abort if this number of consecutive exceptions happen
