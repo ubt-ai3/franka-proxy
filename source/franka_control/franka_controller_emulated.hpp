@@ -42,7 +42,7 @@ public:
 	~franka_controller_emulated() noexcept override;
 
 
-	void move(const robot_config_7dof& target) override;
+	void move(const robot_config_7dof& target, const force_torque_config_cartesian* target_force_torques) override;
 	bool move_until_contact(const robot_config_7dof& target) override;
 
 	void open_gripper() override;
@@ -56,6 +56,7 @@ public:
 	void automatic_error_recovery() override;
 
 	robot_config_7dof current_config() const override;
+	force_torque_config_cartesian current_force_torque() const override;
 	int current_gripper_pos() const override;
 	int max_gripper_pos() const override;
 
@@ -77,7 +78,7 @@ public:
 	**/
 	void move_sequence
 		(std::vector<std::array<double, 7>> q_sequence,
-		 std::vector<std::array<double, 6>>,
+		 std::vector<std::array<double, 6>> f_sequence,
 		 std::vector<std::array<double, 6>>) override;
 	
 private:
@@ -94,6 +95,7 @@ private:
 	bool gripper_open_;
 
 	robot_config_7dof state_joint_values_;
+	force_torque_config_cartesian state_force_torque_values_;
 	int state_gripper_pos_;
 
 	static constexpr int max_gripper_pos_ = 50;

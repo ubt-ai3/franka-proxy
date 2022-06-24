@@ -34,6 +34,9 @@ franka_controller_emulated::franka_controller_emulated()
 	state_joint_values_
 		((Eigen::Matrix<double, 7, 1>() <<
 			0, 0, 0, -0.0698, 0, 0, 0).finished()),
+	state_force_torque_values_
+		((Eigen::Matrix<double, 6, 1>() <<
+			0, 0, 0, 0, 0, 0, 0).finished()),
 	state_gripper_pos_(0)
 { }
 
@@ -93,9 +96,10 @@ robot_config_7dof operator*(const robot_config_7dof& xes, double rhs)
 }
 
 
-void franka_controller_emulated::move(const robot_config_7dof& target)
+void franka_controller_emulated::move(const robot_config_7dof& target, const force_torque_config_cartesian* target_force_torques)
 {
 	robot_config_7dof current_joint_values = current_config();
+	force_torque_config_cartesian current_force_torque_values = current_force_torque();
 
 	auto last_time = std::chrono::steady_clock::now();
 
@@ -127,6 +131,7 @@ void franka_controller_emulated::move(const robot_config_7dof& target)
 		{
 			// If the next waymark is in reach, move there.
 			current_joint_values = target;
+			if(target_force_torques) current_force_torque_values = *target_force_torques;
 		}
 		else
 		{
@@ -135,12 +140,18 @@ void franka_controller_emulated::move(const robot_config_7dof& target)
 			current_joint_values = current_joint_values +
 				(target - current_joint_values) *
 					(move_length / length_to_next);
+			if (target_force_torques) {
+				current_force_torque_values = current_force_torque_values +
+					(*target_force_torques - current_force_torque_values) *
+					(move_length / length_to_next);
+			}
 		}
 
 		// Copy from process variables to exposed state.
 		{
 			std::lock_guard<std::mutex> lk(controller_mutex_);
 			state_joint_values_ = current_joint_values;
+			state_force_torque_values_ = current_force_torque_values;
 		}
 
 		std::this_thread::sleep_until(next_timepoint);
@@ -151,7 +162,7 @@ void franka_controller_emulated::move(const robot_config_7dof& target)
 bool franka_controller_emulated::move_until_contact
 	(const robot_config_7dof& target)
 {
-	move(target);
+	move(target, nullptr);
 	return true;
 }
 
@@ -192,6 +203,11 @@ void franka_controller_emulated::automatic_error_recovery() {}
 robot_config_7dof franka_controller_emulated::current_config() const
 {
 	return state_joint_values_;
+}
+
+force_torque_config_cartesian franka_controller_emulated::current_force_torque() const
+{
+	return state_force_torque_values_;
 }
 
 
@@ -240,7 +256,7 @@ std::pair<std::vector<std::array<double, 7>>, std::vector<std::array<double, 6>>
 	
 void franka_controller_emulated::move_sequence
 	(std::vector<std::array<double, 7>> q_sequence,
-	 std::vector<std::array<double, 6>>,
+	 std::vector<std::array<double, 6>> f_sequence,
 	 std::vector<std::array<double, 6>>)
 {
 	const auto start_time = std::chrono::steady_clock::now();
@@ -266,6 +282,7 @@ void franka_controller_emulated::move_sequence
 		{
 			std::lock_guard<std::mutex> lk(controller_mutex_);
 			state_joint_values_ = Eigen::Map<const Eigen::Matrix<double, 7,1>>(q_sequence[ticks_passed].data());
+			state_force_torque_values_ = Eigen::Map<const Eigen::Matrix<double, 6, 1>>(f_sequence[ticks_passed].data());
 		}
 
 		std::this_thread::sleep_until(next_timepoint);
@@ -273,6 +290,7 @@ void franka_controller_emulated::move_sequence
 
 	std::lock_guard<std::mutex> lk(controller_mutex_);
 	state_joint_values_ = Eigen::Map<const Eigen::Matrix<double, 7,1>>(q_sequence.back().data());
+	state_force_torque_values_ = Eigen::Map<const Eigen::Matrix<double, 6, 1>>(f_sequence.back().data());
 }
 
 
