@@ -53,7 +53,7 @@ public:
 	franka_controller();
 
 	virtual ~franka_controller() noexcept;
-
+	
 	virtual void move(const robot_config_7dof& target, const force_torque_config_cartesian* target_force_torques) = 0;
 	void move(const Eigen::Affine3d& target_world_T_tcp);
 
@@ -101,7 +101,7 @@ public:
 
 	// Legacy functions
 	[[deprecated("Use new move() function.")]]
-		virtual void move_to(const robot_config_7dof& target) { move(target); }
+		virtual void move_to(const robot_config_7dof& target) { move(target, nullptr); }
 	[[deprecated("Use new move() function with changed target.")]]
 		void move_to(const Eigen::Affine3d& target_world_T_nsa)
 			{ move(target_world_T_nsa * j6_T_tcp); }

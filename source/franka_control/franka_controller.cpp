@@ -42,7 +42,7 @@ franka_controller::~franka_controller() noexcept = default;
 void franka_controller::move(const Eigen::Affine3d& target_world_T_tcp)
 {
 	move(franka_util::ik_fast_closest
-		(target_world_T_tcp * tcp_T_j6, current_config()));
+		(target_world_T_tcp * tcp_T_j6, current_config()), nullptr);
 }
 
 

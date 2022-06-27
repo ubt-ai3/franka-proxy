@@ -45,7 +45,7 @@ public:
 	~franka_controller_remote() noexcept override;
 
 
-	void move(const robot_config_7dof& target) override;
+	void move(const robot_config_7dof& target, const force_torque_config_cartesian* target_force_torques = nullptr) override;
 	bool move_until_contact(const robot_config_7dof& target) override;
 
 	void open_gripper() override;
