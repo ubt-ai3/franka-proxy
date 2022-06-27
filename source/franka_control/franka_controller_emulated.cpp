@@ -36,7 +36,7 @@ franka_controller_emulated::franka_controller_emulated()
 			0, 0, 0, -0.0698, 0, 0, 0).finished()),
 	state_force_torque_values_
 		((Eigen::Matrix<double, 6, 1>() <<
-			0, 0, 0, 0, 0, 0, 0).finished()),
+			0, 0, 0, 0, 0, 0).finished()),
 	state_gripper_pos_(0)
 { }
 
