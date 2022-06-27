@@ -38,12 +38,17 @@ franka_controller_remote::franka_controller_remote
 franka_controller_remote::~franka_controller_remote() noexcept = default;
 
 
-void franka_controller_remote::move(const robot_config_7dof& target, const force_torque_config_cartesian* target_force_torque)
+void franka_controller_remote::move(const robot_config_7dof& target)
 {
 	controller_->move_to
 		(franka_proxy::robot_config_7dof
 			{target[0], target[1], target[2],
 			 target[3], target[4], target[5], target[6]});
+}
+
+void franka_controller_remote::move_with_force(const robot_config_7dof& target, const force_torque_config_cartesian& target_force_torques)
+{
+	move(target);
 }
 
 
