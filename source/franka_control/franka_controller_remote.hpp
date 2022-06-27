@@ -59,6 +59,7 @@ public:
 	void automatic_error_recovery() override;
 
 	robot_config_7dof current_config() const override;
+	force_torque_config_cartesian current_force_torque() const override;
 	int current_gripper_pos() const override;
 	int max_gripper_pos() const override;
 
