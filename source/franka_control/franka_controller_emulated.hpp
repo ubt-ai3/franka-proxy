@@ -58,6 +58,7 @@ public:
 
 	robot_config_7dof current_config() const override;
 	force_torque_config_cartesian current_force_torque() const override;
+	int current_position_in_sequence() const override;
 	int current_gripper_pos() const override;
 	int max_gripper_pos() const override;
 
@@ -98,6 +99,7 @@ private:
 	robot_config_7dof state_joint_values_;
 	force_torque_config_cartesian state_force_torque_values_;
 	int state_gripper_pos_;
+	int state_position_in_sequence_;
 
 	static constexpr int max_gripper_pos_ = 50;
 	static constexpr double gripper_default_speed_mps_ = 0.025;
