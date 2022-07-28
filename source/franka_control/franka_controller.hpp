@@ -77,7 +77,6 @@ public:
 
 	virtual robot_config_7dof current_config() const = 0;
 	virtual force_torque_config_cartesian current_force_torque() const = 0;
-	virtual int current_position_in_sequence() const = 0;
 	virtual int current_gripper_pos() const = 0;
 	virtual int max_gripper_pos() const = 0;
 

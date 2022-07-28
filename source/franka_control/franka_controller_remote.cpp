@@ -109,12 +109,6 @@ force_torque_config_cartesian franka_controller_remote::current_force_torque() c
 	return force_torque_config_cartesian();
 }
 
-int franka_controller_remote::current_position_in_sequence() const
-{
-	return 0;
-}
-
-
 int franka_controller_remote::current_gripper_pos() const
 	{ return static_cast<int>( controller_->current_gripper_pos() * gripper_unit_per_m_); }
 int franka_controller_remote::max_gripper_pos() const
