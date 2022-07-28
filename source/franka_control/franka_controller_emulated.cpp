@@ -265,6 +265,11 @@ force_torque_config_cartesian franka_controller_emulated::current_force_torque()
 	return state_force_torque_values_;
 }
 
+int franka_controller_emulated::current_position_in_sequence() const
+{
+	return state_position_in_sequence_;
+}
+
 
 int franka_controller_emulated::current_gripper_pos() const
 {
@@ -348,6 +353,7 @@ void franka_controller_emulated::move_sequence
 	std::lock_guard<std::mutex> lk(controller_mutex_);
 	state_joint_values_ = Eigen::Map<const Eigen::Matrix<double, 7,1>>(q_sequence.back().data());
 	state_force_torque_values_ = Eigen::Map<const Eigen::Matrix<double, 6, 1>>(f_sequence.back().data());
+	state_position_in_sequence_ = ticks_passed;
 }
 
 
