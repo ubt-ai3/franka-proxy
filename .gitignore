@@ -6,3 +6,4 @@
 /external/viral/build
 /tools/visual_studio_2019/*.DotSettings
 /.vs
+/out
