@@ -498,7 +498,6 @@ void franka_hardware_controller::initialize_parameters()
 	}
 }
 
-
 void franka_hardware_controller::set_default_collision_behaviour()
 {
 	robot_.setCollisionBehavior(
@@ -527,6 +526,75 @@ void franka_hardware_controller::set_control_loop_running(bool running)
 	}
 	control_loop_running_cv_.notify_all();
 }
+
+void franka_hardware_controller::set_impedance() {
+	// TODO: get those from robot state
+	// get values needed from robot state
+	std::array<double, 7> position_ = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 }; // robot state: std::array<double, 7> q{} - measured joint position
+	std::array<double, 7> velocity_ = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 }; // robot state: std::array<double, 7> dq{} - measured joint velocity
+	std::array<double, 7> acceleration_ = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 }; // robot state: only ddq_d available - desired joint acceleration - search for solutions??!!??
+
+
+
+	// initialize impedance parameters
+	if (!impedance_parameters_initialized_) {
+		// calculate/set x0_max and derived_x0_max
+		for (int i = 0; i < sizeof x0_max_ / sizeof x0_max_[0]; i++) {
+			x0_max_[i] = std::max(std::abs(l_x0_[i]), u_x0_[i]);
+			derived_x0_max_[i] = std::max(std::abs(l_derived_x0_[i]), u_derived_x0_[i]);
+		}
+
+		impedance_parameters_initialized_ = true;
+	}
+
+	// damping and stiffness matrix
+	Eigen::Matrix<double, 7, 7> damping_matrix_ = Eigen::Matrix<double, 7,7>::Zero();
+	Eigen::Matrix<double, 7, 7> stiffness_matrix_ = Eigen::Matrix<double, 7, 7>::Zero();
+
+	// stiffness and damping
+	for (int i = 0; i < sizeof position_ / sizeof position_[0]; i++) {
+		double mi = 0.0; // TODO: get mi value from inertia 
+		
+		// optimize damping
+		double di = optimizeDamping(l_d_[i], u_d_[i], mi, b_[i], x0_max_[i], derived_x0_max_[i]);
+
+		// get stiffness from new calculated damping value
+		double ki = calculate_stiffness_from_damping(di, mi);
+
+		// add new values to matrices
+		damping_matrix_(i, i) = di;
+		stiffness_matrix_(i, i) = ki;
+	}
+
+	// TODO: stability check
+}
+
+double franka_hardware_controller::optimizeDamping(double l_di, double u_di, double mi, double bi, double x0i_max, double derived_x0i_max) {
+	// di = min(max(...), ...);
+	const double di_max_val_ = std::max(l_di,((2 * mi * derived_x0i_max)/((bi - x0i_max) * exp(1))));
+	return std::min(di_max_val_, u_di);
+}
+
+double franka_hardware_controller::calculate_stiffness_from_damping(double di, double mi) {
+	/**
+		critically damped condition
+
+		stiffness ki = (di)^2/4mmi
+	*/
+
+	double ki_ = di * di;
+
+	if (mi <= 0) {
+		// ki = ki/4;
+		// do nothing and return (di^2) ???
+	}
+	else {
+		ki_ = ki_ / (4 * mi);
+	}
+
+	return ki_;
+}
+
 
 
 

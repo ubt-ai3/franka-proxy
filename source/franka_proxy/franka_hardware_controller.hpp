@@ -174,6 +174,25 @@ private:
 	std::thread robot_state_thread_;
 	std::thread gripper_state_thread_;
 
+	// Impedance control
+	std::array<double, 7> b_ = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
+	std::array<double, 7> l_d_ = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
+	std::array<double, 7> u_d_ = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
+
+	std::array<double, 7> l_x0_ = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
+	std::array<double, 7> u_x0_ = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
+
+	std::array<double, 7> l_derived_x0_ = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
+	std::array<double, 7> u_derived_x0_ = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
+
+	std::array<double, 7> x0_max_ = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
+	std::array<double, 7> derived_x0_max_ = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
+
+	bool impedance_parameters_initialized_ = false;
+
+	void set_impedance();
+	double optimizeDamping(double l_di, double u_di, double mi, double bi, double x0i_max, double derived_x0i_max);
+	double calculate_stiffness_from_damping(double di, double mi);
 };
 
 
