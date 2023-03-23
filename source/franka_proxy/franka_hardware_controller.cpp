@@ -528,16 +528,47 @@ void franka_hardware_controller::set_control_loop_running(bool running)
 }
 
 void franka_hardware_controller::set_impedance() {
-	// TODO: get those from robot state
-	// get values needed from robot state
-	std::array<double, 6> position_ = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 }; // robot state: std::array<double, 7> q{} - measured joint position
-	std::array<double, 6> velocity_ = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 }; // robot state: std::array<double, 7> dq{} - measured joint velocity
-	std::array<double, 6> acceleration_ = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 }; // robot state: only ddq_d available - desired joint acceleration - search for solutions??!!??
+	// TODO: rest of robot state
 
+	// get robot model
+	franka::Model model_ = robot_.loadModel();
 
+	// get jacobian
+	std::array<double, 42> jac_ar_ = model_.zeroJacobian(franka::Frame::kEndEffector, robot_state());
+	Eigen::Map<const Eigen::Matrix<double, 6, 7>> jacobian_(jac_ar_.data());
+
+	// get current position
+	Eigen::Affine3d po_transform_(Eigen::Matrix4d::Map(robot_state().O_T_EE.data()));
+	Eigen::Vector3d position_(po_transform_.translation());
+
+	Eigen::Matrix<double, 6, 1> position_error_;
+
+	// get current velocity
+	Eigen::Map<const Eigen::Matrix<double, 7, 1>> dq_(robot_state().dq.data());
+	Eigen::Matrix<double, 6, 1> velocity_ = jacobian_ * dq_; // dx = j(q)*dq
+
+	// init acceleration variable
+	Eigen::Matrix<double, 6, 1> acceleration_;
 
 	// initialize impedance parameters
 	if (!impedance_parameters_initialized_) {
+		// calculate desired position
+		Eigen::Affine3d pod_transform_(Eigen::Matrix4d::Map(robot_state().O_T_EE.data()));
+		position_d_(pod_transform_.translation());
+
+		// convert current velcoity to init measured velocities
+		std::array<double, 6> new_measured_velocity_;
+
+		for (int i = 0; i < velocity_.rows(); i++) {
+			// get value
+			double vel_ = velocity_(i, 0);
+
+			// store it in new velocity array
+			new_measured_velocity_[i] = vel_;
+		}
+
+		measured_velocities_.push_back(new_measured_velocity_);
+
 		// calculate/set x0_max and derived_x0_max
 		for (int i = 0; i < sizeof x0_max_ / sizeof x0_max_[0]; i++) {
 			x0_max_[i] = std::max(std::abs(l_x0_[i]), u_x0_[i]);
@@ -547,16 +578,52 @@ void franka_hardware_controller::set_impedance() {
 		impedance_parameters_initialized_ = true;
 	}
 
+	// set position error
+	position_error_.head(3) << position_ - position_d_; // transforming to 6x6 as the position error will be mulitplied with the stiffness matrix // TODO: what is head doing?
+
+	// convert current velcoity and push it to measured velocities
+	std::array<double, 6> new_measured_velocity_;
+
+	for (int i = 0; i < velocity_.rows(); i++) {
+		// get value
+		double vel_ = velocity_(i, 0);
+
+		// store it in new velocity array
+		new_measured_velocity_[i] = vel_;
+	}
+
+	measured_velocities_.push_back(new_measured_velocity_);
+
+	// remove first element of measured_velocitues_ if there are more then eleven elements to calculate the current acceleration by the current velocity and the velocity measured ten cycles ago
+	if (measured_velocities_.size() > 11) {
+		measured_velocities_.pop_front();
+	}
+
+	// calculate acceleration
+	std::array<double, 6> acc_list_;
+	double delta_time_ = measured_velocities_.size() * 0.001;
+
+	for (int i = 0; i < acc_list_.size(); i++) {
+		double delta_velocity_ = measured_velocities_.back()[i] - measured_velocities_.front()[i];
+		acc_list_[i] = delta_velocity_ / delta_time_;
+	}
+
+	// set acceleration
+	acceleration_(acc_list_.data());
+
+	// TODO: move those elsewhere -> on each loop init with 0 will run the stability check on each loop
 	// damping and stiffness matrix
-	Eigen::Matrix<double, 6, 6> damping_matrix_ = Eigen::Matrix<double, 7,7>::Zero();
-	Eigen::Matrix<double, 6, 6> stiffness_matrix_ = Eigen::Matrix<double, 7, 7>::Zero();
+	Eigen::Matrix<double, 6, 6> damping_matrix_ = Eigen::Matrix<double, 6,6>::Zero();
+	Eigen::Matrix<double, 6, 6> stiffness_matrix_ = Eigen::Matrix<double, 6, 6>::Zero();
 
 	// stiffness and damping
-	for (int i = 0; i < sizeof position_ / sizeof position_[0]; i++) {
+	for (int i = 0; i < position_error_.rows(); i++) {
 		double mi = 0.0; // TODO: get mi value from inertia 
 		
 		// optimize damping
 		double di = optimizeDamping(l_d_[i], u_d_[i], mi, b_[i], x0_max_[i], derived_x0_max_[i]);
+
+		// TODO: stability check
 
 		// get stiffness from new calculated damping value
 		double ki = calculate_stiffness_from_damping(di, mi);
@@ -566,7 +633,19 @@ void franka_hardware_controller::set_impedance() {
 		stiffness_matrix_(i, i) = ki;
 	}
 
-	// TODO: stability check
+	// TEST STIFFNESS AND DAMPING FOR TESTING WITHOUT IMPEDANCE PLANNER
+	// const double translational_stiffness{ 150.0 };
+	// const double rotational_stiffness{ 10.0 };
+	
+	// stiffness_matrix_.topLeftCorner(3, 3) << translational_stiffness * Eigen::MatrixXd::Identity(3, 3);
+	// stiffness_matrix_.bottomRightCorner(3, 3) << rotational_stiffness * Eigen::MatrixXd::Identity(3, 3);
+	
+	// damping_matrix_.topLeftCorner(3, 3) << 2.0 * sqrt(translational_stiffness) *
+		// Eigen::MatrixXd::Identity(3, 3);
+	// damping_matrix_.bottomRightCorner(3, 3) << 2.0 * sqrt(rotational_stiffness) *
+		// Eigen::MatrixXd::Identity(3, 3);
+	// ----- TEST STIFFNESS AND DAMPING FOR TESTING WITHOUT IMPEDANCE PLANNER
+	
 }
 
 double franka_hardware_controller::optimizeDamping(double l_di, double u_di, double mi, double bi, double x0i_max, double derived_x0i_max) {
