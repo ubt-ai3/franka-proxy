@@ -27,173 +27,176 @@ namespace franka_proxy
 {
 
 
-using robot_config_7dof = std::array<double, 7>;
-using robot_force_config = std::array<double, 6>;
-using robot_force_selection = std::array<double, 6>;
+	using robot_config_7dof = std::array<double, 7>;
+	using robot_force_config = std::array<double, 6>;
+	using robot_force_selection = std::array<double, 6>;
 
 
-/**
- *************************************************************************
- *
- * @class franka_hardware_controller
- *
- * todo
- *
- ************************************************************************/
-class franka_hardware_controller
-{
-public:
+	/**
+	 *************************************************************************
+	 *
+	 * @class franka_hardware_controller
+	 *
+	 * todo
+	 *
+	 ************************************************************************/
+	class franka_hardware_controller
+	{
+	public:
 
-	franka_hardware_controller
+		franka_hardware_controller
 		(const std::string& controller_ip);
 
-	virtual ~franka_hardware_controller() noexcept;
+		virtual ~franka_hardware_controller() noexcept;
 
 
 
-	/**
-	 * Moves the Panda robot to given target; In case
-	 * of collision, the movement is retried and continued 
-	 * after automatic error recovery
-	 */
-	void move_to(const robot_config_7dof& target);
-	/**
-	 * Moves the Panda robot to given target; In case
-	 * of contact, the movement is aborted and false is returned.
-	 */
-	bool move_to_until_contact(const robot_config_7dof& target);
+		/**
+		 * Moves the Panda robot to given target; In case
+		 * of collision, the movement is retried and continued
+		 * after automatic error recovery
+		 */
+		void move_to(const robot_config_7dof& target);
+		/**
+		 * Moves the Panda robot to given target; In case
+		 * of contact, the movement is aborted and false is returned.
+		 */
+		bool move_to_until_contact(const robot_config_7dof& target);
 
-	void stop_movement();
+		void stop_movement();
 
-	void set_speed_factor(double speed_factor);
+		void set_speed_factor(double speed_factor);
 
-	franka::RobotState robot_state() const;
-
-
-	/** Move the gripper to gripper::max_width. */
-	void open_gripper(double speed = default_gripper_speed);
-	/** Move the gripper to gripper::min_grasp_width. */
-	void close_gripper(double speed = default_gripper_speed);
-	/** Grasp. */
-	bool grasp_gripper(double speed, double force);
-
-	franka::GripperState gripper_state() const;
+		franka::RobotState robot_state() const;
 
 
-	void automatic_error_recovery();
+		/** Move the gripper to gripper::max_width. */
+		void open_gripper(double speed = default_gripper_speed);
+		/** Move the gripper to gripper::min_grasp_width. */
+		void close_gripper(double speed = default_gripper_speed);
+		/** Grasp. */
+		bool grasp_gripper(double speed, double force);
+
+		franka::GripperState gripper_state() const;
 
 
-
-	void apply_z_force(
-		double mass, 
-		double duration);
-
-	/**
-	 * Starts/Stops the recording callback.
-	 */
-	void start_recording();
-	std::pair<std::vector<robot_config_7dof>, std::vector<robot_force_config>> stop_recording();
-	
-	/**
-	 * Moves the Panda robot along a given sequence.
-	 */
-	void move_sequence(
-		const std::vector<robot_config_7dof>& q_sequence);
-
-	void move_sequence(
-		const std::vector<robot_config_7dof>& q_sequence,
-		double f_z);
-
-	void move_sequence(
-		const std::vector<robot_config_7dof>& q_sequence,
-		const std::vector<robot_force_config>& f_sequence,
-		const std::vector<robot_force_selection>& selection_vector);
-
-
-	static constexpr double default_gripper_speed = 0.025;
-
-
-private:
-
-	/**
-	 * Used to update the current robot state while no control loop is
-	 * running.
-	 */
-	void robot_state_update_loop();
-
-
-	/**
-	* Used to update the current gripper state, regardless if a control loop
-	* is running or not.
-	*/
-	void gripper_state_update_loop();
+		void automatic_error_recovery();
 
 
 
-	/**
-	 * Initialize parameters such as joint impedance and collision behavior.
-	 */
-	void initialize_parameters();
+		void apply_z_force(
+			double mass,
+			double duration);
 
-	void set_default_collision_behaviour();
-	void set_contact_drive_collision_behaviour();
+		/**
+		 * Starts/Stops the recording callback.
+		 */
+		void start_recording();
+		std::pair<std::vector<robot_config_7dof>, std::vector<robot_force_config>> stop_recording();
 
+		/**
+		 * Moves the Panda robot along a given sequence.
+		 */
+		void move_sequence(
+			const std::vector<robot_config_7dof>& q_sequence);
 
-	// Robot
-	mutable franka::Robot robot_;
-	bool parameters_initialized_;
+		void move_sequence(
+			const std::vector<robot_config_7dof>& q_sequence,
+			double f_z);
 
-	std::atomic_bool stop_motion_;
-
-	mutable std::mutex speed_factor_lock_;
-	double speed_factor_;
-
-	detail::motion_recorder motion_recorder_;
-
-	// Gripper
-	mutable std::unique_ptr<franka::Gripper> gripper_;
-	double max_width_;
-
-	
-	static constexpr double open_epsilon = 0.1;
-	static constexpr double min_grasp_width = 0.003;
+		void move_sequence(
+			const std::vector<robot_config_7dof>& q_sequence,
+			const std::vector<robot_force_config>& f_sequence,
+			const std::vector<robot_force_selection>& selection_vector);
 
 
-	mutable std::mutex robot_state_lock_;
-	franka::RobotState robot_state_;
+		static constexpr double default_gripper_speed = 0.025;
 
-	mutable std::mutex gripper_state_lock_;
-	franka::GripperState gripper_state_;
 
-	void set_control_loop_running(bool running);
-	bool control_loop_running_;
-	std::mutex control_loop_running_mutex_;
-	std::condition_variable control_loop_running_cv_;
+	private:
 
-	std::atomic_bool terminate_state_threads_;
-	std::thread robot_state_thread_;
-	std::thread gripper_state_thread_;
+		/**
+		 * Used to update the current robot state while no control loop is
+		 * running.
+		 */
+		void robot_state_update_loop();
 
-	// Impedance control
-	std::array<double, 6> b_ = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
-	std::array<double, 6> l_d_ = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
-	std::array<double, 6> u_d_ = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
 
-	std::array<double, 6> l_x0_ = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
-	std::array<double, 6> u_x0_ = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
+		/**
+		* Used to update the current gripper state, regardless if a control loop
+		* is running or not.
+		*/
+		void gripper_state_update_loop();
 
-	std::array<double, 6> l_derived_x0_ = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
-	std::array<double, 6> u_derived_x0_ = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
 
-	std::array<double, 6> x0_max_ = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
-	std::array<double, 6> derived_x0_max_ = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
 
-	bool impedance_parameters_initialized_ = false;
+		/**
+		 * Initialize parameters such as joint impedance and collision behavior.
+		 */
+		void initialize_parameters();
 
-	void set_impedance();
-	double optimizeDamping(double l_di, double u_di, double mi, double bi, double x0i_max, double derived_x0i_max);
-	double calculate_stiffness_from_damping(double di, double mi);
-};
+		void set_default_collision_behaviour();
+		void set_contact_drive_collision_behaviour();
+
+
+		// Robot
+		mutable franka::Robot robot_;
+		bool parameters_initialized_;
+
+		std::atomic_bool stop_motion_;
+
+		mutable std::mutex speed_factor_lock_;
+		double speed_factor_;
+
+		detail::motion_recorder motion_recorder_;
+
+		// Gripper
+		mutable std::unique_ptr<franka::Gripper> gripper_;
+		double max_width_;
+
+
+		static constexpr double open_epsilon = 0.1;
+		static constexpr double min_grasp_width = 0.003;
+
+
+		mutable std::mutex robot_state_lock_;
+		franka::RobotState robot_state_;
+
+		mutable std::mutex gripper_state_lock_;
+		franka::GripperState gripper_state_;
+
+		void set_control_loop_running(bool running);
+		bool control_loop_running_;
+		std::mutex control_loop_running_mutex_;
+		std::condition_variable control_loop_running_cv_;
+
+		std::atomic_bool terminate_state_threads_;
+		std::thread robot_state_thread_;
+		std::thread gripper_state_thread_;
+
+		// Impedance control
+		std::array<double, 6> b_ = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
+		std::array<double, 6> l_d_ = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
+		std::array<double, 6> u_d_ = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
+
+		std::array<double, 6> l_x0_ = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
+		std::array<double, 6> u_x0_ = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
+
+		std::array<double, 6> l_derived_x0_ = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
+		std::array<double, 6> u_derived_x0_ = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
+
+		std::array<double, 6> x0_max_ = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
+		std::array<double, 6> derived_x0_max_ = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
+
+		bool impedance_parameters_initialized_ = false;
+
+		Eigen::Vector3d position_d_;
+		std::list<std::array<double, 6>> measured_velocities_;
+
+		void set_impedance();
+		double optimizeDamping(double l_di, double u_di, double mi, double bi, double x0i_max, double derived_x0i_max);
+		double calculate_stiffness_from_damping(double di, double mi);
+	};
 
 
 } /* namespace franka_proxy */
