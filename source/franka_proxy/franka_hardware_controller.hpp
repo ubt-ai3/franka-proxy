@@ -175,18 +175,18 @@ private:
 	std::thread gripper_state_thread_;
 
 	// Impedance control
-	std::array<double, 7> b_ = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
-	std::array<double, 7> l_d_ = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
-	std::array<double, 7> u_d_ = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
+	std::array<double, 6> b_ = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
+	std::array<double, 6> l_d_ = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
+	std::array<double, 6> u_d_ = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
 
-	std::array<double, 7> l_x0_ = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
-	std::array<double, 7> u_x0_ = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
+	std::array<double, 6> l_x0_ = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
+	std::array<double, 6> u_x0_ = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
 
-	std::array<double, 7> l_derived_x0_ = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
-	std::array<double, 7> u_derived_x0_ = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
+	std::array<double, 6> l_derived_x0_ = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
+	std::array<double, 6> u_derived_x0_ = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
 
-	std::array<double, 7> x0_max_ = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
-	std::array<double, 7> derived_x0_max_ = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
+	std::array<double, 6> x0_max_ = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
+	std::array<double, 6> derived_x0_max_ = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
 
 	bool impedance_parameters_initialized_ = false;
 

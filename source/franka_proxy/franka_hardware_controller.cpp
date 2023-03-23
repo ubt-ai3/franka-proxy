@@ -530,9 +530,9 @@ void franka_hardware_controller::set_control_loop_running(bool running)
 void franka_hardware_controller::set_impedance() {
 	// TODO: get those from robot state
 	// get values needed from robot state
-	std::array<double, 7> position_ = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 }; // robot state: std::array<double, 7> q{} - measured joint position
-	std::array<double, 7> velocity_ = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 }; // robot state: std::array<double, 7> dq{} - measured joint velocity
-	std::array<double, 7> acceleration_ = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 }; // robot state: only ddq_d available - desired joint acceleration - search for solutions??!!??
+	std::array<double, 6> position_ = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 }; // robot state: std::array<double, 7> q{} - measured joint position
+	std::array<double, 6> velocity_ = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 }; // robot state: std::array<double, 7> dq{} - measured joint velocity
+	std::array<double, 6> acceleration_ = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 }; // robot state: only ddq_d available - desired joint acceleration - search for solutions??!!??
 
 
 
@@ -548,8 +548,8 @@ void franka_hardware_controller::set_impedance() {
 	}
 
 	// damping and stiffness matrix
-	Eigen::Matrix<double, 7, 7> damping_matrix_ = Eigen::Matrix<double, 7,7>::Zero();
-	Eigen::Matrix<double, 7, 7> stiffness_matrix_ = Eigen::Matrix<double, 7, 7>::Zero();
+	Eigen::Matrix<double, 6, 6> damping_matrix_ = Eigen::Matrix<double, 7,7>::Zero();
+	Eigen::Matrix<double, 6, 6> stiffness_matrix_ = Eigen::Matrix<double, 7, 7>::Zero();
 
 	// stiffness and damping
 	for (int i = 0; i < sizeof position_ / sizeof position_[0]; i++) {
