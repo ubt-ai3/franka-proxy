@@ -190,9 +190,6 @@ private:
 
 	bool impedance_parameters_initialized_ = false;
 
-	Eigen::Vector3d position_d_;
-	std::list<std::array<double, 6>> measured_velocities_;
-
 	void set_impedance();
 	double optimizeDamping(double l_di, double u_di, double mi, double bi, double x0i_max, double derived_x0i_max);
 	double calculate_stiffness_from_damping(double di, double mi);
