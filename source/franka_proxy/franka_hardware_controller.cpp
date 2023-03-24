@@ -534,9 +534,23 @@ namespace franka_proxy
 		// get robot model
 		franka::Model model_ = robot_.loadModel();
 
+		// get mass matrix
+		std::array<double, 49> mass_ar_ = model_.mass(robot_state());
+		Eigen::Map<const Eigen::Matrix<double, 7, 7>> mass_matrix_(mass_ar_.data());
+
 		// get jacobian
 		std::array<double, 42> jac_ar_ = model_.zeroJacobian(franka::Frame::kEndEffector, robot_state());
 		Eigen::Map<const Eigen::Matrix<double, 6, 7>> jacobian_(jac_ar_.data());
+
+		// calculate inertia matrix
+		// intertia = (J(q)*B^(-1)(q)*J(q).transpose())^(-1)
+		Eigen::Matrix<double, 6, 6> nd_inertia_matrix_ = (jacobian_ * mass_matrix_.inverse() * jacobian_.transpose()).inverse();
+		// only using diagonal elements for calculations
+		Eigen::Matrix<double, 6, 6> inertia_matrix_ = Eigen::Matrix<double, 6, 6>::Zero();
+
+		for (int i = 0; i < nd_inertia_matrix_.rows(); i++) {
+			inertia_matrix_(i, i) = nd_inertia_matrix_(i, i);
+		}
 
 		// get current position
 		Eigen::Affine3d po_transform_(Eigen::Matrix4d::Map(robot_state().O_T_EE.data()));
@@ -618,8 +632,8 @@ namespace franka_proxy
 		Eigen::Matrix<double, 6, 6> stiffness_matrix_ = Eigen::Matrix<double, 6, 6>::Zero();
 
 		// stiffness and damping
-		for (int i = 0; i < position_error_.rows(); i++) {
-			double mi = 0.0; // TODO: get mi value from inertia 
+		for (int i = 0; i < inertia_matrix_.rows(); i++) {
+			double mi = inertia_matrix_(i,i);
 
 			// optimize damping
 			double di = optimizeDamping(l_d_[i], u_d_[i], mi, b_[i], x0_max_[i], derived_x0_max_[i]);
@@ -647,6 +661,8 @@ namespace franka_proxy
 			// Eigen::MatrixXd::Identity(3, 3);
 		// ----- TEST STIFFNESS AND DAMPING FOR TESTING WITHOUT IMPEDANCE PLANNER
 
+		// calculate external force
+		Eigen::Matrix<double, 6, 6> f_ext = inertia_matrix_ * acceleration_ + damping_matrix_ * velocity_ * stiffness_matrix_ * position_error_;
 	}
 
 	double franka_hardware_controller::optimizeDamping(double l_di, double u_di, double mi, double bi, double x0i_max, double derived_x0i_max) {
@@ -659,7 +675,7 @@ namespace franka_proxy
 		/**
 			critically damped condition
 
-			stiffness ki = (di)^2/4mmi
+			stiffness ki = (di)^2/4mi
 		*/
 
 		double ki_ = di * di;
