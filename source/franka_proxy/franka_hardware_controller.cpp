@@ -528,11 +528,16 @@ namespace franka_proxy
 		control_loop_running_cv_.notify_all();
 	}
 
+	// std::function<franka::Torques(const franka::RobotState&, franka::Duration)>
+		// impedance_control_callback = [&](const franka::RobotState& robot_state,
+			// franka::Duration /*duration*/) -> franka::Torques {
 	void franka_hardware_controller::set_impedance() {
-		// TODO: rest of robot state
-
 		// get robot model
 		franka::Model model_ = robot_.loadModel();
+
+		// get coriolis matrix
+		std::array<double, 7> coriolis_ar_ = model_.coriolis(robot_state());
+		Eigen::Map<const Eigen::Matrix<double, 7, 1>> coriolis_(coriolis_ar_.data());
 
 		// get mass matrix
 		std::array<double, 49> mass_ar_ = model_.mass(robot_state());
@@ -565,6 +570,13 @@ namespace franka_proxy
 		// init acceleration variable
 		Eigen::Matrix<double, 6, 1> acceleration_;
 
+		// init joint acceleration variable
+		Eigen::Matrix<double, 7, 1> j_acceleration_;
+
+		// damping and stiffness matrix
+		Eigen::Matrix<double, 6, 6> damping_matrix_ = Eigen::Matrix<double, 6, 6>::Zero();
+		Eigen::Matrix<double, 6, 6> stiffness_matrix_ = Eigen::Matrix<double, 6, 6>::Zero();
+
 		// initialize impedance parameters
 		if (!impedance_parameters_initialized_) {
 			// calculate desired position
@@ -584,11 +596,34 @@ namespace franka_proxy
 
 			measured_velocities_.push_back(new_measured_velocity_);
 
+			// convert current joint velocity to init measured joint velocities
+			std::array<double, 7> new_measured_joint_velocity_;
+
+			for (int i = 0; i < dq_.rows(); i++) {
+				// get value
+				double j_vel_ = dq_(i, 0);
+
+				// store it in new joint velocity array
+				new_measured_joint_velocity_[i] = j_vel_;
+			}
+
+			measured_joint_velocities_.push_back(new_measured_joint_velocity_);
+
 			// calculate/set x0_max and derived_x0_max
 			for (int i = 0; i < sizeof x0_max_ / sizeof x0_max_[0]; i++) {
 				x0_max_[i] = std::max(std::abs(l_x0_[i]), u_x0_[i]);
 				derived_x0_max_[i] = std::max(std::abs(l_derived_x0_[i]), u_derived_x0_[i]);
 			}
+
+			// initialize stiffness and damping matrix - values used from cartesian_impednace_control.cpp (frankaemika.github.io/libfranka/cartesian_impedance_control_8cpp-example.html)
+			const double translational_stiffness{ 150.0 };
+			const double rotational_stiffness{ 10.0 };
+
+			// stiffness_matrix_.topLeftCorner(3, 3) << translational_stiffness * Eigen::MatrixXd::Identity(3, 3);
+			// stiffness_matrix_.bottomRightCorner(3, 3) << rotational_stiffness * Eigen::MatrixXd::Identity(3, 3);
+
+			// damping_matrix_.topLeftCorner(3, 3) << 2.0 * sqrt(translational_stiffness) * Eigen::MatrixXd::Identity(3, 3);
+			// damping_matrix_.bottomRightCorner(3, 3) << 2.0 * sqrt(rotational_stiffness) * Eigen::MatrixXd::Identity(3, 3);
 
 			impedance_parameters_initialized_ = true;
 		}
@@ -609,6 +644,19 @@ namespace franka_proxy
 
 		measured_velocities_.push_back(new_measured_velocity_);
 
+		// convert current joint velocity to init measured joint velocities
+		std::array<double, 7> new_measured_joint_velocity_;
+
+		for (int i = 0; i < dq_.rows(); i++) {
+			// get value
+			double j_vel_ = dq_(i, 0);
+
+			// store it in new joint velocity array
+			new_measured_joint_velocity_[i] = j_vel_;
+		}
+
+		measured_joint_velocities_.push_back(new_measured_joint_velocity_);
+
 		// remove first element of measured_velocitues_ if there are more then eleven elements to calculate the current acceleration by the current velocity and the velocity measured ten cycles ago
 		if (measured_velocities_.size() > 11) {
 			measured_velocities_.pop_front();
@@ -626,10 +674,22 @@ namespace franka_proxy
 		// set acceleration
 		acceleration_(acc_list_.data());
 
-		// TODO: move those elsewhere -> on each loop init with 0 will run the stability check on each loop
-		// damping and stiffness matrix
-		Eigen::Matrix<double, 6, 6> damping_matrix_ = Eigen::Matrix<double, 6, 6>::Zero();
-		Eigen::Matrix<double, 6, 6> stiffness_matrix_ = Eigen::Matrix<double, 6, 6>::Zero();
+		// remove first element of measured_joint_velocitues_ if there are more then eleven elements to calculate the current joint acceleration by the current joint velocity and the joint velocity measured ten cycles ago
+		if (measured_joint_velocities_.size() > 11) {
+			measured_joint_velocities_.pop_front();
+		}
+
+		// calculate joint acceleration
+		std::array<double, 6> j_acc_list_;
+		double j_delta_time_ = measured_joint_velocities_.size() * 0.001;
+
+		for (int i = 0; i < j_acc_list_.size(); i++) {
+			double j_delta_velocity_ = measured_joint_velocities_.back()[i] - measured_joint_velocities_.front()[i];
+			j_acc_list_[i] = j_delta_velocity_ / j_delta_time_;
+		}
+
+		// set joint acceleration
+		j_acceleration_(j_acc_list_.data());
 
 		// stiffness and damping
 		for (int i = 0; i < inertia_matrix_.rows(); i++) {
@@ -662,7 +722,16 @@ namespace franka_proxy
 		// ----- TEST STIFFNESS AND DAMPING FOR TESTING WITHOUT IMPEDANCE PLANNER
 
 		// calculate external force
-		Eigen::Matrix<double, 6, 6> f_ext = inertia_matrix_ * acceleration_ + damping_matrix_ * velocity_ * stiffness_matrix_ * position_error_;
+		Eigen::Matrix<double, 6, 6> f_ext_ = inertia_matrix_ * acceleration_ + damping_matrix_ * velocity_ * stiffness_matrix_ * position_error_;
+	
+		// calculate torque - without gravity as the robot handles it itself
+		Eigen::VectorXd tau_d_ = mass_matrix_ * j_acceleration_ + coriolis_ * dq_ - jacobian_.transpose() * f_ext_;
+
+		std::array<double, 7> tau_d_ar_;
+		Eigen::VectorXd::Map(&tau_d_ar_[0], 7) = tau_d_;
+
+		// robot_state().tau_J_d = tau_d_ar_; ???
+		// return tau_d_ar_;
 	}
 
 	double franka_hardware_controller::optimizeDamping(double l_di, double u_di, double mi, double bi, double x0i_max, double derived_x0i_max) {
