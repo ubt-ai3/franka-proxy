@@ -532,19 +532,22 @@ namespace franka_proxy
 		// impedance_control_callback = [&](const franka::RobotState& robot_state,
 			// franka::Duration /*duration*/) -> franka::Torques {
 	void franka_hardware_controller::set_impedance() {
+		// get robot state
+		franka::RobotState state_ = robot_state();
+
 		// get robot model
 		franka::Model model_ = robot_.loadModel();
 
 		// get coriolis matrix
-		std::array<double, 7> coriolis_ar_ = model_.coriolis(robot_state());
+		std::array<double, 7> coriolis_ar_ = model_.coriolis(state_);
 		Eigen::Map<const Eigen::Matrix<double, 7, 1>> coriolis_(coriolis_ar_.data());
 
 		// get mass matrix
-		std::array<double, 49> mass_ar_ = model_.mass(robot_state());
+		std::array<double, 49> mass_ar_ = model_.mass(state_);
 		Eigen::Map<const Eigen::Matrix<double, 7, 7>> mass_matrix_(mass_ar_.data());
 
 		// get jacobian
-		std::array<double, 42> jac_ar_ = model_.zeroJacobian(franka::Frame::kEndEffector, robot_state());
+		std::array<double, 42> jac_ar_ = model_.zeroJacobian(franka::Frame::kEndEffector, state_);
 		Eigen::Map<const Eigen::Matrix<double, 6, 7>> jacobian_(jac_ar_.data());
 
 		// calculate inertia matrix
@@ -558,13 +561,13 @@ namespace franka_proxy
 		}
 
 		// get current position
-		Eigen::Affine3d po_transform_(Eigen::Matrix4d::Map(robot_state().O_T_EE.data()));
+		Eigen::Affine3d po_transform_(Eigen::Matrix4d::Map(state_.O_T_EE.data()));
 		Eigen::Vector3d position_(po_transform_.translation());
 
 		Eigen::Matrix<double, 6, 1> position_error_;
 
 		// get current velocity
-		Eigen::Map<const Eigen::Matrix<double, 7, 1>> dq_(robot_state().dq.data());
+		Eigen::Map<const Eigen::Matrix<double, 7, 1>> dq_(state_.dq.data());
 		Eigen::Matrix<double, 6, 1> velocity_ = jacobian_ * dq_; // dx = j(q)*dq
 
 		// init acceleration variable
@@ -580,32 +583,18 @@ namespace franka_proxy
 		// initialize impedance parameters
 		if (!impedance_parameters_initialized_) {
 			// calculate desired position
-			Eigen::Affine3d pod_transform_(Eigen::Matrix4d::Map(robot_state().O_T_EE.data()));
+			Eigen::Affine3d pod_transform_(Eigen::Matrix4d::Map(state_.O_T_EE.data()));
 			position_d_(pod_transform_.translation());
 
 			// convert current velcoity to init measured velocities
 			std::array<double, 6> new_measured_velocity_;
-
-			for (int i = 0; i < velocity_.rows(); i++) {
-				// get value
-				double vel_ = velocity_(i, 0);
-
-				// store it in new velocity array
-				new_measured_velocity_[i] = vel_;
-			}
+			Eigen::VectorXd::Map(&new_measured_velocity_[0], 6) = velocity_;
 
 			measured_velocities_.push_back(new_measured_velocity_);
 
 			// convert current joint velocity to init measured joint velocities
 			std::array<double, 7> new_measured_joint_velocity_;
-
-			for (int i = 0; i < dq_.rows(); i++) {
-				// get value
-				double j_vel_ = dq_(i, 0);
-
-				// store it in new joint velocity array
-				new_measured_joint_velocity_[i] = j_vel_;
-			}
+			Eigen::VectorXd::Map(&new_measured_joint_velocity_[0], 7) = dq_;
 
 			measured_joint_velocities_.push_back(new_measured_joint_velocity_);
 
@@ -616,8 +605,8 @@ namespace franka_proxy
 			}
 
 			// initialize stiffness and damping matrix - values used from cartesian_impednace_control.cpp (frankaemika.github.io/libfranka/cartesian_impedance_control_8cpp-example.html)
-			const double translational_stiffness{ 150.0 };
-			const double rotational_stiffness{ 10.0 };
+			//  double translational_stiffness{ 150.0 };
+			// const double rotational_stiffness{ 10.0 };
 
 			// stiffness_matrix_.topLeftCorner(3, 3) << translational_stiffness * Eigen::MatrixXd::Identity(3, 3);
 			// stiffness_matrix_.bottomRightCorner(3, 3) << rotational_stiffness * Eigen::MatrixXd::Identity(3, 3);
@@ -633,27 +622,13 @@ namespace franka_proxy
 
 		// convert current velcoity and push it to measured velocities
 		std::array<double, 6> new_measured_velocity_;
-
-		for (int i = 0; i < velocity_.rows(); i++) {
-			// get value
-			double vel_ = velocity_(i, 0);
-
-			// store it in new velocity array
-			new_measured_velocity_[i] = vel_;
-		}
+		Eigen::VectorXd::Map(&new_measured_velocity_[0], 6) = velocity_;
 
 		measured_velocities_.push_back(new_measured_velocity_);
 
-		// convert current joint velocity to init measured joint velocities
+		// convert current joint velocity to feed measured joint velocities
 		std::array<double, 7> new_measured_joint_velocity_;
-
-		for (int i = 0; i < dq_.rows(); i++) {
-			// get value
-			double j_vel_ = dq_(i, 0);
-
-			// store it in new joint velocity array
-			new_measured_joint_velocity_[i] = j_vel_;
-		}
+		Eigen::VectorXd::Map(&new_measured_joint_velocity_[0], 7) = dq_;
 
 		measured_joint_velocities_.push_back(new_measured_joint_velocity_);
 
