@@ -31,6 +31,7 @@ add_executable(
     franka_proxy
         ${CMAKE_CURRENT_SOURCE_DIR}/source/franka_proxy/franka_hardware_controller.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/source/franka_proxy/motion_generator_force.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/source/franka_proxy/motion_generator_impedance_hold_position.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/source/franka_proxy/motion_generator_joint_max_accel.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/source/franka_proxy/motion_generator_seq_cart_vel_tau.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/source/franka_proxy/franka_motion_recorder.cpp
@@ -38,7 +39,7 @@ add_executable(
         ${CMAKE_CURRENT_SOURCE_DIR}/source/franka_proxy/franka_network_state_server.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/source/franka_proxy/franka_proxy.cpp
         #${CMAKE_CURRENT_SOURCE_DIR}/source/jr3_ft_sensor/force_torque_sensor.cpp
- "source/franka_proxy/motion_generator_impedance_hold_position.cpp")
+)
 
 target_include_directories(
     franka_proxy
