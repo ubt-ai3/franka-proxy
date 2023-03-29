@@ -22,7 +22,6 @@
 
 #include "franka_motion_recorder.hpp"
 
-
 namespace franka_proxy
 {
 
@@ -109,6 +108,10 @@ namespace franka_proxy
 			const std::vector<robot_force_config>& f_sequence,
 			const std::vector<robot_force_selection>& selection_vector);
 
+		/**
+		 * Starts impedance controller to hold the current position
+		 */
+		void impedance_hold_position();
 
 		static constexpr double default_gripper_speed = 0.025;
 
@@ -173,31 +176,6 @@ namespace franka_proxy
 		std::atomic_bool terminate_state_threads_;
 		std::thread robot_state_thread_;
 		std::thread gripper_state_thread_;
-
-		// Impedance control
-		std::array<double, 6> b_ = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
-		std::array<double, 6> l_d_ = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
-		std::array<double, 6> u_d_ = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
-
-		std::array<double, 6> l_x0_ = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
-		std::array<double, 6> u_x0_ = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
-
-		std::array<double, 6> l_derived_x0_ = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
-		std::array<double, 6> u_derived_x0_ = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
-
-		std::array<double, 6> x0_max_ = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
-		std::array<double, 6> derived_x0_max_ = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
-
-		bool impedance_parameters_initialized_ = false;
-
-		Eigen::Vector3d position_d_;
-		std::list<std::array<double, 6>> measured_velocities_;
-
-		std::list<std::array<double, 7>> measured_joint_velocities_;
-
-		void set_impedance();
-		double optimizeDamping(double l_di, double u_di, double mi, double bi, double x0i_max, double derived_x0i_max);
-		double calculate_stiffness_from_damping(double di, double mi);
 	};
 
 

@@ -1,0 +1,88 @@
+/**
+ *************************************************************************
+ *
+ * @file motion_generator_impedance_hold_position.hpp
+ *
+ * todo
+ *
+ ************************************************************************/
+
+
+#if !defined(INCLUDED__FRANKA_PROXY__MOTION_GENERATOR_IMPEDANCE_HOLD_POSITION_HPP)
+#define INCLUDED__FRANKA_PROXY__MOTION_GENERATOR_IMPEDANCE_HOLD_POSITION_HPP
+
+
+#include <vector>
+
+#include <Eigen/Core>
+
+#include <franka/robot.h>
+#include <franka/model.h>
+
+
+
+namespace franka_proxy
+{
+	namespace detail
+	{
+
+
+		/**
+		 *************************************************************************
+		 *
+		 * @class impedance_hold_position_motion_generator
+		 *
+		 * in use
+		 *
+		 ************************************************************************/
+		class impedance_hold_position_motion_generator
+		{
+		public:
+
+			impedance_hold_position_motion_generator(franka::Robot& robot, std::mutex& state_lock, franka::RobotState& robot_state, double duration);
+
+			franka::Torques callback(const franka::RobotState& robot_state, franka::Duration period);
+
+		private:
+			double optimizeDamping(double l_di, double u_di, double mi, double bi, double x0i_max, double derived_x0i_max);
+			double calculate_stiffness_from_damping(double di, double mi);
+
+			franka::Model model_;
+
+			std::mutex& state_lock_;
+			franka::RobotState& state_;
+
+			std::array<double, 6> b_ = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
+			std::array<double, 6> l_d_ = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
+			std::array<double, 6> u_d_ = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
+
+			std::array<double, 6> l_x0_ = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
+			std::array<double, 6> u_x0_ = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
+
+			std::array<double, 6> l_derived_x0_ = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
+			std::array<double, 6> u_derived_x0_ = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
+
+			std::array<double, 6> x0_max_ = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
+			std::array<double, 6> derived_x0_max_ = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
+
+			double time_ = 0.0;
+			double duration_;
+
+			Eigen::Vector3d position_d_;
+			std::list<std::array<double, 6>> measured_velocities_;
+
+			std::list<std::array<double, 7>> measured_joint_velocities_;
+
+			// damping and stiffness matrix
+			Eigen::Matrix<double, 6, 6> damping_matrix_ = Eigen::Matrix<double, 6, 6>::Zero();
+			Eigen::Matrix<double, 6, 6> stiffness_matrix_ = Eigen::Matrix<double, 6, 6>::Zero();
+		};
+
+
+
+
+	} /* namespace detail */
+} /* namespace franka_proxy */
+
+
+#endif /* !defined(INCLUDED__FRANKA_PROXY__MOTION_GENERATOR_IMPEDANCE_HOLD_POSITION_HPP) */
