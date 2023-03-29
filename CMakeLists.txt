@@ -72,7 +72,7 @@ add_library(
     franka_proxy_client STATIC
         ${CMAKE_CURRENT_SOURCE_DIR}/source/franka_proxy_client/franka_network_client.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/source/franka_proxy_client/franka_remote_controller.cpp
- "source/franka_proxy/motion_generator_impedance_hold_position.cpp")
+)
 
 target_include_directories(
     franka_proxy_client
@@ -99,7 +99,7 @@ target_compile_definitions(
 add_executable(
     franka_proxy_client_test
         ${CMAKE_CURRENT_SOURCE_DIR}/source/franka_proxy_client_test/main.cpp
- "source/franka_proxy/motion_generator_impedance_hold_position.cpp")
+)
 
 target_include_directories(
     franka_proxy_client_test
@@ -132,7 +132,7 @@ add_library(
         ${CMAKE_CURRENT_SOURCE_DIR}/source/franka_control/franka_controller_remote.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/source/franka_control/franka_util.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/source/franka_control/ikfast.cpp
- "source/franka_proxy/motion_generator_impedance_hold_position.cpp")
+)
 
 target_include_directories(
     franka_control
@@ -164,7 +164,7 @@ target_sources(
 	franka_proxy_share
 	PRIVATE
 		${CMAKE_CURRENT_SOURCE_DIR}/source/franka_proxy_share/franka_proxy_commands.cpp
- "source/franka_proxy/motion_generator_impedance_hold_position.cpp")
+)
 
 target_include_directories(
 	franka_proxy_share
