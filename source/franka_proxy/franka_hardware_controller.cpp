@@ -110,9 +110,9 @@ namespace franka_proxy
 		set_control_loop_running(false);
 	}
 
-	void franka_hardware_controller::impedance_hold_position()
+	void franka_hardware_controller::impedance_hold_position(const double duration)
 	{
-		detail::impedance_hold_position_motion_generator motion_generator(robot_, robot_state_lock_, robot_state_, 20);
+		detail::impedance_hold_position_motion_generator motion_generator(robot_, robot_state_lock_, robot_state_, duration);
 
 		try
 		{

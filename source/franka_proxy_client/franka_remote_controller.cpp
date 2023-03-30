@@ -68,6 +68,11 @@ void franka_remote_controller::move_sequence
 		(q_sequence, f_sequence, selection_vector_sequence);
 }
 
+void franka_remote_controller::impedance_hold_position(double duration)
+{
+	send_command<command_impedance_hold_position>(duration);
+}
+
 
 void franka_remote_controller::apply_z_force(double mass, double duration)
 	{ send_command<command_force_z>(mass, duration); }

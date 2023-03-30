@@ -111,7 +111,7 @@ namespace franka_proxy
 		/**
 		 * Starts impedance controller to hold the current position
 		 */
-		void impedance_hold_position();
+		void impedance_hold_position(double duraction);
 
 		static constexpr double default_gripper_speed = 0.025;
 

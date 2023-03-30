@@ -81,6 +81,10 @@ public:
 		 const std::vector<std::array<double, 6>>& f_sequence,
 		 const std::vector<std::array<double, 6>>& selection_vector_sequence);
 
+	/**
+	 * Starts impedance controller to hold the current position
+	*/
+	void impedance_hold_position(double duration);
 
 	/**
 	 * todo docu

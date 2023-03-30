@@ -84,6 +84,28 @@ void from_json(const nlohmann::json& json, command_move_hybrid_sequence& object)
 
 //////////////////////////////////////////////////////////////////////////
 //
+// command_impedance_hold_position
+//
+//////////////////////////////////////////////////////////////////////////
+
+
+void to_json(nlohmann::json& json, const command_impedance_hold_position& object)
+{
+	json["type"] = command_impedance_hold_position::type;
+	json["duration"] = object.duration;
+}
+
+
+void from_json(const nlohmann::json& json, command_impedance_hold_position& object)
+{
+	json.at("duration").get_to(object.duration);
+}
+
+
+
+
+//////////////////////////////////////////////////////////////////////////
+//
 // command_force_z
 //
 //////////////////////////////////////////////////////////////////////////

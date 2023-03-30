@@ -106,6 +106,29 @@ void from_json(const nlohmann::json& json, command_move_hybrid_sequence& object)
 /**
  *************************************************************************
  *
+ * @class command_impedance_hold_position
+ *
+ * Commands the robot to use the impedance controller to hold the current
+ * position for a given duration
+ *
+ ************************************************************************/
+	struct command_impedance_hold_position
+{
+	using response_type = command_generic_response;
+	static constexpr char type[] = "imdedance.hold";
+
+	double duration;
+};
+
+void to_json(nlohmann::json&, const command_impedance_hold_position& object);
+void from_json(const nlohmann::json& json, command_impedance_hold_position& object);
+
+
+
+
+/**
+ *************************************************************************
+ *
  * @class command_force_z
  *
  * Commands the robot to apply a force of given `mass` for `duration`

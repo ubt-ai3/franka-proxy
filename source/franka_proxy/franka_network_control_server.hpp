@@ -78,6 +78,7 @@ private:
 	command_generic_response process_command(const command_move_to_config&);
 	command_generic_response process_command(const command_move_hybrid_sequence&);
 	command_generic_response process_command(const command_move_until_contact&);
+	command_generic_response process_command(const command_impedance_hold_position&);
 	command_generic_response process_command(const command_force_z&);
 	command_generic_response process_command(const command_open_gripper&);
 	command_generic_response process_command(const command_close_gripper&);

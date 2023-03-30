@@ -112,6 +112,12 @@ int main()
 	
 	std::cout << "Finished Force Test." << std::endl;
 
+	std::cout << "Starting Impedance - Hold Position Test." << std::endl;
+
+	controller.impedance_hold_position(60);
+
+	std::cout << "Finished Impedance - Hold Position Test." << std::endl;
+
 
 	std::cout << "Starting FK/IK Test." << std::endl;
 
