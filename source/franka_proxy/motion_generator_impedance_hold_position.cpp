@@ -99,7 +99,7 @@ namespace franka_proxy
 				return current_torques_;
 			}
 
-			// get coriolis matrix
+			// get coriolis matrix (coriolis_ = C x dq_)
 			std::array<double, 7> coriolis_ar_ = model_.coriolis(state_);
 			Eigen::Map<const Eigen::Matrix<double, 7, 1>> coriolis_(coriolis_ar_.data());
 
@@ -176,7 +176,7 @@ namespace franka_proxy
 
 			// calculate joint acceleration
 			std::array<double, 6> j_acc_list_;
-			double j_delta_time_ = measured_joint_velocities_.size() * 0.001;
+			double j_delta_time_ = measured_joint_velocities_.size() * 0.001; // TODO: use time?
 
 			for (int i = 0; i < j_acc_list_.size(); i++) {
 				double j_delta_velocity_ = measured_joint_velocities_.back()[i] - measured_joint_velocities_.front()[i];
@@ -218,10 +218,10 @@ namespace franka_proxy
 			// ----- TEST STIFFNESS AND DAMPING FOR TESTING WITHOUT IMPEDANCE PLANNER
 
 			// calculate external force
-			Eigen::Matrix<double, 6, 6> f_ext_ = inertia_matrix_ * acceleration_ + damping_matrix_ * velocity_ * stiffness_matrix_ * position_error_;
+			Eigen::Matrix<double, 6, 1> f_ext_ = inertia_matrix_ * acceleration_ + damping_matrix_ * velocity_ + stiffness_matrix_ * position_error_;
 
 			// calculate torque - without gravity as the robot handles it itself
-			Eigen::VectorXd tau_d_ = mass_matrix_ * j_acceleration_ + coriolis_ * dq_ - jacobian_.transpose() * f_ext_;
+			Eigen::VectorXd tau_d_ = mass_matrix_ * j_acceleration_ + coriolis_ - jacobian_.transpose() * f_ext_;
 
 			std::array<double, 7> tau_d_ar_;
 			Eigen::VectorXd::Map(&tau_d_ar_[0], 7) = tau_d_;
