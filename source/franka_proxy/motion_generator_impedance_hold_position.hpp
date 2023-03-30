@@ -15,6 +15,7 @@
 #include <vector>
 
 #include <Eigen/Core>
+#include <Eigen/Dense>
 
 #include <franka/robot.h>
 #include <franka/model.h>
@@ -42,6 +43,8 @@ namespace franka_proxy
 			impedance_hold_position_motion_generator(franka::Robot& robot, std::mutex& state_lock, franka::RobotState& robot_state, double duration);
 
 			franka::Torques callback(const franka::RobotState& robot_state, franka::Duration period);
+			franka::Torques callback_example(const franka::RobotState& robot_state, franka::Duration period);
+			franka::Torques	callback_own(const franka::RobotState& robot_state, franka::Duration period);
 
 		private:
 			double optimizeDamping(double l_di, double u_di, double mi, double bi, double x0i_max, double derived_x0i_max);
@@ -68,6 +71,8 @@ namespace franka_proxy
 			double time_ = 0.0;
 			double duration_;
 
+			Eigen::Quaterniond orientation_d_;
+
 			Eigen::Vector3d position_d_;
 			std::list<std::array<double, 6>> measured_velocities_;
 
@@ -76,6 +81,11 @@ namespace franka_proxy
 			// damping and stiffness matrix
 			Eigen::Matrix<double, 6, 6> damping_matrix_ = Eigen::Matrix<double, 6, 6>::Zero();
 			Eigen::Matrix<double, 6, 6> stiffness_matrix_ = Eigen::Matrix<double, 6, 6>::Zero();
+
+			// Impedance example
+			Eigen::Quaterniond orientation_d;
+
+			Eigen::Vector3d position_d;
 		};
 
 
