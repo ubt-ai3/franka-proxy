@@ -93,26 +93,6 @@ namespace franka_proxy
 				return current_torques_;
 			}
 
-			// init damping and stiffness -> TODO: set them in time_ == 0
-			//const double translational_stiffness{ 150.0 };
-			//const double rotational_stiffness{ 10.0 };
-
-			////stiffness_matrix_.setZero();
-			//stiffness_matrix_.topLeftCorner(3, 3) << translational_stiffness * Eigen::MatrixXd::Identity(3, 3);
-			//stiffness_matrix_.bottomRightCorner(3, 3) << rotational_stiffness * Eigen::MatrixXd::Identity(3, 3);
-			////damping_matrix_.setZero();
-			//damping_matrix_.topLeftCorner(3, 3) << 2.0 * sqrt(translational_stiffness) *
-			//	Eigen::MatrixXd::Identity(3, 3);
-			//damping_matrix_.bottomRightCorner(3, 3) << 2.0 * sqrt(rotational_stiffness) *
-			//	Eigen::MatrixXd::Identity(3, 3);
-
-			//if (time_ == 0.0) {
-			//	// equilibrium point is the current position
-			//	Eigen::Affine3d init_transform_(Eigen::Matrix4d::Map(state_.O_T_EE.data()));
-			//	position_d_ = init_transform_.translation();
-			//	orientation_d_ = init_transform_.linear();
-			//}
-
 			// save timestamp
 			timestamps_.push_back(time_);
 
@@ -242,19 +222,6 @@ namespace franka_proxy
 				damping_matrix_(i, i) = di;
 				stiffness_matrix_(i, i) = ki;
 			}*/
-
-			//// TEST STIFFNESS AND DAMPING FOR TESTING WITHOUT IMPEDANCE PLANNER
-			//const double translational_stiffness{ 150.0 };
-			//const double rotational_stiffness{ 10.0 };
-
-			//stiffness_matrix_.topLeftCorner(3, 3) << translational_stiffness * Eigen::MatrixXd::Identity(3, 3);
-			//stiffness_matrix_.bottomRightCorner(3, 3) << rotational_stiffness * Eigen::MatrixXd::Identity(3, 3);
-
-			//damping_matrix_.topLeftCorner(3, 3) << 2.0 * sqrt(translational_stiffness) *
-			//	Eigen::MatrixXd::Identity(3, 3);
-			//damping_matrix_.bottomRightCorner(3, 3) << 2.0 * sqrt(rotational_stiffness) *
-			//	Eigen::MatrixXd::Identity(3, 3);
-			//// ----- TEST STIFFNESS AND DAMPING FOR TESTING WITHOUT IMPEDANCE PLANNER
 
 			// calculate external force
 			Eigen::Matrix<double, 6, 1> f_ext_ = inertia_matrix_ * acceleration_ + damping_matrix_ * velocity_ + stiffness_matrix_ * position_error_;
