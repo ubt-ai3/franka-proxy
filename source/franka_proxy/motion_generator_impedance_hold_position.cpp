@@ -57,6 +57,22 @@ namespace franka_proxy
 				{ {100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0} },
 				{ {100.0, 100.0, 100.0, 100.0, 100.0, 100.0} },
 				{ {100.0, 100.0, 100.0, 100.0, 100.0, 100.0} });
+
+			// equilibrium point is the current position
+			Eigen::Affine3d init_transform_(Eigen::Matrix4d::Map(state_.O_T_EE.data()));
+			position_d_ = init_transform_.translation();
+			orientation_d_ = init_transform_.linear();
+
+			const double translational_stiffness{ 150.0 };
+			const double rotational_stiffness{ 10.0 };
+
+			// initialize stiffness and damping matrix
+			stiffness_matrix_.topLeftCorner(3, 3) << translational_stiffness * Eigen::MatrixXd::Identity(3, 3);
+			stiffness_matrix_.bottomRightCorner(3, 3) << rotational_stiffness * Eigen::MatrixXd::Identity(3, 3);
+			damping_matrix_.topLeftCorner(3, 3) << 2.0 * sqrt(translational_stiffness) *
+				Eigen::MatrixXd::Identity(3, 3);
+			damping_matrix_.bottomRightCorner(3, 3) << 2.0 * sqrt(rotational_stiffness) *
+				Eigen::MatrixXd::Identity(3, 3);
 		}
 
 		franka::Torques impedance_hold_position_motion_generator::callback(const franka::RobotState& robot_state, franka::Duration period)
@@ -78,25 +94,27 @@ namespace franka_proxy
 			}
 
 			// init damping and stiffness -> TODO: set them in time_ == 0
-			const double translational_stiffness{ 150.0 };
-			const double rotational_stiffness{ 10.0 };
+			//const double translational_stiffness{ 150.0 };
+			//const double rotational_stiffness{ 10.0 };
 
-			Eigen::MatrixXd stiffness(6, 6), damping(6, 6);
-			stiffness.setZero();
-			stiffness.topLeftCorner(3, 3) << translational_stiffness * Eigen::MatrixXd::Identity(3, 3);
-			stiffness.bottomRightCorner(3, 3) << rotational_stiffness * Eigen::MatrixXd::Identity(3, 3);
-			damping.setZero();
-			damping.topLeftCorner(3, 3) << 2.0 * sqrt(translational_stiffness) *
-				Eigen::MatrixXd::Identity(3, 3);
-			damping.bottomRightCorner(3, 3) << 2.0 * sqrt(rotational_stiffness) *
-				Eigen::MatrixXd::Identity(3, 3);
+			////stiffness_matrix_.setZero();
+			//stiffness_matrix_.topLeftCorner(3, 3) << translational_stiffness * Eigen::MatrixXd::Identity(3, 3);
+			//stiffness_matrix_.bottomRightCorner(3, 3) << rotational_stiffness * Eigen::MatrixXd::Identity(3, 3);
+			////damping_matrix_.setZero();
+			//damping_matrix_.topLeftCorner(3, 3) << 2.0 * sqrt(translational_stiffness) *
+			//	Eigen::MatrixXd::Identity(3, 3);
+			//damping_matrix_.bottomRightCorner(3, 3) << 2.0 * sqrt(rotational_stiffness) *
+			//	Eigen::MatrixXd::Identity(3, 3);
 
-			if (time_ == 0.0) {
-				// equilibrium point is the current position
-				Eigen::Affine3d init_transform_(Eigen::Matrix4d::Map(state_.O_T_EE.data()));
-				position_d_ = init_transform_.translation();
-				orientation_d_ = init_transform_.linear();
-			}
+			//if (time_ == 0.0) {
+			//	// equilibrium point is the current position
+			//	Eigen::Affine3d init_transform_(Eigen::Matrix4d::Map(state_.O_T_EE.data()));
+			//	position_d_ = init_transform_.translation();
+			//	orientation_d_ = init_transform_.linear();
+			//}
+
+			// save timestamp
+			timestamps_.push_back(time_);
 
 			// get coriolis matrix (coriolis_ = C x dq_)
 			std::array<double, 7> coriolis_ar_ = model_.coriolis(state_);
@@ -160,13 +178,21 @@ namespace franka_proxy
 				measured_velocities_.pop_front();
 			}
 
+			// calculate delta time for acceleration and joint acceleration calculation
+			double delta_time_ = timestamps_.back() - timestamps_.front();
+
 			// calculate acceleration
 			std::array<double, 6> acc_list_;
-			double delta_time_ = measured_velocities_.size() * 0.001;
 
-			for (int i = 0; i < acc_list_.size(); i++) {
-				double delta_velocity_ = measured_velocities_.back()[i] - measured_velocities_.front()[i];
-				acc_list_[i] = delta_velocity_ / delta_time_;
+			// avoiding dividing by 0. Also: if no time has passed, no acceleration could have taken place
+			if (delta_time_ == 0.0) {
+				acc_list_ = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
+			}
+			else {
+				for (int i = 0; i < acc_list_.size(); i++) {
+					double delta_velocity_ = measured_velocities_.back()[i] - measured_velocities_.front()[i];
+					acc_list_[i] = delta_velocity_ / delta_time_;
+				}
 			}
 
 			// init and set acceleration variable
@@ -179,15 +205,25 @@ namespace franka_proxy
 
 			// calculate joint acceleration
 			std::array<double, 6> j_acc_list_;
-			double j_delta_time_ = measured_joint_velocities_.size() * 0.001; // TODO: use time?
 
-			for (int i = 0; i < j_acc_list_.size(); i++) {
-				double j_delta_velocity_ = measured_joint_velocities_.back()[i] - measured_joint_velocities_.front()[i];
-				j_acc_list_[i] = j_delta_velocity_ / j_delta_time_;
+			// avoiding dividing by 0. Also: if no time has passed, no (joint) acceleration could have taken place
+			if (delta_time_ == 0.0) {
+				j_acc_list_ = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
+			}
+			else {
+				for (int i = 0; i < j_acc_list_.size(); i++) {
+					double j_delta_velocity_ = measured_joint_velocities_.back()[i] - measured_joint_velocities_.front()[i];
+					j_acc_list_[i] = j_delta_velocity_ / delta_time_;
+				}
 			}
 
 			// init and set joint acceleration variable
 			Eigen::Matrix<double, 7, 1> j_acceleration_(j_acc_list_.data());
+
+			// remove first element of timestamps_ if there are more then eleven timestamps, as it is not needed for further iterations and all calculations requiring timestamps_ are done at this point
+			if (timestamps_.size() > 11) {
+				timestamps_.pop_front();
+			}
 
 			/*
 			// stiffness and damping
@@ -221,7 +257,7 @@ namespace franka_proxy
 			//// ----- TEST STIFFNESS AND DAMPING FOR TESTING WITHOUT IMPEDANCE PLANNER
 
 			// calculate external force
-			Eigen::Matrix<double, 6, 1> f_ext_ = inertia_matrix_ * acceleration_ + damping * velocity_ + stiffness * position_error_;
+			Eigen::Matrix<double, 6, 1> f_ext_ = inertia_matrix_ * acceleration_ + damping_matrix_ * velocity_ + stiffness_matrix_ * position_error_;
 
 			// calculate torque - without gravity as the robot handles it itself
 			Eigen::VectorXd tau_d_ = mass_matrix_ * j_acceleration_ + coriolis_ - jacobian_.transpose() * f_ext_;

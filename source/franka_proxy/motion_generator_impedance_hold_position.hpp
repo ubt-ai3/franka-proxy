@@ -66,14 +66,14 @@ namespace franka_proxy
 			std::array<double, 6> x0_max_ = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
 			std::array<double, 6> derived_x0_max_ = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
 
-			double time_ = 0.0;
 			double duration_;
+			double time_ = 0.0;
+			std::list<double> timestamps_;
 
 			Eigen::Quaterniond orientation_d_;
-
 			Eigen::Vector3d position_d_;
-			std::list<std::array<double, 6>> measured_velocities_;
 
+			std::list<std::array<double, 6>> measured_velocities_;
 			std::list<std::array<double, 7>> measured_joint_velocities_;
 
 			// damping and stiffness matrix
