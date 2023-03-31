@@ -112,13 +112,9 @@ namespace franka_proxy
 
 			// calculate inertia matrix
 			// intertia = (J(q)*B^(-1)(q)*J(q).transpose())^(-1)
-			Eigen::Matrix<double, 6, 6> nd_inertia_matrix_ = (jacobian_ * mass_matrix_.inverse() * jacobian_.transpose()).inverse();
-			// only using diagonal elements for calculations
-			Eigen::Matrix<double, 6, 6> inertia_matrix_ = Eigen::Matrix<double, 6, 6>::Zero();
-
-			for (int i = 0; i < nd_inertia_matrix_.rows(); i++) {
-				inertia_matrix_(i, i) = nd_inertia_matrix_(i, i);
-			}
+			Eigen::Matrix<double, 6, 6> inertia_matrix_ar = (jacobian_ * mass_matrix_.inverse() * jacobian_.transpose()).inverse();
+			// only using diagonal elements for damping and stiffness optimization, using complete matrix for output calculations
+			Eigen::Map<const Eigen::Matrix<double, 6, 6>> inertia_matrix_(inertia_matrix_ar.data());
 
 			// get current position
 			Eigen::Affine3d po_transform_(Eigen::Matrix4d::Map(state_.O_T_EE.data()));
