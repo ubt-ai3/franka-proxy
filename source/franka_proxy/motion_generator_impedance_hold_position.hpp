@@ -43,8 +43,6 @@ namespace franka_proxy
 			impedance_hold_position_motion_generator(franka::Robot& robot, std::mutex& state_lock, franka::RobotState& robot_state, double duration);
 
 			franka::Torques callback(const franka::RobotState& robot_state, franka::Duration period);
-			franka::Torques callback_example(const franka::RobotState& robot_state, franka::Duration period);
-			franka::Torques	callback_own(const franka::RobotState& robot_state, franka::Duration period);
 
 		private:
 			double optimizeDamping(double l_di, double u_di, double mi, double bi, double x0i_max, double derived_x0i_max);
