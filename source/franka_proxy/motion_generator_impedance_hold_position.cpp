@@ -75,7 +75,10 @@ namespace franka_proxy
 				Eigen::MatrixXd::Identity(3, 3);
 		}
 
-		franka::Torques impedance_hold_position_motion_generator::callback(const franka::RobotState& robot_state, franka::Duration period)
+		franka::Torques impedance_hold_position_motion_generator::callback
+			(const franka::RobotState& robot_state,
+				franka::Duration period,
+				std::function<Eigen::Vector3d (const double)> get_desired_position)
 		{
 			{
 				std::lock_guard<std::mutex> state_guard(state_lock_);
@@ -114,11 +117,14 @@ namespace franka_proxy
 			// only using diagonal elements for damping and stiffness optimization, using complete matrix for output calculations
 			Eigen::Map<const Eigen::Matrix<double, 6, 6>> inertia_matrix_(inertia_matrix_ar.data());
 
+			// get current desired position
+			position_d_ = get_desired_position(time_);
+
 			// get current position
 			Eigen::Affine3d po_transform_(Eigen::Matrix4d::Map(state_.O_T_EE.data()));
 			Eigen::Vector3d position_(po_transform_.translation());
 
-			// get cirremt orientation
+			// get current orientation
 			Eigen::Quaterniond orientation_(po_transform_.linear());
 
 			Eigen::Matrix<double, 6, 1> position_error_;

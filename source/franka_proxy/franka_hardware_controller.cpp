@@ -19,6 +19,7 @@
 #include <franka/model.h>
 
 #include "franka_motion_recorder.hpp"
+#include "impedance_position_generator.hpp"
 #include "motion_generator_force.hpp"
 #include "motion_generator_impedance_hold_position.hpp"
 #include "motion_generator_joint_max_accel.hpp"
@@ -113,6 +114,7 @@ namespace franka_proxy
 	void franka_hardware_controller::impedance_hold_position(const double duration)
 	{
 		detail::impedance_hold_position_motion_generator motion_generator(robot_, robot_state_lock_, robot_state_, duration);
+		detail::impedance_position_generator position_generator(robot_state_, robot_state_lock_);
 
 		try
 		{
@@ -126,7 +128,13 @@ namespace franka_proxy
 				[&](const franka::RobotState& robot_state,
 					franka::Duration period) -> franka::Torques
 				{
-					return motion_generator.callback(robot_state, period);
+					return motion_generator.callback
+						(robot_state, period,
+							[&](const double time) -> Eigen::Vector3d
+							{
+								return position_generator.hold_current_position(time);
+							}
+						);
 				}, true, 10.0
 			);
 		}
