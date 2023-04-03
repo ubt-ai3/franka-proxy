@@ -36,13 +36,22 @@ namespace franka_proxy
 		{
 		public:
 			impedance_position_generator(franka::RobotState& robot_state, std::mutex& state_lock);
+			impedance_position_generator
+				(franka::RobotState& robot_state,
+					std::mutex& state_lock,
+					std::list<Eigen::Vector3d>& positions,
+					double duration);
+
 			Eigen::Vector3d hold_current_position(double time);
 
 		private:
 			std::mutex& state_lock_;
 			franka::RobotState& state_;
 
-			Eigen::Vector3d initial_position_;
+			Eigen::Vector3d current_position_;
+			std::list<Eigen::Vector3d> positions_;
+
+			double position_interval_;
 		};
 
 

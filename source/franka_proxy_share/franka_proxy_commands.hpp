@@ -129,6 +129,30 @@ void from_json(const nlohmann::json& json, command_impedance_hold_position& obje
 /**
  *************************************************************************
  *
+ * @class command_impedance_follow_positions
+ *
+ * Commands the robot to use the impedance controller to hold the current
+ * position for a given duration
+ *
+ ************************************************************************/
+struct command_impedance_follow_positions
+{
+	using response_type = command_generic_response;
+	static constexpr char type[] = "imdedance.follow";
+
+	std::list<Eigen::Vector3d>& positions;
+	double duration;
+};
+
+void to_json(nlohmann::json&, const command_impedance_follow_positions& object);
+void from_json(const nlohmann::json& json, command_impedance_follow_positions& object);
+
+
+
+
+/**
+ *************************************************************************
+ *
  * @class command_force_z
  *
  * Commands the robot to apply a force of given `mass` for `duration`

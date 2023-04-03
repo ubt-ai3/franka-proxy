@@ -82,9 +82,14 @@ public:
 		 const std::vector<std::array<double, 6>>& selection_vector_sequence);
 
 	/**
-	 * Starts impedance controller to hold the current position
+	 * Impedance controller to hold the current position
 	*/
 	void impedance_hold_position(double duration);
+
+	/**
+	*  Impedance controller to follow path of positions
+	*/
+	void impedance_follow_positions(std::list<Eigen::Vector3d>& positions, double duration);
 
 	/**
 	 * todo docu

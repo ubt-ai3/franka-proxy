@@ -118,6 +118,12 @@ int main()
 
 	std::cout << "Finished Impedance - Hold Position Test." << std::endl;
 
+	/*std::cout << "Starting Impedance - Follow Positions Test." << std::endl;
+
+	controller.impedance_follow_positions(,30);
+
+	std::cout << "Finished Impedance - Follow Positions Test." << std::endl;*/
+
 
 	std::cout << "Starting FK/IK Test." << std::endl;
 

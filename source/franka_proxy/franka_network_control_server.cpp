@@ -109,6 +109,7 @@ franka_control_server::franka_control_server
 	register_command_handler<command_move_hybrid_sequence>();
 	register_command_handler<command_move_until_contact>();
 	register_command_handler<command_impedance_hold_position>();
+	register_command_handler<command_impedance_follow_positions>();
 	register_command_handler<command_force_z>();
 	register_command_handler<command_open_gripper>();
 	register_command_handler<command_close_gripper>();
@@ -280,6 +281,13 @@ command_generic_response franka_control_server::process_command
 	(const command_impedance_hold_position& cmd)
 {
 	controller_.impedance_hold_position(cmd.duration);
+	return command_result::success;
+}
+
+command_generic_response franka_control_server::process_command
+(const command_impedance_follow_positions& cmd)
+{
+	controller_.impedance_follow_positions(cmd.positions, cmd.duration);
 	return command_result::success;
 }
 

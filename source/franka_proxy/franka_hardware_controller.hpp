@@ -109,9 +109,13 @@ namespace franka_proxy
 			const std::vector<robot_force_selection>& selection_vector);
 
 		/**
-		 * Starts impedance controller to hold the current position
+		 * Impedance controller to hold the current position
 		 */
 		void impedance_hold_position(double duraction);
+		/**
+		 * Impedacne controller to hold multiple positions/ to follow path of multiple positions
+		*/
+		void impedance_follow_positions(std::list<Eigen::Vector3d>& positions, double duration);
 
 		static constexpr double default_gripper_speed = 0.025;
 

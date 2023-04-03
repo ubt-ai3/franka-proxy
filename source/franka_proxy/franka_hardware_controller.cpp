@@ -147,6 +147,42 @@ namespace franka_proxy
 		set_control_loop_running(false);
 	}
 
+	void franka_hardware_controller::impedance_follow_positions(std::list<Eigen::Vector3d>& positions, double duration)
+	{
+		detail::impedance_hold_position_motion_generator motion_generator(robot_, robot_state_lock_, robot_state_, duration);
+		detail::impedance_position_generator position_generator(robot_state_, robot_state_lock_, positions, duration);
+
+		try
+		{
+			set_control_loop_running(true);
+			{
+				// Lock the current_state_lock_ to wait for state_thread_ to finish.
+				std::lock_guard<std::mutex> state_guard(robot_state_lock_);
+			}
+
+			robot_.control(
+				[&](const franka::RobotState& robot_state,
+					franka::Duration period) -> franka::Torques
+				{
+					return motion_generator.callback
+					(robot_state, period,
+						[&](const double time) -> Eigen::Vector3d
+						{
+							return position_generator.hold_current_position(time);
+						}
+					);
+				}, true, 10.0
+			);
+		}
+		catch (const franka::Exception&)
+		{
+			set_control_loop_running(false);
+			throw;
+		}
+
+		set_control_loop_running(false);
+	}
+
 
 	void franka_hardware_controller::move_to(const robot_config_7dof& target)
 	{

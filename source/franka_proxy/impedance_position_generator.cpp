@@ -48,11 +48,46 @@ namespace franka_proxy
 
 			// get initial position
 			Eigen::Affine3d po_transform_(Eigen::Matrix4d::Map(state_.O_T_EE.data()));
-			initial_position_ = po_transform_.translation();
+			current_position_ = po_transform_.translation();
+
+			position_interval_ = 0.0;
+		}
+
+		impedance_position_generator::impedance_position_generator
+		(franka::RobotState& robot_state,
+			std::mutex& state_lock,
+			std::list<Eigen::Vector3d>& positions,
+			double duration)
+			:
+			state_lock_(state_lock),
+			state_(robot_state),
+			positions_(positions)
+		{
+			{
+				std::lock_guard<std::mutex> state_guard(state_lock_);
+				state_ = robot_state;
+			}
+
+			// get initial position
+			Eigen::Affine3d po_transform_(Eigen::Matrix4d::Map(state_.O_T_EE.data()));
+			current_position_ = po_transform_.translation();
+
+			if (duration > 0.0) {
+				position_interval_ = positions.size() / duration;
+			}
+			else {
+				position_interval_ = 0.0;
+			}
 		}
 
 		Eigen::Vector3d impedance_position_generator::hold_current_position(double time) {
-			return initial_position_;
+			if (std::fmod(time, position_interval_) == 0 && !positions_.empty()) {
+				// get new position from positions list
+				current_position_ = positions_.front();
+				positions_.pop_front();
+			}
+
+			return current_position_;
 		}
 
 
