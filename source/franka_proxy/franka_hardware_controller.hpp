@@ -115,7 +115,7 @@ namespace franka_proxy
 		/**
 		 * Impedacne controller to hold multiple positions/ to follow path of multiple positions
 		*/
-		void impedance_follow_positions(const std::vector<std::array<double, 3>>& positions, double duration);
+		void impedance_follow_positions(const std::list<std::array<double, 3>>& positions, double duration);
 
 		static constexpr double default_gripper_speed = 0.025;
 
