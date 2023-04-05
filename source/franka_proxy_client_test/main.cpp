@@ -114,15 +114,17 @@ int main()
 
 	std::cout << "Starting Impedance - Hold Position Test." << std::endl;
 
-	controller.impedance_hold_position(60);
+	controller.impedance_hold_position(10);
 
 	std::cout << "Finished Impedance - Hold Position Test." << std::endl;
 
-	/*std::cout << "Starting Impedance - Follow Positions Test." << std::endl;
+	std::cout << "Starting Impedance - Follow Positions Test." << std::endl;
+	// positions
+	std::list<std::array<double, 3>> impedance_positions_ = { {0.46605243904963067, -0.056919271667763421, 0.27852690306836975}, {0.54808105573789268, -0.051876625055700246, 0.26785610340481225} };
 
-	controller.impedance_follow_positions(,30);
+	controller.impedance_follow_positions(impedance_positions_, 10);
 
-	std::cout << "Finished Impedance - Follow Positions Test." << std::endl;*/
+	std::cout << "Finished Impedance - Follow Positions Test." << std::endl;
 
 
 	std::cout << "Starting FK/IK Test." << std::endl;
