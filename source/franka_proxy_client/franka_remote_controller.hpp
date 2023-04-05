@@ -89,7 +89,8 @@ public:
 	/**
 	*  Impedance controller to follow path of positions
 	*/
-	void impedance_follow_positions(std::list<std::array<double, 3>>& positions, double duration);
+	void impedance_follow_positions(double duration);
+	//void impedance_follow_positions(std::list<std::array<double, 3>>& positions, double duration);
 
 	/**
 	 * todo docu
