@@ -287,8 +287,7 @@ command_generic_response franka_control_server::process_command
 command_generic_response franka_control_server::process_command
 (const command_impedance_follow_positions& cmd)
 {
-	controller_.impedance_follow_positions(cmd.duration);
-	//controller_.impedance_follow_positions(cmd.positions, cmd.duration);
+	controller_.impedance_follow_positions(cmd.positions, cmd.duration);
 	return command_result::success;
 }
 

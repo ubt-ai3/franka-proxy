@@ -141,7 +141,7 @@ struct command_impedance_follow_positions
 	using response_type = command_generic_response;
 	static constexpr char type[] = "impedance.follow";
 
-	//std::list<std::array<double, 3>>& positions;
+	std::vector<std::array<double, 3>> positions;
 	double duration;
 };
 

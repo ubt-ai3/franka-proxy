@@ -73,11 +73,9 @@ void franka_remote_controller::impedance_hold_position(double duration)
 	send_command<command_impedance_hold_position>(duration);
 }
 
-void franka_remote_controller::impedance_follow_positions(double duration)
-//void franka_remote_controller::impedance_follow_positions(std::list<std::array<double, 3>>& positions, double duration)
+void franka_remote_controller::impedance_follow_positions(std::vector<std::array<double, 3>>& positions, double duration)
 {
-	send_command<command_impedance_follow_positions>(duration);
-	//send_command<command_impedance_follow_positions>(positions, duration);
+	send_command<command_impedance_follow_positions>(positions, duration);
 }
 
 void franka_remote_controller::apply_z_force(double mass, double duration)

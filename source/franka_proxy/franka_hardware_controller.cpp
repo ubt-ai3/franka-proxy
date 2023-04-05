@@ -147,12 +147,10 @@ namespace franka_proxy
 		set_control_loop_running(false);
 	}
 
-	void franka_hardware_controller::impedance_follow_positions(double duration)
-	//void franka_hardware_controller::impedance_follow_positions(std::list<std::array<double, 3>>& positions, double duration)
+	void franka_hardware_controller::impedance_follow_positions(const std::vector<std::array<double, 3>>& positions, double duration)
 	{
 		detail::impedance_hold_position_motion_generator motion_generator(robot_, robot_state_lock_, robot_state_, duration);
-		detail::impedance_position_generator position_generator(robot_state_, robot_state_lock_);
-		//detail::impedance_position_generator position_generator(robot_state_, robot_state_lock_, positions, duration);
+		detail::impedance_position_generator position_generator(robot_state_, robot_state_lock_, positions, duration);
 
 		try
 		{
