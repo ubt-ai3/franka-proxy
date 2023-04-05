@@ -73,7 +73,7 @@ namespace franka_proxy
 			current_position_ = po_transform_.translation();
 
 			if (duration > 0.0) {
-				position_interval_ = positions.size() / duration;
+				position_interval_ = duration / positions.size();
 			}
 			else {
 				position_interval_ = 0.0;
