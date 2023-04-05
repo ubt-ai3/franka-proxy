@@ -51,7 +51,6 @@ namespace franka_proxy
 			current_position_ = po_transform_.translation();
 
 			position_interval_ = 0.0;
-			next_position_at_ = position_interval_;
 		}
 
 		impedance_position_generator::impedance_position_generator
@@ -79,8 +78,6 @@ namespace franka_proxy
 			else {
 				position_interval_ = 0.0;
 			}
-
-			next_position_at_ = position_interval_;
 		}
 
 		Eigen::Vector3d impedance_position_generator::hold_current_position(double time) {
