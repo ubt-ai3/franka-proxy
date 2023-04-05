@@ -52,6 +52,7 @@ namespace franka_proxy
 			std::list<std::array<double, 3>> positions_;
 
 			double position_interval_;
+			double next_position_at_;
 		};
 
 

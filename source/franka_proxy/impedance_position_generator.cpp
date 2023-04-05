@@ -51,6 +51,7 @@ namespace franka_proxy
 			current_position_ = po_transform_.translation();
 
 			position_interval_ = 0.0;
+			next_position_at_ = position_interval_;
 		}
 
 		impedance_position_generator::impedance_position_generator
@@ -78,16 +79,21 @@ namespace franka_proxy
 			else {
 				position_interval_ = 0.0;
 			}
+
+			next_position_at_ = position_interval_;
 		}
 
 		Eigen::Vector3d impedance_position_generator::hold_current_position(double time) {
-			if (std::fmod(time, position_interval_) == 0 && !positions_.empty()) {
+			if (time >= next_position_at_ && !positions_.empty()) {
 				// get new position from list and map position to Vector3d
 				std::array<double, 3> position_ar_= positions_.front();
 				Eigen::Map<const Eigen::Vector3d> position_(position_ar_.data());
 
 				current_position_ = position_;
 				positions_.pop_front();
+
+				// set next position interval
+				next_position_at_ = next_position_at_ + position_interval_;
 			}
 
 			return current_position_;
