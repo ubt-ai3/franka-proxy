@@ -112,14 +112,14 @@ void from_json(const nlohmann::json& json, command_impedance_hold_position& obje
 
 void to_json(nlohmann::json& json, const command_impedance_follow_positions& object)
 {
-	json["positions"] = obect.positions;
+	//json["positions"] = object.positions;
 	json["duration"] = object.duration;
 }
 
 
 void from_json(const nlohmann::json& json, command_impedance_follow_positions& object)
 {
-	json.at("positions").get_to(object.positions);
+	//json.at("positions").get_to(object.positions);
 	json.at("duration").get_to(object.duration);
 }
 

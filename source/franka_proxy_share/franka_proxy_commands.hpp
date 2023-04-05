@@ -14,6 +14,7 @@
 
 #include <array>
 #include <cstdint>
+#include <list>
 #include <vector>
 #include <string>
 
@@ -115,7 +116,7 @@ void from_json(const nlohmann::json& json, command_move_hybrid_sequence& object)
 	struct command_impedance_hold_position
 {
 	using response_type = command_generic_response;
-	static constexpr char type[] = "imdedance.hold";
+	static constexpr char type[] = "impedance.hold";
 
 	double duration;
 };
@@ -138,9 +139,9 @@ void from_json(const nlohmann::json& json, command_impedance_hold_position& obje
 struct command_impedance_follow_positions
 {
 	using response_type = command_generic_response;
-	static constexpr char type[] = "imdedance.follow";
+	static constexpr char type[] = "impedance.follow";
 
-	std::list<Eigen::Vector3d>& positions;
+	//std::list<std::array<double, 3>>& positions;
 	double duration;
 };
 

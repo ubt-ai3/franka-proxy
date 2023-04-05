@@ -56,7 +56,7 @@ namespace franka_proxy
 		impedance_position_generator::impedance_position_generator
 		(franka::RobotState& robot_state,
 			std::mutex& state_lock,
-			std::list<Eigen::Vector3d>& positions,
+			std::list<std::array<double, 3>>& positions,
 			double duration)
 			:
 			state_lock_(state_lock),
@@ -82,8 +82,11 @@ namespace franka_proxy
 
 		Eigen::Vector3d impedance_position_generator::hold_current_position(double time) {
 			if (std::fmod(time, position_interval_) == 0 && !positions_.empty()) {
-				// get new position from positions list
-				current_position_ = positions_.front();
+				// get new position from list and map position to Vector3d
+				std::array<double, 3> position_ar_= positions_.front();
+				Eigen::Map<const Eigen::Vector3d> position_(position_ar_.data());
+
+				current_position_ = position_;
 				positions_.pop_front();
 			}
 
