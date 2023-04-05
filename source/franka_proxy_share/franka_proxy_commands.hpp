@@ -113,7 +113,7 @@ void from_json(const nlohmann::json& json, command_move_hybrid_sequence& object)
  * position for a given duration
  *
  ************************************************************************/
-	struct command_impedance_hold_position
+struct command_impedance_hold_position
 {
 	using response_type = command_generic_response;
 	static constexpr char type[] = "impedance.hold";
