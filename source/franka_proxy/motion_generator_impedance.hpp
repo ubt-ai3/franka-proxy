@@ -1,15 +1,15 @@
 /**
  *************************************************************************
  *
- * @file motion_generator_impedance_hold_position.hpp
+ * @file motion_generator_impedance.hpp
  *
  * todo
  *
  ************************************************************************/
 
 
-#if !defined(INCLUDED__FRANKA_PROXY__MOTION_GENERATOR_IMPEDANCE_HOLD_POSITION_HPP)
-#define INCLUDED__FRANKA_PROXY__MOTION_GENERATOR_IMPEDANCE_HOLD_POSITION_HPP
+#if !defined(INCLUDED__FRANKA_PROXY__MOTION_GENERATOR_IMPEDANCE_HPP)
+#define INCLUDED__FRANKA_PROXY__MOTION_GENERATOR_IMPEDANCE_HPP
 
 
 #include <vector>
@@ -31,16 +31,16 @@ namespace franka_proxy
 		/**
 		 *************************************************************************
 		 *
-		 * @class impedance_hold_position_motion_generator
+		 * @class impedance_motion_generator
 		 *
 		 * in use
 		 *
 		 ************************************************************************/
-		class impedance_hold_position_motion_generator
+		class impedance_motion_generator
 		{
 		public:
 
-			impedance_hold_position_motion_generator
+			impedance_motion_generator
 				(franka::Robot& robot,
 					std::mutex& state_lock,
 					franka::RobotState& robot_state,
@@ -86,11 +86,6 @@ namespace franka_proxy
 			// damping and stiffness matrix
 			Eigen::Matrix<double, 6, 6> damping_matrix_ = Eigen::Matrix<double, 6, 6>::Zero();
 			Eigen::Matrix<double, 6, 6> stiffness_matrix_ = Eigen::Matrix<double, 6, 6>::Zero();
-
-			// Impedance example
-			Eigen::Quaterniond orientation_d;
-
-			Eigen::Vector3d position_d;
 		};
 
 
@@ -100,4 +95,4 @@ namespace franka_proxy
 } /* namespace franka_proxy */
 
 
-#endif /* !defined(INCLUDED__FRANKA_PROXY__MOTION_GENERATOR_IMPEDANCE_HOLD_POSITION_HPP) */
+#endif /* !defined(INCLUDED__FRANKA_PROXY__MOTION_GENERATOR_IMPEDANCE_HPP) */

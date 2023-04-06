@@ -1,14 +1,14 @@
 /**
  *************************************************************************
  *
- * @file motion_generator_impedance_hold_position.cpp
+ * @file motion_generator_impedance.cpp
  *
  * ..., implementation.
  *
  ************************************************************************/
 
 
-#include "motion_generator_impedance_hold_position.hpp"
+#include "motion_generator_impedance.hpp"
 
 #include <utility>
 #include <iostream>
@@ -29,12 +29,12 @@ namespace franka_proxy
 
 		//////////////////////////////////////////////////////////////////////////
 		//
-		// impedance_hold_position_motion_generator
+		// impedance_motion_generator
 		//
 		//////////////////////////////////////////////////////////////////////////
 
 
-		impedance_hold_position_motion_generator::impedance_hold_position_motion_generator
+		impedance_motion_generator::impedance_motion_generator
 		(franka::Robot& robot,
 			std::mutex& state_lock,
 			franka::RobotState& robot_state,
@@ -75,7 +75,7 @@ namespace franka_proxy
 				Eigen::MatrixXd::Identity(3, 3);
 		}
 
-		franka::Torques impedance_hold_position_motion_generator::callback
+		franka::Torques impedance_motion_generator::callback
 			(const franka::RobotState& robot_state,
 				franka::Duration period,
 				std::function<Eigen::Vector3d (const double)> get_desired_position)
@@ -241,13 +241,13 @@ namespace franka_proxy
 			return tau_d_ar_;
 		}
 
-		double impedance_hold_position_motion_generator::optimizeDamping(double l_di, double u_di, double mi, double bi, double x0i_max, double derived_x0i_max) {
+		double impedance_motion_generator::optimizeDamping(double l_di, double u_di, double mi, double bi, double x0i_max, double derived_x0i_max) {
 			// di = min(max(...), ...);
 			const double di_max_val_ = std::max(l_di, ((2 * mi * derived_x0i_max) / ((bi - x0i_max) * exp(1))));
 			return std::min(di_max_val_, u_di);
 		}
 
-		double impedance_hold_position_motion_generator::calculate_stiffness_from_damping(double di, double mi) {
+		double impedance_motion_generator::calculate_stiffness_from_damping(double di, double mi) {
 			/**
 				critically damped condition
 
