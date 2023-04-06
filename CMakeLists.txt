@@ -31,8 +31,9 @@ add_executable(
     franka_proxy
         ${CMAKE_CURRENT_SOURCE_DIR}/source/franka_proxy/franka_hardware_controller.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/source/franka_proxy/impedance_position_generator.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/source/franka_proxy/motion_generator_admittance.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/source/franka_proxy/motion_generator_force.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/source/franka_proxy/motion_generator_impedance_hold_position.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/source/franka_proxy/motion_generator_impedance.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/source/franka_proxy/motion_generator_joint_max_accel.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/source/franka_proxy/motion_generator_seq_cart_vel_tau.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/source/franka_proxy/franka_motion_recorder.cpp

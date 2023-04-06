@@ -21,7 +21,7 @@
 #include "franka_motion_recorder.hpp"
 #include "impedance_position_generator.hpp"
 #include "motion_generator_force.hpp"
-#include "motion_generator_impedance_hold_position.hpp"
+#include "motion_generator_impedance.hpp"
 #include "motion_generator_joint_max_accel.hpp"
 #include "motion_generator_seq_cart_vel_tau.hpp"
 
@@ -113,7 +113,7 @@ namespace franka_proxy
 
 	void franka_hardware_controller::impedance_hold_position(const double duration)
 	{
-		detail::impedance_hold_position_motion_generator motion_generator(robot_, robot_state_lock_, robot_state_, duration);
+		detail::impedance_motion_generator motion_generator(robot_, robot_state_lock_, robot_state_, duration);
 		detail::impedance_position_generator position_generator(robot_state_, robot_state_lock_);
 
 		try
@@ -149,7 +149,7 @@ namespace franka_proxy
 
 	void franka_hardware_controller::impedance_follow_positions(const std::list<std::array<double, 3>>& positions, double duration)
 	{
-		detail::impedance_hold_position_motion_generator motion_generator(robot_, robot_state_lock_, robot_state_, duration);
+		detail::impedance_motion_generator motion_generator(robot_, robot_state_lock_, robot_state_, duration);
 		detail::impedance_position_generator position_generator(robot_state_, robot_state_lock_, positions, duration);
 
 		try
