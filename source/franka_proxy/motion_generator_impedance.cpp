@@ -80,9 +80,9 @@ namespace franka_proxy
 		}
 
 		franka::Torques impedance_motion_generator::callback
-			(const franka::RobotState& robot_state,
-				franka::Duration period,
-				std::function<Eigen::Vector3d (const double)> get_desired_position)
+		(const franka::RobotState& robot_state,
+			franka::Duration period,
+			std::function<Eigen::Vector3d(const double)> get_desired_position)
 		{
 			{
 				std::lock_guard<std::mutex> state_guard(state_lock_);
@@ -246,13 +246,21 @@ namespace franka_proxy
 			Eigen::VectorXd::Map(&tau_d_ar_[0], 7) = tau_d_;
 
 			// log to csv
-			std::string f_ext_log_ = f_ext_(0) + "; " + f_ext_(1) + "; " + f_ext_(2) + "; " + f_ext_(3) + "; " + f_ext_(4) + "; " + f_ext_(5);
-			std::string position_d_log_ = position_d_.x() + "; " + position_d_.y() +"; " + position_d_.z();
-			std::string position_log_ = position_.x() + "; " + position_.y() + "; " + position_.z();
-			std::string stiffness_matrix_log_ = stiffness_matrix_(0, 0) + "; " + stiffness_matrix_(1, 1) + "; " + stiffness_matrix_(2, 2) + "; " + stiffness_matrix_(3, 3) + "; " + stiffness_matrix_(4, 4) + "; " + stiffness_matrix_(5, 5);
-			std::string damping_matrix_log_ = damping_matrix_(0, 0) + "; " + damping_matrix_(1, 1) + "; " + damping_matrix_(2, 2) + "; " + damping_matrix_(3, 3) + "; " + damping_matrix_(4, 4) + "; " + damping_matrix_(5, 5);
-			std::string current_values = time_ + "; " + f_ext_log_ + "; " + position_d_log_ + "; " + position_log_ + "; " + stiffness_matrix_log_ + "; " + damping_matrix_log_;
-			csv_log_ << current_values << "\n";
+			std::ostringstream f_ext_log_;
+			f_ext_log_ << f_ext_(0) << "; " << f_ext_(1) << "; " << f_ext_(2) << "; " << f_ext_(3) << "; " << f_ext_(4) << "; " << f_ext_(5);
+			std::ostringstream position_d_log_;
+			position_d_log_ << position_d_.x() << "; " << position_d_.y() << "; " << position_d_.z();
+			std::ostringstream position_log_;
+			position_log_ << position_.x() << "; " << position_.y() << "; " << position_.z();
+			std::ostringstream stiffness_matrix_log_;
+			stiffness_matrix_log_ << stiffness_matrix_(0, 0) << "; " << stiffness_matrix_(1, 1) << "; " << stiffness_matrix_(2, 2) << "; " << stiffness_matrix_(3, 3) << "; " << stiffness_matrix_(4, 4) << "; " << stiffness_matrix_(5, 5);
+			std::ostringstream damping_matrix_log_;
+			damping_matrix_log_ << damping_matrix_(0, 0) << "; " << damping_matrix_(1, 1) << "; " << damping_matrix_(2, 2) << "; " << damping_matrix_(3, 3) << "; " << damping_matrix_(4, 4) << "; " << damping_matrix_(5, 5);
+
+			std::ostringstream current_values;
+			current_values << time_ << "; " << f_ext_log_.str() << "; " << position_d_log_.str() << "; " << position_log_.str() << "; " << stiffness_matrix_log_.str() << "; " << damping_matrix_log_.str();
+
+			csv_log_ << current_values.str() << "\n";
 
 			return tau_d_ar_;
 		}
