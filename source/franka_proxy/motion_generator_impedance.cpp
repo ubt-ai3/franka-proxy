@@ -73,6 +73,10 @@ namespace franka_proxy
 				Eigen::MatrixXd::Identity(3, 3);
 			damping_matrix_.bottomRightCorner(3, 3) << 2.0 * sqrt(rotational_stiffness) *
 				Eigen::MatrixXd::Identity(3, 3);
+
+			// start logging to csv file
+			csv_log_.open("impedance_log.csv");
+			csv_log_ << csv_header << "\n";
 		}
 
 		franka::Torques impedance_motion_generator::callback
@@ -92,6 +96,9 @@ namespace franka_proxy
 				// todo this may be wrong! -> comment from other motion generator
 				franka::Torques current_torques_(state_.tau_J);
 				current_torques_.motion_finished = true;
+
+				// close log file
+				csv_log_.close();
 
 				return current_torques_;
 			}
@@ -237,6 +244,15 @@ namespace franka_proxy
 
 			std::array<double, 7> tau_d_ar_;
 			Eigen::VectorXd::Map(&tau_d_ar_[0], 7) = tau_d_;
+
+			// log to csv
+			std::string f_ext_log_ = f_ext_(0) + "; " + f_ext_(1) + "; " + f_ext_(2) + "; " + f_ext_(3) + "; " + f_ext_(4) + "; " + f_ext_(5);
+			std::string position_d_log_ = position_d_.x() + "; " + position_d_.y() +"; " + position_d_.z();
+			std::string position_log_ = position_.x() + "; " + position_.y() + "; " + position_.z();
+			std::string stiffness_matrix_log_ = stiffness_matrix_(0, 0) + "; " + stiffness_matrix_(1, 1) + "; " + stiffness_matrix_(2, 2) + "; " + stiffness_matrix_(3, 3) + "; " + stiffness_matrix_(4, 4) + "; " + stiffness_matrix_(5, 5);
+			std::string damping_matrix_log_ = damping_matrix_(0, 0) + "; " + damping_matrix_(1, 1) + "; " + damping_matrix_(2, 2) + "; " + damping_matrix_(3, 3) + "; " + damping_matrix_(4, 4) + "; " + damping_matrix_(5, 5);
+			std::string current_values = time_ + "; " + f_ext_log_ + "; " + position_d_log_ + "; " + position_log_ + "; " + stiffness_matrix_log_ + "; " + damping_matrix_log_;
+			csv_log_ << current_values << "\n";
 
 			return tau_d_ar_;
 		}

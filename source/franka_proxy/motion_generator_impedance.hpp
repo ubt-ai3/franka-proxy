@@ -13,6 +13,8 @@
 
 
 #include <vector>
+#include <iostream>
+#include <fstream>
 
 #include <Eigen/Core>
 #include <Eigen/Dense>
@@ -86,6 +88,10 @@ namespace franka_proxy
 			// damping and stiffness matrix
 			Eigen::Matrix<double, 6, 6> damping_matrix_ = Eigen::Matrix<double, 6, 6>::Zero();
 			Eigen::Matrix<double, 6, 6> stiffness_matrix_ = Eigen::Matrix<double, 6, 6>::Zero();
+
+			// csv logging
+			std::ofstream csv_log_;
+			std::string csv_header = "time; f_ext j1; f_ext j2; f_ext j3; f_ext j4; f_ext j5; f_ext j6; position_d x; position_d y; position_d z; position x; position y; position z; s j1; s j2; s j3; s j4; s j5; s j6; d j1; d j2; d j3; d j4; d j5; d j6";
 		};
 
 
