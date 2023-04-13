@@ -107,6 +107,30 @@ void from_json(const nlohmann::json& json, command_move_hybrid_sequence& object)
 /**
  *************************************************************************
  *
+ * @class command_admittance_apply_force
+ *
+ * Commands the robot to use the admittance controller to hold/apply the
+ * given desired force for a given duration
+ *
+ ************************************************************************/
+struct command_admittance_apply_force
+{
+	using response_type = command_generic_response;
+	static constexpr char type[] = "admittance.apply";
+
+	std::array<double, 6> desired_force;
+	double duration;
+};
+
+void to_json(nlohmann::json&, const command_admittance_apply_force& object);
+void from_json(const nlohmann::json& json, command_admittance_apply_force& object);
+
+
+
+
+/**
+ *************************************************************************
+ *
  * @class command_impedance_hold_position
  *
  * Commands the robot to use the impedance controller to hold the current
@@ -132,8 +156,8 @@ void from_json(const nlohmann::json& json, command_impedance_hold_position& obje
  *
  * @class command_impedance_follow_positions
  *
- * Commands the robot to use the impedance controller to hold the current
- * position for a given duration
+ * Commands the robot to use the impedance controller to follow a path of
+ * given positions for a given duration
  *
  ************************************************************************/
 struct command_impedance_follow_positions

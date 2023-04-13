@@ -108,6 +108,7 @@ franka_control_server::franka_control_server
 	register_command_handler<command_move_to_config>();
 	register_command_handler<command_move_hybrid_sequence>();
 	register_command_handler<command_move_until_contact>();
+	register_command_handler<command_admittance_apply_force>();
 	register_command_handler<command_impedance_hold_position>();
 	register_command_handler<command_impedance_follow_positions>();
 	register_command_handler<command_force_z>();
@@ -275,6 +276,13 @@ command_generic_response franka_control_server::process_command
 	return controller_.move_to_until_contact(cmd.target_joint_config)
 		? command_result::success
 		: command_result::success_command_failed;
+}
+
+command_generic_response franka_control_server::process_command
+(const command_admittance_apply_force& cmd)
+{
+	controller_.admittance_apply_force(cmd.desired_force, cmd.duration);
+	return command_result::success;
 }
 
 command_generic_response franka_control_server::process_command

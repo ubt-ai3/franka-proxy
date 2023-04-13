@@ -135,6 +135,13 @@ int main()
 
 	std::cout << "Finished Impedance - Follow Positions Test." << std::endl;
 
+	std::cout << "Starting Admittance - Apply Force Test." << std::endl;
+	// desired force
+	std::array<double, 6> desired_force = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
+
+	controller.admittance_apply_force(desired_force, 60);
+
+	std::cout << "Finished Admittance - Apply Force Test." << std::endl;
 
 	std::cout << "Starting FK/IK Test." << std::endl;
 

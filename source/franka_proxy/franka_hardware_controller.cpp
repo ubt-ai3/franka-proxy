@@ -20,6 +20,7 @@
 
 #include "franka_motion_recorder.hpp"
 #include "impedance_position_generator.hpp"
+#include "motion_generator_admittance.hpp"
 #include "motion_generator_force.hpp"
 #include "motion_generator_impedance.hpp"
 #include "motion_generator_joint_max_accel.hpp"
@@ -101,6 +102,35 @@ namespace franka_proxy
 				{
 					return fmg.callback(robot_state, period);
 				}, true, 10.0);
+		}
+		catch (const franka::Exception&)
+		{
+			set_control_loop_running(false);
+			throw;
+		}
+
+		set_control_loop_running(false);
+	}
+
+	void franka_hardware_controller::admittance_apply_force(const std::array<double, 6>& desired_force, const double duration)
+	{
+		detail::admittance_motion_generator motion_generator(robot_, robot_state_lock_, robot_state_, desired_force, duration);
+
+		try
+		{
+			set_control_loop_running(true);
+			{
+				// Lock the current_state_lock_ to wait for state_thread_ to finish.
+				std::lock_guard<std::mutex> state_guard(robot_state_lock_);
+			}
+
+			robot_.control(
+				[&](const franka::RobotState& robot_state,
+					franka::Duration period) -> franka::Torques
+				{
+					return motion_generator.callback(robot_state, period);
+				}, true, 10.0
+			);
 		}
 		catch (const franka::Exception&)
 		{

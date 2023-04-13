@@ -84,6 +84,11 @@ public:
 	/**
 	 * Impedance controller to hold the current position
 	*/
+	void admittance_apply_force(std::array<double, 6>& desired_force, double duration);
+
+	/**
+	 * Impedance controller to hold the current position
+	*/
 	void impedance_hold_position(double duration);
 
 	/**
