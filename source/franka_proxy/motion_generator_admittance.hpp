@@ -20,6 +20,8 @@
 #include <franka/robot.h>
 #include <franka/model.h>
 
+#include "motion_generator_impedance.hpp"
+
 
 
 namespace franka_proxy
@@ -44,6 +46,7 @@ namespace franka_proxy
 			(franka::Robot& robot,
 				std::mutex& state_lock,
 				franka::RobotState& robot_state,
+				std::array<double, 6> desired_force,
 				double duration);
 
 			franka::Torques callback
@@ -57,25 +60,11 @@ namespace franka_proxy
 			std::mutex& state_lock_;
 			franka::RobotState& state_;
 
-			std::array<double, 6> b_ = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
-			std::array<double, 6> l_d_ = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
-			std::array<double, 6> u_d_ = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
-
-			std::array<double, 6> l_x0_ = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
-			std::array<double, 6> u_x0_ = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
-
-			std::array<double, 6> l_derived_x0_ = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
-			std::array<double, 6> u_derived_x0_ = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
-
-			std::array<double, 6> x0_max_ = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
-			std::array<double, 6> derived_x0_max_ = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
-
 			double duration_;
 			double time_ = 0.0;
 			double last_time_ = 0.0;
 
-			///////////////////////////////////////////////
-			Eigen::Vector3d position_eq_; // x_e interaction port equilibrium position - used as position_d_ in impedance
+			Eigen::Matrix<double, 6, 1> f_d_;
 
 			// set positions
 			std::list<Eigen::Matrix<double, 6, 1>> last_x_list_;
@@ -83,13 +72,9 @@ namespace franka_proxy
 			// damping and stiffness matrix
 			Eigen::Matrix<double, 6, 6> damping_matrix_ = Eigen::Matrix<double, 6, 6>::Zero();
 			Eigen::Matrix<double, 6, 6> stiffness_matrix_ = Eigen::Matrix<double, 6, 6>::Zero();
-			///////////////////////////////////////////////
 
-			Eigen::Quaterniond orientation_d_;
-			Eigen::Vector3d position_d_;
-
-			std::list<std::array<double, 6>> measured_velocities_;
-			std::list<std::array<double, 7>> measured_joint_velocities_;
+			// impedance controller to command new desired positin
+			impedance_motion_generator impedance_controller_;
 		};
 
 
