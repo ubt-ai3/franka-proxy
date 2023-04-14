@@ -114,7 +114,7 @@ int main()
 
 	std::cout << "Starting Impedance - Hold Position Test." << std::endl;
 
-	controller.impedance_hold_position(10);
+	controller.impedance_hold_position(15);
 
 	std::cout << "Finished Impedance - Hold Position Test." << std::endl;
 
@@ -123,23 +123,38 @@ int main()
 	std::list<std::array<double, 3>> impedance_positions_ = {
 		{0.46605243904963067, -0.056919271667763421, 0.27852690306836975},
 		{0.54808105573789268, -0.051876625055700246, 0.26785610340481225},
-		{0.62396015408891670, -0.054112542017245170, 0.27540793634271588},
-		{0.61720706559078087, -0.235814978871107780, 0.28119054229315449},
-		{0.58704544708151185, 0.2943481886612492300, 0.28660956793645886},
-		{0.60173018977726767, 0.2960414250033999200, 0.15938849689655810},
-		{0.62968703724029917, 0.3111298638816038500, 0.45859470184591494},
+		// {0.62396015408891670, -0.054112542017245170, 0.27540793634271588},
+		// {0.61720706559078087, -0.235814978871107780, 0.28119054229315449},
+		// {0.58704544708151185, 0.2943481886612492300, 0.28660956793645886},
+		// {0.60173018977726767, 0.2960414250033999200, 0.15938849689655810},
+		// {0.62968703724029917, 0.3111298638816038500, 0.45859470184591494},
 		{0.46605243904963067, -0.056919271667763421, 0.27852690306836975}, // back to first position
 	};
 
-	controller.impedance_follow_positions(impedance_positions_, 10);
+	//controller.impedance_follow_positions(impedance_positions_, 10);
 
 	std::cout << "Finished Impedance - Follow Positions Test." << std::endl;
 
 	std::cout << "Starting Admittance - Apply Force Test." << std::endl;
 	// desired force
-	std::array<double, 6> desired_force = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
+	std::array<double, 6> desired_force_normal = {
+		-811981.0,
+		-0.321702,
+		145387.0,
+		0.0449813,
+		-0.111362,
+		-0.126319
+	};
+	std::array<double, 6> desired_force = {
+		0.939855,
+		0.581384,
+		-0.494879,
+		-0.0326082,
+		-0.011073,
+		0.466052
+	};
 
-	controller.admittance_apply_force(desired_force, 60);
+	controller.admittance_apply_force(desired_force_normal, 120);
 
 	std::cout << "Finished Admittance - Apply Force Test." << std::endl;
 

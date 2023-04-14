@@ -22,6 +22,9 @@
 
 #include "motion_generator_impedance.hpp"
 
+#include <iostream>
+#include <fstream>
+
 
 
 namespace franka_proxy
@@ -75,6 +78,11 @@ namespace franka_proxy
 
 			// impedance controller to command new desired positin
 			impedance_motion_generator impedance_controller_;
+
+			// csv logging
+			std::ofstream csv_log_;
+			std::ofstream csv_prod1_log_;
+			std::ofstream force_log_;
 		};
 
 
