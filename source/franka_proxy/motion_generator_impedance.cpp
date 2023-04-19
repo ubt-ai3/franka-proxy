@@ -218,7 +218,7 @@ namespace franka_proxy
 				timestamps_.pop_front();
 			}
 
-			/*
+			
 			// stiffness and damping
 			for (int i = 0; i < inertia_matrix_.rows(); i++) {
 				double mi = inertia_matrix_(i,i);
@@ -226,7 +226,13 @@ namespace franka_proxy
 				// optimize damping
 				double di = optimizeDamping(l_d_[i], u_d_[i], mi, b_[i], x0_max_[i], derived_x0_max_[i]);
 
-				// TODO: stability check
+				// stability check
+				auto current_damping = damping_matrix_(i, i);
+				auto stability_condition = current_damping - ((current_damping * current_damping * delta_time_) / mi) + 10.0;
+
+				if (di <= stability_condition) {
+					di = stability_condition;
+				}
 
 				// get stiffness from new calculated damping value
 				double ki = calculate_stiffness_from_damping(di, mi);
@@ -234,7 +240,7 @@ namespace franka_proxy
 				// add new values to matrices
 				damping_matrix_(i, i) = di;
 				stiffness_matrix_(i, i) = ki;
-			}*/
+			}
 
 			// calculate external force
 			Eigen::Matrix<double, 6, 1> f_ext_ = inertia_matrix_ * acceleration_ + damping_matrix_ * velocity_ + stiffness_matrix_ * position_error_;

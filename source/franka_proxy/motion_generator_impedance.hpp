@@ -62,9 +62,9 @@ namespace franka_proxy
 			std::mutex& state_lock_;
 			franka::RobotState& state_;
 
-			std::array<double, 6> b_ = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
-			std::array<double, 6> l_d_ = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
-			std::array<double, 6> u_d_ = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
+			std::array<double, 6> b_ = { 0.03, 0.03, 0.03, 0.036, 0.036, 0.036 };
+			std::array<double, 6> l_d_ = { 1280.0, 460.0, -30.0, 1990.0, -880.0, 1350.0 };
+			std::array<double, 6> u_d_ = { 5035.0, 2000.0, 330.0, 4800.0, 5500.0, 3300.0 };
 
 			std::array<double, 6> l_x0_ = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
 			std::array<double, 6> u_x0_ = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
@@ -72,8 +72,8 @@ namespace franka_proxy
 			std::array<double, 6> l_derived_x0_ = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
 			std::array<double, 6> u_derived_x0_ = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
 
-			std::array<double, 6> x0_max_ = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
-			std::array<double, 6> derived_x0_max_ = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
+			std::array<double, 6> x0_max_ = { 0.025, 0.025, 0.025, 0.025, 0.025, 0.025 };
+			std::array<double, 6> derived_x0_max_ = { 0.03, 0.03, 0.03, 0.03, 0.03, 0.03 };
 
 			double duration_;
 			double time_ = 0.0;
