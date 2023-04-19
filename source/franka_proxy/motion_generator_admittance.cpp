@@ -83,7 +83,7 @@ namespace franka_proxy
 
 			// set desired force
 			Eigen::Map<Eigen::Matrix<double, 6, 1>> f_mapped_(desired_force.data());
-			f_d_ = f_init_;
+			f_d_ = f_mapped_;
 
 			// start logging to csv file
 			csv_log_.open("admittance.csv");
@@ -191,13 +191,13 @@ namespace franka_proxy
 			double delta_time_ = last_time_ - time_;
 
 			// calculate new position
-			Eigen::Matrix<double, 6, 6> x_i_prod1_ = ((stiffness_matrix_ * (delta_time_ * delta_time_))
+			const Eigen::Matrix<double, 6, 6> x_i_prod1_ = ((stiffness_matrix_ * (delta_time_ * delta_time_))
 				+ (damping_matrix_ * delta_time_) + inertia_matrix_).inverse();
 
-			Eigen::Matrix<double, 6, 1> x_i_sum1_ = (delta_time_ * delta_time_) * (f_error_ + (stiffness_matrix_ * position_eq_));
-			Eigen::Matrix<double, 6, 1> x_i_sum2_ = delta_time_ * damping_matrix_ * last_x_list_.front();
-			Eigen::Matrix<double, 6, 1> x_i_sum3_ = inertia_matrix_ * ((2 * last_x_list_.front()) - last_x_list_.back());
-			Eigen::Matrix<double, 6, 1> x_i_prod2_ = x_i_sum1_ + x_i_sum2_ + x_i_sum3_;
+			const Eigen::Matrix<double, 6, 1> x_i_sum1_ = (delta_time_ * delta_time_) * (f_error_ + (stiffness_matrix_ * position_eq_));
+			const Eigen::Matrix<double, 6, 1> x_i_sum2_ = delta_time_ * damping_matrix_ * last_x_list_.front();
+			const Eigen::Matrix<double, 6, 1> x_i_sum3_ = inertia_matrix_ * ((2 * last_x_list_.front()) - last_x_list_.back());
+			const Eigen::Matrix<double, 6, 1> x_i_prod2_ = x_i_sum1_ + x_i_sum2_ + x_i_sum3_;
 
 			Eigen::Matrix<double, 6, 1> x_i_ = x_i_prod1_ * x_i_prod2_;
 
