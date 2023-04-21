@@ -78,7 +78,7 @@ namespace franka_proxy
 			noise_log_.open("force_noise_log.csv");
 			x_i_log_.open("x_i_log.csv");
 			x_i_log_ << "time" << "; " << "x_i x" << "; " << "x_i y" << "; " << "x_i z" << "; " << "x_i dx" << "; " << "x_i dy" << "; " << "x_i dz" << "; " << "x_i_1 x" << "; " << "x_i_1 y" << "; " << "x_i_1 z" << "; " << "x_i_1 dx" << "; " << "x_i_1 dy" << "; " << "x_i_1 dz" << "; " << "x_i_2 x" << "; " << "x_i_2 y" << "; " << "x_i_2 z" << "; " << "x_i_2 dx" << "; " << "x_i_2 dy" << "; " << "x_i_2 dz" << "; " << "red x_i x" << "; " << "red x_i y" << "; " << "red x_i z" << "; " << "red x_i dx" << "; " << "red x_i dy" << "; " << "red x_i dz" << "; " << "red x_i_1 x" << "; " << "red x_i_1 y" << "; " << "red x_i_1 z" << "; " << "red x_i_1 dx" << "; " << "red x_i_1 dy" << "; " << "red x_i_1 dz" << "; " << "red x_i_2 x" << "; " << "red x_i_2 y" << "; " << "red x_i_2 z" << "; " << "red x_i_2 dx" << "; " << "red x_i_2 dy" << "; " << "red x_i_2 dz" << "\n";
-	
+
 		}
 
 		franka::Torques admittance_motion_generator::callback
@@ -131,7 +131,7 @@ namespace franka_proxy
 
 				xi1 = position_eq_;
 				xi2 = position_eq_;
-				
+
 
 				// todo this may be wrong! -> comment from other motion generator
 				franka::Torques current_torques_(state_.tau_J);
@@ -159,7 +159,7 @@ namespace franka_proxy
 
 			// get ext force
 			std::array<double, 6> f_ext_ar_ = state_.O_F_ext_hat_K;
-			
+
 			// add measured f_ext to array
 			f_exts_.push_front(f_ext_ar_);
 
@@ -195,9 +195,6 @@ namespace franka_proxy
 				f_exts_.pop_back();
 			}
 
-			// set current force for further calculations
-			Eigen::Map<Eigen::Matrix<double, 6, 1>> current_force(f_ext_middle.data());
-
 			// x_i-1 and x_i_2 noise reduction
 			std::list<std::array<double, 6>> x_is_it(last_x_i_list_);
 			std::array<double, 6> x_i_1_ar = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
@@ -205,29 +202,29 @@ namespace franka_proxy
 			int x_i_list_size = last_x_i_list_.size();
 
 			for (int i = 0; i < x_i_list_size; i++) {
-				std::array<double, 6> current_el = x_is_it.front();
+				std::array<double, 6> current_el_x = x_is_it.front();
 				x_is_it.pop_front();
 
-				if (i < x_i_list_size - 2) {
-					x_i_1_ar[0] = x_i_1_ar[0] + current_el[0];
-					x_i_1_ar[1] = x_i_1_ar[1] + current_el[1];
-					x_i_1_ar[2] = x_i_1_ar[2] + current_el[2];
-					x_i_1_ar[3] = x_i_1_ar[3] + current_el[3];
-					x_i_1_ar[4] = x_i_1_ar[4] + current_el[4];
-					x_i_1_ar[5] = x_i_1_ar[5] + current_el[5];
+				if (i < x_i_list_size - 1) {
+					x_i_1_ar[0] = x_i_1_ar[0] + current_el_x[0];
+					x_i_1_ar[1] = x_i_1_ar[1] + current_el_x[1];
+					x_i_1_ar[2] = x_i_1_ar[2] + current_el_x[2];
+					x_i_1_ar[3] = x_i_1_ar[3] + current_el_x[3];
+					x_i_1_ar[4] = x_i_1_ar[4] + current_el_x[4];
+					x_i_1_ar[5] = x_i_1_ar[5] + current_el_x[5];
 				}
 
 				if (i > 0) {
-					x_i_2_ar[0] = x_i_2_ar[0] * current_el[0];
-					x_i_2_ar[1] = x_i_2_ar[1] * current_el[1];
-					x_i_2_ar[2] = x_i_2_ar[2] * current_el[2];
-					x_i_2_ar[3] = x_i_2_ar[3] * current_el[3];
-					x_i_2_ar[4] = x_i_2_ar[4] * current_el[4];
-					x_i_2_ar[5] = x_i_2_ar[5] * current_el[5];
+					x_i_2_ar[0] = x_i_2_ar[0] + current_el_x[0];
+					x_i_2_ar[1] = x_i_2_ar[1] + current_el_x[1];
+					x_i_2_ar[2] = x_i_2_ar[2] + current_el_x[2];
+					x_i_2_ar[3] = x_i_2_ar[3] + current_el_x[3];
+					x_i_2_ar[4] = x_i_2_ar[4] + current_el_x[4];
+					x_i_2_ar[5] = x_i_2_ar[5] + current_el_x[5];
 				}
 
 				if (i == x_i_list_size - 1) {
-					auto size = x_i_list_size -1;
+					auto size = x_i_list_size - 1;
 
 					x_i_1_ar[0] = x_i_1_ar[0] / size;
 					x_i_1_ar[1] = x_i_1_ar[1] / size;
@@ -247,6 +244,9 @@ namespace franka_proxy
 
 			Eigen::Map<Eigen::Matrix<double, 6, 1>> x_i_1(x_i_1_ar.data());
 			Eigen::Map<Eigen::Matrix<double, 6, 1>> x_i_2(x_i_2_ar.data());
+
+			// set current force for further calculations
+			Eigen::Map<Eigen::Matrix<double, 6, 1>> current_force(f_ext_middle.data());
 
 			// using constant as using actual timestamps causing too much noise
 			double delta_time_ = 0.001;
@@ -277,10 +277,10 @@ namespace franka_proxy
 			std::array<double, 6> new_x_i_ar = { x_i_(0), x_i_(1), x_i_(2), x_i_(3), x_i_(4), x_i_(5) };
 			last_x_i_list_.push_front(new_x_i_ar);
 
-			if (last_x_i_list_.size() > 11) {
+			if (last_x_i_list_.size() > 3) {
 				last_x_i_list_.pop_back();
 			}
-			
+
 
 			// test
 			Eigen::Map<const Eigen::Matrix<double, 6, 1>> f_ext_(f_ext_ar_.data());
