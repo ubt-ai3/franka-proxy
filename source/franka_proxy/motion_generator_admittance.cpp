@@ -77,7 +77,7 @@ namespace franka_proxy
 			force_log_.open("force_log.csv");
 			noise_log_.open("force_noise_log.csv");
 			x_i_log_.open("x_i_log.csv");
-			x_i_log_ << "time" << "x_i x" << "x_i y" << "x_i z" << "x_i dx" << "x_i dy" << "x_i dz" << "x_i_1 x" << "x_i_1 y" << "x_i_1 z" << "x_i_1 dx" << "x_i_1 dy" << "x_i_1 dz" << "x_i_2 x" << "x_i_2 y" << "x_i_2 z" << "x_i_2 dx" << "x_i_2 dy" << "x_i_2 dz" << "red x_i x" << "red x_i y" << "red x_i z" << "red x_i dx" << "red x_i dy" << "red x_i dz" << "red x_i_1 x" << "red x_i_1 y" << "red x_i_1 z" << "red x_i_1 dx" << "red x_i_1 dy" << "red x_i_1 dz" << "red x_i_2 x" << "red x_i_2 y" << "red x_i_2 z" << "red x_i_2 dx" << "red x_i_2 dy" << "red x_i_2 dz" << "\n";
+			x_i_log_ << "time" << "; " << "x_i x" << "; " << "x_i y" << "; " << "x_i z" << "; " << "x_i dx" << "; " << "x_i dy" << "; " << "x_i dz" << "; " << "x_i_1 x" << "; " << "x_i_1 y" << "; " << "x_i_1 z" << "; " << "x_i_1 dx" << "; " << "x_i_1 dy" << "; " << "x_i_1 dz" << "; " << "x_i_2 x" << "; " << "x_i_2 y" << "; " << "x_i_2 z" << "; " << "x_i_2 dx" << "; " << "x_i_2 dy" << "; " << "x_i_2 dz" << "; " << "red x_i x" << "; " << "red x_i y" << "; " << "red x_i z" << "; " << "red x_i dx" << "; " << "red x_i dy" << "; " << "red x_i dz" << "; " << "red x_i_1 x" << "; " << "red x_i_1 y" << "; " << "red x_i_1 z" << "; " << "red x_i_1 dx" << "; " << "red x_i_1 dy" << "; " << "red x_i_1 dz" << "; " << "red x_i_2 x" << "; " << "red x_i_2 y" << "; " << "red x_i_2 z" << "; " << "red x_i_2 dx" << "; " << "red x_i_2 dy" << "; " << "red x_i_2 dz" << "\n";
 	
 		}
 
