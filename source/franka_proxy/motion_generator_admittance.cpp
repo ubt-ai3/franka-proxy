@@ -76,6 +76,9 @@ namespace franka_proxy
 			csv_prod1_log_.open("admittance_prod1.csv");
 			force_log_.open("force_log.csv");
 			noise_log_.open("force_noise_log.csv");
+			x_i_log_.open("x_i_log.csv");
+			x_i_log_ << "time" << "x_i x" << "x_i y" << "x_i z" << "x_i dx" << "x_i dy" << "x_i dz" << "x_i_1 x" << "x_i_1 y" << "x_i_1 z" << "x_i_1 dx" << "x_i_1 dy" << "x_i_1 dz" << "x_i_2 x" << "x_i_2 y" << "x_i_2 z" << "x_i_2 dx" << "x_i_2 dy" << "x_i_2 dz" << "red x_i x" << "red x_i y" << "red x_i z" << "red x_i dx" << "red x_i dy" << "red x_i dz" << "red x_i_1 x" << "red x_i_1 y" << "red x_i_1 z" << "red x_i_1 dx" << "red x_i_1 dy" << "red x_i_1 dz" << "red x_i_2 x" << "red x_i_2 y" << "red x_i_2 z" << "red x_i_2 dx" << "red x_i_2 dy" << "red x_i_2 dz" << "\n";
+	
 		}
 
 		franka::Torques admittance_motion_generator::callback
@@ -99,6 +102,7 @@ namespace franka_proxy
 				csv_prod1_log_.close();
 				force_log_.close();
 				noise_log_.close();
+				x_i_log_.close();
 
 				return current_torques_;
 			}
@@ -120,9 +124,13 @@ namespace franka_proxy
 			// x_i-1 and x_i-2 are required for calculations
 			// -> set them to the current position for initialization
 			// -> sideeffect: enough timestamps to avoid having delta_time_ = 0
-			if (last_x_list_.size() < 2) {
+			if (last_x_i_list_.size() < 2) {
 				// add current position to last positions list
-				last_x_list_.push_back(position_eq_);
+				last_x_i_list_.push_front(position_eq_);
+
+				xi1 = position_eq_;
+				xi2 = position_eq_;
+				
 
 				// todo this may be wrong! -> comment from other motion generator
 				franka::Torques current_torques_(state_.tau_J);
@@ -186,6 +194,54 @@ namespace franka_proxy
 				f_exts_.pop_back();
 			}
 
+			// x_i-1 and x_i_2 noise reduction
+			std::list<Eigen::Matrix<double, 6, 1>> x_is_it = {};
+			Eigen::Matrix<double, 6, 1> x_i_1 = Eigen::Matrix<double, 6, 1>::Zero();
+			Eigen::Matrix<double, 6, 1> x_i_2 = Eigen::Matrix<double, 6, 1>::Zero();
+
+			for (int i = 0; i < last_x_i_list_.size(); i++) {
+				auto current_el = last_x_i_list_.front();
+
+				x_i_1(0,0) = x_i_1(0, 0) + current_el(0, 0);
+				x_i_1(1,0) = x_i_1(1, 0) + current_el(1, 0);
+				x_i_1(2,0) = x_i_1(2, 0) + current_el(2, 0);
+				x_i_1(3,0) = x_i_1(3, 0) + current_el(3, 0);
+				x_i_1(4,0) = x_i_1(4, 0) + current_el(4, 0);
+				x_i_1(5,0) = x_i_1(5, 0) + current_el(5, 0);
+
+				if (i > 0) {
+					x_i_2(0, 0) = x_i_2(0, 0) * current_el(0, 0);
+					x_i_2(1, 0) = x_i_2(1, 0) * current_el(1, 0);
+					x_i_2(2, 0) = x_i_2(2, 0) * current_el(2, 0);
+					x_i_2(3, 0) = x_i_2(3, 0) * current_el(3, 0);
+					x_i_2(4, 0) = x_i_2(4, 0) * current_el(4, 0);
+					x_i_2(5, 0) = x_i_2(5, 0) * current_el(5, 0);
+				}
+
+				x_is_it.push_back(current_el);
+				last_x_i_list_.pop_front();
+
+				if (i == last_x_i_list_.size()) {
+					auto size = last_x_i_list_.size();
+
+					x_i_1(0, 0) = x_i_1(0, 0) / size;
+					x_i_1(1, 0) = x_i_1(1, 0) / size;
+					x_i_1(2, 0) = x_i_1(2, 0) / size;
+					x_i_1(3, 0) = x_i_1(3, 0) / size;
+					x_i_1(4, 0) = x_i_1(4, 0) / size;
+					x_i_1(5, 0) = x_i_1(5, 0) / size;
+
+					x_i_2(0, 0) = x_i_2(0, 0) / size;
+					x_i_2(1, 0) = x_i_2(1, 0) / size;
+					x_i_2(2, 0) = x_i_2(2, 0) / size;
+					x_i_2(3, 0) = x_i_2(3, 0) / size;
+					x_i_2(4, 0) = x_i_2(4, 0) / size;
+					x_i_2(5, 0) = x_i_2(5, 0) / size;
+				}
+			}
+
+			last_x_i_list_ = x_is_it;
+
 			// set current force for further calculations
 			Eigen::Map<Eigen::Matrix<double, 6, 1>> current_force(f_ext_middle.data());
 
@@ -197,15 +253,30 @@ namespace franka_proxy
 				+ (damping_matrix_ * delta_time_) + inertia_matrix_).inverse();
 
 			const Eigen::Matrix<double, 6, 1> x_i_sum1_ = (delta_time_ * delta_time_) * (-current_force + (stiffness_matrix_ * position_eq_));
-			const Eigen::Matrix<double, 6, 1> x_i_sum2_ = delta_time_ * damping_matrix_ * last_x_list_.front();
-			const Eigen::Matrix<double, 6, 1> x_i_sum3_ = inertia_matrix_ * ((2 * last_x_list_.front()) - last_x_list_.back());
+			const Eigen::Matrix<double, 6, 1> x_i_sum2_ = delta_time_ * damping_matrix_ * x_i_1;
+			const Eigen::Matrix<double, 6, 1> x_i_sum3_ = inertia_matrix_ * ((2 * x_i_1) - x_i_2);
 			const Eigen::Matrix<double, 6, 1> x_i_prod2_ = x_i_sum1_ + x_i_sum2_ + x_i_sum3_;
 
 			Eigen::Matrix<double, 6, 1> x_i_ = x_i_prod1_ * x_i_prod2_;
 
+			// test new position
+			const Eigen::Matrix<double, 6, 6> nx_i_prod1_ = ((stiffness_matrix_ * (delta_time_ * delta_time_))
+				+ (damping_matrix_ * delta_time_) + inertia_matrix_).inverse();
+
+			const Eigen::Matrix<double, 6, 1> nx_i_sum1_ = (delta_time_ * delta_time_) * (-current_force + (stiffness_matrix_ * position_eq_));
+			const Eigen::Matrix<double, 6, 1> nx_i_sum2_ = delta_time_ * damping_matrix_ * xi1;
+			const Eigen::Matrix<double, 6, 1> nx_i_sum3_ = inertia_matrix_ * ((2 * xi1) - xi2);
+			const Eigen::Matrix<double, 6, 1> nx_i_prod2_ = nx_i_sum1_ + nx_i_sum2_ + nx_i_sum3_;
+
+			Eigen::Matrix<double, 6, 1> nx_i_ = nx_i_prod1_ * nx_i_prod2_;
+
 			// store new x_i_ in list and remove oldest entry
-			last_x_list_.push_front(x_i_);
-			last_x_list_.pop_back();
+			last_x_i_list_.push_front(x_i_);
+
+			if (last_x_i_list_.size() > 11) {
+				last_x_i_list_.pop_back();
+			}
+			
 
 			// test
 			Eigen::Map<const Eigen::Matrix<double, 6, 1>> f_ext_(f_ext_ar_.data());
@@ -220,8 +291,8 @@ namespace franka_proxy
 			f_ext_log_ << f_ext_(0) << "; " << f_ext_(1) << "; " << f_ext_(2) << "; " << f_ext_(3) << "; " << f_ext_(4) << "; " << f_ext_(5);
 			std::ostringstream ft_existing_log_;
 			ft_existing_log_ << ft_existing(0) << "; " << ft_existing(1) << "; " << ft_existing(2) << "; " << ft_existing(3) << "; " << ft_existing(4) << "; " << ft_existing(5);
-			std::ostringstream x_i_log_;
-			x_i_log_ << x_i_(0) << "; " << x_i_(1) << "; " << x_i_(2) << "; " << x_i_(3) << "; " << x_i_(4) << "; " << x_i_(5);
+			std::ostringstream x_i_log;
+			x_i_log << x_i_(0) << "; " << x_i_(1) << "; " << x_i_(2) << "; " << x_i_(3) << "; " << x_i_(4) << "; " << x_i_(5);
 			std::ostringstream x_e_log_;
 			x_e_log_ << position_eq_(0) << "; " << position_eq_(1) << "; " << position_eq_(2) << "; " << position_eq_(3) << "; " << position_eq_(4) << "; " << position_eq_(5);
 			std::ostringstream x_i_prod2_log_;
@@ -236,7 +307,7 @@ namespace franka_proxy
 			x_head_log_ << x_head_(0) << "; " << x_head_(1) << "; " << x_head_(2);
 
 			std::ostringstream current_values;
-			current_values << time_ << "; " << "; " << f_ext_log_.str() << "; " << "; " << ft_existing_log_.str() << "; " << "; " << x_i_log_.str() << "; " << "; " << x_e_log_.str() << "; " << "; " << current_force_log.str();
+			current_values << time_ << "; " << "; " << f_ext_log_.str() << "; " << "; " << ft_existing_log_.str() << "; " << "; " << x_i_log.str() << "; " << "; " << x_e_log_.str() << "; " << "; " << current_force_log.str();
 
 			csv_log_ << current_values.str() << "\n";
 
@@ -255,11 +326,31 @@ namespace franka_proxy
 			current_noise_values << time_ << "; " << "; " << f_ext_log_.str() << "; " << "; " << f_ext_middle_log.str();
 			noise_log_ << current_noise_values.str() << "\n";
 
+			std::ostringstream nxi_log;
+			nxi_log << nx_i_(0) << "; " << nx_i_(1) << "; " << nx_i_(2) << "; " << nx_i_(3) << "; " << nx_i_(4) << "; " << nx_i_(5);
+			std::ostringstream nxi1_log;
+			nxi1_log << xi1(0) << "; " << xi1(1) << "; " << xi1(2) << "; " << xi1(3) << "; " << xi1(4) << "; " << xi1(5);
+			std::ostringstream nxi2_log;
+			nxi2_log << xi2(0) << "; " << xi2(1) << "; " << xi2(2) << "; " << xi2(3) << "; " << xi2(4) << "; " << xi2(5);
+			std::ostringstream rxi_log;
+			rxi_log << x_i_(0) << "; " << x_i_(1) << "; " << x_i_(2) << "; " << x_i_(3) << "; " << x_i_(4) << "; " << x_i_(5);
+			std::ostringstream rxi1_log;
+			rxi1_log << x_i_1(0) << "; " << x_i_1(1) << "; " << x_i_1(2) << "; " << x_i_1(3) << "; " << x_i_1(4) << "; " << x_i_1(5);
+			std::ostringstream rxi2_log;
+			rxi2_log << xi2(0) << "; " << x_i_2(1) << "; " << x_i_2(2) << "; " << x_i_2(3) << "; " << x_i_2(4) << "; " << x_i_2(5);
+
+			xi2 = xi1;
+			xi1 = nx_i_;
+
+			std::ostringstream current_x_values;
+			current_x_values << time_ << "; " << nxi_log.str() << "; " << nxi1_log.str() << "; " << nxi2_log.str() << "; " << rxi_log.str() << "; " << rxi1_log.str() << "; " << rxi2_log.str();
+			x_i_log_ << current_x_values.str() << "\n";
+
 			return impedance_controller_.callback
 			(state_, period,
 				[&](const double time) -> Eigen::Vector3d
 				{
-					return x_i_.head(3); // TODO: Change Impedance callback to use all 6 components
+					return nx_i_.head(3); // TODO: Change Impedance callback to use all 6 components
 				}
 			);
 
