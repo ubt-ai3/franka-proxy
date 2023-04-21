@@ -202,12 +202,15 @@ namespace franka_proxy
 			for (int i = 0; i < last_x_i_list_.size(); i++) {
 				auto current_el = last_x_i_list_.front();
 
-				x_i_1(0,0) = x_i_1(0, 0) + current_el(0, 0);
-				x_i_1(1,0) = x_i_1(1, 0) + current_el(1, 0);
-				x_i_1(2,0) = x_i_1(2, 0) + current_el(2, 0);
-				x_i_1(3,0) = x_i_1(3, 0) + current_el(3, 0);
-				x_i_1(4,0) = x_i_1(4, 0) + current_el(4, 0);
-				x_i_1(5,0) = x_i_1(5, 0) + current_el(5, 0);
+				if (i < last_x_i_list_.size() - 1) {
+					x_i_1(0, 0) = x_i_1(0, 0) + current_el(0, 0);
+					x_i_1(1, 0) = x_i_1(1, 0) + current_el(1, 0);
+					x_i_1(2, 0) = x_i_1(2, 0) + current_el(2, 0);
+					x_i_1(3, 0) = x_i_1(3, 0) + current_el(3, 0);
+					x_i_1(4, 0) = x_i_1(4, 0) + current_el(4, 0);
+					x_i_1(5, 0) = x_i_1(5, 0) + current_el(5, 0);
+				}
+				
 
 				if (i > 0) {
 					x_i_2(0, 0) = x_i_2(0, 0) * current_el(0, 0);
@@ -221,7 +224,7 @@ namespace franka_proxy
 				x_is_it.push_back(current_el);
 				last_x_i_list_.pop_front();
 
-				if (i == last_x_i_list_.size()) {
+				if (i == last_x_i_list_.size() - 1) {
 					auto size = last_x_i_list_.size();
 
 					x_i_1(0, 0) = x_i_1(0, 0) / size;
