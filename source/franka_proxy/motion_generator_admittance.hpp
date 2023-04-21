@@ -71,7 +71,7 @@ namespace franka_proxy
 			std::list<std::array<double, 6>> f_exts_;
 
 			// set positions
-			std::list<Eigen::Matrix<double, 6, 1>> last_x_i_list_;
+			std::list<std::array<double, 6>> last_x_i_list_;
 
 			// damping and stiffness matrix
 			Eigen::Matrix<double, 6, 6> damping_matrix_ = Eigen::Matrix<double, 6, 6>::Zero();
