@@ -65,9 +65,10 @@ namespace franka_proxy
 
 			double duration_;
 			double time_ = 0.0;
-			double last_time_ = 0.0;
 
 			Eigen::Matrix<double, 6, 1> f_d_;
+
+			std::list<std::array<double, 6>> f_exts_;
 
 			// set positions
 			std::list<Eigen::Matrix<double, 6, 1>> last_x_list_;
@@ -83,6 +84,9 @@ namespace franka_proxy
 			std::ofstream csv_log_;
 			std::ofstream csv_prod1_log_;
 			std::ofstream force_log_;
+			std::ofstream noise_log_;
+
+			Eigen::Vector3d init_pos_;
 		};
 
 

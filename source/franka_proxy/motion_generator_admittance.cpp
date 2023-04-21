@@ -38,7 +38,7 @@ namespace franka_proxy
 		(franka::Robot& robot,
 			std::mutex& state_lock,
 			franka::RobotState& robot_state,
-			std::array<double, 6> desired_force,
+			std::array<double, 6> desired_force, // TODO: remove parameter
 			double duration)
 			:
 			model_(robot.loadModel()),
@@ -71,24 +71,11 @@ namespace franka_proxy
 			damping_matrix_.bottomRightCorner(3, 3) << 2.0 * sqrt(rotational_stiffness) *
 				Eigen::MatrixXd::Identity(3, 3);
 
-			/*for (int i = 0; i < stiffness_matrix_.cols(); i++) {
-				for (int j = 0; j < stiffness_matrix_.rows(); j++) {
-					stiffness_matrix_(i, j) = stiffness_matrix_(i, j) * 0.5;
-					damping_matrix_(i, j) = damping_matrix_(i, j) * 0.5;
-				}
-			}*/
-
-			std::array<double, 6> f_init_ar_ = state_.O_F_ext_hat_K;
-			Eigen::Map<const Eigen::Matrix<double, 6, 1>> f_init_(f_init_ar_.data());
-
-			// set desired force
-			Eigen::Map<Eigen::Matrix<double, 6, 1>> f_mapped_(desired_force.data());
-			f_d_ = f_mapped_;
-
 			// start logging to csv file
 			csv_log_.open("admittance.csv");
 			csv_prod1_log_.open("admittance_prod1.csv");
 			force_log_.open("force_log.csv");
+			noise_log_.open("force_noise_log.csv");
 		}
 
 		franka::Torques admittance_motion_generator::callback
@@ -111,21 +98,10 @@ namespace franka_proxy
 				csv_log_.close();
 				csv_prod1_log_.close();
 				force_log_.close();
+				noise_log_.close();
+
 				return current_torques_;
 			}
-
-			////////////////////////////
-			/*franka::Torques c_(state_.tau_J);
-
-			std::array<double, 6> force_ar_ = state_.O_F_ext_hat_K;
-			Eigen::Map<const Eigen::Matrix<double, 6, 1>> force_(force_ar_.data());
-
-			std::ostringstream force_log2_;
-			force_log2_ << force_(0) << "; " << force_(1) << "; " << force_(2) << "; " << force_(3) << "; " << force_(4) << "; " << force_(5);
-			force_log_ << force_log2_.str() << "\n";
-
-			return c_;*/
-			////////////////////////////
 
 			// get current position
 			Eigen::Affine3d po_transform_(Eigen::Matrix4d::Map(state_.O_T_EE.data()));
@@ -145,9 +121,6 @@ namespace franka_proxy
 			// -> set them to the current position for initialization
 			// -> sideeffect: enough timestamps to avoid having delta_time_ = 0
 			if (last_x_list_.size() < 2) {
-				// save current time as last_time_ for accurate delta_time calculations after the first two iterations
-				last_time_ = time_;
-
 				// add current position to last positions list
 				last_x_list_.push_back(position_eq_);
 
@@ -156,8 +129,6 @@ namespace franka_proxy
 
 				return current_torques_;
 			}
-
-			//csv_log_.close();
 
 			// get mass matrix
 			std::array<double, 49> mass_ar_ = model_.mass(state_);
@@ -173,72 +144,99 @@ namespace franka_proxy
 			// only using diagonal elements for damping and stiffness optimization, using complete matrix for output calculations
 			Eigen::Map<const Eigen::Matrix<double, 6, 6>> inertia_matrix_(inertia_matrix_ar.data());
 
+			// todo
+			std::array<double, 16> ee_T_k = state_.EE_T_K;
+			Eigen::Map<const Eigen::Matrix<double, 4, 4>> ee_T_k_matrix(ee_T_k.data());
+
 			// get ext force
 			std::array<double, 6> f_ext_ar_ = state_.O_F_ext_hat_K;
-			Eigen::Map<const Eigen::Matrix<double, 6, 1>> f_ext_(f_ext_ar_.data());
-			// test
-			std::array<double, 7> gravity_array = model_.gravity(state_);
-			Eigen::Map<Eigen::Matrix<double, 7, 1>> gravity_(gravity_array.data());
-			Eigen::Map<Eigen::Matrix<double, 7, 1>> tau_measured(state_.tau_J.data());
-			Eigen::VectorXd tau_existing = tau_measured - gravity_;
-			auto ft_existing = jacobian_ * tau_existing;
+			
+			// add measured f_ext to array
+			f_exts_.push_front(f_ext_ar_);
 
-			// calculate force error
-			Eigen::Matrix<double, 6, 1> f_error_ = f_ext_ - f_d_;
-			//Eigen::Matrix<double, 6, 1> f_error_ = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
+			// calculate f_ext from last measurements
+			std::array<double, 6> f_ext_middle = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
 
-			// calculate delta time for position calculation
-			double delta_time_ = last_time_ - time_;
+			std::list<std::array<double, 6>> f_exts_it(f_exts_);
+
+			for (int i = 0; i < f_exts_.size(); i++) {
+				std::array<double, 6> current_el = f_exts_it.front();
+				f_exts_it.pop_front();
+
+				f_ext_middle[0] = f_ext_middle[0] + current_el[0];
+				f_ext_middle[1] = f_ext_middle[1] + current_el[1];
+				f_ext_middle[2] = f_ext_middle[2] + current_el[2];
+				f_ext_middle[3] = f_ext_middle[3] + current_el[3];
+				f_ext_middle[4] = f_ext_middle[4] + current_el[4];
+				f_ext_middle[5] = f_ext_middle[5] + current_el[5];
+
+				if (i == f_exts_.size() - 1) {
+					auto size = f_exts_.size();
+
+					f_ext_middle[0] = f_ext_middle[0] / size;
+					f_ext_middle[1] = f_ext_middle[1] / size;
+					f_ext_middle[2] = f_ext_middle[2] / size;
+					f_ext_middle[3] = f_ext_middle[3] / size;
+					f_ext_middle[4] = f_ext_middle[4] / size;
+					f_ext_middle[5] = f_ext_middle[5] / size;
+				}
+			}
+
+			if (f_exts_.size() == 41) {
+				f_exts_.pop_back();
+			}
+
+			// set current force for further calculations
+			Eigen::Map<Eigen::Matrix<double, 6, 1>> current_force(f_ext_middle.data());
+
+			// using constant as using actual timestamps causing too much noise
+			double delta_time_ = 0.001;
 
 			// calculate new position
 			const Eigen::Matrix<double, 6, 6> x_i_prod1_ = ((stiffness_matrix_ * (delta_time_ * delta_time_))
 				+ (damping_matrix_ * delta_time_) + inertia_matrix_).inverse();
 
-			const Eigen::Matrix<double, 6, 1> x_i_sum1_ = (delta_time_ * delta_time_) * (f_error_ + (stiffness_matrix_ * position_eq_));
+			const Eigen::Matrix<double, 6, 1> x_i_sum1_ = (delta_time_ * delta_time_) * (-current_force + (stiffness_matrix_ * position_eq_));
 			const Eigen::Matrix<double, 6, 1> x_i_sum2_ = delta_time_ * damping_matrix_ * last_x_list_.front();
 			const Eigen::Matrix<double, 6, 1> x_i_sum3_ = inertia_matrix_ * ((2 * last_x_list_.front()) - last_x_list_.back());
 			const Eigen::Matrix<double, 6, 1> x_i_prod2_ = x_i_sum1_ + x_i_sum2_ + x_i_sum3_;
 
 			Eigen::Matrix<double, 6, 1> x_i_ = x_i_prod1_ * x_i_prod2_;
 
-			std::string over = "";
-
-			if (x_i_(0) < 1.0 && x_i_(0) > -1.0 && x_i_(1) < 1.0 && x_i_(1) > -1.0 && x_i_(2) < 1.0 && x_i_(2) > -1.0 && x_i_(3) < 1.0 && x_i_(3) > -1.0 && x_i_(4) < 1.0 && x_i_(4) > -1.0 && x_i_(5) < 1.0 && x_i_(5) > -1.0) {
-				over = "false";
-			}
-			else {
-				x_i_ = last_x_list_.front();
-
-				over = "true";
-			}
-
 			// store new x_i_ in list and remove oldest entry
 			last_x_list_.push_front(x_i_);
 			last_x_list_.pop_back();
 
-			// save current time as last_time_ for accurate delta_time calculations within next iteration
-			last_time_ = time_;
+			// test
+			Eigen::Map<const Eigen::Matrix<double, 6, 1>> f_ext_(f_ext_ar_.data());
+			std::array<double, 7> gravity_array = model_.gravity(state_);
+			Eigen::Map<Eigen::Matrix<double, 7, 1>> gravity_(gravity_array.data());
+			Eigen::Map<Eigen::Matrix<double, 7, 1>> tau_measured(state_.tau_J.data());
+			Eigen::VectorXd tau_existing = tau_measured - gravity_;
+			auto ft_existing = jacobian_ * tau_existing;
 
 			// log to csv
 			std::ostringstream f_ext_log_;
 			f_ext_log_ << f_ext_(0) << "; " << f_ext_(1) << "; " << f_ext_(2) << "; " << f_ext_(3) << "; " << f_ext_(4) << "; " << f_ext_(5);
 			std::ostringstream ft_existing_log_;
-			ft_existing_log_ << f_ext_(0) << "; " << f_ext_(1) << "; " << f_ext_(2) << "; " << f_ext_(3) << "; " << f_ext_(4) << "; " << f_ext_(5);
+			ft_existing_log_ << ft_existing(0) << "; " << ft_existing(1) << "; " << ft_existing(2) << "; " << ft_existing(3) << "; " << ft_existing(4) << "; " << ft_existing(5);
 			std::ostringstream x_i_log_;
 			x_i_log_ << x_i_(0) << "; " << x_i_(1) << "; " << x_i_(2) << "; " << x_i_(3) << "; " << x_i_(4) << "; " << x_i_(5);
 			std::ostringstream x_e_log_;
 			x_e_log_ << position_eq_(0) << "; " << position_eq_(1) << "; " << position_eq_(2) << "; " << position_eq_(3) << "; " << position_eq_(4) << "; " << position_eq_(5);
 			std::ostringstream x_i_prod2_log_;
 			x_i_prod2_log_ << x_i_prod2_(0) << "; " << x_i_prod2_(1) << "; " << x_i_prod2_(2) << "; " << x_i_prod2_(3) << "; " << x_i_prod2_(4) << "; " << x_i_prod2_(5);
-			std::ostringstream f_error_log_;
-			f_error_log_ << f_error_(0) << "; " << f_error_(1) << "; " << f_error_(2) << "; " << f_error_(3) << "; " << f_error_(4) << "; " << f_error_(5);
+			std::ostringstream current_force_log;
+			current_force_log << current_force(0) << "; " << current_force(1) << "; " << current_force(2) << "; " << current_force(3) << "; " << current_force(4) << "; " << current_force(5);
+			std::ostringstream f_ext_middle_log;
+			f_ext_middle_log << f_ext_middle[0] << "; " << f_ext_middle[1] << "; " << f_ext_middle[2] << "; " << f_ext_middle[3] << "; " << f_ext_middle[4] << "; " << f_ext_middle[5];
 
 			Eigen::Vector3d x_head_(x_i_.head(3));
 			std::ostringstream x_head_log_;
 			x_head_log_ << x_head_(0) << "; " << x_head_(1) << "; " << x_head_(2);
 
 			std::ostringstream current_values;
-			current_values << time_ << "; " << "; " << f_ext_log_.str() << "; " << "; " << ft_existing_log_.str() << "; " << "; " << x_i_log_.str() << "; " << "; " << x_e_log_.str() << "; " << "; " << x_i_prod2_log_.str() << "; " << "; " << over << "; " << "; " << x_head_log_.str() << "; " << "; " << f_error_log_.str();
+			current_values << time_ << "; " << "; " << f_ext_log_.str() << "; " << "; " << ft_existing_log_.str() << "; " << "; " << x_i_log_.str() << "; " << "; " << x_e_log_.str() << "; " << "; " << current_force_log.str();
 
 			csv_log_ << current_values.str() << "\n";
 
@@ -253,30 +251,25 @@ namespace franka_proxy
 
 			csv_prod1_log_ << prod1_log_.str();
 
-			// HOW TO CALULATE POSITION_EQ_?????????????????????????????????? CURRENT POSITION AS POSITION_EQ!!!!!!
-			// DESIRED FORCE F_EXT AS PARAMETER FOR CONSTRUCTOR -> NOT FROM STATE OF ROBOT -> DELTA FORCE
-
-			/*return impedance_controller_.callback
-			(state_, period,
-				[&](const double time) -> Eigen::Vector3d
-				{
-					return x_i_.head(3);
-				}
-			);*/
-
-			// todo this may be wrong! -> comment from other motion generator
-			franka::Torques current_torques_(state_.tau_J);
-
-			Eigen::Affine3d po_transform2_(Eigen::Matrix4d::Map(state_.O_T_EE.data()));
-			Eigen::Vector3d current_return_position_ = po_transform2_.translation();
+			std::ostringstream current_noise_values;
+			current_noise_values << time_ << "; " << "; " << f_ext_log_.str() << "; " << "; " << f_ext_middle_log.str();
+			noise_log_ << current_noise_values.str() << "\n";
 
 			return impedance_controller_.callback
 			(state_, period,
 				[&](const double time) -> Eigen::Vector3d
 				{
-					return x_head_;
+					return x_i_.head(3); // TODO: Change Impedance callback to use all 6 components
 				}
 			);
+
+			/*return impedance_controller_.callback
+			(state_, period,
+				[&](const double time) -> Eigen::Vector3d
+				{
+					return x_head_;
+				}
+			);*/
 		}
 
 

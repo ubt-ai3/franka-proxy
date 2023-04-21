@@ -114,7 +114,7 @@ int main()
 
 	std::cout << "Starting Impedance - Hold Position Test." << std::endl;
 
-	controller.impedance_hold_position(15);
+	controller.impedance_hold_position(10);
 
 	std::cout << "Finished Impedance - Hold Position Test." << std::endl;
 
@@ -145,7 +145,7 @@ int main()
 		-0.111362,
 		-0.126319
 	};
-	std::array<double, 6> desired_force = {
+	std::array<double, 6> desired_force_1 = {
 		0.939855,
 		0.581384,
 		-0.494879,
@@ -153,8 +153,16 @@ int main()
 		-0.011073,
 		0.466052
 	};
+	std::array<double, 6> desired_force = {
+		5.0,
+		0.581384,
+		-0.494879,
+		0.0326082,
+		-0.011073,
+		0.466052
+	};
 
-	controller.admittance_apply_force(desired_force_normal, 120);
+	controller.admittance_apply_force(desired_force, 120);
 
 	std::cout << "Finished Admittance - Apply Force Test." << std::endl;
 
