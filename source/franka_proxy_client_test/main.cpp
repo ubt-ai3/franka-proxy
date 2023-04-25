@@ -162,7 +162,7 @@ int main()
 		0.466052
 	};
 
-	controller.admittance_apply_force(desired_force, 120);
+	controller.apply_admittance(120);
 
 	std::cout << "Finished Admittance - Apply Force Test." << std::endl;
 

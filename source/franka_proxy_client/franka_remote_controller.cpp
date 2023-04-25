@@ -68,9 +68,9 @@ void franka_remote_controller::move_sequence
 		(q_sequence, f_sequence, selection_vector_sequence);
 }
 
-void franka_remote_controller::admittance_apply_force(std::array<double, 6>& desired_force, double duration)
+void franka_remote_controller::apply_admittance(double duration)
 {
-	send_command <command_admittance_apply_force>(desired_force, duration);
+	send_command <command_apply_admittance>(duration);
 }
 
 void franka_remote_controller::impedance_hold_position(double duration)

@@ -109,9 +109,9 @@ namespace franka_proxy
 			const std::vector<robot_force_selection>& selection_vector);
 
 		/**
-		 * Admittance controller to hold/apply specific force
+		 * Admittance controller
 		 */
-		void admittance_apply_force(const std::array<double, 6>& desired_force, double duraction);
+		void apply_admittance(double duration);
 		/**
 		 * Impedance controller to hold the current position
 		 */

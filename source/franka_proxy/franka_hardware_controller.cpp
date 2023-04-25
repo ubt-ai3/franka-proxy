@@ -112,9 +112,9 @@ namespace franka_proxy
 		set_control_loop_running(false);
 	}
 
-	void franka_hardware_controller::admittance_apply_force(const std::array<double, 6>& desired_force, const double duration)
+	void franka_hardware_controller::apply_admittance(const double duration)
 	{
-		detail::admittance_motion_generator motion_generator(robot_, robot_state_lock_, robot_state_, desired_force, duration);
+		detail::admittance_motion_generator motion_generator(robot_, robot_state_lock_, robot_state_, duration);
 
 		try
 		{

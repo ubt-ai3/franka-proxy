@@ -107,23 +107,21 @@ void from_json(const nlohmann::json& json, command_move_hybrid_sequence& object)
 /**
  *************************************************************************
  *
- * @class command_admittance_apply_force
+ * @class command_apply_force
  *
- * Commands the robot to use the admittance controller to hold/apply the
- * given desired force for a given duration
+ * Commands the robot to use the admittance controller 
  *
  ************************************************************************/
-struct command_admittance_apply_force
+struct command_apply_admittance
 {
 	using response_type = command_generic_response;
 	static constexpr char type[] = "admittance.apply";
 
-	std::array<double, 6> desired_force;
 	double duration;
 };
 
-void to_json(nlohmann::json&, const command_admittance_apply_force& object);
-void from_json(const nlohmann::json& json, command_admittance_apply_force& object);
+void to_json(nlohmann::json&, const command_apply_admittance& object);
+void from_json(const nlohmann::json& json, command_apply_admittance& object);
 
 
 

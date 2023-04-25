@@ -49,7 +49,6 @@ namespace franka_proxy
 			(franka::Robot& robot,
 				std::mutex& state_lock,
 				franka::RobotState& robot_state,
-				std::array<double, 6> desired_force,
 				double duration);
 
 			franka::Torques callback
@@ -66,12 +65,11 @@ namespace franka_proxy
 			double duration_;
 			double time_ = 0.0;
 
-			Eigen::Matrix<double, 6, 1> f_d_;
-
 			std::list<std::array<double, 6>> f_exts_;
 
-			// set positions
-			std::list<std::array<double, 6>> last_x_i_list_;
+			bool initialized_ = false;
+			Eigen::Matrix<double, 6, 1> x_i_1_;
+			Eigen::Matrix<double, 6, 1> x_i_2_;
 
 			// damping and stiffness matrix
 			Eigen::Matrix<double, 6, 6> damping_matrix_ = Eigen::Matrix<double, 6, 6>::Zero();
@@ -85,11 +83,6 @@ namespace franka_proxy
 			std::ofstream csv_prod1_log_;
 			std::ofstream force_log_;
 			std::ofstream noise_log_;
-			std::ofstream x_i_log_;
-
-			// test logging
-			Eigen::Matrix<double, 6, 1> xi1;
-			Eigen::Matrix<double, 6, 1> xi2;
 		};
 
 

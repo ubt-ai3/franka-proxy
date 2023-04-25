@@ -108,7 +108,7 @@ franka_control_server::franka_control_server
 	register_command_handler<command_move_to_config>();
 	register_command_handler<command_move_hybrid_sequence>();
 	register_command_handler<command_move_until_contact>();
-	register_command_handler<command_admittance_apply_force>();
+	register_command_handler<command_apply_admittance>();
 	register_command_handler<command_impedance_hold_position>();
 	register_command_handler<command_impedance_follow_positions>();
 	register_command_handler<command_force_z>();
@@ -279,9 +279,9 @@ command_generic_response franka_control_server::process_command
 }
 
 command_generic_response franka_control_server::process_command
-(const command_admittance_apply_force& cmd)
+(const command_apply_admittance& cmd)
 {
-	controller_.admittance_apply_force(cmd.desired_force, cmd.duration);
+	controller_.apply_admittance(cmd.duration);
 	return command_result::success;
 }
 

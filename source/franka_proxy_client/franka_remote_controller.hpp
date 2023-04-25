@@ -82,9 +82,9 @@ public:
 		 const std::vector<std::array<double, 6>>& selection_vector_sequence);
 
 	/**
-	 * Impedance controller to hold the current position
+	 * Admittance controller
 	*/
-	void admittance_apply_force(std::array<double, 6>& desired_force, double duration);
+	void apply_admittance(double duration);
 
 	/**
 	 * Impedance controller to hold the current position

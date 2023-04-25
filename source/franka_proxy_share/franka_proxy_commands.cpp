@@ -84,22 +84,20 @@ void from_json(const nlohmann::json& json, command_move_hybrid_sequence& object)
 
 //////////////////////////////////////////////////////////////////////////
 //
-// command_admittance_apply_force
+// command_apply_admittance
 //
 //////////////////////////////////////////////////////////////////////////
 
 
-void to_json(nlohmann::json& json, const command_admittance_apply_force& object)
+void to_json(nlohmann::json& json, const command_apply_admittance& object)
 {
-	json["type"] = command_admittance_apply_force::type;
-	json["desired_force"] = object.desired_force;
+	json["type"] = command_apply_admittance::type;
 	json["duration"] = object.duration;
 }
 
 
-void from_json(const nlohmann::json& json, command_admittance_apply_force& object)
+void from_json(const nlohmann::json& json, command_apply_admittance& object)
 {
-	json.at("desired_force").get_to(object.desired_force);
 	json.at("duration").get_to(object.duration);
 }
 
