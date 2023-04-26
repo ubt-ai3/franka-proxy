@@ -245,11 +245,9 @@ namespace franka_proxy
 
 			return impedance_controller_.callback
 			(state_, period,
-				[&](const double time) -> std::array<double, 16>
+				[&](const double time) -> Eigen::Matrix<double, 6, 1>
 				{
-					// TEST
-					// return x_i.head(3); // TODO: Change Impedance callback to use all 6 components
-					return state_.O_T_EE;
+					return x_i;
 				}
 			);
 		}

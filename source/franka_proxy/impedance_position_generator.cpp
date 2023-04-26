@@ -1,14 +1,14 @@
 /**
  *************************************************************************
  *
- * @file impedance_pose_generator.cpp
+ * @file impedance_position_generator.cpp
  *
  * ..., implementation.
  *
  ************************************************************************/
 
 
-#include "impedance_pose_generator.hpp"
+#include "impedance_position_generator.hpp"
 
 #include <utility>
 #include <iostream>
@@ -29,12 +29,12 @@ namespace franka_proxy
 
 		//////////////////////////////////////////////////////////////////////////
 		//
-		// impedance_pose_generator
+		// impedance_position_generator
 		//
 		//////////////////////////////////////////////////////////////////////////
 
 
-		impedance_pose_generator::impedance_pose_generator
+		impedance_position_generator::impedance_position_generator
 			(franka::RobotState& robot_state,
 			std::mutex& state_lock)
 			:
@@ -52,7 +52,7 @@ namespace franka_proxy
 			pose_interval_ = 0.0;
 		}
 
-		impedance_pose_generator::impedance_pose_generator
+		impedance_position_generator::impedance_position_generator
 		(franka::RobotState& robot_state,
 			std::mutex& state_lock,
 			std::list<std::array<double, 16>> poses,
@@ -80,7 +80,12 @@ namespace franka_proxy
 			}
 		}
 
-		std::array<double, 16> impedance_pose_generator::hold_current_pose(double time) {
+		Eigen::Matrix<double, 6, 1> impedance_position_generator::hold_current_pose(double time) {
+			{
+				std::lock_guard<std::mutex> state_guard(state_lock_);
+				state_ = robot_state;
+			}
+
 			if (time >= next_pose_at_ && !poses_.empty()) {
 				// get new pose from list
 				current_pose_ = poses_.front();
@@ -90,7 +95,33 @@ namespace franka_proxy
 				next_pose_at_ = next_pose_at_ + pose_interval_;
 			}
 
-			return current_pose_;
+			// get current desired position and orientation
+			Eigen::Affine3d po_d_transform(Eigen::Matrix4d::Map(current_pose_.data()));
+			Eigen::Vector3d position_d(po_d_transform.translation());
+			Eigen::Quaterniond orientation_d(po_d_transform.linear());
+
+			// get current position and orientation
+			Eigen::Affine3d po_transform(Eigen::Matrix4d::Map(state_.O_T_EE.data()));
+			Eigen::Vector3d position(po_transform.translation());
+			Eigen::Quaterniond orientation(po_transform.linear());
+
+			Eigen::Matrix<double, 6, 1> position_error;
+
+			// calculate the position error
+			position_error.head(3) << position - position_d; // transforming to 6x6 as the position error will be mulitplied with the stiffness matrix
+
+			// calculate orientation error
+			if (orientation_d.coeffs().dot(orientation.coeffs()) < 0.0) {
+				orientation.coeffs() << -orientation.coeffs();
+			}
+
+			// "difference" quaternion
+			Eigen::Quaterniond diff_quaternion(orientation.inverse() * orientation_d);
+			position_error.tail(3) << diff_quaternion.x(), diff_quaternion.y(), diff_quaternion.z();
+			// Transform to base frame
+			position_error.tail(3) << -po_transform.linear() * position_error.tail(3);
+
+			return position_error;
 		}
 
 

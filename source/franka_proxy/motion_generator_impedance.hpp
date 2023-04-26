@@ -51,7 +51,7 @@ namespace franka_proxy
 			franka::Torques callback
 				(const franka::RobotState& robot_state,
 				franka::Duration period,
-				std::function<std::array<double, 16>(const double)> get_desired_pose);
+				std::function<Eigen::Matrix<double, 6, 1>(const double)> get_position_error);
 
 		private:
 			double optimizeDamping(double l_di, double u_di, double mi, double bi, double x0i_max, double derived_x0i_max);
