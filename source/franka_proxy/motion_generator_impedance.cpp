@@ -249,7 +249,7 @@ namespace franka_proxy
 			std::ostringstream f_ext_log;
 			f_ext_log << f_ext(0) << "; " << f_ext(1) << "; " << f_ext(2) << "; " << f_ext(3) << "; " << f_ext(4) << "; " << f_ext(5);
 			std::ostringstream position_d_log;
-			position_d_log << position_d_.x() << "; " << position_d_.y() << "; " << position_d_.z();
+			position_d_log << position_d.x() << "; " << position_d.y() << "; " << position_d.z();
 			std::ostringstream position_log;
 			position_log << position.x() << "; " << position.y() << "; " << position.z();
 			std::ostringstream stiffness_matrix_log;
