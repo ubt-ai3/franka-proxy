@@ -114,7 +114,7 @@ int main()
 
 	std::cout << "Starting Impedance - Hold Position Test." << std::endl;
 
-	controller.impedance_hold_position(10);
+	controller.impedance_hold_pose(120);
 
 	std::cout << "Finished Impedance - Hold Position Test." << std::endl;
 

@@ -87,14 +87,14 @@ public:
 	void apply_admittance(double duration);
 
 	/**
-	 * Impedance controller to hold the current position
+	 * Impedance controller to hold the current pose
 	*/
-	void impedance_hold_position(double duration);
+	void impedance_hold_pose(double duration);
 
 	/**
-	*  Impedance controller to follow path of positions
+	*  Impedance controller to follow path of poses
 	*/
-	void impedance_follow_positions(std::list<std::array<double, 3>>& positions, double duration);
+	void impedance_follow_poses(std::list<std::array<double, 16>>& positions, double duration);
 
 	/**
 	 * todo docu
