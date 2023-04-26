@@ -224,17 +224,18 @@ namespace franka_proxy
 			// log to csv
 			std::ostringstream f_ext_log;
 			f_ext_log << f_ext(0) << "; " << f_ext(1) << "; " << f_ext(2) << "; " << f_ext(3) << "; " << f_ext(4) << "; " << f_ext(5);
-			std::ostringstream position_d_log;
+			/*std::ostringstream position_d_log;
 			position_d_log << position_d.x() << "; " << position_d.y() << "; " << position_d.z();
 			std::ostringstream position_log;
-			position_log << position.x() << "; " << position.y() << "; " << position.z();
+			position_log << position.x() << "; " << position.y() << "; " << position.z();*/
 			std::ostringstream stiffness_matrix_log;
 			stiffness_matrix_log << stiffness_matrix_(0, 0) << "; " << stiffness_matrix_(1, 1) << "; " << stiffness_matrix_(2, 2) << "; " << stiffness_matrix_(3, 3) << "; " << stiffness_matrix_(4, 4) << "; " << stiffness_matrix_(5, 5);
 			std::ostringstream damping_matrix_log;
 			damping_matrix_log << damping_matrix_(0, 0) << "; " << damping_matrix_(1, 1) << "; " << damping_matrix_(2, 2) << "; " << damping_matrix_(3, 3) << "; " << damping_matrix_(4, 4) << "; " << damping_matrix_(5, 5);
 
 			std::ostringstream current_values;
-			current_values << time_ << "; " << f_ext_log.str() << "; " << position_d_log.str() << "; " << position_log.str() << "; " << stiffness_matrix_log.str() << "; " << damping_matrix_log.str();
+			current_values << time_ << "; " << f_ext_log.str() << "; " << "; " << "; " << stiffness_matrix_log.str() << "; " << damping_matrix_log.str();
+			//current_values << time_ << "; " << f_ext_log.str() << "; " << position_d_log.str() << "; " << position_log.str() << "; " << stiffness_matrix_log.str() << "; " << damping_matrix_log.str();
 
 			csv_log_ << current_values.str() << "\n";
 

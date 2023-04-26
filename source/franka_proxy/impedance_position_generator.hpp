@@ -42,7 +42,7 @@ namespace franka_proxy
 					std::list<std::array<double, 16>> poses,
 					double duration);
 
-			Eigen::Matrix<double, 6, 1> hold_current_pose(double time);
+			Eigen::Matrix<double, 6, 1> hold_current_pose(const franka::RobotState& robot_state, double time);
 
 		private:
 			std::mutex& state_lock_;

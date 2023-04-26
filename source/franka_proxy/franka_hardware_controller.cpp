@@ -162,7 +162,7 @@ namespace franka_proxy
 						(robot_state, period,
 							[&](const double time) -> Eigen::Matrix<double, 6, 1>
 							{
-								return position_error_generator.hold_current_pose(time);
+								return position_error_generator.hold_current_pose(robot_state, time);
 							}
 						);
 				}, true, 10.0
@@ -198,7 +198,7 @@ namespace franka_proxy
 					(robot_state, period,
 						[&](const double time) -> Eigen::Matrix<double, 6, 1>
 						{
-							return position_error_generator.hold_current_pose(time);
+							return position_error_generator.hold_current_pose(robot_state, time);
 						}
 					);
 				}, true, 10.0

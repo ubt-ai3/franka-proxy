@@ -80,7 +80,7 @@ namespace franka_proxy
 			}
 		}
 
-		Eigen::Matrix<double, 6, 1> impedance_position_generator::hold_current_pose(double time) {
+		Eigen::Matrix<double, 6, 1> impedance_position_generator::hold_current_pose(const franka::RobotState& robot_state, double time) {
 			{
 				std::lock_guard<std::mutex> state_guard(state_lock_);
 				state_ = robot_state;
