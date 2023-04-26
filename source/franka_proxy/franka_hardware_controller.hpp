@@ -113,13 +113,13 @@ namespace franka_proxy
 		 */
 		void apply_admittance(double duration);
 		/**
-		 * Impedance controller to hold the current position
+		 * Impedance controller to hold the current pose
 		 */
-		void impedance_hold_position(double duraction);
+		void impedance_hold_pose(double duration);
 		/**
-		 * Impedacne controller to hold multiple positions/ to follow path of multiple positions
+		 * Impedacne controller to hold multiple poses/ to follow path of multiple poses
 		*/
-		void impedance_follow_positions(const std::list<std::array<double, 3>>& positions, double duration);
+		void impedance_follow_poses(const std::list<std::array<double, 16>>& poses, double duration);
 
 		static constexpr double default_gripper_speed = 0.025;
 

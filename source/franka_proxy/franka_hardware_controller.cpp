@@ -19,7 +19,7 @@
 #include <franka/model.h>
 
 #include "franka_motion_recorder.hpp"
-#include "impedance_position_generator.hpp"
+#include "impedance_pose_generator.hpp"
 #include "motion_generator_admittance.hpp"
 #include "motion_generator_force.hpp"
 #include "motion_generator_impedance.hpp"
@@ -141,10 +141,10 @@ namespace franka_proxy
 		set_control_loop_running(false);
 	}
 
-	void franka_hardware_controller::impedance_hold_position(const double duration)
+	void franka_hardware_controller::impedance_hold_pose(const double duration)
 	{
 		detail::impedance_motion_generator motion_generator(robot_, robot_state_lock_, robot_state_, duration);
-		detail::impedance_position_generator position_generator(robot_state_, robot_state_lock_);
+		detail::impedance_pose_generator pose_generator(robot_state_, robot_state_lock_);
 
 		try
 		{
@@ -160,9 +160,9 @@ namespace franka_proxy
 				{
 					return motion_generator.callback
 						(robot_state, period,
-							[&](const double time) -> Eigen::Vector3d
+							[&](const double time) -> std::array<double, 16>
 							{
-								return position_generator.hold_current_position(time);
+								return pose_generator.hold_current_pose(time);
 							}
 						);
 				}, true, 10.0
@@ -177,10 +177,10 @@ namespace franka_proxy
 		set_control_loop_running(false);
 	}
 
-	void franka_hardware_controller::impedance_follow_positions(const std::list<std::array<double, 3>>& positions, double duration)
+	void franka_hardware_controller::impedance_follow_poses(const std::list<std::array<double, 16>>& poses, double duration)
 	{
 		detail::impedance_motion_generator motion_generator(robot_, robot_state_lock_, robot_state_, duration);
-		detail::impedance_position_generator position_generator(robot_state_, robot_state_lock_, positions, duration);
+		detail::impedance_pose_generator pose_generator(robot_state_, robot_state_lock_, poses, duration);
 
 		try
 		{
@@ -196,9 +196,9 @@ namespace franka_proxy
 				{
 					return motion_generator.callback
 					(robot_state, period,
-						[&](const double time) -> Eigen::Vector3d
+						[&](const double time) -> std::array<double, 16>
 						{
-							return position_generator.hold_current_position(time);
+							return pose_generator.hold_current_pose(time);
 						}
 					);
 				}, true, 10.0

@@ -106,19 +106,19 @@ void from_json(const nlohmann::json& json, command_apply_admittance& object)
 
 //////////////////////////////////////////////////////////////////////////
 //
-// command_impedance_hold_position
+// command_impedance_hold_pose
 //
 //////////////////////////////////////////////////////////////////////////
 
 
-void to_json(nlohmann::json& json, const command_impedance_hold_position& object)
+void to_json(nlohmann::json& json, const command_impedance_hold_pose& object)
 {
-	json["type"] = command_impedance_hold_position::type;
+	json["type"] = command_impedance_hold_pose::type;
 	json["duration"] = object.duration;
 }
 
 
-void from_json(const nlohmann::json& json, command_impedance_hold_position& object)
+void from_json(const nlohmann::json& json, command_impedance_hold_pose& object)
 {
 	json.at("duration").get_to(object.duration);
 }
@@ -128,22 +128,22 @@ void from_json(const nlohmann::json& json, command_impedance_hold_position& obje
 
 //////////////////////////////////////////////////////////////////////////
 //
-// command_impedance_follow_positions
+// command_impedance_follow_poses
 //
 //////////////////////////////////////////////////////////////////////////
 
 
-void to_json(nlohmann::json& json, const command_impedance_follow_positions& object)
+void to_json(nlohmann::json& json, const command_impedance_follow_poses& object)
 {
-	json["type"] = command_impedance_follow_positions::type;
-	json["positions"] = object.positions;
+	json["type"] = command_impedance_follow_poses::type;
+	json["poses"] = object.poses;
 	json["duration"] = object.duration;
 }
 
 
-void from_json(const nlohmann::json& json, command_impedance_follow_positions& object)
+void from_json(const nlohmann::json& json, command_impedance_follow_poses& object)
 {
-	json.at("positions").get_to(object.positions);
+	json.at("poses").get_to(object.poses);
 	json.at("duration").get_to(object.duration);
 }
 

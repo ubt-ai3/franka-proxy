@@ -58,11 +58,6 @@ namespace franka_proxy
 				{ {100.0, 100.0, 100.0, 100.0, 100.0, 100.0} },
 				{ {100.0, 100.0, 100.0, 100.0, 100.0, 100.0} });
 
-			// equilibrium point is the current position
-			Eigen::Affine3d init_transform(Eigen::Matrix4d::Map(state_.O_T_EE.data()));
-			position_d_ = init_transform.translation();
-			orientation_d_ = init_transform.linear();
-
 			const double translational_stiffness{ 150.0 };
 			const double rotational_stiffness{ 10.0 };
 
@@ -82,7 +77,7 @@ namespace franka_proxy
 		franka::Torques impedance_motion_generator::callback
 		(const franka::RobotState& robot_state,
 			franka::Duration period,
-			std::function<Eigen::Vector3d(const double)> get_desired_position)
+			std::function<std::array<double, 16>(const double)> get_desired_pose)
 		{
 			{
 				std::lock_guard<std::mutex> state_guard(state_lock_);
@@ -123,14 +118,14 @@ namespace franka_proxy
 			// only using diagonal elements for damping and stiffness optimization, using complete matrix for output calculations
 			Eigen::Map<const Eigen::Matrix<double, 6, 6>> inertia_matrix(inertia_matrix_ar.data());
 
-			// get current desired position
-			position_d_ = get_desired_position(time_);
+			// get current desired position and orientation
+			Eigen::Affine3d po_d_transform(Eigen::Matrix4d::Map(get_desired_pose(time_).data()));
+			Eigen::Vector3d position_d(po_d_transform.translation());
+			Eigen::Quaterniond orientation_d(po_d_transform.linear());
 
-			// get current position
+			// get current position and orientation
 			Eigen::Affine3d po_transform(Eigen::Matrix4d::Map(state_.O_T_EE.data()));
 			Eigen::Vector3d position(po_transform.translation());
-
-			// get current orientation
 			Eigen::Quaterniond orientation(po_transform.linear());
 
 			Eigen::Matrix<double, 6, 1> position_error;
@@ -140,15 +135,15 @@ namespace franka_proxy
 			Eigen::Matrix<double, 6, 1> velocity = jacobian * dq; // dx = j(q)*dq
 
 			// set position error
-			position_error.head(3) << position - position_d_; // transforming to 6x6 as the position error will be mulitplied with the stiffness matrix
+			position_error.head(3) << position - position_d; // transforming to 6x6 as the position error will be mulitplied with the stiffness matrix
 
 			// calculate orientation error
-			if (orientation_d_.coeffs().dot(orientation.coeffs()) < 0.0) {
+			if (orientation_d.coeffs().dot(orientation.coeffs()) < 0.0) {
 				orientation.coeffs() << -orientation.coeffs();
 			}
 
 			// "difference" quaternion
-			Eigen::Quaterniond diff_quaternion(orientation.inverse() * orientation_d_);
+			Eigen::Quaterniond diff_quaternion(orientation.inverse() * orientation_d);
 			position_error.tail(3) << diff_quaternion.x(), diff_quaternion.y(), diff_quaternion.z();
 			// Transform to base frame
 			position_error.tail(3) << -po_transform.linear() * position_error.tail(3);

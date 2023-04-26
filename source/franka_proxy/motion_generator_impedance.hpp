@@ -51,7 +51,7 @@ namespace franka_proxy
 			franka::Torques callback
 				(const franka::RobotState& robot_state,
 				franka::Duration period,
-				std::function<Eigen::Vector3d(const double)> get_desired_position);
+				std::function<std::array<double, 16>(const double)> get_desired_pose);
 
 		private:
 			double optimizeDamping(double l_di, double u_di, double mi, double bi, double x0i_max, double derived_x0i_max);
@@ -78,9 +78,6 @@ namespace franka_proxy
 			double duration_;
 			double time_ = 0.0;
 			std::list<double> timestamps_;
-
-			Eigen::Quaterniond orientation_d_;
-			Eigen::Vector3d position_d_;
 
 			std::list<std::array<double, 6>> measured_velocities_;
 			std::list<std::array<double, 7>> measured_joint_velocities_;

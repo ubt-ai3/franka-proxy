@@ -1,15 +1,15 @@
 /**
  *************************************************************************
  *
- * @file impedance_position_generator.hpp
+ * @file impedance_pose_generator.hpp
  *
  * todo
  *
  ************************************************************************/
 
 
-#if !defined(INCLUDED__FRANKA_PROXY__IMPEDANCE_POSITION_GENERATOR_HPP)
-#define INCLUDED__FRANKA_PROXY__IMPEDANCE_POSITION_GENERATOR_HPP
+#if !defined(INCLUDED__FRANKA_PROXY__IMPEDANCE_POSE_GENERATOR_HPP)
+#define INCLUDED__FRANKA_PROXY__IMPEDANCE_POSE_GENERATOR_HPP
 
 
 #include <Eigen/Core>
@@ -27,32 +27,32 @@ namespace franka_proxy
 		/**
 		 *************************************************************************
 		 *
-		 * @class impedance_position_generator
+		 * @class impedance_pose_generator
 		 *
 		 * in use
 		 *
 		 ************************************************************************/
-		class impedance_position_generator
+		class impedance_pose_generator
 		{
 		public:
-			impedance_position_generator(franka::RobotState& robot_state, std::mutex& state_lock);
-			impedance_position_generator
+			impedance_pose_generator(franka::RobotState& robot_state, std::mutex& state_lock);
+			impedance_pose_generator
 				(franka::RobotState& robot_state,
 					std::mutex& state_lock,
-					std::list<std::array<double, 3>> positions,
+					std::list<std::array<double, 16>> poses,
 					double duration);
 
-			Eigen::Vector3d hold_current_position(double time);
+			std::array<double, 16> hold_current_pose(double time);
 
 		private:
 			std::mutex& state_lock_;
 			franka::RobotState& state_;
 
-			Eigen::Vector3d current_position_;
-			std::list<std::array<double, 3>> positions_;
+			std::array<double, 16> current_pose_;
+			std::list<std::array<double, 16>> poses_;
 
-			double position_interval_;
-			double next_position_at_ = 0.0;
+			double pose_interval_;
+			double next_pose_at_ = 0.0;
 		};
 
 

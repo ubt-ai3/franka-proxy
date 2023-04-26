@@ -129,13 +129,13 @@ void from_json(const nlohmann::json& json, command_apply_admittance& object);
 /**
  *************************************************************************
  *
- * @class command_impedance_hold_position
+ * @class command_impedance_hold_pose
  *
  * Commands the robot to use the impedance controller to hold the current
- * position for a given duration
+ * pose for a given duration
  *
  ************************************************************************/
-struct command_impedance_hold_position
+struct command_impedance_hold_pose
 {
 	using response_type = command_generic_response;
 	static constexpr char type[] = "impedance.hold";
@@ -143,8 +143,8 @@ struct command_impedance_hold_position
 	double duration;
 };
 
-void to_json(nlohmann::json&, const command_impedance_hold_position& object);
-void from_json(const nlohmann::json& json, command_impedance_hold_position& object);
+void to_json(nlohmann::json&, const command_impedance_hold_pose& object);
+void from_json(const nlohmann::json& json, command_impedance_hold_pose& object);
 
 
 
@@ -152,23 +152,23 @@ void from_json(const nlohmann::json& json, command_impedance_hold_position& obje
 /**
  *************************************************************************
  *
- * @class command_impedance_follow_positions
+ * @class command_impedance_follow_poses
  *
  * Commands the robot to use the impedance controller to follow a path of
- * given positions for a given duration
+ * given poses for a given duration
  *
  ************************************************************************/
-struct command_impedance_follow_positions
+struct command_impedance_follow_poses
 {
 	using response_type = command_generic_response;
 	static constexpr char type[] = "impedance.follow";
 
-	std::list<std::array<double, 3>> positions;
+	std::list<std::array<double, 16>> poses;
 	double duration;
 };
 
-void to_json(nlohmann::json&, const command_impedance_follow_positions& object);
-void from_json(const nlohmann::json& json, command_impedance_follow_positions& object);
+void to_json(nlohmann::json&, const command_impedance_follow_poses& object);
+void from_json(const nlohmann::json& json, command_impedance_follow_poses& object);
 
 
 
