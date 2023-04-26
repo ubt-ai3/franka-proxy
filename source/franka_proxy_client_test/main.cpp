@@ -136,31 +136,6 @@ int main()
 	std::cout << "Finished Impedance - Follow Positions Test." << std::endl;
 
 	std::cout << "Starting Admittance - Apply Force Test." << std::endl;
-	// desired force
-	std::array<double, 6> desired_force_normal = {
-		-811981.0,
-		-0.321702,
-		145387.0,
-		0.0449813,
-		-0.111362,
-		-0.126319
-	};
-	std::array<double, 6> desired_force_1 = {
-		0.939855,
-		0.581384,
-		-0.494879,
-		-0.0326082,
-		-0.011073,
-		0.466052
-	};
-	std::array<double, 6> desired_force = {
-		5.0,
-		0.581384,
-		-0.494879,
-		0.0326082,
-		-0.011073,
-		0.466052
-	};
 
 	controller.apply_admittance(120);
 
