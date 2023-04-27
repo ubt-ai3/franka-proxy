@@ -74,6 +74,7 @@ namespace franka_proxy
 			csv_log_.open("admittance.csv");
 			csv_prod1_log_.open("admittance_prod1.csv");
 			force_log_.open("force_log.csv");
+			force_log_ << "time; f_ext1; f_ext2; f_ext3; f_ext4; f_ext5; f_ext6; ft1; ft2; ft3; ft4; ft5; ft6" << "\n";
 			noise_log_.open("force_noise_log.csv");
 		}
 
@@ -138,19 +139,19 @@ namespace franka_proxy
 			position_eq.head(3) << current_position;
 
 			// calculate orientation
-			if (orientation.coeffs().dot(orientation.coeffs()) < 0.0) {
+			/*if (orientation.coeffs().dot(orientation.coeffs()) < 0.0) {
 				orientation.coeffs() << -orientation.coeffs();
-			}
+			}*/
 
-			// "difference" quaternion
-			Eigen::Quaterniond diff_quaternion(orientation.inverse() * orientation);
-			position_eq.tail(3) << diff_quaternion.x(), diff_quaternion.y(), diff_quaternion.z();
+			//// "difference" quaternion
+			//Eigen::Quaterniond diff_quaternion(orientation.inverse() * orientation);
+			//position_eq.tail(3) << diff_quaternion.x(), diff_quaternion.y(), diff_quaternion.z();
+			//// Transform to base frame
+			//position_eq.tail(3) << -po_transform.linear() * position_eq.tail(3);
+
+			position_eq.tail(3) << orientation.x(), orientation.y(), orientation.z();
 			// Transform to base frame
 			position_eq.tail(3) << -po_transform.linear() * position_eq.tail(3);
-
-			//position_eq.tail(3) << orientation.x(), orientation.y(), orientation.z();
-			// Transform to base frame
-			//position_eq.tail(3) << -po_transform.linear() * position_eq.tail(3);
 
 			// x_i-1 and x_i-2 are required for further calculations
 			if (!initialized_) {
@@ -175,8 +176,38 @@ namespace franka_proxy
 			// only using diagonal elements for damping and stiffness optimization, using complete matrix for output calculations
 			Eigen::Map<const Eigen::Matrix<double, 6, 6>> inertia_matrix(inertia_matrix_ar.data());
 
-			// get ext 
+			// test
+			std::array<double, 7> gravity_array = model_.gravity(state_);
+			Eigen::Map<Eigen::Matrix<double, 7, 1>> gravity(gravity_array.data());
+			Eigen::Map<Eigen::Matrix<double, 7, 1>> tau_measured(state_.tau_J.data());
+			Eigen::VectorXd tau_existing = tau_measured - gravity;
+			auto ft_existing = jacobian * tau_existing;
+
+			//std::array<double, 6> f_ext_ar;
+			//Eigen::VectorXd::Map(&f_ext_ar[0], 6) = ft_existing;
+
+			// get f ext 
 			std::array<double, 6> f_ext_ar = state_.O_F_ext_hat_K;
+
+			// filter model discrepancy noise
+			for (int i = 0; i < 6; i++) {
+				if (i < 3) {
+					if (f_ext_ar[i] < 0.0) {
+						f_ext_ar[i] = f_ext_ar[i] + std::min(2.0, abs(f_ext_ar[i]));
+					}
+					else {
+						f_ext_ar[i] = f_ext_ar[i] - std::min(2.0, abs(f_ext_ar[i]));
+					}
+				}
+				else {
+					if (f_ext_ar[i] < 0.0) {
+						f_ext_ar[i] = f_ext_ar[i] + std::min(1.0, abs(f_ext_ar[i]));
+					}
+					else {
+						f_ext_ar[i] = f_ext_ar[i] - std::min(1.0, abs(f_ext_ar[i]));
+					}
+				}
+			}
 
 			// add measured f_ext to array
 			f_exts_.push_front(f_ext_ar);
@@ -235,13 +266,13 @@ namespace franka_proxy
 			x_i_1_ = x_i;
 
 
-			// test
+			//// test
 			Eigen::Map<const Eigen::Matrix<double, 6, 1>> f_ext_(f_ext_ar.data());
-			std::array<double, 7> gravity_array = model_.gravity(state_);
-			Eigen::Map<Eigen::Matrix<double, 7, 1>> gravity(gravity_array.data());
-			Eigen::Map<Eigen::Matrix<double, 7, 1>> tau_measured(state_.tau_J.data());
-			Eigen::VectorXd tau_existing = tau_measured - gravity;
-			auto ft_existing = jacobian * tau_existing;
+			//std::array<double, 7> gravity_array = model_.gravity(state_);
+			//Eigen::Map<Eigen::Matrix<double, 7, 1>> gravity(gravity_array.data());
+			//Eigen::Map<Eigen::Matrix<double, 7, 1>> tau_measured(state_.tau_J.data());
+			//Eigen::VectorXd tau_existing = tau_measured - gravity;
+			//auto ft_existing = jacobian * tau_existing;
 
 			// log to csv
 			std::ostringstream f_ext_log;
@@ -278,6 +309,16 @@ namespace franka_proxy
 			std::ostringstream current_noise_values;
 			current_noise_values << time_ << "; " << "; " << f_ext_log.str() << "; " << "; " << f_ext_middle_log.str();
 			noise_log_ << current_noise_values.str() << "\n";
+
+			std::ostringstream f_ext_ar_log;
+			f_ext_ar_log << f_ext_ar[0] << "; " << f_ext_ar[1] << "; " << f_ext_ar[2] << "; " << f_ext_ar[3] << "; " << f_ext_ar[4] << "; " << f_ext_ar[5];
+			std::ostringstream ft_log;
+			ft_log << ft_existing(0) << "; " << ft_existing(1) << "; " << ft_existing(2) << "; " << ft_existing(3) << "; " << ft_existing(4) << "; " << ft_existing(5) << "; " << sqrt(f_ext_ar[3]* f_ext_ar[3] + f_ext_ar[4] * f_ext_ar[4] + f_ext_ar[5] * f_ext_ar[5]);
+			// x, y, z below 2.0/N
+			// or x, y, z below 1.0/Nm
+			std::ostringstream f_val;
+			f_val << time_ << "; " << f_ext_ar_log.str() << "; " << ft_log.str() << "\n";
+			force_log_ << f_val.str();
 
 			return impedance_controller_.callback
 			(state_, period,
