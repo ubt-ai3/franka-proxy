@@ -283,7 +283,7 @@ namespace franka_proxy
 			(state_, period,
 				[&](const double time) -> Eigen::Matrix<double, 6, 1>
 				{
-					return x_i;
+					return position_eq - x_i;
 				}
 			);
 		}

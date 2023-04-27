@@ -19,7 +19,6 @@
 #include <franka/model.h>
 
 #include "franka_motion_recorder.hpp"
-#include "impedance_position_generator.hpp"
 #include "motion_generator_admittance.hpp"
 #include "motion_generator_force.hpp"
 #include "motion_generator_impedance.hpp"
@@ -144,7 +143,6 @@ namespace franka_proxy
 	void franka_hardware_controller::impedance_hold_pose(const double duration)
 	{
 		detail::impedance_motion_generator motion_generator(robot_, robot_state_lock_, robot_state_, duration);
-		detail::impedance_position_generator position_error_generator(robot_state_, robot_state_lock_);
 
 		try
 		{
@@ -162,7 +160,7 @@ namespace franka_proxy
 						(robot_state, period,
 							[&](const double time) -> Eigen::Matrix<double, 6, 1>
 							{
-								return position_error_generator.hold_current_pose(robot_state, time);
+								return motion_generator.calculate_position_error(robot_state, time);
 							}
 						);
 				}, true, 10.0
@@ -179,8 +177,7 @@ namespace franka_proxy
 
 	void franka_hardware_controller::impedance_follow_poses(const std::list<std::array<double, 16>>& poses, double duration)
 	{
-		detail::impedance_motion_generator motion_generator(robot_, robot_state_lock_, robot_state_, duration);
-		detail::impedance_position_generator position_error_generator(robot_state_, robot_state_lock_, poses, duration);
+		detail::impedance_motion_generator motion_generator(robot_, robot_state_lock_, robot_state_, poses, duration);
 
 		try
 		{
@@ -198,7 +195,7 @@ namespace franka_proxy
 					(robot_state, period,
 						[&](const double time) -> Eigen::Matrix<double, 6, 1>
 						{
-							return position_error_generator.hold_current_pose(robot_state, time);
+							return motion_generator.calculate_position_error(robot_state, time);
 						}
 					);
 				}, true, 10.0

@@ -69,6 +69,62 @@ namespace franka_proxy
 			damping_matrix_.bottomRightCorner(3, 3) << 2.0 * sqrt(rotational_stiffness) *
 				Eigen::MatrixXd::Identity(3, 3);
 
+			// position error calculation initialization - initial pose
+			current_pose_ = state_.O_T_EE;
+			pose_interval_ = 0.0;
+
+			// start logging to csv file
+			csv_log_.open("impedance_log.csv");
+			csv_log_ << csv_header << "\n";
+		};
+
+		impedance_motion_generator::impedance_motion_generator
+		(franka::Robot& robot,
+			std::mutex& state_lock,
+			franka::RobotState& robot_state,
+			std::list<std::array<double, 16>> poses,
+			double duration)
+			:
+			model_(robot.loadModel()),
+			state_lock_(state_lock),
+			state_(robot_state),
+			poses_(poses),
+			duration_(duration)
+		{
+			{
+				std::lock_guard<std::mutex> state_guard(state_lock_);
+				state_ = robot_state;
+			}
+
+			// load model
+			model_ = robot.loadModel();
+
+			robot.setCollisionBehavior({ {100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0} },
+				{ {100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0} },
+				{ {100.0, 100.0, 100.0, 100.0, 100.0, 100.0} },
+				{ {100.0, 100.0, 100.0, 100.0, 100.0, 100.0} });
+
+			const double translational_stiffness{ 150.0 };
+			const double rotational_stiffness{ 10.0 };
+
+			// initialize stiffness and damping matrix
+			stiffness_matrix_.topLeftCorner(3, 3) << translational_stiffness * Eigen::MatrixXd::Identity(3, 3);
+			stiffness_matrix_.bottomRightCorner(3, 3) << rotational_stiffness * Eigen::MatrixXd::Identity(3, 3);
+			damping_matrix_.topLeftCorner(3, 3) << 2.0 * sqrt(translational_stiffness) *
+				Eigen::MatrixXd::Identity(3, 3);
+			damping_matrix_.bottomRightCorner(3, 3) << 2.0 * sqrt(rotational_stiffness) *
+				Eigen::MatrixXd::Identity(3, 3);
+
+			// position error calculation initialization - initial pose
+			current_pose_ = state_.O_T_EE;
+
+			if (duration > 0.0) {
+				pose_interval_ = duration / poses.size();
+			}
+			else {
+				pose_interval_ = 0.0;
+			}
+
 			// start logging to csv file
 			csv_log_.open("impedance_log.csv");
 			csv_log_ << csv_header << "\n";
@@ -117,8 +173,6 @@ namespace franka_proxy
 			Eigen::Matrix<double, 6, 6> inertia_matrix_ar = (jacobian * mass_matrix.inverse() * jacobian.transpose()).inverse();
 			// only using diagonal elements for damping and stiffness optimization, using complete matrix for output calculations
 			Eigen::Map<const Eigen::Matrix<double, 6, 6>> inertia_matrix(inertia_matrix_ar.data());
-
-			Eigen::Matrix<double, 6, 1> position_error(get_position_error(time_));
 
 			// get current velocity
 			Eigen::Map<const Eigen::Matrix<double, 7, 1>> dq(state_.dq.data());
@@ -212,6 +266,8 @@ namespace franka_proxy
 				stiffness_matrix_(i, i) = ki;
 			}*/
 
+			Eigen::Matrix<double, 6, 1> position_error(get_position_error(time_));
+
 			// calculate external force
 			Eigen::Matrix<double, 6, 1> f_ext = inertia_matrix * acceleration + damping_matrix_ * velocity + stiffness_matrix_ * position_error;
 
@@ -240,6 +296,50 @@ namespace franka_proxy
 			csv_log_ << current_values.str() << "\n";
 
 			return tau_d_ar;
+		}
+
+		Eigen::Matrix<double, 6, 1> impedance_motion_generator::calculate_position_error(const franka::RobotState& robot_state, double time) {
+			{
+				std::lock_guard<std::mutex> state_guard(state_lock_);
+				state_ = robot_state;
+			}
+
+			if (time >= next_pose_at_ && !poses_.empty()) {
+				// get new pose from list
+				current_pose_ = poses_.front();
+				poses_.pop_front();
+
+				// set next position interval
+				next_pose_at_ = next_pose_at_ + pose_interval_;
+			}
+
+			// get current desired position and orientation
+			Eigen::Affine3d po_d_transform(Eigen::Matrix4d::Map(current_pose_.data()));
+			Eigen::Vector3d position_d(po_d_transform.translation());
+			Eigen::Quaterniond orientation_d(po_d_transform.linear());
+
+			// get current position and orientation
+			Eigen::Affine3d po_transform(Eigen::Matrix4d::Map(state_.O_T_EE.data()));
+			Eigen::Vector3d position(po_transform.translation());
+			Eigen::Quaterniond orientation(po_transform.linear());
+
+			Eigen::Matrix<double, 6, 1> position_error;
+
+			// calculate the position error
+			position_error.head(3) << position - position_d; // transforming to 6x6 as the position error will be mulitplied with the stiffness matrix
+
+			// calculate orientation error
+			if (orientation_d.coeffs().dot(orientation.coeffs()) < 0.0) {
+				orientation.coeffs() << -orientation.coeffs();
+			}
+
+			// "difference" quaternion
+			Eigen::Quaterniond diff_quaternion(orientation.inverse() * orientation_d);
+			position_error.tail(3) << diff_quaternion.x(), diff_quaternion.y(), diff_quaternion.z();
+			// Transform to base frame
+			position_error.tail(3) << -po_transform.linear() * position_error.tail(3);
+
+			return position_error;
 		}
 
 		double impedance_motion_generator::optimizeDamping(double l_di, double u_di, double mi, double bi, double x0i_max, double derived_x0i_max) {

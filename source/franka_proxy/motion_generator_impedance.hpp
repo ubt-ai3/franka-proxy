@@ -28,7 +28,7 @@ namespace franka_proxy
 {
 	namespace detail
 	{
-
+		class impedance_position_error_calculator;
 
 		/**
 		 *************************************************************************
@@ -48,10 +48,19 @@ namespace franka_proxy
 					franka::RobotState& robot_state,
 					double duration);
 
+			impedance_motion_generator
+			(franka::Robot& robot,
+				std::mutex& state_lock,
+				franka::RobotState& robot_state,
+				std::list<std::array<double, 16>> poses,
+				double duration);
+
 			franka::Torques callback
 				(const franka::RobotState& robot_state,
 				franka::Duration period,
 				std::function<Eigen::Matrix<double, 6, 1>(const double)> get_position_error);
+
+			Eigen::Matrix<double, 6, 1> calculate_position_error(const franka::RobotState& robot_state, double time);
 
 		private:
 			double optimizeDamping(double l_di, double u_di, double mi, double bi, double x0i_max, double derived_x0i_max);
@@ -86,14 +95,17 @@ namespace franka_proxy
 			Eigen::Matrix<double, 6, 6> damping_matrix_ = Eigen::Matrix<double, 6, 6>::Zero();
 			Eigen::Matrix<double, 6, 6> stiffness_matrix_ = Eigen::Matrix<double, 6, 6>::Zero();
 
+			// position error calculation
+			std::array<double, 16> current_pose_;
+			std::list<std::array<double, 16>> poses_;
+
+			double pose_interval_;
+			double next_pose_at_ = 0.0;
+
 			// csv logging
 			std::ofstream csv_log_;
 			std::string csv_header = "time; f_ext j1; f_ext j2; f_ext j3; f_ext j4; f_ext j5; f_ext j6; position_d x; position_d y; position_d z; position x; position y; position z; s j1; s j2; s j3; s j4; s j5; s j6; d j1; d j2; d j3; d j4; d j5; d j6";
 		};
-
-
-
-
 	} /* namespace detail */
 } /* namespace franka_proxy */
 
