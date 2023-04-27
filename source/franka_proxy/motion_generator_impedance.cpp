@@ -190,7 +190,7 @@ namespace franka_proxy
 
 			
 			// stiffness and damping
-			for (int i = 0; i < inertia_matrix.rows(); i++) {
+			/*for (int i = 0; i < inertia_matrix.rows(); i++) {
 				double mi = inertia_matrix(i,i);
 
 				// optimize damping
@@ -210,7 +210,7 @@ namespace franka_proxy
 				// add new values to matrices
 				damping_matrix_(i, i) = di;
 				stiffness_matrix_(i, i) = ki;
-			}
+			}*/
 
 			// calculate external force
 			Eigen::Matrix<double, 6, 1> f_ext = inertia_matrix * acceleration + damping_matrix_ * velocity + stiffness_matrix_ * position_error;

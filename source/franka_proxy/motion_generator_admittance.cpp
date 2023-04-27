@@ -102,19 +102,55 @@ namespace franka_proxy
 				return current_torques;
 			}
 
-			// get current position
+			//// get current desired position and orientation
+			//Eigen::Affine3d po_d_transform(Eigen::Matrix4d::Map(current_pose_.data()));
+			//Eigen::Vector3d position_d(po_d_transform.translation());
+			//Eigen::Quaterniond orientation_d(po_d_transform.linear());
+
+			//// get current position and orientation
+			//Eigen::Affine3d po_transform(Eigen::Matrix4d::Map(state_.O_T_EE.data()));
+			//Eigen::Vector3d position(po_transform.translation());
+			//Eigen::Quaterniond orientation(po_transform.linear());
+
+			//Eigen::Matrix<double, 6, 1> position_error;
+
+			//// calculate the position error
+			//position_error.head(3) << position - position_d; // transforming to 6x6 as the position error will be mulitplied with the stiffness matrix
+
+			//// calculate orientation error
+			//if (orientation_d.coeffs().dot(orientation.coeffs()) < 0.0) {
+			//	orientation.coeffs() << -orientation.coeffs();
+			//}
+
+			//// "difference" quaternion
+			//Eigen::Quaterniond diff_quaternion(orientation.inverse() * orientation_d);
+			//position_error.tail(3) << diff_quaternion.x(), diff_quaternion.y(), diff_quaternion.z();
+			//// Transform to base frame
+			//position_error.tail(3) << -po_transform.linear() * position_error.tail(3);
+
+			// get current position and orientation
 			Eigen::Affine3d po_transform(Eigen::Matrix4d::Map(state_.O_T_EE.data()));
 			Eigen::Vector3d current_position(po_transform.translation());
-
-			// get current orientation
 			Eigen::Quaterniond orientation(po_transform.linear());
 
 			// calculate/set current_x_
 			Eigen::Matrix<double, 6, 1> position_eq;
 			position_eq.head(3) << current_position;
-			position_eq.tail(3) << orientation.x(), orientation.y(), orientation.z();
+
+			// calculate orientation
+			if (orientation.coeffs().dot(orientation.coeffs()) < 0.0) {
+				orientation.coeffs() << -orientation.coeffs();
+			}
+
+			// "difference" quaternion
+			Eigen::Quaterniond diff_quaternion(orientation.inverse() * orientation);
+			position_eq.tail(3) << diff_quaternion.x(), diff_quaternion.y(), diff_quaternion.z();
 			// Transform to base frame
 			position_eq.tail(3) << -po_transform.linear() * position_eq.tail(3);
+
+			//position_eq.tail(3) << orientation.x(), orientation.y(), orientation.z();
+			// Transform to base frame
+			//position_eq.tail(3) << -po_transform.linear() * position_eq.tail(3);
 
 			// x_i-1 and x_i-2 are required for further calculations
 			if (!initialized_) {
@@ -139,7 +175,7 @@ namespace franka_proxy
 			// only using diagonal elements for damping and stiffness optimization, using complete matrix for output calculations
 			Eigen::Map<const Eigen::Matrix<double, 6, 6>> inertia_matrix(inertia_matrix_ar.data());
 
-			// get ext force
+			// get ext 
 			std::array<double, 6> f_ext_ar = state_.O_F_ext_hat_K;
 
 			// add measured f_ext to array
