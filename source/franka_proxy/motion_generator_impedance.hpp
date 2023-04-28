@@ -71,9 +71,18 @@ namespace franka_proxy
 			std::mutex& state_lock_;
 			franka::RobotState& state_;
 
-			std::array<double, 6> b_ = { 0.03, 0.03, 0.03, 0.036, 0.036, 0.036 };
-			std::array<double, 6> l_d_ = { 1280.0, 460.0, -30.0, 1990.0, -880.0, 1350.0 };
-			std::array<double, 6> u_d_ = { 5035.0, 2000.0, 330.0, 4800.0, 5500.0, 3300.0 };
+			//std::array<double, 6> b_ = { 0.03, 0.03, 0.03, 0.036, 0.036, 0.036 };
+			std::array<double, 6> b_ = { 0.03, 0.03, 0.03, 0.0, 0.0, 0.0 };
+			std::array<double, 6> l_d_ = { 102.0, 102.0, 102.0, 27.0, 27.0, 27.0 };
+			//std::array<double, 6> l_d_ = { 134.0, 134.0, 134.0, 44.72, 44.72, 44.72 };
+			//std::array<double, 6> l_d_ = { -81.241, -81.241, -81.241, -20.1, -20.1, -20.1 };
+			//std::array<double, 6> l_d_ = { 100.0, 100.0, 100.0, 300.0, 300.0, 300.0 };
+			//std::array<double, 6> l_d_ = { 1280.0, 460.0, -30.0, 1990.0, -880.0, 1350.0 };
+			//std::array<double, 6> u_d_ = { 81.241, 81.241, 81.241, 20.1, 20.1, 20.1 };
+			//std::array<double, 6> u_d_ = { 150.0, 150.0, 150.0, 50.0, 50.0, 50.0 };
+			//std::array<double, 6> u_d_ = { 134.0, 134.0, 134.0, 44.72, 44.72, 44.72 };
+			std::array<double, 6> u_d_ = { 102.0, 102.0, 102.0, 27.0, 27.0, 27.0 };
+			//std::array<double, 6> u_d_ = { 5035.0, 2000.0, 330.0, 4800.0, 5500.0, 3300.0 };
 
 			std::array<double, 6> l_x0_ = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
 			std::array<double, 6> u_x0_ = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
@@ -81,8 +90,8 @@ namespace franka_proxy
 			std::array<double, 6> l_derived_x0_ = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
 			std::array<double, 6> u_derived_x0_ = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
 
-			std::array<double, 6> x0_max_ = { 0.025, 0.025, 0.025, 0.025, 0.025, 0.025 };
-			std::array<double, 6> derived_x0_max_ = { 0.03, 0.03, 0.03, 0.03, 0.03, 0.03 };
+			std::array<double, 6> x0_max_ = { 0.025, 0.025, 0.025, 0.0, 0.0, 0.0 };
+			std::array<double, 6> derived_x0_max_ = { 0.03, 0.03, 0.03, 0.0, 0.0, 0.0 };
 
 			double duration_;
 			double time_ = 0.0;
@@ -104,7 +113,9 @@ namespace franka_proxy
 
 			// csv logging
 			std::ofstream csv_log_;
-			std::string csv_header = "time; f_ext j1; f_ext j2; f_ext j3; f_ext j4; f_ext j5; f_ext j6; position_d x; position_d y; position_d z; position x; position y; position z; s j1; s j2; s j3; s j4; s j5; s j6; d j1; d j2; d j3; d j4; d j5; d j6";
+			std::string csv_header = "time; f_ext j1; f_ext j2; f_ext j3; f_ext j4; f_ext j5; f_ext j6; s1; s2; s3; s4; s5; s6; d1; d2; d3; d4; d5; d6";
+			//std::string csv_header = "time; f_ext j1; f_ext j2; f_ext j3; f_ext j4; f_ext j5; f_ext j6; position_d x; position_d y; position_d z; position x; position y; position z; s j1; s j2; s j3; s j4; s j5; s j6; d j1; d j2; d j3; d j4; d j5; d j6";
+			std::ofstream matrix_log_;
 		};
 	} /* namespace detail */
 } /* namespace franka_proxy */
