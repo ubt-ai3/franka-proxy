@@ -58,16 +58,16 @@ namespace franka_proxy
 				{ {100.0, 100.0, 100.0, 100.0, 100.0, 100.0} },
 				{ {100.0, 100.0, 100.0, 100.0, 100.0, 100.0} });
 
-			/*const double translational_stiffness{ 300.0 };
-			const double rotational_stiffness{ 20.0 };*/
+			const double translational_stiffness{300.0};
+			const double rotational_stiffness{ 50.0 };
 
 			// initialize stiffness and damping matrix
-			/*stiffness_matrix_.topLeftCorner(3, 3) << translational_stiffness * Eigen::MatrixXd::Identity(3, 3);
-			stiffness_matrix_.bottomRightCorner(3, 3) << rotational_stiffness * Eigen::MatrixXd::Identity(3, 3);
-			damping_matrix_.topLeftCorner(3, 3) << 2.0 * sqrt(translational_stiffness) *
-				Eigen::MatrixXd::Identity(3, 3);
-			damping_matrix_.bottomRightCorner(3, 3) << 2.0 * sqrt(rotational_stiffness) *
-				Eigen::MatrixXd::Identity(3, 3);*/
+			//stiffness_matrix_.topLeftCorner(3, 3) << translational_stiffness * Eigen::MatrixXd::Identity(3, 3);
+			//stiffness_matrix_.bottomRightCorner(3, 3) << rotational_stiffness * Eigen::MatrixXd::Identity(3, 3);
+			//damping_matrix_.topLeftCorner(3, 3) << 2.0 * sqrt(translational_stiffness) *
+			//	Eigen::MatrixXd::Identity(3, 3);
+			//damping_matrix_.bottomRightCorner(3, 3) << 2.0 * sqrt(rotational_stiffness) *
+			//	Eigen::MatrixXd::Identity(3, 3);
 
 			// position error calculation initialization - initial pose
 			current_pose_ = state_.O_T_EE;
@@ -94,6 +94,7 @@ namespace franka_proxy
 			// only using diagonal elements for damping and stiffness optimization, using complete matrix for output calculations
 			Eigen::Map<const Eigen::Matrix<double, 6, 6>> inertia_matrix(inertia_matrix_ar.data());
 
+			
 			double delta_time = 0.001;
 			// stiffness and damping
 			for (int i = 0; i < inertia_matrix.rows(); i++) {
@@ -105,13 +106,13 @@ namespace franka_proxy
 				// stability check
 				auto current_damping = damping_matrix_(i, i);
 
-				//if (di < current_damping) {
-					auto stability_condition = current_damping - ((current_damping * current_damping * delta_time) / mi) + ((current_damping * 0.0002 * 0.001) / mi);
+				if (di < current_damping) {
+					auto stability_condition = current_damping - ((current_damping * current_damping * delta_time) / mi) + 1.0; // ((current_damping * 0.0002 * 0.001) / mi);
 
 					if (di <= stability_condition) {
 						di = stability_condition;
 					}
-				//}
+				}
 
 				// get stiffness from new calculated damping value
 				double ki = calculate_stiffness_from_damping(di, mi);
@@ -119,7 +120,9 @@ namespace franka_proxy
 				// add new values to matrices
 				damping_matrix_(i, i) = di;
 				stiffness_matrix_(i, i) = ki;
+
 			}
+			
 		};
 
 		impedance_motion_generator::impedance_motion_generator
@@ -147,12 +150,12 @@ namespace franka_proxy
 				{ {100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0} },
 				{ {100.0, 100.0, 100.0, 100.0, 100.0, 100.0} },
 				{ {100.0, 100.0, 100.0, 100.0, 100.0, 100.0} });
-
-			/*const double translational_stiffness{ 150.0 };
-			const double rotational_stiffness{ 10.0 };*/
+			
+			/*const double translational_stiffness{300.0};
+			const double rotational_stiffness{ 50.0 };
 
 			// initialize stiffness and damping matrix
-			/*stiffness_matrix_.topLeftCorner(3, 3) << translational_stiffness * Eigen::MatrixXd::Identity(3, 3);
+			stiffness_matrix_.topLeftCorner(3, 3) << translational_stiffness * Eigen::MatrixXd::Identity(3, 3);
 			stiffness_matrix_.bottomRightCorner(3, 3) << rotational_stiffness * Eigen::MatrixXd::Identity(3, 3);
 			damping_matrix_.topLeftCorner(3, 3) << 2.0 * sqrt(translational_stiffness) *
 				Eigen::MatrixXd::Identity(3, 3);
@@ -189,7 +192,7 @@ namespace franka_proxy
 			Eigen::Matrix<double, 6, 6> inertia_matrix_ar = (jacobian * mass_matrix.inverse() * jacobian.transpose()).inverse();
 			// only using diagonal elements for damping and stiffness optimization, using complete matrix for output calculations
 			Eigen::Map<const Eigen::Matrix<double, 6, 6>> inertia_matrix(inertia_matrix_ar.data());
-
+			
 			 double delta_time = 0.001;
 			// stiffness and damping
 			 for (int i = 0; i < inertia_matrix.rows(); i++) {
@@ -202,7 +205,7 @@ namespace franka_proxy
 				auto current_damping = damping_matrix_(i, i);
 
 				//if (di < current_damping) {
-					auto stability_condition = current_damping - ((current_damping * current_damping * delta_time) / mi) + ((current_damping * 0.0002 * 0.001) / mi);
+				auto stability_condition = current_damping - ((current_damping * current_damping * delta_time) / mi) + 0.0; // ((current_damping * 0.0002 * 0.001) / mi);
 
 					if (di <= stability_condition) {
 						di = stability_condition;
@@ -285,8 +288,8 @@ namespace franka_proxy
 			}
 
 			// calculate delta time for acceleration and joint acceleration calculation
-			// double delta_time = timestamps_.back() - timestamps_.front();
-			double delta_time = 0.001;
+			double delta_time = timestamps_.back() - timestamps_.front();
+			//double delta_time = 0.001;
 
 			// calculate acceleration
 			std::array<double, 6> acc_list_;
