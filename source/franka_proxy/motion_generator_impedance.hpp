@@ -71,15 +71,19 @@ namespace franka_proxy
 			std::mutex& state_lock_;
 			franka::RobotState& state_;
 
+			const double PI = 3.141592653589793238463;
+
 			//std::array<double, 6> b_ = { 0.03, 0.03, 0.03, 0.036, 0.036, 0.036 };
-			std::array<double, 6> b_ = { 0.03, 0.03, 0.03, 0.0, 0.0, 0.0 };
+			//std::array<double, 6> b_ = { 0.03, 0.03, 0.03, 0.0, 0.0, 0.0 };
+			std::array<double, 6> b_ = { 0.04, 0.04, 0.04, PI/6, PI/6, PI/6 };
 			//std::array<double, 6> l_d_ = { 102.0, 102.0, 102.0, 27.0, 27.0, 27.0 };
 			//std::array<double, 6> l_d_ = { 134.0, 134.0, 134.0, 44.72, 44.72, 44.72 };
-			std::array<double, 6> l_d_ = { 81.241, 81.241, 81.241, 20.1, 20.1, 20.1 };
+			std::array<double, 6> l_d_ = { 81.241, 81.241, 81.241, 5.1, 5.1, 5.1 };
 			//std::array<double, 6> l_d_ = { -81.241, -81.241, -81.241, -20.1, -20.1, -20.1 };
 			//std::array<double, 6> l_d_ = { 100.0, 100.0, 100.0, 300.0, 300.0, 300.0 };
 			//std::array<double, 6> l_d_ = { 1280.0, 460.0, -30.0, 1990.0, -880.0, 1350.0 };
-			std::array<double, 6> u_d_ = { 81.241, 81.241, 81.241, 20.1, 20.1, 20.1 };
+			std::array<double, 6> u_d_ = { 81.241, 81.241, 81.241, 5.1, 5.1, 5.1 };
+			//std::array<double, 6> u_d_ = { 81.241, 81.241, 81.241, 20.1, 20.1, 20.1 };
 			//std::array<double, 6> u_d_ = { 150.0, 150.0, 150.0, 50.0, 50.0, 50.0 };
 			//std::array<double, 6> u_d_ = { 134.0, 134.0, 134.0, 44.72, 44.72, 44.72 };
 			//std::array<double, 6> u_d_ = { 102.0, 102.0, 102.0, 27.0, 27.0, 27.0 };
@@ -91,8 +95,10 @@ namespace franka_proxy
 			std::array<double, 6> l_derived_x0_ = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
 			std::array<double, 6> u_derived_x0_ = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
 
-			std::array<double, 6> x0_max_ = { 0.025, 0.025, 0.025, 0.0, 0.0, 0.0 };
-			std::array<double, 6> derived_x0_max_ = { 0.03, 0.03, 0.03, 0.0, 0.0, 0.0 };
+			std::array<double, 6> x0_max_ = { 0.0218, 0.0160, 0.0057, 0.0192, 0.0097, 0.0301 };
+			//std::array<double, 6> x0_max_ = { 0.025, 0.025, 0.025, 0.0, 0.0, 0.0 };
+			std::array<double, 6> derived_x0_max_ = { 0.1729, 0.1240, 0.0635, 0.4331, 0.2396, 0.1633 };
+			//std::array<double, 6> derived_x0_max_ = { 0.03, 0.03, 0.03, 0.0, 0.0, 0.0 };
 
 			double duration_;
 			double time_ = 0.0;
