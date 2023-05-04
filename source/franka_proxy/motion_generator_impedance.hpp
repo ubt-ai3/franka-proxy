@@ -124,6 +124,7 @@ namespace franka_proxy
 			std::string csv_header = "time; f_ext j1; f_ext j2; f_ext j3; f_ext j4; f_ext j5; f_ext j6; s1; s2; s3; s4; s5; s6; d1; d2; d3; d4; d5; d6";
 			//std::string csv_header = "time; f_ext j1; f_ext j2; f_ext j3; f_ext j4; f_ext j5; f_ext j6; position_d x; position_d y; position_d z; position x; position y; position z; s j1; s j2; s j3; s j4; s j5; s j6; d j1; d j2; d j3; d j4; d j5; d j6";
 			std::ofstream matrix_log_;
+			std::ofstream mass_inertia_log_;
 		};
 	} /* namespace detail */
 } /* namespace franka_proxy */

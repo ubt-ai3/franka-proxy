@@ -62,12 +62,12 @@ namespace franka_proxy
 			const double rotational_stiffness{ 50.0 };
 
 			// initialize stiffness and damping matrix
-			//stiffness_matrix_.topLeftCorner(3, 3) << translational_stiffness * Eigen::MatrixXd::Identity(3, 3);
-			//stiffness_matrix_.bottomRightCorner(3, 3) << rotational_stiffness * Eigen::MatrixXd::Identity(3, 3);
-			//damping_matrix_.topLeftCorner(3, 3) << 2.0 * sqrt(translational_stiffness) *
-			//	Eigen::MatrixXd::Identity(3, 3);
-			//damping_matrix_.bottomRightCorner(3, 3) << 2.0 * sqrt(rotational_stiffness) *
-			//	Eigen::MatrixXd::Identity(3, 3);
+			stiffness_matrix_.topLeftCorner(3, 3) << translational_stiffness * Eigen::MatrixXd::Identity(3, 3);
+			stiffness_matrix_.bottomRightCorner(3, 3) << rotational_stiffness * Eigen::MatrixXd::Identity(3, 3);
+			damping_matrix_.topLeftCorner(3, 3) << 2.0 * sqrt(translational_stiffness) *
+				Eigen::MatrixXd::Identity(3, 3);
+			damping_matrix_.bottomRightCorner(3, 3) << 2.0 * sqrt(rotational_stiffness) *
+				Eigen::MatrixXd::Identity(3, 3);
 
 			// position error calculation initialization - initial pose
 			current_pose_ = state_.O_T_EE;
@@ -78,6 +78,8 @@ namespace franka_proxy
 			csv_log_ << csv_header << "\n";
 
 			matrix_log_.open("impedance_matrix_log.csv");
+
+			mass_inertia_log_.open("mass_inertia_log.csv");
 
 			/////////////////////////////////////////////////////////////
 			// get mass matrix
@@ -95,7 +97,7 @@ namespace franka_proxy
 			Eigen::Map<const Eigen::Matrix<double, 6, 6>> inertia_matrix(inertia_matrix_ar.data());
 
 			
-			double delta_time = 0.001;
+			/*double delta_time = 0.001;
 			// stiffness and damping
 			for (int i = 0; i < inertia_matrix.rows(); i++) {
 				double mi = inertia_matrix(i,i);
@@ -121,7 +123,7 @@ namespace franka_proxy
 				damping_matrix_(i, i) = di;
 				stiffness_matrix_(i, i) = ki;
 
-			}
+			}*/
 			
 		};
 
@@ -177,6 +179,8 @@ namespace franka_proxy
 			csv_log_ << csv_header << "\n";
 
 			matrix_log_.open("impedance_matrix_log.csv");
+
+			mass_inertia_log_.open("mass_inertia_log.csv");
 
 			/////////////////////////////////////////////////////////////
 			// get mass matrix
@@ -241,6 +245,7 @@ namespace franka_proxy
 				// close log file
 				csv_log_.close();
 				matrix_log_.close();
+				mass_inertia_log_.close();
 
 				return current_torques;
 			}
@@ -416,6 +421,25 @@ namespace franka_proxy
 			}
 
 			matrix_log_ << damp_mat_log.str();
+
+			mass_inertia_log_ << "Mass Matrix" << ";" << ";" << ";" << ";" << ";" << ";" << ";" << "Inertia Matrix" << "\n";
+			std::ostringstream mass_inertia;
+
+			for (int i = 0; i < 6; i++) {
+				for (int j = 0; j < 6; j++) {
+					mass_inertia << mass_matrix(i, j) << "; ";
+				}
+
+				mass_inertia << "; ";
+
+				for (int j = 0; j < 6; j++) {
+					mass_inertia << mass_matrix(i, j) << "; ";
+				}
+
+				mass_inertia << "\n";
+			}
+
+			mass_inertia_log_ << mass_inertia.str();
 
 			return tau_d_ar;
 		}
