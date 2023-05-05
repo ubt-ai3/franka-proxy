@@ -59,23 +59,16 @@ namespace franka_proxy
 				{ {100.0, 100.0, 100.0, 100.0, 100.0, 100.0} },
 				{ {100.0, 100.0, 100.0, 100.0, 100.0, 100.0} });
 
-			const double translational_stiffness{ 150.0 };
-			const double rotational_stiffness{ 10.0 };
-
 			// initialize stiffness and damping matrix
-			stiffness_matrix_.topLeftCorner(3, 3) << translational_stiffness * Eigen::MatrixXd::Identity(3, 3);
-			stiffness_matrix_.bottomRightCorner(3, 3) << rotational_stiffness * Eigen::MatrixXd::Identity(3, 3);
-			damping_matrix_.topLeftCorner(3, 3) << 2.0 * sqrt(translational_stiffness) *
+			stiffness_matrix_.topLeftCorner(3, 3) << translational_stiffness_ * Eigen::MatrixXd::Identity(3, 3);
+			stiffness_matrix_.bottomRightCorner(3, 3) << rotational_stiffness_ * Eigen::MatrixXd::Identity(3, 3);
+			damping_matrix_.topLeftCorner(3, 3) << 2.0 * sqrt(translational_stiffness_) *
 				Eigen::MatrixXd::Identity(3, 3);
-			damping_matrix_.bottomRightCorner(3, 3) << 2.0 * sqrt(rotational_stiffness) *
+			damping_matrix_.bottomRightCorner(3, 3) << 2.0 * sqrt(rotational_stiffness_) *
 				Eigen::MatrixXd::Identity(3, 3);
 
 			// start logging to csv file
 			csv_log_.open("admittance.csv");
-			csv_prod1_log_.open("admittance_prod1.csv");
-			force_log_.open("force_log.csv");
-			force_log_ << "time; f_ext1; f_ext2; f_ext3; f_ext4; f_ext5; f_ext6; ft1; ft2; ft3; ft4; ft5; ft6" << "\n";
-			noise_log_.open("force_noise_log.csv");
 		}
 
 		franka::Torques admittance_motion_generator::callback
@@ -89,66 +82,22 @@ namespace franka_proxy
 
 			time_ += period.toSec();
 
-			// TODO: check return type of function
 			if (time_ > duration_) {
 				// motion finished
-				// todo this may be wrong! -> comment from other motion generator
 				franka::Torques current_torques(state_.tau_J);
 				current_torques.motion_finished = true;
 				csv_log_.close();
-				csv_prod1_log_.close();
-				force_log_.close();
-				noise_log_.close();
 
 				return current_torques;
 			}
-
-			//// get current desired position and orientation
-			//Eigen::Affine3d po_d_transform(Eigen::Matrix4d::Map(current_pose_.data()));
-			//Eigen::Vector3d position_d(po_d_transform.translation());
-			//Eigen::Quaterniond orientation_d(po_d_transform.linear());
-
-			//// get current position and orientation
-			//Eigen::Affine3d po_transform(Eigen::Matrix4d::Map(state_.O_T_EE.data()));
-			//Eigen::Vector3d position(po_transform.translation());
-			//Eigen::Quaterniond orientation(po_transform.linear());
-
-			//Eigen::Matrix<double, 6, 1> position_error;
-
-			//// calculate the position error
-			//position_error.head(3) << position - position_d; // transforming to 6x6 as the position error will be mulitplied with the stiffness matrix
-
-			//// calculate orientation error
-			//if (orientation_d.coeffs().dot(orientation.coeffs()) < 0.0) {
-			//	orientation.coeffs() << -orientation.coeffs();
-			//}
-
-			//// "difference" quaternion
-			//Eigen::Quaterniond diff_quaternion(orientation.inverse() * orientation_d);
-			//position_error.tail(3) << diff_quaternion.x(), diff_quaternion.y(), diff_quaternion.z();
-			//// Transform to base frame
-			//position_error.tail(3) << -po_transform.linear() * position_error.tail(3);
 
 			// get current position and orientation
 			Eigen::Affine3d po_transform(Eigen::Matrix4d::Map(state_.O_T_EE.data()));
 			Eigen::Vector3d current_position(po_transform.translation());
 			Eigen::Quaterniond orientation(po_transform.linear());
 
-			// calculate/set current_x_
 			Eigen::Matrix<double, 6, 1> position_eq;
 			position_eq.head(3) << current_position;
-
-			// calculate orientation
-			/*if (orientation.coeffs().dot(orientation.coeffs()) < 0.0) {
-				orientation.coeffs() << -orientation.coeffs();
-			}*/
-
-			//// "difference" quaternion
-			//Eigen::Quaterniond diff_quaternion(orientation.inverse() * orientation);
-			//position_eq.tail(3) << diff_quaternion.x(), diff_quaternion.y(), diff_quaternion.z();
-			//// Transform to base frame
-			//position_eq.tail(3) << -po_transform.linear() * position_eq.tail(3);
-
 			position_eq.tail(3) << orientation.x(), orientation.y(), orientation.z();
 			// Transform to base frame
 			position_eq.tail(3) << -po_transform.linear() * position_eq.tail(3);
@@ -172,22 +121,11 @@ namespace franka_proxy
 
 			// calculate inertia matrix
 			// intertia = (J(q)*B^(-1)(q)*J(q).transpose())^(-1)
-			Eigen::Matrix<double, 6, 6> inertia_matrix_ar = (jacobian * mass_matrix.inverse() * jacobian.transpose()).inverse();
-			// only using diagonal elements for damping and stiffness optimization, using complete matrix for output calculations
-			Eigen::Map<const Eigen::Matrix<double, 6, 6>> inertia_matrix(inertia_matrix_ar.data());
-
-			// test
-			std::array<double, 7> gravity_array = model_.gravity(state_);
-			Eigen::Map<Eigen::Matrix<double, 7, 1>> gravity(gravity_array.data());
-			Eigen::Map<Eigen::Matrix<double, 7, 1>> tau_measured(state_.tau_J.data());
-			Eigen::VectorXd tau_existing = tau_measured - gravity;
-			auto ft_existing = jacobian * tau_existing;
-
-			//std::array<double, 6> f_ext_ar;
-			//Eigen::VectorXd::Map(&f_ext_ar[0], 6) = ft_existing;
+			Eigen::Matrix<double, 6, 6> inertia_matrix = (jacobian * mass_matrix.inverse() * jacobian.transpose()).inverse();
 
 			// get f ext 
 			std::array<double, 6> f_ext_ar = state_.O_F_ext_hat_K;
+			Eigen::Map<const Eigen::Matrix<double, 6, 1>> f_ext_(f_ext_ar.data());
 
 			// filter model discrepancy noise
 			for (int i = 0; i < 6; i++) {
@@ -265,20 +203,9 @@ namespace franka_proxy
 			x_i_2_ = x_i_1_;
 			x_i_1_ = x_i;
 
-
-			//// test
-			Eigen::Map<const Eigen::Matrix<double, 6, 1>> f_ext_(f_ext_ar.data());
-			//std::array<double, 7> gravity_array = model_.gravity(state_);
-			//Eigen::Map<Eigen::Matrix<double, 7, 1>> gravity(gravity_array.data());
-			//Eigen::Map<Eigen::Matrix<double, 7, 1>> tau_measured(state_.tau_J.data());
-			//Eigen::VectorXd tau_existing = tau_measured - gravity;
-			//auto ft_existing = jacobian * tau_existing;
-
 			// log to csv
 			std::ostringstream f_ext_log;
 			f_ext_log << f_ext_(0) << "; " << f_ext_(1) << "; " << f_ext_(2) << "; " << f_ext_(3) << "; " << f_ext_(4) << "; " << f_ext_(5);
-			std::ostringstream ft_existing_log_;
-			ft_existing_log_ << ft_existing(0) << "; " << ft_existing(1) << "; " << ft_existing(2) << "; " << ft_existing(3) << "; " << ft_existing(4) << "; " << ft_existing(5);
 			std::ostringstream x_i_log;
 			x_i_log << x_i(0) << "; " << x_i(1) << "; " << x_i(2) << "; " << x_i(3) << "; " << x_i(4) << "; " << x_i(5);
 			std::ostringstream x_e_log;
@@ -291,34 +218,9 @@ namespace franka_proxy
 			f_ext_middle_log << f_ext_middle[0] << "; " << f_ext_middle[1] << "; " << f_ext_middle[2] << "; " << f_ext_middle[3] << "; " << f_ext_middle[4] << "; " << f_ext_middle[5];
 
 			std::ostringstream current_values;
-			current_values << time_ << "; " << "; " << f_ext_log.str() << "; " << "; " << ft_existing_log_.str() << "; " << "; " << x_i_log.str() << "; " << "; " << x_e_log.str() << "; " << "; " << current_force_log.str();
+			current_values << time_ << "; " << "; " << f_ext_log.str() << "; " << "; " << x_i_log.str() << "; " << "; " << x_e_log.str() << "; " << "; " << current_force_log.str();
 
 			csv_log_ << current_values.str() << "\n";
-
-			std::ostringstream prod1_log_;
-			prod1_log_ << time_;
-
-			for (int i = 0; i < 6; i++) {
-				prod1_log_ << "; " << x_i_prod1(i, 0) << "; " << x_i_prod1(i, 1) << "; " << x_i_prod1(i, 2) << "; " << x_i_prod1(i, 3) << "; " << x_i_prod1(i, 4) << "; " << x_i_prod1(i, 5) << "\n";
-			}
-
-			prod1_log_ << "\n";
-
-			csv_prod1_log_ << prod1_log_.str();
-
-			std::ostringstream current_noise_values;
-			current_noise_values << time_ << "; " << "; " << f_ext_log.str() << "; " << "; " << f_ext_middle_log.str();
-			noise_log_ << current_noise_values.str() << "\n";
-
-			std::ostringstream f_ext_ar_log;
-			f_ext_ar_log << f_ext_ar[0] << "; " << f_ext_ar[1] << "; " << f_ext_ar[2] << "; " << f_ext_ar[3] << "; " << f_ext_ar[4] << "; " << f_ext_ar[5];
-			std::ostringstream ft_log;
-			ft_log << ft_existing(0) << "; " << ft_existing(1) << "; " << ft_existing(2) << "; " << ft_existing(3) << "; " << ft_existing(4) << "; " << ft_existing(5) << "; " << sqrt(f_ext_ar[3]* f_ext_ar[3] + f_ext_ar[4] * f_ext_ar[4] + f_ext_ar[5] * f_ext_ar[5]);
-			// x, y, z below 2.0/N
-			// or x, y, z below 1.0/Nm
-			std::ostringstream f_val;
-			f_val << time_ << "; " << f_ext_ar_log.str() << "; " << ft_log.str() << "\n";
-			force_log_ << f_val.str();
 
 			return impedance_controller_.callback
 			(state_, period,

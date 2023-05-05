@@ -72,6 +72,8 @@ namespace franka_proxy
 			Eigen::Matrix<double, 6, 1> x_i_2_;
 
 			// damping and stiffness matrix
+			double translational_stiffness_ = 150.0;
+			double rotational_stiffness_ = 10.0;
 			Eigen::Matrix<double, 6, 6> damping_matrix_ = Eigen::Matrix<double, 6, 6>::Zero();
 			Eigen::Matrix<double, 6, 6> stiffness_matrix_ = Eigen::Matrix<double, 6, 6>::Zero();
 
@@ -80,9 +82,6 @@ namespace franka_proxy
 
 			// csv logging
 			std::ofstream csv_log_;
-			std::ofstream csv_prod1_log_;
-			std::ofstream force_log_;
-			std::ofstream noise_log_;
 		};
 
 

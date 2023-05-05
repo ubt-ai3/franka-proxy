@@ -58,15 +58,12 @@ namespace franka_proxy
 				{ {100.0, 100.0, 100.0, 100.0, 100.0, 100.0} },
 				{ {100.0, 100.0, 100.0, 100.0, 100.0, 100.0} });
 
-			const double translational_stiffness{300.0};
-			const double rotational_stiffness{ 50.0 };
-
 			// initialize stiffness and damping matrix
-			stiffness_matrix_.topLeftCorner(3, 3) << translational_stiffness * Eigen::MatrixXd::Identity(3, 3);
-			stiffness_matrix_.bottomRightCorner(3, 3) << rotational_stiffness * Eigen::MatrixXd::Identity(3, 3);
-			damping_matrix_.topLeftCorner(3, 3) << 2.0 * sqrt(translational_stiffness) *
+			stiffness_matrix_.topLeftCorner(3, 3) << translational_stiffness_ * Eigen::MatrixXd::Identity(3, 3);
+			stiffness_matrix_.bottomRightCorner(3, 3) << rotational_stiffness_ * Eigen::MatrixXd::Identity(3, 3);
+			damping_matrix_.topLeftCorner(3, 3) << 2.0 * sqrt(translational_stiffness_) *
 				Eigen::MatrixXd::Identity(3, 3);
-			damping_matrix_.bottomRightCorner(3, 3) << 2.0 * sqrt(rotational_stiffness) *
+			damping_matrix_.bottomRightCorner(3, 3) << 2.0 * sqrt(rotational_stiffness_) *
 				Eigen::MatrixXd::Identity(3, 3);
 
 			// position error calculation initialization - initial pose
@@ -76,56 +73,6 @@ namespace franka_proxy
 			// start logging to csv file
 			csv_log_.open("impedance_log.csv");
 			csv_log_ << csv_header << "\n";
-
-			matrix_log_.open("impedance_matrix_log.csv");
-
-			mass_inertia_log_.open("mass_inertia_log.csv");
-
-			/////////////////////////////////////////////////////////////
-			// get mass matrix
-			std::array<double, 49> mass_ar = model_.mass(state_);
-			Eigen::Map<const Eigen::Matrix<double, 7, 7>> mass_matrix(mass_ar.data());
-
-			// get jacobian
-			std::array<double, 42> jac_ar = model_.zeroJacobian(franka::Frame::kEndEffector, state_);
-			Eigen::Map<const Eigen::Matrix<double, 6, 7>> jacobian(jac_ar.data());
-
-			// calculate inertia matrix
-			// intertia = (J(q)*B^(-1)(q)*J(q).transpose())^(-1)
-			Eigen::Matrix<double, 6, 6> inertia_matrix_ar = (jacobian * mass_matrix.inverse() * jacobian.transpose()).inverse();
-			//Eigen::Matrix<double, 6, 6> inertia_matrix_ar = ((jacobian.transpose()).inverse() * mass_matrix * jacobian.inverse());
-			// only using diagonal elements for damping and stiffness optimization, using complete matrix for output calculations
-			Eigen::Map<const Eigen::Matrix<double, 6, 6>> inertia_matrix(inertia_matrix_ar.data());
-
-			
-			/*double delta_time = 0.001;
-			// stiffness and damping
-			for (int i = 0; i < inertia_matrix.rows() - 3; i++) {
-				double mi = inertia_matrix(i,i);
-
-				// optimize damping
-				double di = optimizeDamping(l_d_[i], u_d_[i], mi, b_[i], x0_max_[i], derived_x0_max_[i]);
-
-				// stability check
-				auto current_damping = damping_matrix_(i, i);
-
-				if (di < current_damping) {
-					auto stability_condition = current_damping - ((current_damping * current_damping * delta_time) / mi) + 1.0; // ((current_damping * 0.0002 * 0.001) / mi);
-
-					if (di <= stability_condition) {
-						di = stability_condition;
-					}
-				}
-
-				// get stiffness from new calculated damping value
-				double ki = calculate_stiffness_from_damping(di, mi);
-
-				// add new values to matrices
-				damping_matrix_(i, i) = di;
-				stiffness_matrix_(i, i) = ki;
-
-			}*/
-			
 		};
 
 		impedance_motion_generator::impedance_motion_generator
@@ -153,16 +100,13 @@ namespace franka_proxy
 				{ {100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0} },
 				{ {100.0, 100.0, 100.0, 100.0, 100.0, 100.0} },
 				{ {100.0, 100.0, 100.0, 100.0, 100.0, 100.0} });
-			
-			const double translational_stiffness{300.0};
-			const double rotational_stiffness{ 50.0 };
 
 			// initialize stiffness and damping matrix
-			stiffness_matrix_.topLeftCorner(3, 3) << translational_stiffness * Eigen::MatrixXd::Identity(3, 3);
-			stiffness_matrix_.bottomRightCorner(3, 3) << rotational_stiffness * Eigen::MatrixXd::Identity(3, 3);
-			damping_matrix_.topLeftCorner(3, 3) << 2.0 * sqrt(translational_stiffness) *
+			stiffness_matrix_.topLeftCorner(3, 3) << translational_stiffness_ * Eigen::MatrixXd::Identity(3, 3);
+			stiffness_matrix_.bottomRightCorner(3, 3) << rotational_stiffness_ * Eigen::MatrixXd::Identity(3, 3);
+			damping_matrix_.topLeftCorner(3, 3) << 2.0 * sqrt(translational_stiffness_) *
 				Eigen::MatrixXd::Identity(3, 3);
-			damping_matrix_.bottomRightCorner(3, 3) << 2.0 * sqrt(rotational_stiffness) *
+			damping_matrix_.bottomRightCorner(3, 3) << 2.0 * sqrt(rotational_stiffness_) *
 				Eigen::MatrixXd::Identity(3, 3);
 
 			// position error calculation initialization - initial pose
@@ -178,53 +122,6 @@ namespace franka_proxy
 			// start logging to csv file
 			csv_log_.open("impedance_log.csv");
 			csv_log_ << csv_header << "\n";
-
-			matrix_log_.open("impedance_matrix_log.csv");
-
-			mass_inertia_log_.open("mass_inertia_log.csv");
-
-			/////////////////////////////////////////////////////////////
-			// get mass matrix
-			std::array<double, 49> mass_ar = model_.mass(state_);
-			Eigen::Map<const Eigen::Matrix<double, 7, 7>> mass_matrix(mass_ar.data());
-
-			// get jacobian
-			std::array<double, 42> jac_ar = model_.zeroJacobian(franka::Frame::kEndEffector, state_);
-			Eigen::Map<const Eigen::Matrix<double, 6, 7>> jacobian(jac_ar.data());
-
-			// calculate inertia matrix
-			// intertia = (J(q)*B^(-1)(q)*J(q).transpose())^(-1)
-			Eigen::Matrix<double, 6, 6> inertia_matrix_ar = (jacobian * mass_matrix.inverse() * jacobian.transpose()).inverse();
-			// only using diagonal elements for damping and stiffness optimization, using complete matrix for output calculations
-			Eigen::Map<const Eigen::Matrix<double, 6, 6>> inertia_matrix(inertia_matrix_ar.data());
-
-			 /*double delta_time = 0.001;
-			 // stiffness and damping
-			 for (int i = 0; i < inertia_matrix.rows() - 3; i++) {
-				 double mi = inertia_matrix(i, i);
-
-				 // optimize damping
-				 double di = optimizeDamping(l_d_[i], u_d_[i], mi, b_[i], x0_max_[i], derived_x0_max_[i]);
-
-				 // stability check
-				 auto current_damping = damping_matrix_(i, i);
-
-				 if (di < current_damping) {
-					 auto stability_condition = current_damping - ((current_damping * current_damping * delta_time) / mi) + 1.0; // ((current_damping * 0.0002 * 0.001) / mi);
-
-					 if (di <= stability_condition) {
-						 di = stability_condition;
-					 }
-				 }
-
-				 // get stiffness from new calculated damping value
-				 double ki = calculate_stiffness_from_damping(di, mi);
-
-				 // add new values to matrices
-				 damping_matrix_(i, i) = di;
-				 stiffness_matrix_(i, i) = ki;
-
-			 }*/
 		}
 
 		franka::Torques impedance_motion_generator::callback
@@ -246,8 +143,6 @@ namespace franka_proxy
 
 				// close log file
 				csv_log_.close();
-				matrix_log_.close();
-				mass_inertia_log_.close();
 
 				return current_torques;
 			}
@@ -270,17 +165,7 @@ namespace franka_proxy
 
 			// calculate inertia matrix
 			// intertia = (J(q)*B^(-1)(q)*J(q).transpose())^(-1)
-			Eigen::Matrix<double, 6, 6> inertia_matrix_ar = (jacobian * mass_matrix.inverse() * jacobian.transpose()).inverse();
-			/*/auto jacobian_transposed = jacobian.transpose();
-			auto jacobian_t_inverse = jacobian_transposed.inverse();
-			std::cout << jacobian.rows() << "   " << jacobian.cols() << "\n";
-			std::cout << jacobian_transposed.rows() << "   " << jacobian_transposed.cols() << "\n";
-			std::cout << jacobian_t_inverse.rows() << "   " << jacobian_t_inverse.cols() << "\n";
-			Eigen::Matrix<double, 6, 6> inertia_matrix_ar = jacobian_t_inverse * mass_matrix; // *jacobian.inverse();*/
-			//Eigen::Matrix<double, 6, 6> inertia_matrix_ar = jacobian_transposed.inverse() * mass_matrix * jacobian_inverse;
-
-			// only using diagonal elements for damping and stiffness optimization, using complete matrix for output calculations
-			Eigen::Map<const Eigen::Matrix<double, 6, 6>> inertia_matrix(inertia_matrix_ar.data());
+			Eigen::Matrix<double, 6, 6> inertia_matrix = (jacobian * mass_matrix.inverse() * jacobian.transpose()).inverse();
 
 			// get current velocity
 			Eigen::Map<const Eigen::Matrix<double, 7, 1>> dq(state_.dq.data());
@@ -305,7 +190,6 @@ namespace franka_proxy
 
 			// calculate delta time for acceleration and joint acceleration calculation
 			double delta_time = timestamps_.back() - timestamps_.front();
-			//double delta_time = 0.001;
 
 			// calculate acceleration
 			std::array<double, 6> acc_list_;
@@ -351,8 +235,6 @@ namespace franka_proxy
 				timestamps_.pop_front();
 			}
 
-			
-			// double delta_time = 0.001;
 			// stiffness and damping
 			for (int i = 0; i < inertia_matrix.rows() - 3; i++) {
 				double mi = inertia_matrix(i,i);
@@ -408,53 +290,6 @@ namespace franka_proxy
 			//current_values << time_ << "; " << f_ext_log.str() << "; " << position_d_log.str() << "; " << position_log.str() << "; " << stiffness_matrix_log.str() << "; " << damping_matrix_log.str();
 
 			csv_log_ << current_values.str() << "\n";
-
-			matrix_log_ << "\n" << "Stiffness Matrix" << "\n";
-			std::ostringstream stiff_mat_log;
-
-			for (int i = 0; i < 6; i++) {
-				for (int j = 0; j < 6; j++) {
-					stiff_mat_log << stiffness_matrix_(i, j) << "; ";
-				}
-
-				stiff_mat_log << "\n";
-			}
-
-			matrix_log_ << stiff_mat_log.str();
-
-			matrix_log_ << "\n" << "Damping Matrix" << "\n";
-			std::ostringstream damp_mat_log;
-
-			for (int i = 0; i < 6; i++) {
-				for (int j = 0; j < 6; j++) {
-					damp_mat_log << damping_matrix_(i, j) << "; ";
-				}
-
-				damp_mat_log << "\n";
-			}
-
-			matrix_log_ << damp_mat_log.str();
-
-			mass_inertia_log_ << "Mass Matrix" << ";" << ";" << ";" << ";" << ";" << ";" << ";" << "Inertia Matrix" << "\n";
-			std::ostringstream mass_inertia;
-
-			for (int i = 0; i < mass_matrix.rows(); i++) {
-				for (int j = 0; j < mass_matrix.rows(); j++) {
-					mass_inertia << mass_matrix(i, j) << "; ";
-				}
-
-				mass_inertia << "; ";
-
-				if (i < 6) {
-					for (int j = 0; j < inertia_matrix.rows(); j++) {
-						mass_inertia << inertia_matrix(i, j) << "; ";
-					}
-				}
-				
-				mass_inertia << "\n";
-			}
-
-			mass_inertia_log_ << mass_inertia.str();
 
 			return tau_d_ar;
 		}
@@ -519,10 +354,6 @@ namespace franka_proxy
 			double ki_ = di * di;
 
 			if (mi <= 0) {
-				// ki = ki/4;
-				// do nothing and return (di^2) ???
-			}
-			else {
 				ki_ = ki_ / (4 * mi);
 			}
 
