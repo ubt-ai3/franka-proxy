@@ -93,12 +93,74 @@ void to_json(nlohmann::json& json, const command_apply_admittance& object)
 {
 	json["type"] = command_apply_admittance::type;
 	json["duration"] = object.duration;
+	json["log"] = object.log;
 }
 
 
 void from_json(const nlohmann::json& json, command_apply_admittance& object)
 {
 	json.at("duration").get_to(object.duration);
+	json.at("log").get_to(object.log);
+}
+
+
+
+
+//////////////////////////////////////////////////////////////////////////
+//
+// command_apply_admittance_adm_desired_stiffness
+//
+//////////////////////////////////////////////////////////////////////////
+
+
+void to_json(nlohmann::json& json, const command_apply_admittance_adm_desired_stiffness& object)
+{
+	json["type"] = command_apply_admittance_adm_desired_stiffness::type;
+	json["duration"] = object.duration;
+	json["log"] = object.log;
+	json["rotational_stiffness"] = object.rotational_stiffness;
+	json["translational_stiffness"] = object.translational_stiffness;
+}
+
+
+void from_json(const nlohmann::json& json, command_apply_admittance_adm_desired_stiffness& object)
+{
+	json.at("duration").get_to(object.duration);
+	json.at("log").get_to(object.log);
+	json.at("rotational_stiffness").get_to(object.rotational_stiffness);
+	json.at("translational_stiffness").get_to(object.translational_stiffness);
+}
+
+
+
+
+//////////////////////////////////////////////////////////////////////////
+//
+// command_apply_admittance_adm_imp_desired_stiffness
+//
+//////////////////////////////////////////////////////////////////////////
+
+
+void to_json(nlohmann::json& json, const command_apply_admittance_adm_imp_desired_stiffness& object)
+{
+	json["type"] = command_apply_admittance_adm_imp_desired_stiffness::type;
+	json["duration"] = object.duration;
+	json["log"] = object.log;
+	json["adm_rotational_stiffness"] = object.adm_rotational_stiffness;
+	json["adm_translational_stiffness"] = object.adm_translational_stiffness;
+	json["imp_rotational_stiffness"] = object.imp_rotational_stiffness;
+	json["imp_translational_stiffness"] = object.imp_translational_stiffness;
+}
+
+
+void from_json(const nlohmann::json& json, command_apply_admittance_adm_imp_desired_stiffness& object)
+{
+	json.at("duration").get_to(object.duration);
+	json.at("log").get_to(object.log);
+	json.at("adm_rotational_stiffness").get_to(object.adm_rotational_stiffness);
+	json.at("adm_translational_stiffness").get_to(object.adm_translational_stiffness);
+	json.at("imp_rotational_stiffness").get_to(object.imp_rotational_stiffness);
+	json.at("imp_translational_stiffness").get_to(object.imp_translational_stiffness);
 }
 
 
@@ -132,14 +194,14 @@ void from_json(const nlohmann::json& json, command_impedance_hold_pose& object)
 
 //////////////////////////////////////////////////////////////////////////
 //
-// command_impedance_hold_pose
+// command_impedance_hold_pose_desired_stiffness
 //
 //////////////////////////////////////////////////////////////////////////
 
 
 void to_json(nlohmann::json& json, const command_impedance_hold_pose_desired_stiffness& object)
 {
-	json["type"] = command_impedance_hold_pose::type;
+	json["type"] = command_impedance_hold_pose_desired_stiffness::type;
 	json["duration"] = object.duration;
 	json["log"] = object.log;
 	json["use_stiff_damp_online_calc"] = object.use_stiff_damp_online_calc;
@@ -190,14 +252,14 @@ void from_json(const nlohmann::json& json, command_impedance_poses& object)
 
 //////////////////////////////////////////////////////////////////////////
 //
-// command_impedance_poses
+// command_impedance_poses_desired_stiffness
 //
 //////////////////////////////////////////////////////////////////////////
 
 
 void to_json(nlohmann::json& json, const command_impedance_poses_desired_stiffness& object)
 {
-	json["type"] = command_impedance_poses::type;
+	json["type"] = command_impedance_poses_desired_stiffness::type;
 	json["poses"] = object.poses;
 	json["duration"] = object.duration;
 	json["log"] = object.log;
