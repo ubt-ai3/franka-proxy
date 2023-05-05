@@ -98,7 +98,7 @@ namespace franka_proxy
 			Eigen::Map<const Eigen::Matrix<double, 6, 6>> inertia_matrix(inertia_matrix_ar.data());
 
 			
-			double delta_time = 0.001;
+			/*double delta_time = 0.001;
 			// stiffness and damping
 			for (int i = 0; i < inertia_matrix.rows() - 3; i++) {
 				double mi = inertia_matrix(i,i);
@@ -124,7 +124,7 @@ namespace franka_proxy
 				damping_matrix_(i, i) = di;
 				stiffness_matrix_(i, i) = ki;
 
-			}
+			}*/
 			
 		};
 
@@ -198,7 +198,7 @@ namespace franka_proxy
 			// only using diagonal elements for damping and stiffness optimization, using complete matrix for output calculations
 			Eigen::Map<const Eigen::Matrix<double, 6, 6>> inertia_matrix(inertia_matrix_ar.data());
 
-			 double delta_time = 0.001;
+			 /*double delta_time = 0.001;
 			 // stiffness and damping
 			 for (int i = 0; i < inertia_matrix.rows() - 3; i++) {
 				 double mi = inertia_matrix(i, i);
@@ -224,7 +224,7 @@ namespace franka_proxy
 				 damping_matrix_(i, i) = di;
 				 stiffness_matrix_(i, i) = ki;
 
-			 }
+			 }*/
 		}
 
 		franka::Torques impedance_motion_generator::callback
@@ -351,7 +351,7 @@ namespace franka_proxy
 				timestamps_.pop_front();
 			}
 
-			/*
+			
 			// double delta_time = 0.001;
 			// stiffness and damping
 			for (int i = 0; i < inertia_matrix.rows() - 3; i++) {
@@ -378,7 +378,7 @@ namespace franka_proxy
 				damping_matrix_(i, i) = di;
 				stiffness_matrix_(i, i) = ki;
 
-			}*/
+			}
 
 			Eigen::Matrix<double, 6, 1> position_error(get_position_error(time_));
 
