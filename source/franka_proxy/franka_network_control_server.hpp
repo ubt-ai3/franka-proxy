@@ -79,6 +79,8 @@ private:
 	command_generic_response process_command(const command_move_hybrid_sequence&);
 	command_generic_response process_command(const command_move_until_contact&);
 	command_generic_response process_command(const command_apply_admittance&);
+	command_generic_response process_command(const command_apply_admittance_adm_desired_stiffness&);
+	command_generic_response process_command(const command_apply_admittance_adm_imp_desired_stiffness&);
 	command_generic_response process_command(const command_impedance_hold_pose&);
 	command_generic_response process_command(const command_impedance_hold_pose_desired_stiffness&);
 	command_generic_response process_command(const command_impedance_poses&);

@@ -84,7 +84,17 @@ public:
 	/**
 	 * Admittance controller
 	*/
-	void apply_admittance(double duration);
+	void apply_admittance(double duration, bool log);
+
+	/**
+	 * Admittance controller using desired rotational and translational stiffness within the admittance controller
+	*/
+	void apply_admittance(double duration, bool log, double rotational_stiffness, double translational_stiffness);
+
+	/**
+	 * Admittance controller using desired rotational and translational stiffness within the admittance and the impedance controller
+	*/
+	void apply_admittance(double duration, bool log, double adm_rotational_stiffness, double adm_translational_stiffness, double imp_rotational_stiffness, double imp_translational_stiffness);
 
 	/**
 	 * Impedance controller to hold the current pose

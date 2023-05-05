@@ -111,7 +111,15 @@ namespace franka_proxy
 		/**
 		 * Admittance controller
 		 */
-		void apply_admittance(double duration);
+		void apply_admittance(double duration, bool log);
+		/**
+		 * Admittance controller using desired admittance rotational and translational stiffness parameter
+		 */
+		void apply_admittance(double duration, bool log, double rotational_stiffness, double translational_stiffness);
+		/**
+		 * Admittance controller using desired admittance and impedance rotational and translational stiffness parameter
+		 */
+		void apply_admittance(double duration, bool log, double adm_rotational_stiffness, double adm_translational_stiffness, double imp_rotational_stiffness, double imp_translational_stiffness);
 		/**
 		 * Impedance controller to hold the current pose
 		 */

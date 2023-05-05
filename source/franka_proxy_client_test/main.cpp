@@ -138,7 +138,9 @@ int main()
 
 	std::cout << "Starting Admittance - Apply Force Test." << std::endl;
 
-	controller.apply_admittance(120);
+	controller.apply_admittance(120, false);
+	//controller.apply_admittance(120, false, 300, 30);
+	//controller.apply_admittance(120, false, 500, 50, 150, 10);
 
 	std::cout << "Finished Admittance - Apply Force Test." << std::endl;
 

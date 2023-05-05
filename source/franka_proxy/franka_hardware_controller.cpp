@@ -111,11 +111,76 @@ namespace franka_proxy
 		set_control_loop_running(false);
 	}
 
-	void franka_hardware_controller::apply_admittance(const double duration)
+	void franka_hardware_controller::apply_admittance(const double duration, const bool log)
 	{
-		const bool log = false;
-
 		detail::admittance_motion_generator motion_generator(robot_, robot_state_lock_, robot_state_, duration, log);
+
+		try
+		{
+			set_control_loop_running(true);
+			{
+				// Lock the current_state_lock_ to wait for state_thread_ to finish.
+				std::lock_guard<std::mutex> state_guard(robot_state_lock_);
+			}
+
+			robot_.control(
+				[&](const franka::RobotState& robot_state,
+					franka::Duration period) -> franka::Torques
+				{
+					return motion_generator.callback(robot_state, period);
+				}, true, 10.0
+			);
+		}
+		catch (const franka::Exception&)
+		{
+			set_control_loop_running(false);
+			throw;
+		}
+
+		set_control_loop_running(false);
+	}
+
+	void franka_hardware_controller::apply_admittance(const double duration, const bool log, const double rotational_stiffness, const double translational_stiffness)
+	{
+		detail::admittance_motion_generator motion_generator(robot_, robot_state_lock_, robot_state_, duration, log);
+
+		motion_generator.set_admittance_rotational_stiffness(rotational_stiffness);
+		motion_generator.set_admittance_translational_stiffness(translational_stiffness);
+
+		try
+		{
+			set_control_loop_running(true);
+			{
+				// Lock the current_state_lock_ to wait for state_thread_ to finish.
+				std::lock_guard<std::mutex> state_guard(robot_state_lock_);
+			}
+
+			robot_.control(
+				[&](const franka::RobotState& robot_state,
+					franka::Duration period) -> franka::Torques
+				{
+					return motion_generator.callback(robot_state, period);
+				}, true, 10.0
+			);
+		}
+		catch (const franka::Exception&)
+		{
+			set_control_loop_running(false);
+			throw;
+		}
+
+		set_control_loop_running(false);
+	}
+
+	void franka_hardware_controller::apply_admittance(const double duration, const bool log, const double adm_rotational_stiffness, const double adm_translational_stiffness, const double imp_rotational_stiffness, const double imp_translational_stiffness)
+	{
+		detail::admittance_motion_generator motion_generator(robot_, robot_state_lock_, robot_state_, duration, log);
+
+		motion_generator.set_admittance_rotational_stiffness(adm_rotational_stiffness);
+		motion_generator.set_admittance_translational_stiffness(adm_translational_stiffness);
+
+		motion_generator.set_impedance_rotational_stiffness(imp_rotational_stiffness);
+		motion_generator.set_impedance_translational_stiffness(imp_translational_stiffness);
 
 		try
 		{

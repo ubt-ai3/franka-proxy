@@ -118,10 +118,66 @@ struct command_apply_admittance
 	static constexpr char type[] = "admittance.apply";
 
 	double duration;
+	bool log;
 };
 
 void to_json(nlohmann::json&, const command_apply_admittance& object);
 void from_json(const nlohmann::json& json, command_apply_admittance& object);
+
+
+
+
+/**
+ *************************************************************************
+ *
+ * @class command_apply_admittance_adm_desired_stiffness
+ *
+ * Commands the robot to use the admittance controller with desired
+ * rotational and translational stiffness within the admittance controller
+ *
+ ************************************************************************/
+struct command_apply_admittance_adm_desired_stiffness
+{
+	using response_type = command_generic_response;
+	static constexpr char type[] = "admittance.apply_adm_desired_stiffness";
+
+	double duration;
+	bool log;
+	double rotational_stiffness;
+	double translational_stiffness;
+};
+
+void to_json(nlohmann::json&, const command_apply_admittance_adm_desired_stiffness& object);
+void from_json(const nlohmann::json& json, command_apply_admittance_adm_desired_stiffness& object);
+
+
+
+
+/**
+ *************************************************************************
+ *
+ * @class command_apply_admittance_adm_imp_desired_stiffness
+ *
+ * Commands the robot to use the admittance controller with desired
+ * rotational and translational stiffness within the admittance and the
+ * impedance controller
+ *
+ ************************************************************************/
+struct command_apply_admittance_adm_imp_desired_stiffness
+{
+	using response_type = command_generic_response;
+	static constexpr char type[] = "admittance.apply_adm_imp_desired_stiffness";
+
+	double duration;
+	bool log;
+	double adm_rotational_stiffness;
+	double adm_translational_stiffness;
+	double imp_rotational_stiffness;
+	double imp_translational_stiffness;
+};
+
+void to_json(nlohmann::json&, const command_apply_admittance_adm_imp_desired_stiffness& object);
+void from_json(const nlohmann::json& json, command_apply_admittance_adm_imp_desired_stiffness& object);
 
 
 

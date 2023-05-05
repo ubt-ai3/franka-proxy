@@ -68,9 +68,19 @@ void franka_remote_controller::move_sequence
 		(q_sequence, f_sequence, selection_vector_sequence);
 }
 
-void franka_remote_controller::apply_admittance(double duration)
+void franka_remote_controller::apply_admittance(double duration, bool log)
 {
-	send_command <command_apply_admittance>(duration);
+	send_command <command_apply_admittance>(duration, log);
+}
+
+void franka_remote_controller::apply_admittance(double duration, bool log, double rotational_stiffness, double translational_stiffness)
+{
+	send_command <command_apply_admittance_adm_desired_stiffness>(duration, log, rotational_stiffness, translational_stiffness);
+}
+
+void franka_remote_controller::apply_admittance(double duration, bool log, double adm_rotational_stiffness, double adm_translational_stiffness, double imp_rotational_stiffness, double imp_translational_stiffness)
+{
+	send_command <command_apply_admittance_adm_imp_desired_stiffness>(duration, log, adm_rotational_stiffness, adm_translational_stiffness, imp_rotational_stiffness, imp_translational_stiffness);
 }
 
 void franka_remote_controller::impedance_hold_pose(double duration, bool log, bool use_stiff_damp_online_calc)

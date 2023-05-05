@@ -109,6 +109,8 @@ franka_control_server::franka_control_server
 	register_command_handler<command_move_hybrid_sequence>();
 	register_command_handler<command_move_until_contact>();
 	register_command_handler<command_apply_admittance>();
+	register_command_handler<command_apply_admittance_adm_desired_stiffness>();
+	register_command_handler<command_apply_admittance_adm_imp_desired_stiffness>();
 	register_command_handler<command_impedance_hold_pose>();
 	register_command_handler<command_impedance_hold_pose_desired_stiffness>();
 	register_command_handler<command_impedance_poses>();
@@ -283,7 +285,21 @@ command_generic_response franka_control_server::process_command
 command_generic_response franka_control_server::process_command
 (const command_apply_admittance& cmd)
 {
-	controller_.apply_admittance(cmd.duration);
+	controller_.apply_admittance(cmd.duration, cmd.log);
+	return command_result::success;
+}
+
+command_generic_response franka_control_server::process_command
+(const command_apply_admittance_adm_desired_stiffness& cmd)
+{
+	controller_.apply_admittance(cmd.duration, cmd.log, cmd.rotational_stiffness, cmd.translational_stiffness);
+	return command_result::success;
+}
+
+command_generic_response franka_control_server::process_command
+(const command_apply_admittance_adm_imp_desired_stiffness& cmd)
+{
+	controller_.apply_admittance(cmd.duration, cmd.log, cmd.adm_rotational_stiffness, cmd.adm_translational_stiffness, cmd.imp_rotational_stiffness, cmd.imp_translational_stiffness);
 	return command_result::success;
 }
 
