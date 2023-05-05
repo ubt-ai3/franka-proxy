@@ -89,12 +89,22 @@ public:
 	/**
 	 * Impedance controller to hold the current pose
 	*/
-	void impedance_hold_pose(double duration);
+	void impedance_hold_pose(double duration, bool log, bool use_stiff_damp_online_calc);
+
+	/**
+	 * Impedance controller to hold the current pose with desired rotational and translational stiffness
+	*/
+	void impedance_hold_pose(double duration, bool log, bool use_stiff_damp_online_calc, double rotational_stiffness, double translational_stiffness);
 
 	/**
 	*  Impedance controller to follow path of poses
 	*/
-	void impedance_follow_poses(std::list<std::array<double, 16>>& positions, double duration);
+	void impedance_poses(std::list<std::array<double, 16>>& positions, double duration, bool log, bool use_stiff_damp_online_calc);
+
+	/**
+	*  Impedance controller to follow path of poses with desired rotational and translational stiffness
+	*/
+	void impedance_poses(std::list<std::array<double, 16>>& positions, double duration, bool log, bool use_stiff_damp_online_calc, double rotational_stiffness, double translational_stiffness);
 
 	/**
 	 * todo docu

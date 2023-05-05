@@ -115,11 +115,19 @@ namespace franka_proxy
 		/**
 		 * Impedance controller to hold the current pose
 		 */
-		void impedance_hold_pose(double duration);
+		void impedance_hold_pose(double duration, bool log, bool use_stiff_damp_online_calc);
+		/**
+		 * Impedance controller to hold the current pose using desired rotational and translational stiffness parameter
+		 */
+		void impedance_hold_pose(double duration, bool log, bool use_stiff_damp_online_calc, double rotational_stiffness, double translational_stiffness);
 		/**
 		 * Impedacne controller to hold multiple poses/ to follow path of multiple poses
 		*/
-		void impedance_follow_poses(const std::list<std::array<double, 16>>& poses, double duration);
+		void impedance_poses(const std::list<std::array<double, 16>>& poses, double duration, bool log, bool use_stiff_damp_online_calc);
+		/**
+		 * Impedacne controller to hold multiple poses/ to follow path of multiple poses using desired rotational and translational stiffness parameter
+		*/
+		void impedance_poses(const std::list<std::array<double, 16>>& poses, double duration, bool log, bool use_stiff_damp_online_calc, double rotational_stiffness, double translational_stiffness);
 
 		static constexpr double default_gripper_speed = 0.025;
 

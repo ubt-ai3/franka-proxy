@@ -73,14 +73,24 @@ void franka_remote_controller::apply_admittance(double duration)
 	send_command <command_apply_admittance>(duration);
 }
 
-void franka_remote_controller::impedance_hold_pose(double duration)
+void franka_remote_controller::impedance_hold_pose(double duration, bool log, bool use_stiff_damp_online_calc)
 {
-	send_command<command_impedance_hold_pose>(duration);
+	send_command<command_impedance_hold_pose>(duration, log, use_stiff_damp_online_calc);
 }
 
-void franka_remote_controller::impedance_follow_poses(std::list<std::array<double, 16>>& poses, double duration)
+void franka_remote_controller::impedance_hold_pose(double duration, bool log, bool use_stiff_damp_online_calc, double rotational_stiffness, double translational_stiffness)
 {
-	send_command<command_impedance_follow_poses>(poses, duration);
+	send_command<command_impedance_hold_pose_desired_stiffness>(duration, log, use_stiff_damp_online_calc, rotational_stiffness, translational_stiffness);
+}
+
+void franka_remote_controller::impedance_poses(std::list<std::array<double, 16>>& poses, double duration, bool log, bool use_stiff_damp_online_calc)
+{
+	send_command<command_impedance_poses>(poses, duration, log, use_stiff_damp_online_calc);
+}
+
+void franka_remote_controller::impedance_poses(std::list<std::array<double, 16>>& poses, double duration, bool log, bool use_stiff_damp_online_calc, double rotational_stiffness, double translational_stiffness)
+{
+	send_command<command_impedance_poses_desired_stiffness>(poses, duration, log, use_stiff_damp_online_calc, rotational_stiffness, translational_stiffness);
 }
 
 void franka_remote_controller::apply_z_force(double mass, double duration)
