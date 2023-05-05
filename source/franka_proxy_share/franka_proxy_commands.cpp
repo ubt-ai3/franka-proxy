@@ -213,7 +213,7 @@ void to_json(nlohmann::json& json, const command_impedance_hold_pose_desired_sti
 void from_json(const nlohmann::json& json, command_impedance_hold_pose_desired_stiffness& object)
 {
 	json.at("duration").get_to(object.duration);
-	json.at("log").get_to(object.duration);
+	json.at("log").get_to(object.log);
 	json.at("use_stiff_damp_online_calc").get_to(object.use_stiff_damp_online_calc);
 	json.at("rotational_stiffness").get_to(object.rotational_stiffness);
 	json.at("translational_stiffness").get_to(object.translational_stiffness);
