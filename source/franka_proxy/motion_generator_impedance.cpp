@@ -77,6 +77,8 @@ namespace franka_proxy
 			logging_(logging),
 			online_parameter_calc_(use_online_parameter_calc)
 		{
+			init_impedance_motion_generator(robot, state_lock, robot_state);
+
 			if (duration > 0.0) {
 				pose_interval_ = duration / poses.size();
 			}

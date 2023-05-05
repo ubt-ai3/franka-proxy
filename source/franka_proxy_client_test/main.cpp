@@ -114,36 +114,31 @@ int main()
 
 	std::cout << "Starting Impedance - Hold Position Test." << std::endl;
 
-	controller.impedance_hold_pose(5, false, false);
+	controller.impedance_hold_pose(15, false, false);
 
 	std::cout << "Finished Impedance - Hold Position Test." << std::endl;
 
 	std::cout << "Starting Impedance - Hold Position Test With Desired Stiffness." << std::endl;
 
-	//controller.impedance_hold_pose(30, true, false, 10, 150);
+	controller.impedance_hold_pose(30, true, false, 10, 150);
 
 	std::cout << "Finished Impedance - Hold Position Test." << std::endl;
 
 	std::cout << "Starting Impedance - Follow Positions Test." << std::endl;
 	// positions
-	std::list<std::array<double, 3>> impedance_positions_ = {
-		{0.46605243904963067, -0.056919271667763421, 0.27852690306836975},
-		{0.54808105573789268, -0.051876625055700246, 0.26785610340481225},
-		// {0.62396015408891670, -0.054112542017245170, 0.27540793634271588},
-		// {0.61720706559078087, -0.235814978871107780, 0.28119054229315449},
-		// {0.58704544708151185, 0.2943481886612492300, 0.28660956793645886},
-		// {0.60173018977726767, 0.2960414250033999200, 0.15938849689655810},
-		// {0.62968703724029917, 0.3111298638816038500, 0.45859470184591494},
-		{0.46605243904963067, -0.056919271667763421, 0.27852690306836975}, // back to first position
+	std::list<std::array<double, 16>> poses = {
+		{0.321529, 0.8236, 0.467208, 0, 0.931889, -0.187754, -0.310343, 0, -0.167882, 0.53518, -0.827888, 0, 0.426976, 0.382873, 0.324984, 1},
+		{0.323711, 0.604326, 0.727999, 0, 0.698631, -0.671549, 0.246814, 0, 0.638056, 0.428714, -0.639601, 0, 0.600692, 0.372768, 0.415227, 1},
+		{0.826378, 0.559426, 0.0642109, 0, 0.562775, -0.824385, -0.0604543, 0, 0.0191152, 0.086096, -0.996103, 0, 0.503131, 0.2928, 0.296891, 1}
 	};
 
-	//controller.impedance_follow_positions(impedance_positions_, 10);
+	controller.impedance_poses(poses, 30, false, false, 10, 150);
 
 	std::cout << "Finished Impedance - Follow Positions Test." << std::endl;
 
 	std::cout << "Starting Admittance - Apply Force Test." << std::endl;
 
-	controller.apply_admittance(30, false);
+	controller.apply_admittance(30, true);
 
 	std::cout << "Finished Admittance - Apply Force Test." << std::endl;
 
