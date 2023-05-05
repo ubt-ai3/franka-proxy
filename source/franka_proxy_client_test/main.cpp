@@ -114,13 +114,13 @@ int main()
 
 	std::cout << "Starting Impedance - Hold Position Test." << std::endl;
 
-	controller.impedance_hold_pose(30, true, false);
+	controller.impedance_hold_pose(5, false, false);
 
 	std::cout << "Finished Impedance - Hold Position Test." << std::endl;
 
 	std::cout << "Starting Impedance - Hold Position Test With Desired Stiffness." << std::endl;
 
-	controller.impedance_hold_pose(30, true, false, 50, 500);
+	//controller.impedance_hold_pose(30, true, false, 10, 150);
 
 	std::cout << "Finished Impedance - Hold Position Test." << std::endl;
 
@@ -143,11 +143,21 @@ int main()
 
 	std::cout << "Starting Admittance - Apply Force Test." << std::endl;
 
-	//controller.apply_admittance(120, false);
-	//controller.apply_admittance(120, false, 300, 30);
-	//controller.apply_admittance(120, false, 500, 50, 150, 10);
+	controller.apply_admittance(30, false);
 
 	std::cout << "Finished Admittance - Apply Force Test." << std::endl;
+
+	std::cout << "Starting Admittance - Apply Force Desired Admittance Stiffness Test." << std::endl;
+
+	controller.apply_admittance(30, false, 20, 300);
+
+	std::cout << "Finished Admittance - Apply Force Desired Admittance Stiffness Test." << std::endl;
+
+	std::cout << "Starting Admittance - Apply Force Desired Admittance and Impedance Test." << std::endl;
+
+	controller.apply_admittance(30, false, 20, 300, 20, 300);
+
+	std::cout << "Finished Admittance - Apply Force Desired Admittance and Impedance Test." << std::endl;
 
 	std::cout << "Starting FK/IK Test." << std::endl;
 
