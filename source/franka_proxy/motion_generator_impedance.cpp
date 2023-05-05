@@ -38,41 +38,26 @@ namespace franka_proxy
 		(franka::Robot& robot,
 			std::mutex& state_lock,
 			franka::RobotState& robot_state,
-			double duration)
+			double duration,
+			bool logging,
+			bool use_online_parameter_calc)
 			:
 			model_(robot.loadModel()),
 			state_lock_(state_lock),
 			state_(robot_state),
-			duration_(duration)
+			duration_(duration),
+			logging_(logging),
+			online_parameter_calc_(use_online_parameter_calc)
 		{
-			{
-				std::lock_guard<std::mutex> state_guard(state_lock_);
-				state_ = robot_state;
-			}
+			init_impedance_motion_generator(robot, state_lock, robot_state);
 
-			// load model
-			model_ = robot.loadModel();
-
-			robot.setCollisionBehavior({ {100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0} },
-				{ {100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0} },
-				{ {100.0, 100.0, 100.0, 100.0, 100.0, 100.0} },
-				{ {100.0, 100.0, 100.0, 100.0, 100.0, 100.0} });
-
-			// initialize stiffness and damping matrix
-			stiffness_matrix_.topLeftCorner(3, 3) << translational_stiffness_ * Eigen::MatrixXd::Identity(3, 3);
-			stiffness_matrix_.bottomRightCorner(3, 3) << rotational_stiffness_ * Eigen::MatrixXd::Identity(3, 3);
-			damping_matrix_.topLeftCorner(3, 3) << 2.0 * sqrt(translational_stiffness_) *
-				Eigen::MatrixXd::Identity(3, 3);
-			damping_matrix_.bottomRightCorner(3, 3) << 2.0 * sqrt(rotational_stiffness_) *
-				Eigen::MatrixXd::Identity(3, 3);
-
-			// position error calculation initialization - initial pose
-			current_pose_ = state_.O_T_EE;
 			pose_interval_ = 0.0;
 
-			// start logging to csv file
-			csv_log_.open("impedance_log.csv");
-			csv_log_ << csv_header << "\n";
+			if (logging_) {
+				// start logging to csv file
+				csv_log_.open("impedance_log.csv");
+				csv_log_ << csv_header << "\n";
+			}
 		};
 
 		impedance_motion_generator::impedance_motion_generator
@@ -80,14 +65,33 @@ namespace franka_proxy
 			std::mutex& state_lock,
 			franka::RobotState& robot_state,
 			std::list<std::array<double, 16>> poses,
-			double duration)
+			double duration,
+			bool logging,
+			bool use_online_parameter_calc)
 			:
 			model_(robot.loadModel()),
 			state_lock_(state_lock),
 			state_(robot_state),
 			poses_(poses),
-			duration_(duration)
+			duration_(duration),
+			logging_(logging),
+			online_parameter_calc_(use_online_parameter_calc)
 		{
+			if (duration > 0.0) {
+				pose_interval_ = duration / poses.size();
+			}
+			else {
+				pose_interval_ = 0.0;
+			}
+
+			if (logging_) {
+				// start logging to csv file
+				csv_log_.open("impedance_log.csv");
+				csv_log_ << csv_header << "\n";
+			}
+		}
+
+		void impedance_motion_generator::init_impedance_motion_generator(franka::Robot& robot, std::mutex& state_lock, franka::RobotState& robot_state) {
 			{
 				std::lock_guard<std::mutex> state_guard(state_lock_);
 				state_ = robot_state;
@@ -102,26 +106,10 @@ namespace franka_proxy
 				{ {100.0, 100.0, 100.0, 100.0, 100.0, 100.0} });
 
 			// initialize stiffness and damping matrix
-			stiffness_matrix_.topLeftCorner(3, 3) << translational_stiffness_ * Eigen::MatrixXd::Identity(3, 3);
-			stiffness_matrix_.bottomRightCorner(3, 3) << rotational_stiffness_ * Eigen::MatrixXd::Identity(3, 3);
-			damping_matrix_.topLeftCorner(3, 3) << 2.0 * sqrt(translational_stiffness_) *
-				Eigen::MatrixXd::Identity(3, 3);
-			damping_matrix_.bottomRightCorner(3, 3) << 2.0 * sqrt(rotational_stiffness_) *
-				Eigen::MatrixXd::Identity(3, 3);
+			calculate_default_stiffness_and_damping();
 
 			// position error calculation initialization - initial pose
 			current_pose_ = state_.O_T_EE;
-
-			if (duration > 0.0) {
-				pose_interval_ = duration / poses.size();
-			}
-			else {
-				pose_interval_ = 0.0;
-			}
-
-			// start logging to csv file
-			csv_log_.open("impedance_log.csv");
-			csv_log_ << csv_header << "\n";
 		}
 
 		franka::Torques impedance_motion_generator::callback
@@ -136,13 +124,20 @@ namespace franka_proxy
 
 			time_ += period.toSec();
 
+			if (!initialized_) {
+				// first call of callback -> no more rotational / translational stiffness changes are allowed
+				initialized_ = true;
+			}
+
 			if (time_ > duration_) {
 				// motion finished
 				franka::Torques current_torques(state_.tau_J);
 				current_torques.motion_finished = true;
 
-				// close log file
-				csv_log_.close();
+				if (logging_) {
+					// close log file
+					csv_log_.close();
+				}
 
 				return current_torques;
 			}
@@ -235,32 +230,35 @@ namespace franka_proxy
 				timestamps_.pop_front();
 			}
 
-			// stiffness and damping
-			for (int i = 0; i < inertia_matrix.rows() - 3; i++) {
-				double mi = inertia_matrix(i,i);
+			// online stiffness and damping calculation
+			if (online_parameter_calc_) {
+				// stiffness and damping
+				for (int i = 0; i < inertia_matrix.rows() - 3; i++) {
+					double mi = inertia_matrix(i, i);
 
-				// optimize damping
-				double di = optimizeDamping(l_d_[i], u_d_[i], mi, b_[i], x0_max_[i], derived_x0_max_[i]);
+					// optimize damping
+					double di = optimizeDamping(l_d_[i], u_d_[i], mi, b_[i], x0_max_[i], derived_x0_max_[i]);
 
-				// stability check
-				auto current_damping = damping_matrix_(i, i);
+					// stability check
+					auto current_damping = damping_matrix_(i, i);
 
-				if (di < current_damping) {
-					auto stability_condition = current_damping - ((current_damping * current_damping * delta_time) / mi) + 1.0; // ((current_damping * 0.0002 * 0.001) / mi);
+					if (di < current_damping) {
+						auto stability_condition = current_damping - ((current_damping * current_damping * delta_time) / mi) + 1.0; // ((current_damping * 0.0002 * 0.001) / mi);
 
-					if (di <= stability_condition) {
-						di = stability_condition;
+						if (di <= stability_condition) {
+							di = stability_condition;
+						}
 					}
+
+					// get stiffness from new calculated damping value
+					double ki = calculate_stiffness_from_damping(di, mi);
+
+					// add new values to matrices
+					damping_matrix_(i, i) = di;
+					stiffness_matrix_(i, i) = ki;
 				}
-
-				// get stiffness from new calculated damping value
-				double ki = calculate_stiffness_from_damping(di, mi);
-
-				// add new values to matrices
-				damping_matrix_(i, i) = di;
-				stiffness_matrix_(i, i) = ki;
-
 			}
+			
 
 			Eigen::Matrix<double, 6, 1> position_error(get_position_error(time_));
 
@@ -273,24 +271,26 @@ namespace franka_proxy
 			std::array<double, 7> tau_d_ar;
 			Eigen::VectorXd::Map(&tau_d_ar[0], 7) = tau_d;
 
-			// log to csv
-			std::ostringstream f_ext_log;
-			f_ext_log << f_ext(0) << "; " << f_ext(1) << "; " << f_ext(2) << "; " << f_ext(3) << "; " << f_ext(4) << "; " << f_ext(5);
-			/*std::ostringstream position_d_log;
-			position_d_log << position_d.x() << "; " << position_d.y() << "; " << position_d.z();
-			std::ostringstream position_log;
-			position_log << position.x() << "; " << position.y() << "; " << position.z();*/
-			std::ostringstream stiffness_matrix_log;
-			stiffness_matrix_log << stiffness_matrix_(0, 0) << "; " << stiffness_matrix_(1, 1) << "; " << stiffness_matrix_(2, 2) << "; " << stiffness_matrix_(3, 3) << "; " << stiffness_matrix_(4, 4) << "; " << stiffness_matrix_(5, 5);
-			std::ostringstream damping_matrix_log;
-			damping_matrix_log << damping_matrix_(0, 0) << "; " << damping_matrix_(1, 1) << "; " << damping_matrix_(2, 2) << "; " << damping_matrix_(3, 3) << "; " << damping_matrix_(4, 4) << "; " << damping_matrix_(5, 5);
+			if (logging_) {
+				// log to csv
+				std::ostringstream f_ext_log;
+				f_ext_log << f_ext(0) << "; " << f_ext(1) << "; " << f_ext(2) << "; " << f_ext(3) << "; " << f_ext(4) << "; " << f_ext(5);
+				/*std::ostringstream position_d_log;
+				position_d_log << position_d.x() << "; " << position_d.y() << "; " << position_d.z();
+				std::ostringstream position_log;
+				position_log << position.x() << "; " << position.y() << "; " << position.z();*/
+				std::ostringstream stiffness_matrix_log;
+				stiffness_matrix_log << stiffness_matrix_(0, 0) << "; " << stiffness_matrix_(1, 1) << "; " << stiffness_matrix_(2, 2) << "; " << stiffness_matrix_(3, 3) << "; " << stiffness_matrix_(4, 4) << "; " << stiffness_matrix_(5, 5);
+				std::ostringstream damping_matrix_log;
+				damping_matrix_log << damping_matrix_(0, 0) << "; " << damping_matrix_(1, 1) << "; " << damping_matrix_(2, 2) << "; " << damping_matrix_(3, 3) << "; " << damping_matrix_(4, 4) << "; " << damping_matrix_(5, 5);
 
-			std::ostringstream current_values;
-			current_values << time_ << "; " << f_ext_log.str() << "; " << stiffness_matrix_log.str() << "; " << damping_matrix_log.str();
-			//current_values << time_ << "; " << f_ext_log.str() << "; " << position_d_log.str() << "; " << position_log.str() << "; " << stiffness_matrix_log.str() << "; " << damping_matrix_log.str();
+				std::ostringstream current_values;
+				current_values << time_ << "; " << f_ext_log.str() << "; " << stiffness_matrix_log.str() << "; " << damping_matrix_log.str();
+				//current_values << time_ << "; " << f_ext_log.str() << "; " << position_d_log.str() << "; " << position_log.str() << "; " << stiffness_matrix_log.str() << "; " << damping_matrix_log.str();
 
-			csv_log_ << current_values.str() << "\n";
-
+				csv_log_ << current_values.str() << "\n";
+			}
+			
 			return tau_d_ar;
 		}
 
@@ -358,6 +358,53 @@ namespace franka_proxy
 			}
 
 			return ki_;
+		}
+
+		void impedance_motion_generator::calculate_default_stiffness_and_damping() {
+			stiffness_matrix_.topLeftCorner(3, 3) << translational_stiffness_ * Eigen::MatrixXd::Identity(3, 3);
+			stiffness_matrix_.bottomRightCorner(3, 3) << rotational_stiffness_ * Eigen::MatrixXd::Identity(3, 3);
+			damping_matrix_.topLeftCorner(3, 3) << 2.0 * sqrt(translational_stiffness_) *
+				Eigen::MatrixXd::Identity(3, 3);
+			damping_matrix_.bottomRightCorner(3, 3) << 2.0 * sqrt(rotational_stiffness_) *
+				Eigen::MatrixXd::Identity(3, 3);
+		}
+
+		bool impedance_motion_generator::set_rotational_stiffness(double rotational_stiffness) {
+			if (initialized_) {
+				// no changes allowed -> return false as operation failed
+				return false;
+			}
+			else {
+				// set new value
+				rotational_stiffness_ = rotational_stiffness;
+				calculate_default_stiffness_and_damping();
+
+				// operation succeeded -> return true
+				return true;
+			}
+		}
+
+		double impedance_motion_generator::get_rotational_stiffness() {
+			return rotational_stiffness_;
+		}
+
+		bool impedance_motion_generator::set_translational_stiffness(double translational_stiffness) {
+			if (initialized_) {
+				// no changes allowed -> return false as operation failed
+				return false;
+			}
+			else {
+				// set new value
+				translational_stiffness_ = translational_stiffness;
+				calculate_default_stiffness_and_damping();
+
+				// operation succeeded -> return true
+				return true;
+			}
+		}
+
+		double impedance_motion_generator::get_translational_stiffness() {
+			return translational_stiffness_;
 		}
 
 

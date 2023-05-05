@@ -49,13 +49,28 @@ namespace franka_proxy
 			(franka::Robot& robot,
 				std::mutex& state_lock,
 				franka::RobotState& robot_state,
-				double duration);
+				double duration,
+				bool logging);
 
 			franka::Torques callback
 			(const franka::RobotState& robot_state,
 				franka::Duration period);
 
+			// getter and setter for 'default' stiffness and damping parameters
+			bool set_admittance_rotational_stiffness(double rotational_stiffness);
+			bool set_admittance_translational_stiffness(double translational_stiffness);
+
+			bool set_impedance_rotational_stiffness(double rotational_stiffness);
+			bool set_impedance_translational_stiffness(double rotational_stiffness);
+
+			double get_admittance_rotational_stiffness();
+			double get_admittance_translational_stiffness();
+
+			double get_impedance_rotational_stiffness();
+			double get_impedance_translational_stiffness();
+
 		private:
+			void calculate_stiffness_and_damping();
 
 			franka::Model model_;
 
@@ -77,10 +92,11 @@ namespace franka_proxy
 			Eigen::Matrix<double, 6, 6> damping_matrix_ = Eigen::Matrix<double, 6, 6>::Zero();
 			Eigen::Matrix<double, 6, 6> stiffness_matrix_ = Eigen::Matrix<double, 6, 6>::Zero();
 
-			// impedance controller to command new desired positin
+			// impedance controller to command new desired position
 			impedance_motion_generator impedance_controller_;
 
 			// csv logging
+			bool logging_;
 			std::ofstream csv_log_;
 		};
 

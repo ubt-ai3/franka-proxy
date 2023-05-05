@@ -113,7 +113,9 @@ namespace franka_proxy
 
 	void franka_hardware_controller::apply_admittance(const double duration)
 	{
-		detail::admittance_motion_generator motion_generator(robot_, robot_state_lock_, robot_state_, duration);
+		const bool log = false;
+
+		detail::admittance_motion_generator motion_generator(robot_, robot_state_lock_, robot_state_, duration, log);
 
 		try
 		{
@@ -142,7 +144,9 @@ namespace franka_proxy
 
 	void franka_hardware_controller::impedance_hold_pose(const double duration)
 	{
-		detail::impedance_motion_generator motion_generator(robot_, robot_state_lock_, robot_state_, duration);
+		const bool log = false;
+
+		detail::impedance_motion_generator motion_generator(robot_, robot_state_lock_, robot_state_, duration, log, false);
 
 		try
 		{
@@ -177,7 +181,9 @@ namespace franka_proxy
 
 	void franka_hardware_controller::impedance_follow_poses(const std::list<std::array<double, 16>>& poses, double duration)
 	{
-		detail::impedance_motion_generator motion_generator(robot_, robot_state_lock_, robot_state_, poses, duration);
+		const bool log = false;
+
+		detail::impedance_motion_generator motion_generator(robot_, robot_state_lock_, robot_state_, poses, duration, log, false);
 
 		try
 		{

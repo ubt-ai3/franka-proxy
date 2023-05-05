@@ -38,13 +38,15 @@ namespace franka_proxy
 		(franka::Robot& robot,
 			std::mutex& state_lock,
 			franka::RobotState& robot_state,
-			double duration)
+			double duration,
+			bool logging)
 			:
 			model_(robot.loadModel()),
 			state_lock_(state_lock),
 			state_(robot_state),
 			duration_(duration),
-			impedance_controller_(robot, state_lock, robot_state, duration)
+			impedance_controller_(robot, state_lock, robot_state, duration, logging, false),
+			logging_(logging)
 		{
 			{
 				std::lock_guard<std::mutex> state_guard(state_lock_);
@@ -60,15 +62,16 @@ namespace franka_proxy
 				{ {100.0, 100.0, 100.0, 100.0, 100.0, 100.0} });
 
 			// initialize stiffness and damping matrix
-			stiffness_matrix_.topLeftCorner(3, 3) << translational_stiffness_ * Eigen::MatrixXd::Identity(3, 3);
-			stiffness_matrix_.bottomRightCorner(3, 3) << rotational_stiffness_ * Eigen::MatrixXd::Identity(3, 3);
-			damping_matrix_.topLeftCorner(3, 3) << 2.0 * sqrt(translational_stiffness_) *
-				Eigen::MatrixXd::Identity(3, 3);
-			damping_matrix_.bottomRightCorner(3, 3) << 2.0 * sqrt(rotational_stiffness_) *
-				Eigen::MatrixXd::Identity(3, 3);
+			calculate_stiffness_and_damping();
 
-			// start logging to csv file
-			csv_log_.open("admittance.csv");
+			// set impedance controller default stiffness and damping parameter
+			impedance_controller_.set_rotational_stiffness(10); // always true
+			impedance_controller_.set_translational_stiffness(150); // always true
+
+			if (logging_) {
+				// start logging to csv file
+				csv_log_.open("admittance.csv");
+			}
 		}
 
 		franka::Torques admittance_motion_generator::callback
@@ -86,7 +89,10 @@ namespace franka_proxy
 				// motion finished
 				franka::Torques current_torques(state_.tau_J);
 				current_torques.motion_finished = true;
-				csv_log_.close();
+
+				if (logging_) {
+					csv_log_.close();
+				}
 
 				return current_torques;
 			}
@@ -203,24 +209,26 @@ namespace franka_proxy
 			x_i_2_ = x_i_1_;
 			x_i_1_ = x_i;
 
-			// log to csv
-			std::ostringstream f_ext_log;
-			f_ext_log << f_ext_(0) << "; " << f_ext_(1) << "; " << f_ext_(2) << "; " << f_ext_(3) << "; " << f_ext_(4) << "; " << f_ext_(5);
-			std::ostringstream x_i_log;
-			x_i_log << x_i(0) << "; " << x_i(1) << "; " << x_i(2) << "; " << x_i(3) << "; " << x_i(4) << "; " << x_i(5);
-			std::ostringstream x_e_log;
-			x_e_log << position_eq(0) << "; " << position_eq(1) << "; " << position_eq(2) << "; " << position_eq(3) << "; " << position_eq(4) << "; " << position_eq(5);
-			std::ostringstream x_i_prod2_log;
-			x_i_prod2_log << x_i_prod2(0) << "; " << x_i_prod2(1) << "; " << x_i_prod2(2) << "; " << x_i_prod2(3) << "; " << x_i_prod2(4) << "; " << x_i_prod2(5);
-			std::ostringstream current_force_log;
-			current_force_log << current_force(0) << "; " << current_force(1) << "; " << current_force(2) << "; " << current_force(3) << "; " << current_force(4) << "; " << current_force(5);
-			std::ostringstream f_ext_middle_log;
-			f_ext_middle_log << f_ext_middle[0] << "; " << f_ext_middle[1] << "; " << f_ext_middle[2] << "; " << f_ext_middle[3] << "; " << f_ext_middle[4] << "; " << f_ext_middle[5];
+			if (logging_) {
+				// log to csv
+				std::ostringstream f_ext_log;
+				f_ext_log << f_ext_(0) << "; " << f_ext_(1) << "; " << f_ext_(2) << "; " << f_ext_(3) << "; " << f_ext_(4) << "; " << f_ext_(5);
+				std::ostringstream x_i_log;
+				x_i_log << x_i(0) << "; " << x_i(1) << "; " << x_i(2) << "; " << x_i(3) << "; " << x_i(4) << "; " << x_i(5);
+				std::ostringstream x_e_log;
+				x_e_log << position_eq(0) << "; " << position_eq(1) << "; " << position_eq(2) << "; " << position_eq(3) << "; " << position_eq(4) << "; " << position_eq(5);
+				std::ostringstream x_i_prod2_log;
+				x_i_prod2_log << x_i_prod2(0) << "; " << x_i_prod2(1) << "; " << x_i_prod2(2) << "; " << x_i_prod2(3) << "; " << x_i_prod2(4) << "; " << x_i_prod2(5);
+				std::ostringstream current_force_log;
+				current_force_log << current_force(0) << "; " << current_force(1) << "; " << current_force(2) << "; " << current_force(3) << "; " << current_force(4) << "; " << current_force(5);
+				std::ostringstream f_ext_middle_log;
+				f_ext_middle_log << f_ext_middle[0] << "; " << f_ext_middle[1] << "; " << f_ext_middle[2] << "; " << f_ext_middle[3] << "; " << f_ext_middle[4] << "; " << f_ext_middle[5];
 
-			std::ostringstream current_values;
-			current_values << time_ << "; " << "; " << f_ext_log.str() << "; " << "; " << x_i_log.str() << "; " << "; " << x_e_log.str() << "; " << "; " << current_force_log.str();
+				std::ostringstream current_values;
+				current_values << time_ << "; " << "; " << f_ext_log.str() << "; " << "; " << x_i_log.str() << "; " << "; " << x_e_log.str() << "; " << "; " << current_force_log.str();
 
-			csv_log_ << current_values.str() << "\n";
+				csv_log_ << current_values.str() << "\n";
+			}
 
 			return impedance_controller_.callback
 			(state_, period,
@@ -229,6 +237,79 @@ namespace franka_proxy
 					return position_eq - x_i;
 				}
 			);
+		}
+
+		void admittance_motion_generator::calculate_stiffness_and_damping() {
+			stiffness_matrix_.topLeftCorner(3, 3) << translational_stiffness_ * Eigen::MatrixXd::Identity(3, 3);
+			stiffness_matrix_.bottomRightCorner(3, 3) << rotational_stiffness_ * Eigen::MatrixXd::Identity(3, 3);
+			damping_matrix_.topLeftCorner(3, 3) << 2.0 * sqrt(translational_stiffness_) *
+				Eigen::MatrixXd::Identity(3, 3);
+			damping_matrix_.bottomRightCorner(3, 3) << 2.0 * sqrt(rotational_stiffness_) *
+				Eigen::MatrixXd::Identity(3, 3);
+		}
+
+		bool admittance_motion_generator::set_admittance_rotational_stiffness(double rotational_stiffness) {
+			if (initialized_) {
+				// not allowed after initialization -> operation failed -> return false
+				return false;
+			}
+			else {
+				rotational_stiffness_ = rotational_stiffness;
+				calculate_stiffness_and_damping();
+
+				// operation succeeded -> return true;
+				return true;
+			}
+		}
+
+		bool admittance_motion_generator::set_admittance_translational_stiffness(double translational_stiffness) {
+			if (initialized_) {
+				// not allowed after initialization -> operation failed -> return false;
+				return false;
+			}
+			else {
+				translational_stiffness_ = translational_stiffness;
+				calculate_stiffness_and_damping();
+
+				// operation succeeded -> return true
+				return true;
+			}
+		}
+
+		bool admittance_motion_generator::set_impedance_rotational_stiffness(double rotational_stiffness) {
+			if (initialized_) {
+				// not allowed after initialization -> operation failed -> return false
+				return false;
+			}
+			else {
+				return impedance_controller_.set_rotational_stiffness(rotational_stiffness);
+			}
+		}
+
+		bool admittance_motion_generator::set_impedance_translational_stiffness(double translational_stiffness) {
+			if (initialized_) {
+				// not allowed after initialization -> operation failed -> return false
+				return false;
+			}
+			else {
+				return impedance_controller_.set_translational_stiffness(translational_stiffness);
+			}
+		}
+
+		double admittance_motion_generator::get_admittance_rotational_stiffness() {
+			return rotational_stiffness_;
+		}
+
+		double admittance_motion_generator::get_admittance_translational_stiffness() {
+			return translational_stiffness_;
+		}
+
+		double admittance_motion_generator::get_impedance_rotational_stiffness() {
+			return impedance_controller_.get_rotational_stiffness();
+		}
+
+		double admittance_motion_generator::get_impedance_translational_stiffness() {
+			return impedance_controller_.get_translational_stiffness();
 		}
 
 

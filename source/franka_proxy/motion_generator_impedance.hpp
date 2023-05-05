@@ -41,19 +41,22 @@ namespace franka_proxy
 		class impedance_motion_generator
 		{
 		public:
-
 			impedance_motion_generator
-				(franka::Robot& robot,
-					std::mutex& state_lock,
-					franka::RobotState& robot_state,
-					double duration);
+			(franka::Robot& robot,
+				std::mutex& state_lock,
+				franka::RobotState& robot_state,
+				double duration,
+				bool logging,
+				bool use_online_parameter_calc);
 
 			impedance_motion_generator
 			(franka::Robot& robot,
 				std::mutex& state_lock,
 				franka::RobotState& robot_state,
 				std::list<std::array<double, 16>> poses,
-				double duration);
+				double duration,
+				bool logging,
+				bool use_online_parameter_calc);
 
 			franka::Torques callback
 				(const franka::RobotState& robot_state,
@@ -62,7 +65,16 @@ namespace franka_proxy
 
 			Eigen::Matrix<double, 6, 1> calculate_position_error(const franka::RobotState& robot_state, double time);
 
+			// getter and setter for 'default' stiffness and damping
+			bool set_rotational_stiffness(double rotational_stiffness);
+			bool set_translational_stiffness(double translational_stiffness);
+
+			double get_rotational_stiffness();
+			double get_translational_stiffness();
+
 		private:
+			void calculate_default_stiffness_and_damping();
+			void init_impedance_motion_generator(franka::Robot& robot, std::mutex& state_lock, franka::RobotState& robot_state);
 			double optimizeDamping(double l_di, double u_di, double mi, double bi, double x0i_max, double derived_x0i_max);
 			double calculate_stiffness_from_damping(double di, double mi);
 
@@ -70,6 +82,8 @@ namespace franka_proxy
 
 			std::mutex& state_lock_;
 			franka::RobotState& state_;
+
+			bool initialized_ = false;
 
 			const double PI = 3.141592653589793238463;
 
@@ -89,17 +103,23 @@ namespace franka_proxy
 			std::list<std::array<double, 7>> measured_joint_velocities_;
 
 			// damping and stiffness matrix
+			double translational_stiffness_ = 300.0;
+			double rotational_stiffness_ = 50.0;
 			Eigen::Matrix<double, 6, 6> damping_matrix_ = Eigen::Matrix<double, 6, 6>::Zero();
 			Eigen::Matrix<double, 6, 6> stiffness_matrix_ = Eigen::Matrix<double, 6, 6>::Zero();
 
 			// position error calculation
-			std::array<double, 16> current_pose_;
+			std::array<double, 16> current_pose_ = {0};
 			std::list<std::array<double, 16>> poses_;
 
 			double pose_interval_;
 			double next_pose_at_ = 0.0;
 
+			// online stiffness and damping parameter calculation
+			bool online_parameter_calc_ = false;
+
 			// csv logging
+			bool logging_;
 			std::ofstream csv_log_;
 			std::string csv_header = "time; f_ext j1; f_ext j2; f_ext j3; f_ext j4; f_ext j5; f_ext j6; s1; s2; s3; s4; s5; s6; d1; d2; d3; d4; d5; d6";
 			//std::string csv_header = "time; f_ext j1; f_ext j2; f_ext j3; f_ext j4; f_ext j5; f_ext j6; position_d x; position_d y; position_d z; position x; position y; position z; s j1; s j2; s j3; s j4; s j5; s j6; d j1; d j2; d j3; d j4; d j5; d j6";
