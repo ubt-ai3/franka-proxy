@@ -112,6 +112,9 @@ namespace franka_proxy
 			std::array<double, 16> current_pose_ = {0};
 			std::list<std::array<double, 16>> poses_;
 
+			std::list<Eigen::Vector3d> positions_;
+			std::list<Eigen::Quaterniond> orientations_;
+
 			double pose_interval_;
 			double next_pose_at_ = 0.0;
 

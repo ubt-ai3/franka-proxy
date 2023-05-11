@@ -318,8 +318,34 @@ namespace franka_proxy
 
 			// get current position and orientation
 			Eigen::Affine3d po_transform(Eigen::Matrix4d::Map(state_.O_T_EE.data()));
-			Eigen::Vector3d position(po_transform.translation());
+			Eigen::Vector3d current_position(po_transform.translation());
 			Eigen::Quaterniond orientation(po_transform.linear());
+
+			Eigen::Vector3d position = { 0.0, 0.0, 0.0 };
+			positions_.push_front(current_position);
+
+			std::list<Eigen::Vector3d> positions_it(positions_);
+
+			for (int i = 0; i < positions_.size(); i++) {
+				Eigen::Vector3d current_el = positions_it.front();
+				positions_it.pop_front();
+
+				position(0) = position(0) + current_el(0);
+				position(1) = position(1) + current_el(1);
+				position(2) = position(2) + current_el(2);
+
+				if (i == positions_.size() - 1) {
+					auto size = positions_.size();
+
+					position(0) = position(0) / size;
+					position(1) = position(1) / size;
+					position(2) = position(2) / size;
+				}
+			}
+
+			if (positions_.size() == 11) {
+				positions_.pop_back();
+			}
 
 			Eigen::Matrix<double, 6, 1> position_error;
 
