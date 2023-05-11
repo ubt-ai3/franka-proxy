@@ -319,20 +319,32 @@ namespace franka_proxy
 			// get current position and orientation
 			Eigen::Affine3d po_transform(Eigen::Matrix4d::Map(state_.O_T_EE.data()));
 			Eigen::Vector3d current_position(po_transform.translation());
-			Eigen::Quaterniond orientation(po_transform.linear());
+			Eigen::Quaterniond current_orientation(po_transform.linear());
 
 			Eigen::Vector3d position = { 0.0, 0.0, 0.0 };
 			positions_.push_front(current_position);
 
+			Eigen::Quaterniond orientation = { 0.0, 0.0 ,0.0, 0.0 };
+			orientations_.push_front(current_orientation);
+
 			std::list<Eigen::Vector3d> positions_it(positions_);
+			std::list<Eigen::Quaterniond> orientations_it(orientations_);
 
 			for (int i = 0; i < positions_.size(); i++) {
-				Eigen::Vector3d current_el = positions_it.front();
-				positions_it.pop_front();
+				Eigen::Vector3d current_pos_el = positions_it.front();
+				Eigen::Quaterniond current_or_el = orientations_it.front();
 
-				position(0) = position(0) + current_el(0);
-				position(1) = position(1) + current_el(1);
-				position(2) = position(2) + current_el(2);
+				positions_it.pop_front();
+				orientations_it.pop_front();
+
+				position(0) = position(0) + current_pos_el(0);
+				position(1) = position(1) + current_pos_el(1);
+				position(2) = position(2) + current_pos_el(2);
+
+				orientation.w() = orientation.w() + current_or_el.w();
+				orientation.x() = orientation.x() + current_or_el.x();
+				orientation.y() = orientation.y() + current_or_el.y();
+				orientation.z()  = orientation.z() + current_or_el.z();
 
 				if (i == positions_.size() - 1) {
 					auto size = positions_.size();
@@ -340,6 +352,11 @@ namespace franka_proxy
 					position(0) = position(0) / size;
 					position(1) = position(1) / size;
 					position(2) = position(2) / size;
+
+					orientation.w() = orientation.w() / size;
+					orientation.x() = orientation.x() / size;
+					orientation.y() = orientation.y() / size;
+					orientation.z() = orientation.z() / size;
 				}
 			}
 
