@@ -270,7 +270,59 @@ namespace franka_proxy
 			Eigen::Matrix<double, 6, 1> position_error(get_position_error(time_));
 
 			// calculate external force
-			Eigen::Matrix<double, 6, 1> f_ext = inertia_matrix * acceleration + damping_matrix_ * velocity + stiffness_matrix_ * position_error;
+			Eigen::Matrix<double, 6, 1> current_f_ext = inertia_matrix * acceleration + damping_matrix_ * velocity + stiffness_matrix_ * position_error;
+
+			// filter force output
+			f_exts_.push_front(current_f_ext);
+
+			// calculate f_ext from last measurements
+			Eigen::Matrix<double, 6, 1> f_ext = Eigen::Matrix<double, 6, 1>::Zero();
+
+			//std::list<Eigen::Matrix<double, 6, 1>> f_exts_it(f_exts_);
+
+			//for (int i = 0; i < f_exts_.size(); i++) {
+			//	Eigen::Matrix<double, 6, 1> current_el = f_exts_it.front();
+			//	f_exts_it.pop_front();
+
+			f_ext(0) = current_f_ext(0); // +current_el(0);
+			f_ext(1) = current_f_ext(1); //  +current_el(1);
+			f_ext(2) = current_f_ext(2); //  +current_el(2);
+			//	f_ext(3) = f_ext(3) + current_el(3);
+			//	f_ext(4) = f_ext(4) + current_el(4);
+			//	f_ext(5) = f_ext(5) + current_el(5);
+
+			//	if (i == f_exts_.size() - 1) {
+			//		auto size = f_exts_.size();
+
+			//		/*f_ext(0) = f_ext(0) / size;
+			//		f_ext(1) = f_ext(1) / size;
+			//		f_ext(2) = f_ext(2) / size;*/
+			//		f_ext(3) = f_ext(3) / size;
+			//		f_ext(4) = f_ext(4) / size;
+			//		f_ext(5) = f_ext(5) / size;
+
+			//		if(f_ext)
+			//	}
+			//}
+
+			Eigen::Matrix<double, 6, 1> f_ext_front = f_exts_.front();
+			Eigen::Matrix<double, 6, 1> f_ext_back = f_exts_.back();
+
+			for (int i = 3; i < 6; i++) {
+				/*if (abs(f_ext_front(i) - f_ext_back(i)) > 0.03) {
+					if (f_ext_front(i) > f_ext_back(i)) {
+						f_ext(i) = f_ext_back(i) + 0.03;
+					}
+					else {
+						f_ext(i) = f_ext_back(i) - 0.03;
+					}
+				}*/
+				f_ext(i) = f_ext_front(i) * 0.5;
+			}
+
+			if (f_exts_.size() == 1) {
+				f_exts_.pop_back();
+			}
 
 			// calculate torque - without gravity as the robot handles it itself
 			Eigen::VectorXd tau_d = mass_matrix * j_acceleration + coriolis - jacobian.transpose() * f_ext;
@@ -318,51 +370,120 @@ namespace franka_proxy
 
 			// get current position and orientation
 			Eigen::Affine3d po_transform(Eigen::Matrix4d::Map(state_.O_T_EE.data()));
-			Eigen::Vector3d current_position(po_transform.translation());
-			Eigen::Quaterniond current_orientation(po_transform.linear());
+			Eigen::Vector3d position(po_transform.translation());
+			Eigen::Quaterniond orientation(po_transform.linear());
 
-			Eigen::Vector3d position = { 0.0, 0.0, 0.0 };
-			positions_.push_front(current_position);
+			/*Eigen::Vector3d position = { 0.0, 0.0, 0.0 };
+			positions_.push_front(current_position);*/
 
-			Eigen::Quaterniond orientation = { 0.0, 0.0 ,0.0, 0.0 };
-			orientations_.push_front(current_orientation);
+		//	Eigen::Quaterniond orientation = { 0.0, 0.0 ,0.0, 0.0 };
+		//	orientations_.push_front(current_orientation);
 
-			std::list<Eigen::Vector3d> positions_it(positions_);
-			std::list<Eigen::Quaterniond> orientations_it(orientations_);
+		//	if (orientations_.size() < 2) {
+		//		orientations_.push_front(current_orientation);
+		//	}
 
-			for (int i = 0; i < positions_.size(); i++) {
-				Eigen::Vector3d current_pos_el = positions_it.front();
-				Eigen::Quaterniond current_or_el = orientations_it.front();
+		//	Eigen::Quaterniond orientation_front = orientations_.front();
+		//	Eigen::Quaterniond orientation_back = orientations_.back();
 
-				positions_it.pop_front();
-				orientations_it.pop_front();
+		//	//std::list<Eigen::Vector3d> positions_it(positions_);
+		//	//std::list<Eigen::Quaterniond> orientations_it(orientations_);
 
-				position(0) = position(0) + current_pos_el(0);
-				position(1) = position(1) + current_pos_el(1);
-				position(2) = position(2) + current_pos_el(2);
+		//	/*for (int i = 0; i < positions_.size(); i++) {
+		//		Eigen::Vector3d current_pos_el = positions_it.front();
+		//		Eigen::Quaterniond current_or_el = orientations_it.front();
 
-				orientation.w() = orientation.w() + current_or_el.w();
-				orientation.x() = orientation.x() + current_or_el.x();
-				orientation.y() = orientation.y() + current_or_el.y();
-				orientation.z()  = orientation.z() + current_or_el.z();
+		//		positions_it.pop_front();
+		//		orientations_it.pop_front();
 
-				if (i == positions_.size() - 1) {
-					auto size = positions_.size();
+		//		position(0) = position(0) + current_pos_el(0);
+		//		position(1) = position(1) + current_pos_el(1);
+		//		position(2) = position(2) + current_pos_el(2);*/
 
-					position(0) = position(0) / size;
-					position(1) = position(1) / size;
-					position(2) = position(2) / size;
+		//	/*	orientation.w() = orientation.w() + current_or_el.w();
+		//		orientation.x() = orientation.x() + current_or_el.x();
+		//		orientation.y() = orientation.y() + current_or_el.y();
+		//		orientation.z()  = orientation.z() + current_or_el.z();
 
-					orientation.w() = orientation.w() / size;
-					orientation.x() = orientation.x() / size;
-					orientation.y() = orientation.y() / size;
-					orientation.z() = orientation.z() / size;
-				}
-			}
+		//		if (i == positions_.size() - 1) {
+		//			auto size = positions_.size();
 
-			if (positions_.size() == 11) {
-				positions_.pop_back();
-			}
+		//			position(0) = position(0) / size;
+		//			position(1) = position(1) / size;
+		//			position(2) = position(2) / size;
+
+		//			orientation.w() = orientation.w() / size;
+		//			orientation.x() = orientation.x() / size;
+		//			orientation.y() = orientation.y() / size;
+		//			orientation.z() = orientation.z() / size;
+		//		}
+		//	}*/
+
+		///*	orientation.w() = orientation.w() + current_or_el.w();
+		//	orientation.x() = orientation.x() + current_or_el.x();
+		//	orientation.y() = orientation.y() + current_or_el.y();
+		//	orientation.z() = orientation.z() + current_or_el.z();*/
+
+		//	if (abs(orientation_front.w() - orientation_back.w()) > 0.03) {
+		//		/*if (orientation_front.w() > orientation_back.w()) {
+		//			orientation.w() = orientation_back.w() + 0.03;
+		//		}
+		//		else if (orientation_front.w() < orientation_back.w()) {
+		//			orientation.w() = orientation_back.w() - 0.03;
+		//		}
+		//		else {
+		//			orientation.w() = orientation_front.w();
+		//		}*/
+
+		//		orientation.w() = orientation_front.w() * 0.05;
+		//	}
+
+		//	if (abs(orientation_front.x() - orientation_back.x()) > 0.03) {
+		//		/*if (orientation_front.x() > orientation_back.x()) {
+		//			orientation.x() = orientation_back.x() + 0.03;
+		//		}
+		//		else if (orientation_front.x() < orientation_back.x()) {
+		//			orientation.x() = orientation_back.x() - 0.03;
+		//		}
+		//		else {
+		//			orientation.x() = orientation_front.x();
+		//		}*/
+
+		//		orientation.x() = orientation_front.x() * 0.05;
+		//	}
+
+		//	if (abs(orientation_front.y() - orientation_back.y()) > 0.03) {
+		//		/*if (orientation_front.y() > orientation_back.y()) {
+		//			orientation.y() = orientation_back.y() + 0.03;
+		//		}
+		//		else if (orientation_front.y() < orientation_back.y()) {
+		//			orientation.y() = orientation_back.y() - 0.03;
+		//		}
+		//		else {
+		//			orientation.y() = orientation_front.y();
+		//		}*/
+
+		//		orientation.y() = orientation_front.y() * 0.05;
+		//	}
+
+		//	if (abs(orientation_front.z() - orientation_back.z()) > 0.03) {
+		//		/*if (orientation_front.z() > orientation_back.z()) {
+		//			orientation.z() = orientation_back.z() + 0.03;
+		//		}
+		//		else if (orientation_front.z() < orientation_back.z()) {
+		//			orientation.z() = orientation_back.z() - 0.03;
+		//		}
+		//		else {
+		//			orientation.z() = orientation_front.z();
+		//		}*/
+
+		//		orientation.z() = orientation_front.z() * 0.05;
+		//	}
+
+		//	if (orientations_.size() == 2) {
+		//		//positions_.pop_back();
+		//		orientations_.pop_back();
+		//	}
 
 			Eigen::Matrix<double, 6, 1> position_error;
 

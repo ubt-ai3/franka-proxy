@@ -102,6 +102,8 @@ namespace franka_proxy
 			std::list<std::array<double, 6>> measured_velocities_;
 			std::list<std::array<double, 7>> measured_joint_velocities_;
 
+			std::list <Eigen::Matrix<double, 6, 1>> f_exts_;
+
 			// damping and stiffness matrix
 			double translational_stiffness_ = 300.0;
 			double rotational_stiffness_ = 50.0;
@@ -112,7 +114,7 @@ namespace franka_proxy
 			std::array<double, 16> current_pose_ = {0};
 			std::list<std::array<double, 16>> poses_;
 
-			std::list<Eigen::Vector3d> positions_;
+			//std::list<Eigen::Vector3d> positions_;
 			std::list<Eigen::Quaterniond> orientations_;
 
 			double pose_interval_;
