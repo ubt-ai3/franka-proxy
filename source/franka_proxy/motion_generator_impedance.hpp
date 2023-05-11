@@ -120,11 +120,10 @@ namespace franka_proxy
 
 			// csv logging
 			bool logging_;
-			std::ofstream csv_log_;
-			std::string csv_header = "time; f_ext x; f_ext y; f_ext z; f_ext r_x; f_ext r_y; f_ext r_z; s1; s2; s3; s4; s5; s6; d1; d2; d3; d4; d5; d6; position_d x; position_d y; position_d z; rotation_d x; rotation_d y; rotation_d z; position x; position y; position z; rotation x; rotation y; rotation z ";
-			
-			std::ostringstream position_d_log_;
-			std::ostringstream position_log_;
+			std::ofstream csv_log_1_;
+			std::string csv_header1_ = "time; f_ext x; f_ext y; f_ext z; f_ext r_x; f_ext r_y; f_ext r_z; s1; s2; s3; s4; s5; s6; d1; d2; d3; d4; d5; d6";
+			std::ofstream csv_log_2_;
+			std::string csv_header2_ = "time; position_d x; position_d y; position_d z; rotation_d x; rotation_d y; rotation_d z; position x; position y; position z; rotation x; rotation y; rotation z ";
 		};
 	} /* namespace detail */
 } /* namespace franka_proxy */

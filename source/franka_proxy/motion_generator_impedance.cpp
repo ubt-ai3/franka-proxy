@@ -55,8 +55,10 @@ namespace franka_proxy
 
 			if (logging_) {
 				// start logging to csv file
-				csv_log_.open("impedance_log.csv");
-				csv_log_ << csv_header << "\n";
+				csv_log_1_.open("impedance_log_1.csv");
+				csv_log_1_ << csv_header1_ << "\n";
+				csv_log_2_.open("impedance_log_2.csv");
+				csv_log_2_ << csv_header2_ << "\n";
 			}
 		};
 
@@ -88,8 +90,10 @@ namespace franka_proxy
 
 			if (logging_) {
 				// start logging to csv file
-				csv_log_.open("impedance_log.csv");
-				csv_log_ << csv_header << "\n";
+				csv_log_1_.open("impedance_log_1.csv");
+				csv_log_1_ << csv_header1_ << "\n";
+				csv_log_2_.open("impedance_log_2.csv");
+				csv_log_2_ << csv_header2_ << "\n";
 			}
 		}
 
@@ -138,7 +142,8 @@ namespace franka_proxy
 
 				if (logging_) {
 					// close log file
-					csv_log_.close();
+					csv_log_1_.close();
+					csv_log_2_.close();
 				}
 
 				return current_torques;
@@ -285,7 +290,7 @@ namespace franka_proxy
 				std::ostringstream current_values;
 				current_values << time_ << "; " << f_ext_log.str() << "; " << stiffness_matrix_log.str() << "; " << damping_matrix_log.str() << "; " << position_d_log_.str() << "; " << position_log_.str();
 
-				csv_log_ << current_values.str() << "\n";
+				csv_log_1_ << current_values.str() << "\n";
 			}
 			
 			return tau_d_ar;
@@ -333,8 +338,16 @@ namespace franka_proxy
 			position_error.tail(3) << -po_transform.linear() * position_error.tail(3);
 
 			if (logging_) {
-				position_d_log_ << position_d.x() << "; " << position_d.y() << "; " << position_d.z() << "; " << orientation_d.x() << "; " << orientation_d.y() << "; " << orientation_d.z();
-				position_log_ << position.x() << "; " << position.y() << "; " << position.z() << "; " << orientation.x() << "; " << orientation.y() << "; " << orientation.z();
+				std::ostringstream position_d_log;
+				std::ostringstream position_log;
+
+				position_d_log << position_d.x() << "; " << position_d.y() << "; " << position_d.z() << "; " << orientation_d.x() << "; " << orientation_d.y() << "; " << orientation_d.z();
+				position_log << position.x() << "; " << position.y() << "; " << position.z() << "; " << orientation.x() << "; " << orientation.y() << "; " << orientation.z();
+
+				std::ostringstream current_values;
+				current_values << time_ << "; " << position_d_log.str() << "; " << position_log.str();
+
+				csv_log_2_ << current_values.str() << "\n";
 			}
 
 			return position_error;
