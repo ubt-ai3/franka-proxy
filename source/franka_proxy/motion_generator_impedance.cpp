@@ -288,7 +288,7 @@ namespace franka_proxy
 				damping_matrix_log << damping_matrix_(0, 0) << "; " << damping_matrix_(1, 1) << "; " << damping_matrix_(2, 2) << "; " << damping_matrix_(3, 3) << "; " << damping_matrix_(4, 4) << "; " << damping_matrix_(5, 5);
 
 				std::ostringstream current_values;
-				current_values << time_ << "; " << f_ext_log.str() << "; " << stiffness_matrix_log.str() << "; " << damping_matrix_log.str() << "; " << position_d_log_.str() << "; " << position_log_.str();
+				current_values << time_ << "; " << f_ext_log.str() << "; " << stiffness_matrix_log.str() << "; " << damping_matrix_log.str();
 
 				csv_log_1_ << current_values.str() << "\n";
 			}
