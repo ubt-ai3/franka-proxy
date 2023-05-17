@@ -28,8 +28,6 @@ namespace franka_proxy
 {
 	namespace detail
 	{
-		class impedance_position_error_calculator;
-
 		/**
 		 *************************************************************************
 		 *
