@@ -270,27 +270,10 @@ namespace franka_proxy
 			Eigen::Matrix<double, 6, 1> position_error(get_position_error(time_));
 
 			// calculate external force
-			Eigen::Matrix<double, 6, 1> current_f_ext = inertia_matrix * acceleration + damping_matrix_ * velocity + stiffness_matrix_ * position_error;
-
-			// filter force output
-			f_exts_.push_front(current_f_ext);
-
-			// calculate f_ext from last measurements
-			Eigen::Matrix<double, 6, 1> f_ext = Eigen::Matrix<double, 6, 1>::Zero();
-
-			f_ext(0) = current_f_ext(0);
-			f_ext(1) = current_f_ext(1);
-			f_ext(2) = current_f_ext(2);
-
-			Eigen::Matrix<double, 6, 1> f_ext_front = f_exts_.front();
-			Eigen::Matrix<double, 6, 1> f_ext_back = f_exts_.back();
+			Eigen::Matrix<double, 6, 1> f_ext = inertia_matrix * acceleration + damping_matrix_ * velocity + stiffness_matrix_ * position_error;
 
 			for (int i = 3; i < 6; i++) {
-				f_ext(i) = f_ext_front(i) * 0.5;
-			}
-
-			if (f_exts_.size() == 1) {
-				f_exts_.pop_back();
+				f_ext(i) = f_ext(i) * 0.5;
 			}
 
 			// calculate torque - without gravity as the robot handles it itself

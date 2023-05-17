@@ -102,8 +102,6 @@ namespace franka_proxy
 			std::list<std::array<double, 6>> measured_velocities_;
 			std::list<std::array<double, 7>> measured_joint_velocities_;
 
-			std::list <Eigen::Matrix<double, 6, 1>> f_exts_;
-
 			// damping and stiffness matrix
 			double translational_stiffness_ = 300.0;
 			double rotational_stiffness_ = 50.0;
