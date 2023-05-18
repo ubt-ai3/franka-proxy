@@ -20,7 +20,7 @@
 #include <franka/robot.h>
 #include <franka/model.h>
 
-#include "motion_generator_impedance.hpp"
+#include "motion_generator_cartesian_impedance.hpp"
 
 #include <iostream>
 #include <fstream>
@@ -93,7 +93,7 @@ namespace franka_proxy
 			Eigen::Matrix<double, 6, 6> stiffness_matrix_ = Eigen::Matrix<double, 6, 6>::Zero();
 
 			// impedance controller to command new desired position
-			impedance_motion_generator impedance_controller_;
+			cartesian_impedance_motion_generator impedance_controller_;
 
 			// csv logging
 			bool logging_;

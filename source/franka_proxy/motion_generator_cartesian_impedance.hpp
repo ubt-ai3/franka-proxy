@@ -1,15 +1,15 @@
 /**
  *************************************************************************
  *
- * @file motion_generator_impedance.hpp
+ * @file motion_generator_cartesian_impedance.hpp
  *
  * todo
  *
  ************************************************************************/
 
 
-#if !defined(INCLUDED__FRANKA_PROXY__MOTION_GENERATOR_IMPEDANCE_HPP)
-#define INCLUDED__FRANKA_PROXY__MOTION_GENERATOR_IMPEDANCE_HPP
+#if !defined(INCLUDED__FRANKA_PROXY__MOTION_GENERATOR_CARTESIAN_IMPEDANCE_HPP)
+#define INCLUDED__FRANKA_PROXY__MOTION_GENERATOR_CARTESIAN_IMPEDANCE_HPP
 
 
 #include <vector>
@@ -31,15 +31,15 @@ namespace franka_proxy
 		/**
 		 *************************************************************************
 		 *
-		 * @class impedance_motion_generator
+		 * @class cartesian_impedance_motion_generator
 		 *
 		 * in use
 		 *
 		 ************************************************************************/
-		class impedance_motion_generator
+		class cartesian_impedance_motion_generator
 		{
 		public:
-			impedance_motion_generator
+			cartesian_impedance_motion_generator
 			(franka::Robot& robot,
 				std::mutex& state_lock,
 				franka::RobotState& robot_state,
@@ -47,7 +47,7 @@ namespace franka_proxy
 				bool logging,
 				bool use_online_parameter_calc);
 
-			impedance_motion_generator
+			cartesian_impedance_motion_generator
 			(franka::Robot& robot,
 				std::mutex& state_lock,
 				franka::RobotState& robot_state,
@@ -130,4 +130,4 @@ namespace franka_proxy
 } /* namespace franka_proxy */
 
 
-#endif /* !defined(INCLUDED__FRANKA_PROXY__MOTION_GENERATOR_IMPEDANCE_HPP) */
+#endif /* !defined(INCLUDED__FRANKA_PROXY__MOTION_GENERATOR_CARTESIAN_IMPEDANCE_HPP) */

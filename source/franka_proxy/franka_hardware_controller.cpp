@@ -21,7 +21,7 @@
 #include "franka_motion_recorder.hpp"
 #include "motion_generator_admittance.hpp"
 #include "motion_generator_force.hpp"
-#include "motion_generator_impedance.hpp"
+#include "motion_generator_cartesian_impedance.hpp"
 #include "motion_generator_joint_max_accel.hpp"
 #include "motion_generator_seq_cart_vel_tau.hpp"
 
@@ -209,7 +209,7 @@ namespace franka_proxy
 
 	void franka_hardware_controller::impedance_hold_pose(const double duration, const bool log, const bool use_stiff_damp_online_calc)
 	{
-		detail::impedance_motion_generator motion_generator(robot_, robot_state_lock_, robot_state_, duration, log, use_stiff_damp_online_calc);
+		detail::cartesian_impedance_motion_generator motion_generator(robot_, robot_state_lock_, robot_state_, duration, log, use_stiff_damp_online_calc);
 
 		try
 		{
@@ -244,7 +244,7 @@ namespace franka_proxy
 
 	void franka_hardware_controller::impedance_hold_pose(const double duration, const bool log, const bool use_stiff_damp_online_calc, const double rotational_stiffness, const double translational_stiffness)
 	{
-		detail::impedance_motion_generator motion_generator(robot_, robot_state_lock_, robot_state_, duration, log, use_stiff_damp_online_calc);
+		detail::cartesian_impedance_motion_generator motion_generator(robot_, robot_state_lock_, robot_state_, duration, log, use_stiff_damp_online_calc);
 
 		motion_generator.set_rotational_stiffness(rotational_stiffness); // always true;
 		motion_generator.set_translational_stiffness(translational_stiffness); // always true;
@@ -282,7 +282,7 @@ namespace franka_proxy
 
 	void franka_hardware_controller::impedance_poses(const std::list<std::array<double, 16>>& poses, const double duration, const bool log, const bool use_stiff_damp_online_calc)
 	{
-		detail::impedance_motion_generator motion_generator(robot_, robot_state_lock_, robot_state_, poses, duration, log, use_stiff_damp_online_calc);
+		detail::cartesian_impedance_motion_generator motion_generator(robot_, robot_state_lock_, robot_state_, poses, duration, log, use_stiff_damp_online_calc);
 
 		try
 		{
@@ -317,7 +317,7 @@ namespace franka_proxy
 
 	void franka_hardware_controller::impedance_poses(const std::list<std::array<double, 16>>& poses, const double duration, const bool log, const bool use_stiff_damp_online_calc, const double rotational_stiffness, const double translational_stiffness)
 	{
-		detail::impedance_motion_generator motion_generator(robot_, robot_state_lock_, robot_state_, poses, duration, log, use_stiff_damp_online_calc);
+		detail::cartesian_impedance_motion_generator motion_generator(robot_, robot_state_lock_, robot_state_, poses, duration, log, use_stiff_damp_online_calc);
 
 		motion_generator.set_rotational_stiffness(rotational_stiffness); // always true
 		motion_generator.set_translational_stiffness(translational_stiffness); // always true

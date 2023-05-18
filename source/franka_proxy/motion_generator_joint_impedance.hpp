@@ -8,8 +8,8 @@
  ************************************************************************/
 
 
-#if !defined(INCLUDED__FRANKA_PROXY___JOINT_MOTION_GENERATOR_IMPEDANCE_HPP)
-#define INCLUDED__FRANKA_PROXY___JOINT_MOTION_GENERATOR_IMPEDANCE_HPP
+#if !defined(INCLUDED__FRANKA_PROXY__MOTION_GENERATOR_JOINT_IMPEDANCE_HPP)
+#define INCLUDED__FRANKA_PROXY__MOTION_GENERATOR_JOINT_IMPEDANCE_HPP
 
 
 #include <vector>
@@ -50,28 +50,28 @@ namespace franka_proxy
 			(franka::Robot& robot,
 				std::mutex& state_lock,
 				franka::RobotState& robot_state,
-				std::list<std::array<double, 16>> poses,
+				std::list<std::array<double, 7>> joint_positions,
 				double duration,
 				bool logging);
 
 			franka::Torques callback
 			(const franka::RobotState& robot_state,
 				franka::Duration period,
-				std::function<Eigen::Matrix<double, 6, 1>(const double)> get_joint_position_error);
+				std::function<Eigen::Matrix<double, 7, 1>(const double)> get_joint_position_error);
 
-			Eigen::Matrix<double, 6, 1> calculate_position_error(const franka::RobotState& robot_state, double time);
+			Eigen::Matrix<double, 7, 1> calculate_joint_position_error(const franka::RobotState& robot_state, double time);
 
 			// getter and setter for 'default' stiffness and damping
-			bool set_rotational_stiffness(double rotational_stiffness);
-			bool set_translational_stiffness(double translational_stiffness);
+			bool set_stiffness(std::array<double, 49> stiffness);
+			bool set_damping(std::array<double, 49> damping);
 
-			double get_rotational_stiffness();
-			double get_translational_stiffness();
+			std::array<double, 49> get_stiffness();
+			std::array<double, 49> get_damping();
 
 		private:
 			void calculate_default_stiffness_and_damping();
 			void init_impedance_motion_generator(franka::Robot& robot, std::mutex& state_lock, franka::RobotState& robot_state);
-			double calculate_stiffness_from_damping(double di, double mi);
+			double calculate_damping_from_stiffness(double ki);
 
 			franka::Model model_;
 
@@ -89,18 +89,19 @@ namespace franka_proxy
 			// damping and stiffness matrix
 			double translational_stiffness_ = 300.0;
 			double rotational_stiffness_ = 50.0;
-			Eigen::Matrix<double, 6, 6> damping_matrix_ = Eigen::Matrix<double, 6, 6>::Zero(); // 7 x 7
-			Eigen::Matrix<double, 6, 6> stiffness_matrix_ = Eigen::Matrix<double, 6, 6>::Zero(); // 7 x 7
+			Eigen::Matrix<double, 7, 7> damping_matrix_ = Eigen::Matrix<double, 7, 7>::Zero();
+			Eigen::Matrix<double, 7, 7> stiffness_matrix_ = Eigen::Matrix<double, 7, 7>::Zero();
+
+			// Stiffness & Damping
+			const std::array<double, 7> K_P_ = {600.0, 600.0, 600.0, 600.0, 250.0, 150.0, 50.0};
+			const std::array<double, 7> K_D_ = {50.0, 50.0, 50.0, 50.0, 30.0, 25.0, 15.0};
 
 			// joint position error calculation
-			std::array<double, 16> current_pose_ = { 0 };
-			std::list<std::array<double, 16>> poses_;
+			std::array<double, 7> current_joint_position_ = { 0 };
+			std::list<std::array<double, 7>> joint_positions_;
 
-			double pose_interval_;
-			double next_pose_at_ = 0.0;
-
-			// online stiffness and damping parameter calculation
-			bool online_parameter_calc_ = false;
+			double joint_position_interval_;
+			double next_joint_position_at_ = 0.0;
 
 			// csv logging
 			bool logging_;
@@ -113,4 +114,4 @@ namespace franka_proxy
 } /* namespace franka_proxy */
 
 
-#endif /* !defined(INCLUDED__FRANKA_PROXY__MOTION_GENERATOR_IMPEDANCE_HPP) */
+#endif /* !defined(INCLUDED__FRANKA_PROXY__MOTION_GENERATOR_JOINT_IMPEDANCE_HPP) */

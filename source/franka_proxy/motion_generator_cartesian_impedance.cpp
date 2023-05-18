@@ -1,14 +1,14 @@
 /**
  *************************************************************************
  *
- * @file motion_generator_impedance.cpp
+ * @file motion_generator_cartesian_impedance.cpp
  *
  * ..., implementation.
  *
  ************************************************************************/
 
 
-#include "motion_generator_impedance.hpp"
+#include "motion_generator_cartesian_impedance.hpp"
 
 #include <utility>
 #include <iostream>
@@ -29,12 +29,12 @@ namespace franka_proxy
 
 		//////////////////////////////////////////////////////////////////////////
 		//
-		// impedance_motion_generator
+		// cartesian_impedance_motion_generator
 		//
 		//////////////////////////////////////////////////////////////////////////
 
 
-		impedance_motion_generator::impedance_motion_generator
+		cartesian_impedance_motion_generator::cartesian_impedance_motion_generator
 		(franka::Robot& robot,
 			std::mutex& state_lock,
 			franka::RobotState& robot_state,
@@ -55,14 +55,14 @@ namespace franka_proxy
 
 			if (logging_) {
 				// start logging to csv file
-				csv_log_1_.open("impedance_log_1.csv");
+				csv_log_1_.open("cartesian_impedance_log_1.csv");
 				csv_log_1_ << csv_header1_ << "\n";
-				csv_log_2_.open("impedance_log_2.csv");
+				csv_log_2_.open("cartesian_impedance_log_2.csv");
 				csv_log_2_ << csv_header2_ << "\n";
 			}
 		};
 
-		impedance_motion_generator::impedance_motion_generator
+		cartesian_impedance_motion_generator::cartesian_impedance_motion_generator
 		(franka::Robot& robot,
 			std::mutex& state_lock,
 			franka::RobotState& robot_state,
@@ -97,7 +97,7 @@ namespace franka_proxy
 			}
 		}
 
-		void impedance_motion_generator::init_impedance_motion_generator(franka::Robot& robot, std::mutex& state_lock, franka::RobotState& robot_state) {
+		void cartesian_impedance_motion_generator::init_impedance_motion_generator(franka::Robot& robot, std::mutex& state_lock, franka::RobotState& robot_state) {
 			{
 				std::lock_guard<std::mutex> state_guard(state_lock_);
 				state_ = robot_state;
@@ -118,7 +118,7 @@ namespace franka_proxy
 			current_pose_ = state_.O_T_EE;
 		}
 
-		franka::Torques impedance_motion_generator::callback
+		franka::Torques cartesian_impedance_motion_generator::callback
 		(const franka::RobotState& robot_state,
 			franka::Duration period,
 			std::function<Eigen::Matrix<double, 6, 1>(const double)> get_position_error)
@@ -300,7 +300,7 @@ namespace franka_proxy
 			return tau_d_ar;
 		}
 
-		Eigen::Matrix<double, 6, 1> impedance_motion_generator::calculate_position_error(const franka::RobotState& robot_state, double time) {
+		Eigen::Matrix<double, 6, 1> cartesian_impedance_motion_generator::calculate_position_error(const franka::RobotState& robot_state, double time) {
 			{
 				std::lock_guard<std::mutex> state_guard(state_lock_);
 				state_ = robot_state;
@@ -357,13 +357,13 @@ namespace franka_proxy
 			return position_error;
 		}
 
-		double impedance_motion_generator::optimizeDamping(double l_di, double u_di, double mi, double bi, double x0i_max, double derived_x0i_max) {
+		double cartesian_impedance_motion_generator::optimizeDamping(double l_di, double u_di, double mi, double bi, double x0i_max, double derived_x0i_max) {
 			// di = min(max(...), ...);
 			const double di_max_val = std::max(l_di, ((2 * mi * derived_x0i_max) / ((bi - x0i_max) * exp(1))));
 			return std::min(di_max_val, u_di);
 		}
 
-		double impedance_motion_generator::calculate_stiffness_from_damping(double di, double mi) {
+		double cartesian_impedance_motion_generator::calculate_stiffness_from_damping(double di, double mi) {
 			/**
 				critically damped condition
 
@@ -379,7 +379,7 @@ namespace franka_proxy
 			return ki_;
 		}
 
-		void impedance_motion_generator::calculate_default_stiffness_and_damping() {
+		void cartesian_impedance_motion_generator::calculate_default_stiffness_and_damping() {
 			stiffness_matrix_.topLeftCorner(3, 3) << translational_stiffness_ * Eigen::MatrixXd::Identity(3, 3);
 			stiffness_matrix_.bottomRightCorner(3, 3) << rotational_stiffness_ * Eigen::MatrixXd::Identity(3, 3);
 			damping_matrix_.topLeftCorner(3, 3) << 2.0 * sqrt(translational_stiffness_) *
@@ -388,7 +388,7 @@ namespace franka_proxy
 				Eigen::MatrixXd::Identity(3, 3);
 		}
 
-		bool impedance_motion_generator::set_rotational_stiffness(double rotational_stiffness) {
+		bool cartesian_impedance_motion_generator::set_rotational_stiffness(double rotational_stiffness) {
 			if (initialized_) {
 				// no changes allowed -> return false as operation failed
 				return false;
@@ -403,11 +403,11 @@ namespace franka_proxy
 			}
 		}
 
-		double impedance_motion_generator::get_rotational_stiffness() {
+		double cartesian_impedance_motion_generator::get_rotational_stiffness() {
 			return rotational_stiffness_;
 		}
 
-		bool impedance_motion_generator::set_translational_stiffness(double translational_stiffness) {
+		bool cartesian_impedance_motion_generator::set_translational_stiffness(double translational_stiffness) {
 			if (initialized_) {
 				// no changes allowed -> return false as operation failed
 				return false;
@@ -422,7 +422,7 @@ namespace franka_proxy
 			}
 		}
 
-		double impedance_motion_generator::get_translational_stiffness() {
+		double cartesian_impedance_motion_generator::get_translational_stiffness() {
 			return translational_stiffness_;
 		}
 

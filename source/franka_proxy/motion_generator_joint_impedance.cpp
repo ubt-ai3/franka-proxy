@@ -64,24 +64,24 @@ namespace franka_proxy
 		(franka::Robot& robot,
 			std::mutex& state_lock,
 			franka::RobotState& robot_state,
-			std::list<std::array<double, 16>> poses,
+			std::list<std::array<double, 7>> joint_positions,
 			double duration,
 			bool logging)
 			:
 			model_(robot.loadModel()),
 			state_lock_(state_lock),
 			state_(robot_state),
-			poses_(poses),
+			joint_positions_(joint_positions),
 			duration_(duration),
 			logging_(logging)
 		{
 			init_impedance_motion_generator(robot, state_lock, robot_state);
 
 			if (duration > 0.0) {
-				pose_interval_ = duration / poses.size();
+				joint_position_interval_ = duration / joint_positions.size();
 			}
 			else {
-				pose_interval_ = 0.0;
+				joint_position_interval_ = 0.0;
 			}
 
 			if (logging_) {
@@ -117,7 +117,7 @@ namespace franka_proxy
 		franka::Torques joint_impedance_motion_generator::callback
 		(const franka::RobotState& robot_state,
 			franka::Duration period,
-			std::function<Eigen::Matrix<double, 6, 1>(const double)> get_joint_position_error)
+			std::function<Eigen::Matrix<double, 7, 1>(const double)> get_joint_position_error)
 		{
 			{
 				std::lock_guard<std::mutex> state_guard(state_lock_);
@@ -204,7 +204,7 @@ namespace franka_proxy
 				timestamps_.pop_front();
 			}
 
-			Eigen::Matrix<double, 6, 1> joint_position_error(get_joint_position_error(time_));
+			Eigen::Matrix<double, 7, 1> joint_position_error(get_joint_position_error(time_));
 
 			// calculate external force
 			/*Eigen::Matrix<double, 6, 1> f_ext = inertia_matrix * acceleration + damping_matrix_ * velocity + stiffness_matrix_ * position_error;
@@ -214,22 +214,23 @@ namespace franka_proxy
 			}*/
 
 			// calculate torque - without gravity as the robot handles it itself !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-			Eigen::VectorXd tau_d = mass_matrix * j_acceleration + coriolis - jacobian.transpose() * f_ext;
+			// Eigen::VectorXd tau_d = mass_matrix * j_acceleration + coriolis - jacobian.transpose() * f_ext;
+			Eigen::VectorXd tau_d = stiffness_matrix_ * joint_position_error + damping_matrix_ * joint_velocity; // inertia_matrix * joint_acceleration;
 
 			std::array<double, 7> tau_d_ar;
 			Eigen::VectorXd::Map(&tau_d_ar[0], 7) = tau_d;
-			// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+			
 			if (logging_) {
 				// log to csv
-				std::ostringstream f_ext_log;
-				f_ext_log << f_ext(0) << "; " << f_ext(1) << "; " << f_ext(2) << "; " << f_ext(3) << "; " << f_ext(4) << "; " << f_ext(5);
+				std::ostringstream tau_d_log;
+				tau_d_log << tau_d(0) << "; " << tau_d(1) << "; " << tau_d(2) << "; " << tau_d(3) << "; " << tau_d(4) << "; " << tau_d(5) << "; " << tau_d(6);
 				std::ostringstream stiffness_matrix_log;
 				stiffness_matrix_log << stiffness_matrix_(0, 0) << "; " << stiffness_matrix_(1, 1) << "; " << stiffness_matrix_(2, 2) << "; " << stiffness_matrix_(3, 3) << "; " << stiffness_matrix_(4, 4) << "; " << stiffness_matrix_(5, 5);
 				std::ostringstream damping_matrix_log;
 				damping_matrix_log << damping_matrix_(0, 0) << "; " << damping_matrix_(1, 1) << "; " << damping_matrix_(2, 2) << "; " << damping_matrix_(3, 3) << "; " << damping_matrix_(4, 4) << "; " << damping_matrix_(5, 5);
 
 				std::ostringstream current_values;
-				current_values << time_ << "; " << f_ext_log.str() << "; " << stiffness_matrix_log.str() << "; " << damping_matrix_log.str();
+				current_values << time_ << "; " << tau_d_log.str() << "; " << stiffness_matrix_log.str() << "; " << damping_matrix_log.str();
 
 				csv_log_1_ << current_values.str() << "\n";
 			}
@@ -237,124 +238,101 @@ namespace franka_proxy
 			return tau_d_ar;
 		}
 
-		Eigen::Matrix<double, 6, 1> joint_impedance_motion_generator::calculate_position_error(const franka::RobotState& robot_state, double time) {
+		Eigen::Matrix<double, 7, 1> joint_impedance_motion_generator::calculate_joint_position_error(const franka::RobotState& robot_state, double time) {
 			{
 				std::lock_guard<std::mutex> state_guard(state_lock_);
 				state_ = robot_state;
 			}
 
-			if (time >= next_pose_at_ && !poses_.empty()) {
+			if (time >= next_joint_position_at_ && !joint_positions_.empty()) {
 				// get new pose from list
-				current_pose_ = poses_.front();
-				poses_.pop_front();
+				current_joint_position_ = joint_positions_.front();
+				joint_positions_.pop_front();
 
 				// set next position interval
-				next_pose_at_ = next_pose_at_ + pose_interval_;
+				next_joint_position_at_ = next_joint_position_at_ + joint_position_interval_;
 			}
 
-			// get current desired position and orientation
-			Eigen::Affine3d po_d_transform(Eigen::Matrix4d::Map(current_pose_.data()));
-			Eigen::Vector3d position_d(po_d_transform.translation());
-			Eigen::Quaterniond orientation_d(po_d_transform.linear());
+			// get current joint position
+			Eigen::Map<const Eigen::Matrix<double, 7, 1>> dq(state_.dq.data());
 
-			// get current position and orientation
-			Eigen::Affine3d po_transform(Eigen::Matrix4d::Map(state_.O_T_EE.data()));
-			Eigen::Vector3d position(po_transform.translation());
-			Eigen::Quaterniond orientation(po_transform.linear());
-
-			Eigen::Matrix<double, 6, 1> position_error;
-
-			// calculate the position error
-			position_error.head(3) << position - position_d; // transforming to 6x6 as the position error will be mulitplied with the stiffness matrix
-
-			// calculate orientation error
-			if (orientation_d.coeffs().dot(orientation.coeffs()) < 0.0) {
-				orientation.coeffs() << -orientation.coeffs();
-			}
-
-			// "difference" quaternion
-			Eigen::Quaterniond diff_quaternion(orientation.inverse() * orientation_d);
-			position_error.tail(3) << diff_quaternion.x(), diff_quaternion.y(), diff_quaternion.z();
-			// Transform to base frame
-			position_error.tail(3) << -po_transform.linear() * position_error.tail(3);
+			Eigen::Matrix<double, 7, 1> joint_position_error = dq - current_joint_position_;
 
 			if (logging_) {
-				std::ostringstream position_d_log;
-				std::ostringstream position_log;
+				std::ostringstream joint_position_d_log;
+				std::ostringstream joint_position_log;
 
-				position_d_log << position_d.x() << "; " << position_d.y() << "; " << position_d.z() << "; " << orientation_d.x() << "; " << orientation_d.y() << "; " << orientation_d.z();
-				position_log << position.x() << "; " << position.y() << "; " << position.z() << "; " << orientation.x() << "; " << orientation.y() << "; " << orientation.z();
+				joint_position_d_log << current_joint_position_(0) << "; " << current_joint_position_(1) << "; " << current_joint_position_(2) << "; " << current_joint_position_(3) << "; " << current_joint_position_(4) << "; " << current_joint_position_(5) << "; " << current_joint_position_(6);
+				joint_position_log << dq(0) << "; " << dq(1) << "; " << dq(2) << "; " << dq(3) << "; " << dq(4) << "; " << dq(5) << "; " << dq(6);
 
 				std::ostringstream current_values;
-				current_values << time_ << "; " << position_d_log.str() << "; " << position_log.str();
+				current_values << time_ << "; " << joint_position_d_log.str() << "; " << joint_position_log.str();
 
 				csv_log_2_ << current_values.str() << "\n";
 			}
 
-			return position_error;
+			return joint_position_error;
 		}
 
-		double joint_impedance_motion_generator::calculate_stiffness_from_damping(double di, double mi) {
+		double joint_impedance_motion_generator::calculate_damping_from_stiffness(double ki) {
 			/**
 				critically damped condition
 
 				stiffness ki = (di)^2/4mi
 			*/
 
-			double ki_ = di * di;
-
-			if (mi <= 0) {
-				ki_ = ki_ / (4 * mi);
-			}
-
-			return ki_;
+			return 2.0 * sqrt(ki); // mi = 1
 		}
 
 		void joint_impedance_motion_generator::calculate_default_stiffness_and_damping() {
-			stiffness_matrix_.topLeftCorner(3, 3) << translational_stiffness_ * Eigen::MatrixXd::Identity(3, 3);
-			stiffness_matrix_.bottomRightCorner(3, 3) << rotational_stiffness_ * Eigen::MatrixXd::Identity(3, 3);
-			damping_matrix_.topLeftCorner(3, 3) << 2.0 * sqrt(translational_stiffness_) *
-				Eigen::MatrixXd::Identity(3, 3);
-			damping_matrix_.bottomRightCorner(3, 3) << 2.0 * sqrt(rotational_stiffness_) *
-				Eigen::MatrixXd::Identity(3, 3);
+			for (int i = 0; i < stiffness_matrix_.rows(); i++) {
+				stiffness_matrix_(i, i) = K_P[i];
+				damping_matrix_(i, i) = K_D[i]; // TODO: use calculate damping from stiffness method
+			}
 		}
 
-		bool joint_impedance_motion_generator::set_rotational_stiffness(double rotational_stiffness) {
+		bool joint_impedance_motion_generator::set_stiffness(std::array<double, 49> stiffness) {
 			if (initialized_) {
 				// no changes allowed -> return false as operation failed
 				return false;
 			}
 			else {
 				// set new value
-				rotational_stiffness_ = rotational_stiffness;
-				calculate_default_stiffness_and_damping();
+				Eigen::Map<const Eigen::Matrix<double, 7, 7>> new_stiffness_matrix(stiffness.data());
+				stiffness_matrix_ = new_stiffness_matrix;
 
 				// operation succeeded -> return true
 				return true;
 			}
 		}
 
-		double joint_impedance_motion_generator::get_rotational_stiffness() {
-			return rotational_stiffness_;
+		std::array<double, 49> joint_impedance_motion_generator::get_stiffness() {
+			std::array<double, 49> stiffness_matrix_ar;
+			Eigen::VectorXd::Map(&stiffness_matrix_ar[0], 49) = stiffness_matrix_;
+
+			return stiffness_matrix_ar;
 		}
 
-		bool joint_impedance_motion_generator::set_translational_stiffness(double translational_stiffness) {
+		bool joint_impedance_motion_generator::set_damping(std::array<double, 49> damping) {
 			if (initialized_) {
 				// no changes allowed -> return false as operation failed
 				return false;
 			}
 			else {
 				// set new value
-				translational_stiffness_ = translational_stiffness;
-				calculate_default_stiffness_and_damping();
+				Eigen::Map<const Eigen::Matrix<double, 7, 7>> new_damping_matrix(damping.data());
+				damping_matrix_ = new_damping_matrix;
 
 				// operation succeeded -> return true
 				return true;
 			}
 		}
 
-		double joint_impedance_motion_generator::get_translational_stiffness() {
-			return translational_stiffness_;
+		std::array<double, 49> joint_impedance_motion_generator::get_damping() {
+			std::array<double, 49> damping_matrix_ar;
+			Eigen::VectorXd::Map(&damping_matrix_ar[0], 49) = damping_matrix_;
+
+			return damping_matrix_ar;
 		}
 
 
