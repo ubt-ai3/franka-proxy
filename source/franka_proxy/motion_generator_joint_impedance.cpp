@@ -111,7 +111,7 @@ namespace franka_proxy
 			calculate_default_stiffness_and_damping();
 
 			// joint position error calculation initialization - initial pose
-			current_joint_position_ = state_.dq;
+			current_joint_position_ = state_.q;
 		}
 
 		franka::Torques joint_impedance_motion_generator::callback
@@ -161,10 +161,6 @@ namespace franka_proxy
 			std::array<double, 42> jac_ar = model_.zeroJacobian(franka::Frame::kEndEffector, state_);
 			Eigen::Map<const Eigen::Matrix<double, 6, 7>> jacobian(jac_ar.data());
 
-			// calculate inertia matrix !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-			// intertia = (J(q)*B^(-1)(q)*J(q).transpose())^(-1)
-			// Eigen::Matrix<double, 6, 6> inertia_matrix = (jacobian * mass_matrix.inverse() * jacobian.transpose()).inverse();
-
 			// get current joint velocity
 			Eigen::Map<const Eigen::Matrix<double, 7, 1>> joint_velocity(state_.dq.data());
 
@@ -213,9 +209,8 @@ namespace franka_proxy
 				f_ext(i) = f_ext(i) * 0.5;
 			}*/
 
-			// calculate torque - without gravity as the robot handles it itself !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-			// Eigen::VectorXd tau_d = mass_matrix * j_acceleration + coriolis - jacobian.transpose() * f_ext;
-			Eigen::VectorXd tau_d = stiffness_matrix_ * joint_position_error + damping_matrix_ * joint_velocity; // inertia_matrix * joint_acceleration;
+			// calculate torque - without gravity as the robot handles it itself
+			Eigen::VectorXd tau_d = coriolis - (stiffness_matrix_ * joint_position_error + damping_matrix_ * joint_velocity); // inertia_matrix * joint_acceleration;
 
 			std::array<double, 7> tau_d_ar;
 			Eigen::VectorXd::Map(&tau_d_ar[0], 7) = tau_d;
@@ -223,7 +218,7 @@ namespace franka_proxy
 			if (logging_) {
 				// log to csv
 				std::ostringstream tau_d_log;
-				//tau_d_log << tau_d(0) << "; " << tau_d(1) << "; " << tau_d(2) << "; " << tau_d(3) << "; " << tau_d(4) << "; " << tau_d(5) << "; " << tau_d(6);
+				tau_d_log << tau_d(0) << "; " << tau_d(1) << "; " << tau_d(2) << "; " << tau_d(3) << "; " << tau_d(4) << "; " << tau_d(5) << "; " << tau_d(6);
 				std::ostringstream stiffness_matrix_log;
 				stiffness_matrix_log << stiffness_matrix_(0, 0) << "; " << stiffness_matrix_(1, 1) << "; " << stiffness_matrix_(2, 2) << "; " << stiffness_matrix_(3, 3) << "; " << stiffness_matrix_(4, 4) << "; " << stiffness_matrix_(5, 5);
 				std::ostringstream damping_matrix_log;
@@ -254,18 +249,18 @@ namespace franka_proxy
 			}
 
 			// get current joint position
-			Eigen::Map<const Eigen::Matrix<double, 7, 1>> dq(state_.dq.data());
+			Eigen::Map<const Eigen::Matrix<double, 7, 1>> q(state_.q.data());
 
-			Eigen::Map<const Eigen::Matrix<double, 7, 1>> q(current_joint_position_.data());
+			Eigen::Map<const Eigen::Matrix<double, 7, 1>> q_d(current_joint_position_.data());
 
-			Eigen::Matrix<double, 7, 1> joint_position_error = dq - q;
+			Eigen::Matrix<double, 7, 1> joint_position_error = q - q_d;
 
 			if (logging_) {
 				std::ostringstream joint_position_d_log;
 				std::ostringstream joint_position_log;
 
-				joint_position_d_log << q(0) << "; " << q(1) << "; " << q(2) << "; " << q(3) << "; " << q(4) << "; " << q(5) << "; " << q(6);
-				joint_position_log << dq(0) << "; " << dq(1) << "; " << dq(2) << "; " << dq(3) << "; " << dq(4) << "; " << dq(5) << "; " << dq(6);
+				joint_position_d_log << q_d(0) << "; " << q_d(1) << "; " << q_d(2) << "; " << q_d(3) << "; " << q_d(4) << "; " << q_d(5) << "; " << q_d(6);
+				joint_position_log << q(0) << "; " << q(1) << "; " << q(2) << "; " << q(3) << "; " << q(4) << "; " << q(5) << "; " << q(6);
 
 				std::ostringstream current_values;
 				current_values << time_ << "; " << joint_position_d_log.str() << "; " << joint_position_log.str();
@@ -289,7 +284,7 @@ namespace franka_proxy
 		void joint_impedance_motion_generator::calculate_default_stiffness_and_damping() {
 			for (int i = 0; i < stiffness_matrix_.rows(); i++) {
 				stiffness_matrix_(i, i) = K_P_[i];
-				damping_matrix_(i, i) = K_D_[i]; // TODO: use calculate damping from stiffness method
+				damping_matrix_(i, i) = calculate_damping_from_stiffness(K_P_[i]);
 			}
 		}
 
