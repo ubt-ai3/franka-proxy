@@ -83,24 +83,24 @@ void franka_remote_controller::apply_admittance(double duration, bool log, doubl
 	send_command <command_apply_admittance_adm_imp_desired_stiffness>(duration, log, adm_rotational_stiffness, adm_translational_stiffness, imp_rotational_stiffness, imp_translational_stiffness);
 }
 
-void franka_remote_controller::impedance_hold_pose(double duration, bool log, bool use_stiff_damp_online_calc)
+void franka_remote_controller::cartesian_impedance_hold_pose(double duration, bool log, bool use_stiff_damp_online_calc)
 {
-	send_command<command_impedance_hold_pose>(duration, log, use_stiff_damp_online_calc);
+	send_command<command_cartesian_impedance_hold_pose>(duration, log, use_stiff_damp_online_calc);
 }
 
-void franka_remote_controller::impedance_hold_pose(double duration, bool log, bool use_stiff_damp_online_calc, double rotational_stiffness, double translational_stiffness)
+void franka_remote_controller::cartesian_impedance_hold_pose(double duration, bool log, bool use_stiff_damp_online_calc, double rotational_stiffness, double translational_stiffness)
 {
-	send_command<command_impedance_hold_pose_desired_stiffness>(duration, log, use_stiff_damp_online_calc, rotational_stiffness, translational_stiffness);
+	send_command<command_cartesian_impedance_hold_pose_desired_stiffness>(duration, log, use_stiff_damp_online_calc, rotational_stiffness, translational_stiffness);
 }
 
-void franka_remote_controller::impedance_poses(std::list<std::array<double, 16>>& poses, double duration, bool log, bool use_stiff_damp_online_calc)
+void franka_remote_controller::cartesian_impedance_poses(std::list<std::array<double, 16>>& poses, double duration, bool log, bool use_stiff_damp_online_calc)
 {
-	send_command<command_impedance_poses>(poses, duration, log, use_stiff_damp_online_calc);
+	send_command<command_cartesian_impedance_poses>(poses, duration, log, use_stiff_damp_online_calc);
 }
 
-void franka_remote_controller::impedance_poses(std::list<std::array<double, 16>>& poses, double duration, bool log, bool use_stiff_damp_online_calc, double rotational_stiffness, double translational_stiffness)
+void franka_remote_controller::cartesian_impedance_poses(std::list<std::array<double, 16>>& poses, double duration, bool log, bool use_stiff_damp_online_calc, double rotational_stiffness, double translational_stiffness)
 {
-	send_command<command_impedance_poses_desired_stiffness>(poses, duration, log, use_stiff_damp_online_calc, rotational_stiffness, translational_stiffness);
+	send_command<command_cartesian_impedance_poses_desired_stiffness>(poses, duration, log, use_stiff_damp_online_calc, rotational_stiffness, translational_stiffness);
 }
 
 void franka_remote_controller::apply_z_force(double mass, double duration)

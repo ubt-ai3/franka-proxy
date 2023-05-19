@@ -97,24 +97,24 @@ public:
 	void apply_admittance(double duration, bool log, double adm_rotational_stiffness, double adm_translational_stiffness, double imp_rotational_stiffness, double imp_translational_stiffness);
 
 	/**
-	 * Impedance controller to hold the current pose
+	 * Cartesian impedance controller to hold the current pose
 	*/
-	void impedance_hold_pose(double duration, bool log, bool use_stiff_damp_online_calc);
+	void cartesian_impedance_hold_pose(double duration, bool log, bool use_stiff_damp_online_calc);
 
 	/**
-	 * Impedance controller to hold the current pose with desired rotational and translational stiffness
+	 * Cartesian impedance controller to hold the current pose with desired rotational and translational stiffness
 	*/
-	void impedance_hold_pose(double duration, bool log, bool use_stiff_damp_online_calc, double rotational_stiffness, double translational_stiffness);
+	void cartesian_impedance_hold_pose(double duration, bool log, bool use_stiff_damp_online_calc, double rotational_stiffness, double translational_stiffness);
 
 	/**
-	*  Impedance controller to follow path of poses
+	*  Cartesian impedance controller to follow path of poses
 	*/
-	void impedance_poses(std::list<std::array<double, 16>>& positions, double duration, bool log, bool use_stiff_damp_online_calc);
+	void cartesian_impedance_poses(std::list<std::array<double, 16>>& positions, double duration, bool log, bool use_stiff_damp_online_calc);
 
 	/**
-	*  Impedance controller to follow path of poses with desired rotational and translational stiffness
+	*  Cartesian impedance controller to follow path of poses with desired rotational and translational stiffness
 	*/
-	void impedance_poses(std::list<std::array<double, 16>>& positions, double duration, bool log, bool use_stiff_damp_online_calc, double rotational_stiffness, double translational_stiffness);
+	void cartesian_impedance_poses(std::list<std::array<double, 16>>& positions, double duration, bool log, bool use_stiff_damp_online_calc, double rotational_stiffness, double translational_stiffness);
 
 	/**
 	 * todo docu

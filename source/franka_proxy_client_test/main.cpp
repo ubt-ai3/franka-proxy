@@ -114,13 +114,13 @@ int main()
 
 	std::cout << "Starting Impedance - Hold Position Test." << std::endl;
 
-	controller.impedance_hold_pose(150, true, false);
+	controller.cartesian_impedance_hold_pose(150, true, false);
 
 	std::cout << "Finished Impedance - Hold Position Test." << std::endl;
 
 	std::cout << "Starting Impedance - Hold Position Test With Desired Stiffness." << std::endl;
 
-	//controller.impedance_hold_pose(30, true, false, 10, 150);
+	//controller.cartesian_impedance_hold_pose(30, true, false, 10, 150);
 
 	std::cout << "Finished Impedance - Hold Position Test." << std::endl;
 
@@ -132,7 +132,7 @@ int main()
 		{0.826378, 0.559426, 0.0642109, 0, 0.562775, -0.824385, -0.0604543, 0, 0.0191152, 0.086096, -0.996103, 0, 0.503131, 0.2928, 0.296891, 1}
 	};
 
-	// controller.impedance_poses(poses, 30, false, false, 10, 150);
+	// controller.cartesian_impedance_poses(poses, 30, false, false, 10, 150);
 
 	std::cout << "Finished Impedance - Follow Positions Test." << std::endl;
 

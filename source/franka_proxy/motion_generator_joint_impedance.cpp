@@ -49,7 +49,7 @@ namespace franka_proxy
 		{
 			init_impedance_motion_generator(robot, state_lock, robot_state);
 
-			pose_interval_ = 0.0;
+			joint_position_interval_ = 0.0;
 
 			if (logging_) {
 				// start logging to csv file
@@ -111,7 +111,7 @@ namespace franka_proxy
 			calculate_default_stiffness_and_damping();
 
 			// joint position error calculation initialization - initial pose
-			current_pose_ = state_.O_T_EE;
+			current_joint_position_ = state_.dq;
 		}
 
 		franka::Torques joint_impedance_motion_generator::callback
@@ -166,11 +166,11 @@ namespace franka_proxy
 			// Eigen::Matrix<double, 6, 6> inertia_matrix = (jacobian * mass_matrix.inverse() * jacobian.transpose()).inverse();
 
 			// get current joint velocity
-			Eigen::Map<const Eigen::Matrix<double, 7, 1>> dq(state_.dq.data());
+			Eigen::Map<const Eigen::Matrix<double, 7, 1>> joint_velocity(state_.dq.data());
 
 			// convert current joint velocity to feed measured joint velocities
 			std::array<double, 7> new_measured_joint_velocity;
-			Eigen::VectorXd::Map(&new_measured_joint_velocity[0], 7) = dq;
+			Eigen::VectorXd::Map(&new_measured_joint_velocity[0], 7) = joint_velocity;
 
 			measured_joint_velocities_.push_back(new_measured_joint_velocity);
 
@@ -183,11 +183,11 @@ namespace franka_proxy
 			}
 
 			// calculate joint acceleration
-			std::array<double, 6> j_acc_list;
+			std::array<double, 7> j_acc_list;
 
 			// avoiding dividing by 0. Also: if no time has passed, no (joint) acceleration could have taken place
 			if (delta_time == 0.0) {
-				j_acc_list = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
+				j_acc_list = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
 			}
 			else {
 				for (int i = 0; i < j_acc_list.size(); i++) {
@@ -219,11 +219,11 @@ namespace franka_proxy
 
 			std::array<double, 7> tau_d_ar;
 			Eigen::VectorXd::Map(&tau_d_ar[0], 7) = tau_d;
-			
+
 			if (logging_) {
 				// log to csv
 				std::ostringstream tau_d_log;
-				tau_d_log << tau_d(0) << "; " << tau_d(1) << "; " << tau_d(2) << "; " << tau_d(3) << "; " << tau_d(4) << "; " << tau_d(5) << "; " << tau_d(6);
+				//tau_d_log << tau_d(0) << "; " << tau_d(1) << "; " << tau_d(2) << "; " << tau_d(3) << "; " << tau_d(4) << "; " << tau_d(5) << "; " << tau_d(6);
 				std::ostringstream stiffness_matrix_log;
 				stiffness_matrix_log << stiffness_matrix_(0, 0) << "; " << stiffness_matrix_(1, 1) << "; " << stiffness_matrix_(2, 2) << "; " << stiffness_matrix_(3, 3) << "; " << stiffness_matrix_(4, 4) << "; " << stiffness_matrix_(5, 5);
 				std::ostringstream damping_matrix_log;
@@ -256,13 +256,15 @@ namespace franka_proxy
 			// get current joint position
 			Eigen::Map<const Eigen::Matrix<double, 7, 1>> dq(state_.dq.data());
 
-			Eigen::Matrix<double, 7, 1> joint_position_error = dq - current_joint_position_;
+			Eigen::Map<const Eigen::Matrix<double, 7, 1>> q(current_joint_position_.data());
+
+			Eigen::Matrix<double, 7, 1> joint_position_error = dq - q;
 
 			if (logging_) {
 				std::ostringstream joint_position_d_log;
 				std::ostringstream joint_position_log;
 
-				joint_position_d_log << current_joint_position_(0) << "; " << current_joint_position_(1) << "; " << current_joint_position_(2) << "; " << current_joint_position_(3) << "; " << current_joint_position_(4) << "; " << current_joint_position_(5) << "; " << current_joint_position_(6);
+				joint_position_d_log << q(0) << "; " << q(1) << "; " << q(2) << "; " << q(3) << "; " << q(4) << "; " << q(5) << "; " << q(6);
 				joint_position_log << dq(0) << "; " << dq(1) << "; " << dq(2) << "; " << dq(3) << "; " << dq(4) << "; " << dq(5) << "; " << dq(6);
 
 				std::ostringstream current_values;
@@ -286,8 +288,8 @@ namespace franka_proxy
 
 		void joint_impedance_motion_generator::calculate_default_stiffness_and_damping() {
 			for (int i = 0; i < stiffness_matrix_.rows(); i++) {
-				stiffness_matrix_(i, i) = K_P[i];
-				damping_matrix_(i, i) = K_D[i]; // TODO: use calculate damping from stiffness method
+				stiffness_matrix_(i, i) = K_P_[i];
+				damping_matrix_(i, i) = K_D_[i]; // TODO: use calculate damping from stiffness method
 			}
 		}
 
@@ -308,8 +310,13 @@ namespace franka_proxy
 
 		std::array<double, 49> joint_impedance_motion_generator::get_stiffness() {
 			std::array<double, 49> stiffness_matrix_ar;
-			Eigen::VectorXd::Map(&stiffness_matrix_ar[0], 49) = stiffness_matrix_;
 
+			for (int i = 0; i < 7; i++) {
+				for (int j = 0; j < 7; j++) {
+					stiffness_matrix_ar[7 * i + j] = stiffness_matrix_(i, j);
+				}
+			}
+			
 			return stiffness_matrix_ar;
 		}
 
@@ -320,8 +327,8 @@ namespace franka_proxy
 			}
 			else {
 				// set new value
-				Eigen::Map<const Eigen::Matrix<double, 7, 7>> new_damping_matrix(damping.data());
-				damping_matrix_ = new_damping_matrix;
+				/*Eigen::Map<const Eigen::Matrix<double, 7, 7>> new_damping_matrix(damping.data());
+				damping_matrix_ = new_damping_matrix;*/
 
 				// operation succeeded -> return true
 				return true;
@@ -330,7 +337,12 @@ namespace franka_proxy
 
 		std::array<double, 49> joint_impedance_motion_generator::get_damping() {
 			std::array<double, 49> damping_matrix_ar;
-			Eigen::VectorXd::Map(&damping_matrix_ar[0], 49) = damping_matrix_;
+
+			for (int i = 0; i < 7; i++) {
+				for (int j = 0; j < 7; j++) {
+					damping_matrix_ar[7 * i + j] = damping_matrix_(i, j);
+				}
+			}
 
 			return damping_matrix_ar;
 		}

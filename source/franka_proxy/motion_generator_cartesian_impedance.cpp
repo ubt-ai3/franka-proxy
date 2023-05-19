@@ -265,7 +265,7 @@ namespace franka_proxy
 					stiffness_matrix_(i, i) = ki;
 				}
 			}
-			
+
 
 			Eigen::Matrix<double, 6, 1> position_error(get_position_error(time_));
 
@@ -296,7 +296,7 @@ namespace franka_proxy
 
 				csv_log_1_ << current_values.str() << "\n";
 			}
-			
+
 			return tau_d_ar;
 		}
 

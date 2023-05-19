@@ -207,7 +207,7 @@ namespace franka_proxy
 		set_control_loop_running(false);
 	}
 
-	void franka_hardware_controller::impedance_hold_pose(const double duration, const bool log, const bool use_stiff_damp_online_calc)
+	void franka_hardware_controller::cartesian_impedance_hold_pose(const double duration, const bool log, const bool use_stiff_damp_online_calc)
 	{
 		detail::cartesian_impedance_motion_generator motion_generator(robot_, robot_state_lock_, robot_state_, duration, log, use_stiff_damp_online_calc);
 
@@ -242,7 +242,7 @@ namespace franka_proxy
 		set_control_loop_running(false);
 	}
 
-	void franka_hardware_controller::impedance_hold_pose(const double duration, const bool log, const bool use_stiff_damp_online_calc, const double rotational_stiffness, const double translational_stiffness)
+	void franka_hardware_controller::cartesian_impedance_hold_pose(const double duration, const bool log, const bool use_stiff_damp_online_calc, const double rotational_stiffness, const double translational_stiffness)
 	{
 		detail::cartesian_impedance_motion_generator motion_generator(robot_, robot_state_lock_, robot_state_, duration, log, use_stiff_damp_online_calc);
 
@@ -280,7 +280,7 @@ namespace franka_proxy
 		set_control_loop_running(false);
 	}
 
-	void franka_hardware_controller::impedance_poses(const std::list<std::array<double, 16>>& poses, const double duration, const bool log, const bool use_stiff_damp_online_calc)
+	void franka_hardware_controller::cartesian_impedance_poses(const std::list<std::array<double, 16>>& poses, const double duration, const bool log, const bool use_stiff_damp_online_calc)
 	{
 		detail::cartesian_impedance_motion_generator motion_generator(robot_, robot_state_lock_, robot_state_, poses, duration, log, use_stiff_damp_online_calc);
 
@@ -315,7 +315,7 @@ namespace franka_proxy
 		set_control_loop_running(false);
 	}
 
-	void franka_hardware_controller::impedance_poses(const std::list<std::array<double, 16>>& poses, const double duration, const bool log, const bool use_stiff_damp_online_calc, const double rotational_stiffness, const double translational_stiffness)
+	void franka_hardware_controller::cartesian_impedance_poses(const std::list<std::array<double, 16>>& poses, const double duration, const bool log, const bool use_stiff_damp_online_calc, const double rotational_stiffness, const double translational_stiffness)
 	{
 		detail::cartesian_impedance_motion_generator motion_generator(robot_, robot_state_lock_, robot_state_, poses, duration, log, use_stiff_damp_online_calc);
 

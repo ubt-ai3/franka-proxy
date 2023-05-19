@@ -168,21 +168,21 @@ void from_json(const nlohmann::json& json, command_apply_admittance_adm_imp_desi
 
 //////////////////////////////////////////////////////////////////////////
 //
-// command_impedance_hold_pose
+// command_cartesian_impedance_hold_pose
 //
 //////////////////////////////////////////////////////////////////////////
 
 
-void to_json(nlohmann::json& json, const command_impedance_hold_pose& object)
+void to_json(nlohmann::json& json, const command_cartesian_impedance_hold_pose& object)
 {
-	json["type"] = command_impedance_hold_pose::type;
+	json["type"] = command_cartesian_impedance_hold_pose::type;
 	json["duration"] = object.duration;
 	json["log"] = object.log;
 	json["use_stiff_damp_online_calc"] = object.use_stiff_damp_online_calc;
 }
 
 
-void from_json(const nlohmann::json& json, command_impedance_hold_pose& object)
+void from_json(const nlohmann::json& json, command_cartesian_impedance_hold_pose& object)
 {
 	json.at("duration").get_to(object.duration);
 	json.at("log").get_to(object.log);
@@ -194,14 +194,14 @@ void from_json(const nlohmann::json& json, command_impedance_hold_pose& object)
 
 //////////////////////////////////////////////////////////////////////////
 //
-// command_impedance_hold_pose_desired_stiffness
+// command_cartesian_impedance_hold_pose_desired_stiffness
 //
 //////////////////////////////////////////////////////////////////////////
 
 
-void to_json(nlohmann::json& json, const command_impedance_hold_pose_desired_stiffness& object)
+void to_json(nlohmann::json& json, const command_cartesian_impedance_hold_pose_desired_stiffness& object)
 {
-	json["type"] = command_impedance_hold_pose_desired_stiffness::type;
+	json["type"] = command_cartesian_impedance_hold_pose_desired_stiffness::type;
 	json["duration"] = object.duration;
 	json["log"] = object.log;
 	json["use_stiff_damp_online_calc"] = object.use_stiff_damp_online_calc;
@@ -210,7 +210,7 @@ void to_json(nlohmann::json& json, const command_impedance_hold_pose_desired_sti
 }
 
 
-void from_json(const nlohmann::json& json, command_impedance_hold_pose_desired_stiffness& object)
+void from_json(const nlohmann::json& json, command_cartesian_impedance_hold_pose_desired_stiffness& object)
 {
 	json.at("duration").get_to(object.duration);
 	json.at("log").get_to(object.log);
@@ -224,14 +224,14 @@ void from_json(const nlohmann::json& json, command_impedance_hold_pose_desired_s
 
 //////////////////////////////////////////////////////////////////////////
 //
-// command_impedance_poses
+// command_cartesian_impedance_poses
 //
 //////////////////////////////////////////////////////////////////////////
 
 
-void to_json(nlohmann::json& json, const command_impedance_poses& object)
+void to_json(nlohmann::json& json, const command_cartesian_impedance_poses& object)
 {
-	json["type"] = command_impedance_poses::type;
+	json["type"] = command_cartesian_impedance_poses::type;
 	json["poses"] = object.poses;
 	json["duration"] = object.duration;
 	json["log"] = object.log;
@@ -239,7 +239,7 @@ void to_json(nlohmann::json& json, const command_impedance_poses& object)
 }
 
 
-void from_json(const nlohmann::json& json, command_impedance_poses& object)
+void from_json(const nlohmann::json& json, command_cartesian_impedance_poses& object)
 {
 	json.at("poses").get_to(object.poses);
 	json.at("duration").get_to(object.duration);
@@ -252,14 +252,14 @@ void from_json(const nlohmann::json& json, command_impedance_poses& object)
 
 //////////////////////////////////////////////////////////////////////////
 //
-// command_impedance_poses_desired_stiffness
+// command_cartesian_impedance_poses_desired_stiffness
 //
 //////////////////////////////////////////////////////////////////////////
 
 
-void to_json(nlohmann::json& json, const command_impedance_poses_desired_stiffness& object)
+void to_json(nlohmann::json& json, const command_cartesian_impedance_poses_desired_stiffness& object)
 {
-	json["type"] = command_impedance_poses_desired_stiffness::type;
+	json["type"] = command_cartesian_impedance_poses_desired_stiffness::type;
 	json["poses"] = object.poses;
 	json["duration"] = object.duration;
 	json["log"] = object.log;
@@ -269,7 +269,7 @@ void to_json(nlohmann::json& json, const command_impedance_poses_desired_stiffne
 }
 
 
-void from_json(const nlohmann::json& json, command_impedance_poses_desired_stiffness& object)
+void from_json(const nlohmann::json& json, command_cartesian_impedance_poses_desired_stiffness& object)
 {
 	json.at("poses").get_to(object.poses);
 	json.at("duration").get_to(object.duration);

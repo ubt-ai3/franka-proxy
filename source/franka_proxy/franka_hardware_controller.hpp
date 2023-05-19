@@ -121,21 +121,21 @@ namespace franka_proxy
 		 */
 		void apply_admittance(double duration, bool log, double adm_rotational_stiffness, double adm_translational_stiffness, double imp_rotational_stiffness, double imp_translational_stiffness);
 		/**
-		 * Impedance controller to hold the current pose
+		 * Cartesian impedance controller to hold the current pose
 		 */
-		void impedance_hold_pose(double duration, bool log, bool use_stiff_damp_online_calc);
+		void cartesian_impedance_hold_pose(double duration, bool log, bool use_stiff_damp_online_calc);
 		/**
-		 * Impedance controller to hold the current pose using desired rotational and translational stiffness parameter
+		 * Cartesian impedance controller to hold the current pose using desired rotational and translational stiffness parameter
 		 */
-		void impedance_hold_pose(double duration, bool log, bool use_stiff_damp_online_calc, double rotational_stiffness, double translational_stiffness);
+		void cartesian_impedance_hold_pose(double duration, bool log, bool use_stiff_damp_online_calc, double rotational_stiffness, double translational_stiffness);
 		/**
-		 * Impedacne controller to hold multiple poses/ to follow path of multiple poses
+		 * Cartesian impedacne controller to hold multiple poses/ to follow path of multiple poses
 		*/
-		void impedance_poses(const std::list<std::array<double, 16>>& poses, double duration, bool log, bool use_stiff_damp_online_calc);
+		void cartesian_impedance_poses(const std::list<std::array<double, 16>>& poses, double duration, bool log, bool use_stiff_damp_online_calc);
 		/**
-		 * Impedacne controller to hold multiple poses/ to follow path of multiple poses using desired rotational and translational stiffness parameter
+		 * Cartesian impedacne controller to hold multiple poses/ to follow path of multiple poses using desired rotational and translational stiffness parameter
 		*/
-		void impedance_poses(const std::list<std::array<double, 16>>& poses, double duration, bool log, bool use_stiff_damp_online_calc, double rotational_stiffness, double translational_stiffness);
+		void cartesian_impedance_poses(const std::list<std::array<double, 16>>& poses, double duration, bool log, bool use_stiff_damp_online_calc, double rotational_stiffness, double translational_stiffness);
 
 		static constexpr double default_gripper_speed = 0.025;
 

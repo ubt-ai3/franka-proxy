@@ -111,10 +111,10 @@ franka_control_server::franka_control_server
 	register_command_handler<command_apply_admittance>();
 	register_command_handler<command_apply_admittance_adm_desired_stiffness>();
 	register_command_handler<command_apply_admittance_adm_imp_desired_stiffness>();
-	register_command_handler<command_impedance_hold_pose>();
-	register_command_handler<command_impedance_hold_pose_desired_stiffness>();
-	register_command_handler<command_impedance_poses>();
-	register_command_handler<command_impedance_poses_desired_stiffness>();
+	register_command_handler<command_cartesian_impedance_hold_pose>();
+	register_command_handler<command_cartesian_impedance_hold_pose_desired_stiffness>();
+	register_command_handler<command_cartesian_impedance_poses>();
+	register_command_handler<command_cartesian_impedance_poses_desired_stiffness>();
 	register_command_handler<command_force_z>();
 	register_command_handler<command_open_gripper>();
 	register_command_handler<command_close_gripper>();
@@ -304,30 +304,30 @@ command_generic_response franka_control_server::process_command
 }
 
 command_generic_response franka_control_server::process_command
-	(const command_impedance_hold_pose& cmd)
+	(const command_cartesian_impedance_hold_pose& cmd)
 {
-	controller_.impedance_hold_pose(cmd.duration, cmd.log, cmd.use_stiff_damp_online_calc);
+	controller_.cartesian_impedance_hold_pose(cmd.duration, cmd.log, cmd.use_stiff_damp_online_calc);
 	return command_result::success;
 }
 
 command_generic_response franka_control_server::process_command
-(const command_impedance_hold_pose_desired_stiffness& cmd)
+(const command_cartesian_impedance_hold_pose_desired_stiffness& cmd)
 {
-	controller_.impedance_hold_pose(cmd.duration, cmd.log, cmd.use_stiff_damp_online_calc, cmd.rotational_stiffness, cmd.translational_stiffness);
+	controller_.cartesian_impedance_hold_pose(cmd.duration, cmd.log, cmd.use_stiff_damp_online_calc, cmd.rotational_stiffness, cmd.translational_stiffness);
 	return command_result::success;
 }
 
 command_generic_response franka_control_server::process_command
-(const command_impedance_poses& cmd)
+(const command_cartesian_impedance_poses& cmd)
 {
-	controller_.impedance_poses(cmd.poses, cmd.duration, cmd.log, cmd.use_stiff_damp_online_calc);
+	controller_.cartesian_impedance_poses(cmd.poses, cmd.duration, cmd.log, cmd.use_stiff_damp_online_calc);
 	return command_result::success;
 }
 
 command_generic_response franka_control_server::process_command
-(const command_impedance_poses_desired_stiffness& cmd)
+(const command_cartesian_impedance_poses_desired_stiffness& cmd)
 {
-	controller_.impedance_poses(cmd.poses, cmd.duration, cmd.log, cmd.use_stiff_damp_online_calc, cmd.rotational_stiffness, cmd.translational_stiffness);
+	controller_.cartesian_impedance_poses(cmd.poses, cmd.duration, cmd.log, cmd.use_stiff_damp_online_calc, cmd.rotational_stiffness, cmd.translational_stiffness);
 	return command_result::success;
 }
 
