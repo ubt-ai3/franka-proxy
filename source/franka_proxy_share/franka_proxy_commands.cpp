@@ -284,6 +284,109 @@ void from_json(const nlohmann::json& json, command_cartesian_impedance_poses_des
 
 //////////////////////////////////////////////////////////////////////////
 //
+// command_joint_impedance_hold_position
+//
+//////////////////////////////////////////////////////////////////////////
+
+
+void to_json(nlohmann::json& json, const command_joint_impedance_hold_position& object)
+{
+	json["type"] = command_joint_impedance_hold_position::type;
+	json["duration"] = object.duration;
+	json["log"] = object.log;
+}
+
+
+void from_json(const nlohmann::json& json, command_joint_impedance_hold_position& object)
+{
+	json.at("duration").get_to(object.duration);
+	json.at("log").get_to(object.log);
+}
+
+
+
+
+//////////////////////////////////////////////////////////////////////////
+//
+// command_joint_impedance_hold_position_desired_stiffness
+//
+//////////////////////////////////////////////////////////////////////////
+
+
+void to_json(nlohmann::json& json, const command_joint_impedance_hold_position_desired_stiffness& object)
+{
+	json["type"] = command_joint_impedance_hold_position_desired_stiffness::type;
+	json["duration"] = object.duration;
+	json["log"] = object.log;
+	json["stiffness"] = object.stiffness;
+}
+
+
+void from_json(const nlohmann::json& json, command_joint_impedance_hold_position_desired_stiffness& object)
+{
+	json.at("duration").get_to(object.duration);
+	json.at("log").get_to(object.log);
+	json.at("stiffness").get_to(object.stiffness);
+}
+
+
+
+
+//////////////////////////////////////////////////////////////////////////
+//
+// command_joint_impedance_positions
+//
+//////////////////////////////////////////////////////////////////////////
+
+
+void to_json(nlohmann::json& json, const command_joint_impedance_positions& object)
+{
+	json["type"] = command_joint_impedance_positions::type;
+	json["joint_positions"] = object.joint_positions;
+	json["duration"] = object.duration;
+	json["log"] = object.log;
+}
+
+
+void from_json(const nlohmann::json& json, command_joint_impedance_positions& object)
+{
+	json.at("joint_positions").get_to(object.joint_positions);
+	json.at("duration").get_to(object.duration);
+	json.at("log").get_to(object.log);
+}
+
+
+
+
+//////////////////////////////////////////////////////////////////////////
+//
+// command_joint_impedance_positions_desired_stiffness
+//
+//////////////////////////////////////////////////////////////////////////
+
+
+void to_json(nlohmann::json& json, const command_joint_impedance_positions_desired_stiffness& object)
+{
+	json["type"] = command_joint_impedance_positions_desired_stiffness::type;
+	json["joint_positions"] = object.joint_positions;
+	json["duration"] = object.duration;
+	json["log"] = object.log;
+	json["stiffness"] = object.stiffness;
+}
+
+
+void from_json(const nlohmann::json& json, command_joint_impedance_positions_desired_stiffness& object)
+{
+	json.at("joint_positions").get_to(object.joint_positions);
+	json.at("duration").get_to(object.duration);
+	json.at("log").get_to(object.log);
+	json.at("stiffness").get_to(object.stiffness);
+}
+
+
+
+//////////////////////////////////////////////////////////////////////////
+//
 // command_force_z
 //
 //////////////////////////////////////////////////////////////////////////

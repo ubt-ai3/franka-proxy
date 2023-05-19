@@ -320,21 +320,6 @@ namespace franka_proxy
 			return stiffness_matrix_ar;
 		}
 
-		bool joint_impedance_motion_generator::set_damping(std::array<double, 49> damping) {
-			if (initialized_) {
-				// no changes allowed -> return false as operation failed
-				return false;
-			}
-			else {
-				// set new value
-				/*Eigen::Map<const Eigen::Matrix<double, 7, 7>> new_damping_matrix(damping.data());
-				damping_matrix_ = new_damping_matrix;*/
-
-				// operation succeeded -> return true
-				return true;
-			}
-		}
-
 		std::array<double, 49> joint_impedance_motion_generator::get_damping() {
 			std::array<double, 49> damping_matrix_ar;
 

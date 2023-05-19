@@ -103,6 +103,26 @@ void franka_remote_controller::cartesian_impedance_poses(std::list<std::array<do
 	send_command<command_cartesian_impedance_poses_desired_stiffness>(poses, duration, log, use_stiff_damp_online_calc, rotational_stiffness, translational_stiffness);
 }
 
+void franka_remote_controller::joint_impedance_hold_position(double duration, bool log)
+{
+	send_command<command_joint_impedance_hold_position>(duration, log);
+}
+
+void franka_remote_controller::joint_impedance_hold_position(double duration, bool log, std::array<double, 49> stiffness)
+{
+	send_command<command_joint_impedance_hold_position_desired_stiffness>(duration, log, stiffness);
+}
+
+void franka_remote_controller::joint_impedance_positions(std::list<std::array<double, 7>>& joint_positions, double duration, bool log)
+{
+	send_command<command_joint_impedance_positions>(joint_positions, duration, log);
+}
+
+void franka_remote_controller::joint_impedance_positions(std::list<std::array<double, 7>>& joint_positions, double duration, bool log, std::array<double, 49> stiffness)
+{
+	send_command<command_joint_impedance_positions_desired_stiffness>(joint_positions, duration, log, stiffness);
+}
+
 void franka_remote_controller::apply_z_force(double mass, double duration)
 	{ send_command<command_force_z>(mass, duration); }
 

@@ -63,7 +63,6 @@ namespace franka_proxy
 
 			// getter and setter for 'default' stiffness and damping
 			bool set_stiffness(std::array<double, 49> stiffness);
-			bool set_damping(std::array<double, 49> damping);
 
 			std::array<double, 49> get_stiffness();
 			std::array<double, 49> get_damping();
@@ -87,8 +86,6 @@ namespace franka_proxy
 			std::list<std::array<double, 7>> measured_joint_velocities_;
 
 			// damping and stiffness matrix
-			double translational_stiffness_ = 300.0;
-			double rotational_stiffness_ = 50.0;
 			Eigen::Matrix<double, 7, 7> damping_matrix_ = Eigen::Matrix<double, 7, 7>::Zero();
 			Eigen::Matrix<double, 7, 7> stiffness_matrix_ = Eigen::Matrix<double, 7, 7>::Zero();
 

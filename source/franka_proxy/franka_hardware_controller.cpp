@@ -22,6 +22,7 @@
 #include "motion_generator_admittance.hpp"
 #include "motion_generator_force.hpp"
 #include "motion_generator_cartesian_impedance.hpp"
+#include "motion_generator_joint_impedance.hpp"
 #include "motion_generator_joint_max_accel.hpp"
 #include "motion_generator_seq_cart_vel_tau.hpp"
 
@@ -207,6 +208,150 @@ namespace franka_proxy
 		set_control_loop_running(false);
 	}
 
+	void franka_hardware_controller::joint_impedance_hold_position(const double duration, const bool log)
+	{
+		detail::joint_impedance_motion_generator motion_generator(robot_, robot_state_lock_, robot_state_, duration, log);
+
+		try
+		{
+			set_control_loop_running(true);
+			{
+				// Lock the current_state_lock_ to wait for state_thread_ to finish.
+				std::lock_guard<std::mutex> state_guard(robot_state_lock_);
+			}
+
+			robot_.control(
+				[&](const franka::RobotState& robot_state,
+					franka::Duration period) -> franka::Torques
+				{
+					return motion_generator.callback
+						(robot_state, period,
+							[&](const double time) -> Eigen::Matrix<double, 7, 1>
+							{
+								return motion_generator.calculate_joint_position_error(robot_state, time);
+							}
+						);
+				}, true, 10.0
+			);
+		}
+		catch (const franka::Exception&)
+		{
+			set_control_loop_running(false);
+			throw;
+		}
+
+		set_control_loop_running(false);
+	}
+
+	void franka_hardware_controller::joint_impedance_hold_position(const double duration, const bool log, const std::array<double, 49> stiffness)
+	{
+		detail::joint_impedance_motion_generator motion_generator(robot_, robot_state_lock_, robot_state_, duration, log);
+
+		motion_generator.set_stiffness(stiffness); // always true;
+
+		try
+		{
+			set_control_loop_running(true);
+			{
+				// Lock the current_state_lock_ to wait for state_thread_ to finish.
+				std::lock_guard<std::mutex> state_guard(robot_state_lock_);
+			}
+
+			robot_.control(
+				[&](const franka::RobotState& robot_state,
+					franka::Duration period) -> franka::Torques
+				{
+					return motion_generator.callback
+					(robot_state, period,
+						[&](const double time) -> Eigen::Matrix<double, 7, 1>
+						{
+							return motion_generator.calculate_joint_position_error(robot_state, time);
+						}
+					);
+				}, true, 10.0
+			);
+		}
+		catch (const franka::Exception&)
+		{
+			set_control_loop_running(false);
+			throw;
+		}
+
+		set_control_loop_running(false);
+	}
+
+	void franka_hardware_controller::joint_impedance_positions(const std::list<std::array<double, 7>>& joint_positions, const double duration, const bool log)
+	{
+		detail::joint_impedance_motion_generator motion_generator(robot_, robot_state_lock_, robot_state_, joint_positions, duration, log);
+
+		try
+		{
+			set_control_loop_running(true);
+			{
+				// Lock the current_state_lock_ to wait for state_thread_ to finish.
+				std::lock_guard<std::mutex> state_guard(robot_state_lock_);
+			}
+
+			robot_.control(
+				[&](const franka::RobotState& robot_state,
+					franka::Duration period) -> franka::Torques
+				{
+					return motion_generator.callback
+					(robot_state, period,
+						[&](const double time) -> Eigen::Matrix<double, 7, 1>
+						{
+							return motion_generator.calculate_joint_position_error(robot_state, time);
+						}
+					);
+				}, true, 10.0
+			);
+		}
+		catch (const franka::Exception&)
+		{
+			set_control_loop_running(false);
+			throw;
+		}
+
+		set_control_loop_running(false);
+	}
+
+	void franka_hardware_controller::joint_impedance_positions(const std::list<std::array<double, 7>>& joint_positions, const double duration, const bool log, const std::array<double, 49> stiffness)
+	{
+		detail::joint_impedance_motion_generator motion_generator(robot_, robot_state_lock_, robot_state_, joint_positions, duration, log);
+
+		motion_generator.set_stiffness(stiffness); // always true
+
+		try
+		{
+			set_control_loop_running(true);
+			{
+				// Lock the current_state_lock_ to wait for state_thread_ to finish.
+				std::lock_guard<std::mutex> state_guard(robot_state_lock_);
+			}
+
+			robot_.control(
+				[&](const franka::RobotState& robot_state,
+					franka::Duration period) -> franka::Torques
+				{
+					return motion_generator.callback
+					(robot_state, period,
+						[&](const double time) -> Eigen::Matrix<double, 7, 1>
+						{
+							return motion_generator.calculate_joint_position_error(robot_state, time);
+						}
+					);
+				}, true, 10.0
+			);
+		}
+		catch (const franka::Exception&)
+		{
+			set_control_loop_running(false);
+			throw;
+		}
+
+		set_control_loop_running(false);
+	}
+
 	void franka_hardware_controller::cartesian_impedance_hold_pose(const double duration, const bool log, const bool use_stiff_damp_online_calc)
 	{
 		detail::cartesian_impedance_motion_generator motion_generator(robot_, robot_state_lock_, robot_state_, duration, log, use_stiff_damp_online_calc);
@@ -224,12 +369,12 @@ namespace franka_proxy
 					franka::Duration period) -> franka::Torques
 				{
 					return motion_generator.callback
-						(robot_state, period,
-							[&](const double time) -> Eigen::Matrix<double, 6, 1>
-							{
-								return motion_generator.calculate_position_error(robot_state, time);
-							}
-						);
+					(robot_state, period,
+						[&](const double time) -> Eigen::Matrix<double, 6, 1>
+						{
+							return motion_generator.calculate_position_error(robot_state, time);
+						}
+					);
 				}, true, 10.0
 			);
 		}

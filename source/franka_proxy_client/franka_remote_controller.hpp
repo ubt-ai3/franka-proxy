@@ -117,6 +117,26 @@ public:
 	void cartesian_impedance_poses(std::list<std::array<double, 16>>& positions, double duration, bool log, bool use_stiff_damp_online_calc, double rotational_stiffness, double translational_stiffness);
 
 	/**
+	 * Joint space impedance controller to hold the current position
+	*/
+	void joint_impedance_hold_position(double duration, bool log);
+
+	/**
+	 * Joint space impedance controller to hold the current position with desired stiffness matrix parameter
+	*/
+	void joint_impedance_hold_position(double duration, bool log, std::array<double, 49> stiffness);
+
+	/**
+	*  Joint space impedance controller to follow path of positions
+	*/
+	void joint_impedance_positions(std::list<std::array<double, 7>>& joint_positions, double duration, bool log);
+
+	/**
+	*  Joint space impedance controller to follow path of positions with desired stiffness matrix parameter
+	*/
+	void joint_impedance_positions(std::list<std::array<double, 7>>& joint_positions, double duration, bool log, std::array<double, 49> stiffness);
+
+	/**
 	 * todo docu
 	 * todo change to newton
 	 */

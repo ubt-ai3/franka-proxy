@@ -136,6 +136,22 @@ namespace franka_proxy
 		 * Cartesian impedacne controller to hold multiple poses/ to follow path of multiple poses using desired rotational and translational stiffness parameter
 		*/
 		void cartesian_impedance_poses(const std::list<std::array<double, 16>>& poses, double duration, bool log, bool use_stiff_damp_online_calc, double rotational_stiffness, double translational_stiffness);
+		/**
+		 * Joint space impedance controller to hold the current joint position
+		 */
+		void joint_impedance_hold_position(double duration, bool log);
+		/**
+		 * Joint space impedance controller to hold the current joint position using desired stiffness matrix parameter
+		 */
+		void joint_impedance_hold_position(double duration, bool log, std::array<double, 49> stiffness);
+		/**
+		 * Joint space impedacne controller to hold multiple joint positions/ to follow path of multiple joint positions
+		*/
+		void joint_impedance_positions(const std::list<std::array<double, 7>>& joint_positions, double duration, bool log);
+		/**
+		 * Joint space impedacne controller to hold multiple joint positions/ to follow path of multiple joint positions using desired stiffness matrix parameter
+		*/
+		void joint_impedance_positions(const std::list<std::array<double, 7>>& joint_positions, double duration, bool log, std::array<double, 49> stiffness);
 
 		static constexpr double default_gripper_speed = 0.025;
 
