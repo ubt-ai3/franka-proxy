@@ -202,13 +202,6 @@ namespace franka_proxy
 
 			Eigen::Matrix<double, 7, 1> joint_position_error(get_joint_position_error(time_));
 
-			// calculate external force
-			/*Eigen::Matrix<double, 6, 1> f_ext = inertia_matrix * acceleration + damping_matrix_ * velocity + stiffness_matrix_ * position_error;
-
-			for (int i = 3; i < 6; i++) {
-				f_ext(i) = f_ext(i) * 0.5;
-			}*/
-
 			// calculate torque - without gravity as the robot handles it itself
 			Eigen::VectorXd tau_d = coriolis - (stiffness_matrix_ * joint_position_error + damping_matrix_ * joint_velocity); // inertia_matrix * joint_acceleration;
 
