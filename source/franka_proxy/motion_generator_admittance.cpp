@@ -32,7 +32,75 @@ namespace franka_proxy
 		// admittance_motion_generator
 		//
 		//////////////////////////////////////////////////////////////////////////
+		
+		std::vector<Eigen::Affine3d> admittance_motion_generator::fk
+		(const Eigen::Matrix<double, 7, 1>& configuration)
+		{
+			std::vector<Eigen::Affine3d> frames;
 
+			// initialize transformation matrix for FK
+			Eigen::Affine3d trafo(Eigen::Affine3d::Identity());
+			// trafo *= Eigen::AngleAxisd(3.1415, Eigen::Vector3d(0.0f, 0.0f, 1.0f));
+			// link 0 (just a default trafo)
+			frames.push_back(trafo);
+
+			// link 1 (translation to parent frame)
+			trafo *= Eigen::Translation3d(0, 0, 0.333f);
+			// joint angle
+			trafo *= Eigen::AngleAxisd(configuration[0], Eigen::Vector3d(0.0f, 0.0f, 1.0f));
+			frames.push_back(trafo);
+
+			// link 2 (rotation to parent frame)
+			trafo *= Eigen::AngleAxisd(-pi / 2., Eigen::Vector3d(1.0f, 0.0f, 0.0f));
+			// link rotation
+			trafo *= Eigen::AngleAxisd(configuration[1], Eigen::Vector3d(0.0f, 0.0f, 1.0f));
+			frames.push_back(trafo);
+
+			// link 3 (translation and rotation to parent frame)
+			trafo *= Eigen::Translation3d(0, -0.316f, 0.0f);
+			trafo *= Eigen::AngleAxisd(pi / 2., Eigen::Vector3d(1.0f, 0.0f, 0.0f));
+			// link rotation
+			trafo *= Eigen::AngleAxisd(configuration[2], Eigen::Vector3d(0.0f, 0.0f, 1.0f));
+			frames.push_back(trafo);
+
+			// link 4 (translation and rotation to parent frame)
+			trafo *= Eigen::Translation3d(0.0825f, 0.0f, 0.0f);
+			trafo *= Eigen::AngleAxisd(pi / 2., Eigen::Vector3d(1.0f, 0.0f, 0.0f));
+			// link rotation
+			trafo *= Eigen::AngleAxisd(configuration[3], Eigen::Vector3d(0.0f, 0.0f, 1.0f));
+			frames.push_back(trafo);
+
+			// link 5 (translation and rotation to parent frame)
+			trafo *= Eigen::Translation3d(-0.0825f, 0.384f, 0.0f);
+			trafo *= Eigen::AngleAxisd(-pi / 2., Eigen::Vector3d(1.0f, 0.0f, 0.0f));
+			// link rotation
+			trafo *= Eigen::AngleAxisd(configuration[4], Eigen::Vector3d(0.0f, 0.0f, 1.0f));
+			frames.push_back(trafo);
+
+			// link 6 (rotation to parent frame)
+			trafo *= Eigen::AngleAxisd(pi / 2., Eigen::Vector3d(1.0f, 0.0f, 0.0f));
+			// link rotation
+			trafo *= Eigen::AngleAxisd(configuration[5], Eigen::Vector3d(0.0f, 0.0f, 1.0f));
+			frames.push_back(trafo);
+
+			// link 7 (rotation to parent frame)
+			trafo *= Eigen::Translation3d(0.088f, 0.0f, 0.0f);
+			trafo *= Eigen::AngleAxisd(pi / 2., Eigen::Vector3d(1.0f, 0.0f, 0.0f));
+			// link rotation
+			trafo *= Eigen::AngleAxisd(configuration[6], Eigen::Vector3d(0.0f, 0.0f, 1.0f));
+			frames.push_back(trafo);
+
+			// link 7 to flange
+			trafo *= Eigen::Translation3d(0.0f, 0.0f, 0.107);
+			frames.push_back(trafo);
+
+			// flange to standard end effector
+			trafo *= Eigen::Translation3d(0.0f, 0.0f, 0.1034f);
+			trafo *= Eigen::AngleAxisd(pi / 4., Eigen::Vector3d(0.0f, 0.0f, -1.0f));
+			frames.push_back(trafo);
+
+			return frames;
+		}
 
 		admittance_motion_generator::admittance_motion_generator
 		(franka::Robot& robot,
@@ -71,6 +139,8 @@ namespace franka_proxy
 			if (logging_) {
 				// start logging to csv file
 				csv_log_.open("admittance.csv");
+				joint_log_.open("joints.csv");
+				jacobian_log_.open("jacobian.csv");
 			}
 		}
 
@@ -92,13 +162,37 @@ namespace franka_proxy
 
 				if (logging_) {
 					csv_log_.close();
+					joint_log_.close();
+					jacobian_log_.close();
 				}
 
 				return current_torques;
 			}
 
+			// save timestamp
+			timestamps_.push_back(time_);
+
+			// get current joint position
+			Eigen::Map<const Eigen::Matrix<double, 7, 1>> q(state_.q.data());
+
+
 			// get current position and orientation
 			Eigen::Affine3d po_transform(Eigen::Matrix4d::Map(state_.O_T_EE.data()));
+			auto fk_all_joints = fk(q);
+			auto O_T_EE = *fk_all_joints.rbegin() * Eigen::Matrix4d::Identity(); // Eigen::Matrix4d::Map(state_.F_T_EE.data());
+			Eigen::Affine3d test;
+			test.matrix() = O_T_EE;
+
+
+			if (int(time_ * 1000.0)% 100 == 0)
+			{
+				std::cout << po_transform.matrix() << std::endl << std::endl;
+				//std::cout << test.matrix() << std::endl;
+			}
+
+			// !!! using own calculated pose !!!
+			po_transform.matrix() = O_T_EE;
+
 			Eigen::Vector3d current_position(po_transform.translation());
 			Eigen::Quaterniond orientation(po_transform.linear());
 
@@ -106,7 +200,26 @@ namespace franka_proxy
 			position_eq.head(3) << current_position;
 			position_eq.tail(3) << orientation.x(), orientation.y(), orientation.z();
 			// Transform to base frame
-			position_eq.tail(3) << -po_transform.linear() * position_eq.tail(3);
+			position_eq.tail(3) << (orientation.w() > 0 ? -1 : 1) * po_transform.linear() * position_eq.tail(3);
+
+			if (int(time_ * 1000.0) % 100 == 0)
+			{
+				Eigen::Vector3d current_position(po_transform.translation());
+				Eigen::Quaterniond orientation_test(po_transform.rotation());
+
+				Eigen::Matrix<double, 6, 1> position_eq_test;
+				position_eq_test.head(3) << current_position;
+				position_eq_test.tail(3) << orientation_test.x(), orientation_test.y(), orientation_test.z();
+
+				std::cout << position_eq.matrix().transpose() << std::endl;
+
+				// Transform to base frame
+				position_eq_test.tail(3) << (orientation_test.w() > 0 ? -1 : 1) * (orientation_test * position_eq_test.tail(3));
+
+				std::cout << position_eq.matrix().transpose() << std::endl << std::endl;
+				std::cout << position_eq_test.matrix().transpose() << std::endl;
+			}
+
 
 			// x_i-1 and x_i-2 are required for further calculations
 			if (!initialized_) {
@@ -132,7 +245,7 @@ namespace franka_proxy
 			// get f ext 
 			std::array<double, 6> f_ext_ar = state_.O_F_ext_hat_K;
 			Eigen::Map<const Eigen::Matrix<double, 6, 1>> f_ext_(f_ext_ar.data());
-
+			
 			// filter model discrepancy noise
 			for (int i = 0; i < 6; i++) {
 				if (i < 3) {
@@ -192,7 +305,13 @@ namespace franka_proxy
 			Eigen::Map<Eigen::Matrix<double, 6, 1>> current_force(f_ext_middle.data());
 
 			// using constant as using actual timestamps causing too much noise
-			double delta_time = 0.001;
+			//double delta_time = 0.001;
+			// calculate delta time for acceleration and joint acceleration calculation
+			double delta_time = timestamps_.back() - timestamps_.front();
+
+			if (timestamps_.size() > 1) {
+			timestamps_.pop_front();
+			}
 
 			// calculate new position
 			const Eigen::Matrix<double, 6, 6> x_i_prod1 = ((stiffness_matrix_ * (delta_time * delta_time))
@@ -225,9 +344,33 @@ namespace franka_proxy
 				f_ext_middle_log << f_ext_middle[0] << "; " << f_ext_middle[1] << "; " << f_ext_middle[2] << "; " << f_ext_middle[3] << "; " << f_ext_middle[4] << "; " << f_ext_middle[5];
 
 				std::ostringstream current_values;
-				current_values << time_ << "; " << "; " << f_ext_log.str() << "; " << "; " << x_i_log.str() << "; " << "; " << x_e_log.str() << "; " << "; " << current_force_log.str();
+				current_values << time_ << "; " << "; " << f_ext_middle_log.str() << "; " << "; " << x_i_log.str() << "; " << "; " << x_e_log.str(); // << "; " << "; " << current_force_log.str();
 
 				csv_log_ << current_values.str() << "\n";
+
+				// get current joint position
+				Eigen::Map<const Eigen::Matrix<double, 7, 1>> q(state_.q.data());
+
+				std::ostringstream current_joint_values;
+				current_joint_values << time_ << ";" << ";" << q(0) << ";" << q(1) << ";" << q(2) << ";" << q(3) << ";" << q(4) << ";" << q(5) << ";" << q(6);
+
+				joint_log_ << current_joint_values.str() << "\n";
+
+				std::ostringstream jac_log;
+
+				jac_log << time_ << "\n" << ";" << "\n";
+
+				for (int i = 0; i < 6; i++) {
+					for (int j = 0; j < 7; j++) {
+						jac_log << jacobian(i, j) << ";";
+					}
+
+					jac_log << "\n";
+				}
+
+				jac_log << "\n" << ";" << "\n";
+
+				jacobian_log_ << jac_log.str();
 			}
 
 			return impedance_controller_.callback
