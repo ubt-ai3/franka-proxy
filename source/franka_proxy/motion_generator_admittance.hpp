@@ -92,6 +92,8 @@ namespace franka_proxy
 			Eigen::Matrix<double, 6, 1> x_i_1_;
 			Eigen::Matrix<double, 6, 1> x_i_2_;
 
+			Eigen::Quaterniond previous_quaternion_;
+
 			// damping and stiffness matrix
 			double translational_stiffness_ = 150.0;
 			double rotational_stiffness_ = 10.0;
