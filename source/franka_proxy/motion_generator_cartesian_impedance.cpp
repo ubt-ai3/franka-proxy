@@ -59,6 +59,7 @@ namespace franka_proxy
 				csv_log_1_ << csv_header1_ << "\n";
 				csv_log_2_.open("cartesian_impedance_log_2.csv");
 				csv_log_2_ << csv_header2_ << "\n";
+				acc_vel_log_.open("imp_acc_vel.csv");
 			}
 		};
 
@@ -90,10 +91,11 @@ namespace franka_proxy
 
 			if (logging_) {
 				// start logging to csv file
-				csv_log_1_.open("impedance_log_1.csv");
+				csv_log_1_.open("cartesian_impedance_log_1.csv");
 				csv_log_1_ << csv_header1_ << "\n";
-				csv_log_2_.open("impedance_log_2.csv");
+				csv_log_2_.open("cartesian_impedance_log_2.csv");
 				csv_log_2_ << csv_header2_ << "\n";
+				acc_vel_log_.open("imp_acc_vel.csv");
 			}
 		}
 
@@ -144,6 +146,7 @@ namespace franka_proxy
 					// close log file
 					csv_log_1_.close();
 					csv_log_2_.close();
+					acc_vel_log_.close();
 				}
 
 				return current_torques;
@@ -271,7 +274,7 @@ namespace franka_proxy
 
 			// calculate external force
 			Eigen::Matrix<double, 6, 1> f_ext = inertia_matrix * acceleration + damping_matrix_ * velocity + stiffness_matrix_ * position_error;
-
+		
 			for (int i = 3; i < 6; i++) {
 				f_ext(i) = f_ext(i) * 0.5;
 			}
@@ -295,6 +298,11 @@ namespace franka_proxy
 				current_values << time_ << "; " << f_ext_log.str() << "; " << stiffness_matrix_log.str() << "; " << damping_matrix_log.str();
 
 				csv_log_1_ << current_values.str() << "\n";
+
+				std::ostringstream acc_vel_values;
+				acc_vel_values << acceleration(1) << "; " << acceleration(2) << "; " << acceleration(3) << "; " << acceleration(4) << "; " << acceleration(5) << "; " << acceleration(6) << "; " << "; " << velocity(1) << "; " << velocity(2) << "; " << velocity(3) << "; " << velocity(4) << "; " << velocity(5) << "; " << velocity(6);
+
+				acc_vel_log_ << time_ << "; " << "; " << acc_vel_values.str() << "\n";
 			}
 
 			return tau_d_ar;
