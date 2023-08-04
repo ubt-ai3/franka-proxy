@@ -8,9 +8,10 @@ To install the client library use:
 And to install the server application use:  
 ``` /vcpkg.exe install franka-proxy[server]:x64-windows```
 
-Server and client are only compatible if you use the same version, so make sure to work on an identical commit of vcpkg.
+Server and client are only compatible if you use the same port, so make sure to work on an identical version of vcpkg (ai3 internal version).
 
 
+# Building from Source 
 ## Externals via vcpkg
 ```sh
 ./bootstrap-vcpkg.bat
@@ -24,7 +25,7 @@ cmake --build .
 ```
 
 
-# Project structure
+## Project structure
 ```mermaid
 classDiagram
     class franka_state_server{
