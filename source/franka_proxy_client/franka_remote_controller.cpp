@@ -99,14 +99,14 @@ robot_config_7dof franka_remote_controller::current_config() const
 }
 
 
-int franka_remote_controller::current_gripper_pos() const
+double franka_remote_controller::current_gripper_pos() const
 {
 	std::lock_guard<std::mutex> state_guard(state_lock_);
 	return current_gripper_pos_;
 }
 
 
-int franka_remote_controller::max_gripper_pos() const
+double franka_remote_controller::max_gripper_pos() const
 {
 	std::lock_guard<std::mutex> state_guard(state_lock_);
 	return max_gripper_pos_;
@@ -141,8 +141,8 @@ void franka_remote_controller::update()
 	{
 		std::lock_guard lck(state_lock_);
 		current_config_ = state.joint_configuration;
-		current_gripper_pos_ = static_cast<int>(state.width);
-		max_gripper_pos_ = static_cast<int>(state.max_width);
+		current_gripper_pos_ = state.width;
+		max_gripper_pos_ = state.max_width;
 		gripper_grasped_ = state.is_grasped;
 	}
 

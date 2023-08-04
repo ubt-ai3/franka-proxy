@@ -46,6 +46,7 @@ public:
 
 
 	void move(const robot_config_7dof& target) override;
+	void move_with_force(const robot_config_7dof& target, const force_torque_config_cartesian& target_force_torques) override;
 	bool move_until_contact(const robot_config_7dof& target) override;
 
 	void open_gripper() override;
@@ -55,10 +56,10 @@ public:
 
 	double speed_factor() const override;
 	void set_speed_factor(double speed_factor) override;
-
 	void automatic_error_recovery() override;
 
 	robot_config_7dof current_config() const override;
+	force_torque_config_cartesian current_force_torque() const override;
 	int current_gripper_pos() const override;
 	int max_gripper_pos() const override;
 

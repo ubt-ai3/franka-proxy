@@ -20,13 +20,6 @@
 #include <franka/robot.h>
 #include <franka/gripper.h>
 
-//Added includes---------
-#include "franka_motion_recorder.hpp"
-#include "fstream"
-#include "iomanip"
-
-#include "motion_generator_force.hpp"
-#include "csv_data_struct.hpp"
 
 
 namespace franka_proxy
@@ -37,6 +30,10 @@ using robot_config_7dof = std::array<double, 7>;
 using robot_force_config = std::array<double, 6>;
 using robot_force_selection = std::array<double, 6>;
 
+namespace detail
+{
+	class motion_recorder;
+}
 
 /**
  *************************************************************************
@@ -94,13 +91,6 @@ public:
 		double mass, 
 		double duration);
 
-	void hybrid_control(
-		csv_data& data,
-		std::vector<Eigen::Vector3d> desired_positions,
-		std::vector<Eigen::Matrix<double, 6, 1>> desired_forces,
-		std::vector<Eigen::Quaterniond> desired_orientations,
-		std::array<std::array<double, 6>, 6> control_parameters
-		);
 
 	/**
 	 * Starts/Stops the recording callback.
@@ -134,7 +124,15 @@ private:
 	 * Used to update the current robot state while no control loop is
 	 * running.
 	 */
-	void state_update_loop();
+	void robot_state_update_loop();
+
+
+	/**
+	* Used to update the current gripper state, regardless if a control loop
+	* is running or not.
+	*/
+	void gripper_state_update_loop();
+
 
 
 	/**
@@ -155,7 +153,7 @@ private:
 	mutable std::mutex speed_factor_lock_;
 	double speed_factor_;
 
-	detail::motion_recorder motion_recorder_;
+	std::unique_ptr<detail::motion_recorder> motion_recorder_;
 
 	// Gripper
 	mutable std::unique_ptr<franka::Gripper> gripper_;
@@ -166,8 +164,10 @@ private:
 	static constexpr double min_grasp_width = 0.003;
 
 
-	mutable std::mutex state_lock_;
+	mutable std::mutex robot_state_lock_;
 	franka::RobotState robot_state_;
+
+	mutable std::mutex gripper_state_lock_;
 	franka::GripperState gripper_state_;
 
 	void set_control_loop_running(bool running);
@@ -175,8 +175,10 @@ private:
 	std::mutex control_loop_running_mutex_;
 	std::condition_variable control_loop_running_cv_;
 
-	std::atomic_bool terminate_state_thread_;
-	std::thread state_thread_;
+	std::atomic_bool terminate_state_threads_;
+	std::thread robot_state_thread_;
+	std::thread gripper_state_thread_;
+
 
 };
 

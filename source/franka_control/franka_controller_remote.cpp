@@ -46,6 +46,11 @@ void franka_controller_remote::move(const robot_config_7dof& target)
 			 target[3], target[4], target[5], target[6]});
 }
 
+void franka_controller_remote::move_with_force(const robot_config_7dof& target, const force_torque_config_cartesian& target_force_torques)
+{
+	move(target);
+}
+
 
 bool franka_controller_remote::move_until_contact
 	(const robot_config_7dof& target)
@@ -99,11 +104,15 @@ robot_config_7dof franka_controller_remote::current_config() const
 	return ret;
 }
 
+force_torque_config_cartesian franka_controller_remote::current_force_torque() const
+{
+	return force_torque_config_cartesian();
+}
 
 int franka_controller_remote::current_gripper_pos() const
-	{ return controller_->current_gripper_pos(); }
+	{ return static_cast<int>( controller_->current_gripper_pos() * gripper_unit_per_m_); }
 int franka_controller_remote::max_gripper_pos() const
-	{ return controller_->max_gripper_pos(); }
+	{ return static_cast<int>(controller_->max_gripper_pos() * gripper_unit_per_m_); }
 void franka_controller_remote::update()
 	{ controller_->update(); }
 

@@ -18,10 +18,6 @@
 
 #include <franka/robot.h>
 #include <franka/model.h>
-#include <numeric>
-#include "csv_data_struct.hpp"
-
-//#include <jr3_ft_sensor/force_torque_sensor.hpp>
 
 
 
@@ -95,6 +91,8 @@ private:
 };
 
 
+	// @todo work of Laurin Hecken
+	/*
 // ----------- HYBRID CONTROL MOTION GENERATOR CLASS ------------
 class hybrid_control_motion_generator
 {
@@ -184,6 +182,7 @@ private:
 
 	csv_data &data_;
 };
+*/
 
 } /* namespace detail */
 } /* namespace franka_proxy */

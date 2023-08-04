@@ -138,6 +138,9 @@ double force_motion_generator::compute_dq_filtered(int j)
 	return value / dq_filter_size_;
 }
 
+
+// @todo work of Laurin Hecken
+	/*
 //-------------------------------------------------------------------------------------------------
 //------------------Class Hybrid Control Motion Generator---------------------------------------
 //-------------------------------------------------------------------------------------------------
@@ -465,7 +468,7 @@ double detail::hybrid_control_motion_generator::compute_position_error_diff_filt
 	}
 	return (value / position_error_diff_filter_size_);
 }
-
+*/
 
 } /* namespace detail */
 } /* namespace franka_proxy */

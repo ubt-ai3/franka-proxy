@@ -25,6 +25,7 @@ namespace franka_control
 
 
 typedef Eigen::Matrix<double, 7, 1> robot_config_7dof;
+typedef Eigen::Matrix<double, 6, 1> force_torque_config_cartesian;
 
 
 /**
@@ -52,9 +53,9 @@ public:
 	franka_controller();
 
 	virtual ~franka_controller() noexcept;
-
 	
 	virtual void move(const robot_config_7dof& target) = 0;
+	virtual void move_with_force(const robot_config_7dof& target, const force_torque_config_cartesian& target_force_torques) = 0;
 	void move(const Eigen::Affine3d& target_world_T_tcp);
 
 	virtual bool move_until_contact(const robot_config_7dof& target) = 0;
@@ -75,6 +76,7 @@ public:
 
 
 	virtual robot_config_7dof current_config() const = 0;
+	virtual force_torque_config_cartesian current_force_torque() const = 0;
 	virtual int current_gripper_pos() const = 0;
 	virtual int max_gripper_pos() const = 0;
 
@@ -126,7 +128,8 @@ public:
 	const Eigen::Affine3d j6_T_tcp;
 	const Eigen::Affine3d tcp_T_j6;
 
-
+	//used to convert internal double gripper width in meters into an int
+	static constexpr double gripper_unit_per_m_ = 1000.0;
 private:
 
 	Eigen::Affine3d build_j6_T_flange() const;
