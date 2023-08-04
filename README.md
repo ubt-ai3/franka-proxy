@@ -6,7 +6,7 @@ To install the client library use:
 ```./vcpkg.exe install franka-proxy:x64-windows ```
 
 And to install the server application use:  
-``` /vcpkg.exe install franka-proxy[server]:x64-windows```
+```./vcpkg.exe install franka-proxy[server]:x64-windows```
 
 Server and client are only compatible if you use the same port, so make sure to work on an identical version of vcpkg (ai3 internal version).
 
