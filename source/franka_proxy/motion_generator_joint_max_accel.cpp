@@ -75,10 +75,10 @@ bool franka_joint_motion_generator::calculateDesiredValues
 
 	for (size_t i = 0; i < 7; i++)
 	{
-		if (std::abs(delta_q_[i]) < kDeltaQMotionFinished)
+		if (std::abs(delta_q_[i]) < kDeltaQMotionFinished) //vermutlich: wenn Differenz zwischen gewünschter- und aktueller Position kleiner 1e-6 ist, wird true zurückgegeben (motion kann beendet werden)
 		{
 			(*delta_q_d)[i] = 0;
-			joint_motion_finished[i] = true;
+			joint_motion_finished[i] = true; //für dieses eine Gelenk wird bei genügend geringer Differenz das finished auf true gesetzt
 		}
 		else
 		{
@@ -108,7 +108,7 @@ bool franka_joint_motion_generator::calculateDesiredValues
 			}
 		}
 	}
-	return std::all_of
+	return std::all_of //returns true, wenn alle 7 Gelenke in genügend kleiner Differenz zu gewünschter Position stehen
 		(joint_motion_finished.cbegin(), joint_motion_finished.cend(),
 		 [](bool x) { return x; });
 }
@@ -181,9 +181,11 @@ bool franka_joint_motion_generator::colliding(const franka::RobotState& state)
 	return false;
 }
 
-
+//When a robot state is received, the callback function is used to calculate the response: the desired values for that time step. After sending back the response,
+//the callback function will be called again with the most recently received robot state. Since the robot is controlled with a 1 kHz frequency,
+//the callback functions have to compute their result in a short time frame in order to be accepted
 franka::JointPositions franka_joint_motion_generator::operator()
-	(const franka::RobotState& robot_state, franka::Duration period)
+	(const franka::RobotState& robot_state, franka::Duration period) //hier werden die zwei benötigten Argumente für dei Callback Funktion übergeben
 {
 	time_ += period.toSec();
 
@@ -199,7 +201,7 @@ franka::JointPositions franka_joint_motion_generator::operator()
 		throw contact_stop_trigger();
 
 
-	if (time_ == 0.0)
+	if (time_ == 0.0) //the first invocation of the callback function
 	{
 		q_start_ = Vector7d(robot_state.q_d.data());
 		delta_q_ = q_goal_ - q_start_;
@@ -213,7 +215,7 @@ franka::JointPositions franka_joint_motion_generator::operator()
 	Eigen::VectorXd::Map(&joint_positions[0], 7) = (q_start_ + delta_q_d);
 	franka::JointPositions output(joint_positions);
 	output.motion_finished = motion_finished;
-	return output;
+	return output; //gibt die response für den einen Zeitschritt zurück
 }
 
 

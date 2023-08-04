@@ -17,6 +17,10 @@
 #include "franka_network_state_server.hpp"
 
 
+
+#include <franka/exception.h>
+
+
 namespace franka_proxy
 {
 /**
@@ -27,8 +31,11 @@ namespace franka_proxy
  * todo
  *
  ************************************************************************/
+	
 class franka_proxy
 {
+	
+
 public:
 
 	franka_proxy();
@@ -43,6 +50,8 @@ private:
 
     static constexpr unsigned short franka_control_port = 4711;
     static constexpr unsigned short franka_state_port = 4712;
+
+	
 };
 
 

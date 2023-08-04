@@ -45,7 +45,7 @@ namespace franka_proxy
 		parameters_initialized_(false),
 		speed_factor_(0.05),
 
-		motion_recorder_(10.0, robot_, robot_state_),
+	motion_recorder_(std::make_unique<detail::motion_recorder>(10.0, robot_, robot_state_ )),
 
 		robot_state_(robot_.readOnce()),
 
@@ -67,9 +67,9 @@ namespace franka_proxy
 			// todo
 		}
 
-		// todo JHa
-		//robot_.setGuidingMode({ {true, true, true, false, false, true} }, false);
-	}
+	// todo JHa add feature to set guiding mode
+	//robot_.setGuidingMode({ {true, true, true, false, false, true} }, false);
+}
 
 
 	franka_hardware_controller::~franka_hardware_controller() noexcept
@@ -80,14 +80,13 @@ namespace franka_proxy
 	}
 
 
-	void franka_hardware_controller::apply_z_force
-	(const double mass, const double duration)
+void franka_hardware_controller::apply_z_force
+(const double mass, const double duration)
+{
+	initialize_parameters();
+	try
 	{
-		initialize_parameters();
-
-		try
-		{
-			detail::force_motion_generator fmg(robot_, mass, duration);
+		detail::force_motion_generator fmg(robot_, mass, duration);
 
 			set_control_loop_running(true);
 			{
@@ -503,7 +502,7 @@ namespace franka_proxy
 	{
 		initialize_parameters();
 
-		detail::franka_joint_motion_generator motion_generator
+	detail::franka_joint_motion_generator motion_generator 
 		(speed_factor_, target, robot_state_lock_, robot_state_, stop_motion_, false);
 
 		stop_motion_ = false;
@@ -583,15 +582,15 @@ namespace franka_proxy
 	{
 		stop_motion_ = true;
 
-		try
-		{
-			if (gripper_)
-				gripper_->stop();
-		}
-		catch (const franka::Exception&)
-		{
-		}
+	try
+	{
+		if (gripper_)
+			if(!gripper_->stop())
+				std::cerr << "Gripper stop failed." << std::endl;
 	}
+	catch (const franka::Exception&)
+	{}
+}
 
 
 	void franka_hardware_controller::set_speed_factor(double speed_factor)
@@ -664,18 +663,18 @@ namespace franka_proxy
 			std::lock_guard<std::mutex> state_guard(robot_state_lock_);
 		}
 
-		motion_recorder_.start();
-	}
+	motion_recorder_->start();
+}
 
 
-	std::pair<std::vector<robot_config_7dof>, std::vector<robot_force_config>>
-		franka_hardware_controller::stop_recording()
-	{
-		motion_recorder_.stop();
-		set_control_loop_running(false);
+std::pair<std::vector<robot_config_7dof>, std::vector<robot_force_config>>
+	franka_hardware_controller::stop_recording()
+{
+	motion_recorder_->stop();
+	set_control_loop_running(false);
 
-		return { motion_recorder_.latest_record(), motion_recorder_.latest_fts_record() };
-	}
+	return { motion_recorder_->latest_record(), motion_recorder_->latest_fts_record() };
+}
 
 
 	void franka_hardware_controller::move_sequence
@@ -723,7 +722,8 @@ namespace franka_proxy
 	}
 
 
-	void franka_hardware_controller::move_sequence
+	// todo JHa fix this, review work of Laurin Hecken
+void franka_hardware_controller::move_sequence
 	(const std::vector<std::array<double, 7>>& q_sequence, double f_z)
 	{
 		initialize_parameters();
@@ -787,8 +787,44 @@ namespace franka_proxy
 			throw;
 		}
 
-		set_control_loop_running(false);
-	}
+	set_control_loop_running(false);
+
+	// todo work of Laurin Hecken
+	//void franka_hardware_controller::hybrid_control
+	//(csv_data & data, std::vector<Eigen::Vector3d> desired_positions,
+	//	std::vector<Eigen::Matrix<double, 6, 1>> desired_forces, std::vector<Eigen::Quaterniond> desired_orientations,
+	//	std::array<std::array<double, 6>, 6> control_parameters)
+	//{
+		//initialize_parameters();
+
+		//try
+		//{
+		//	detail::hybrid_control_motion_generator fmg(robot_, desired_positions, desired_forces, desired_orientations, control_parameters, data);
+		//	set_control_loop_running(true);
+		//	{
+		//		// Lock the current_state_lock_ to wait for state_thread_ to finish.
+		//		std::lock_guard<std::mutex> state_guard(robot_state_lock_);
+		//	}
+
+		//	// start real-time control loop
+		//	robot_.control(
+		//		[&](const franka::RobotState& robot_state,
+		//			franka::Duration period) -> franka::Torques
+		//		{
+		//			return fmg.callback(robot_state, period);
+		//		}, true, 1000.0);
+
+
+		//}
+		//catch (const franka::Exception&)
+		//{
+		//	set_control_loop_running(false);
+		//	throw;
+		//}
+
+		//set_control_loop_running(false);
+	//}
+}
 
 
 	void franka_hardware_controller::move_sequence

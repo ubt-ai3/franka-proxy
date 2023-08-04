@@ -156,7 +156,7 @@ int main()
 
 	std::cout << "Finished Admittance - Apply Force Desired Admittance and Impedance Test." << std::endl;
 
-	std::cout << "Starting FK/IK Test." << std::endl;
+	//std::cout << "Starting FK/IK Test." << std::endl;
 
 	//Eigen::Affine3d pose
 	//	(franka_control::franka_util::fk
@@ -176,7 +176,7 @@ int main()
 	//Eigen::VectorXd::Map(&q[0], 7) = ik_solution;
 	//controller.move_to(q);
 
-	std::cout << ("Finished FK/IK Test.");
+	//std::cout << ("Finished FK/IK Test.");
 
 
 	std::cout << ("Starting Playback Test.");
