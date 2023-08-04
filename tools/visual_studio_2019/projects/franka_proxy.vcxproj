@@ -32,7 +32,6 @@
     <ClCompile Include="..\..\..\source\franka_proxy\motion_generator_joint_max_accel.cpp" />
     <ClCompile Include="..\..\..\source\franka_proxy\motion_generator_seq_cart_vel_tau.cpp" />
     <ClCompile Include="..\..\..\source\jr3_ft_sensor\force_torque_sensor.cpp" />
-    <ClCompile Include="simulated_annealing.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="franka_share.vcxproj">

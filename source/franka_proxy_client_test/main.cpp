@@ -73,7 +73,7 @@ int main()
 
 	std::cout << "Starting Gripper Test." << std::endl;
 
-	controller.grasp_gripper(0.1);  //Warum diese vier Funktionen nicht auch mit execute_retry?
+	controller.grasp_gripper(0.1);
 	controller.open_gripper(0.1);
 	controller.close_gripper(1);
 	controller.open_gripper(1);
