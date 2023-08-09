@@ -34,6 +34,15 @@ namespace franka_proxy
 		 * @class joint_impedance_motion_generator
 		 *
 		 * in use
+		 * 
+		 * Joint space based impedance controller. A position error calculation 
+		 * callback is required within the callback function. The 
+		 * calculate_position_error function within the 
+		 * joint_impedance_motion_generator class is public and is designed to be 
+		 * used to a) hold the current position or b) to follow a given path (saved 
+		 * during constructor call). Otherwise it is possible to use a different 
+		 * function to calcualte/retrieve the position error for a specific step 
+		 * calculation.
 		 *
 		 ************************************************************************/
 		class joint_impedance_motion_generator
@@ -62,7 +71,7 @@ namespace franka_proxy
 			Eigen::Matrix<double, 7, 1> calculate_joint_position_error(const franka::RobotState& robot_state, double time);
 
 			// getter and setter for 'default' stiffness and damping
-			bool set_stiffness(std::array<double, 49> stiffness);
+			void set_stiffness(const std::array<double, 49>& stiffness);
 
 			std::array<double, 49> get_stiffness();
 			std::array<double, 49> get_damping();
@@ -71,6 +80,8 @@ namespace franka_proxy
 			void calculate_default_stiffness_and_damping();
 			void init_impedance_motion_generator(franka::Robot& robot, std::mutex& state_lock, franka::RobotState& robot_state);
 			double calculate_damping_from_stiffness(double ki);
+			void log_pos_error(Eigen::Matrix<double, 7, 1> q_d, Eigen::Matrix<double, 7, 1> q);
+			void log(Eigen::Matrix<double, 7, 1> tau_d);
 
 			franka::Model model_;
 
@@ -90,12 +101,7 @@ namespace franka_proxy
 			Eigen::Matrix<double, 7, 7> stiffness_matrix_ = Eigen::Matrix<double, 7, 7>::Zero();
 
 			// Stiffness & Damping
-			//const std::array<double, 7> K_P_ = { 150.0, 100.0, 150.0, 100.0, 20.0, 20.0, 20.0 };
-			//const std::array<double, 7> K_P_ = { 300.0, 300.0, 300.0, 300.0, 50.0, 50.0, 50.0 };
-			const std::array<double, 7> K_P_ = {1350.0, 1350.0, 1350.0, 1350.0, 562.5, 337.5, 112.5}; // {600.0, 600.0, 600.0, 600.0, 250.0, 150.0, 50.0}
-			//const std::array<double, 7> K_D_ = { 34.641, 34.641, 34.641, 34.641, 14.1421, 14.1421, 14.1421 };
-			//const std::array<double, 7> K_D_ = { 34.641, 34.641, 34.641, 34.641, 14.1421, 14.1421, 14.1421 };
-			//const std::array<double, 7> K_D_ = {50.0, 50.0, 50.0, 50.0, 30.0, 25.0, 15.0};
+			const std::array<double, 7> K_P_ = { 300.0, 300.0, 300.0, 300.0, 50.0, 50.0, 50.0 };
 
 			// joint position error calculation
 			std::array<double, 7> current_joint_position_ = { 0 };

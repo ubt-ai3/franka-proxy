@@ -203,24 +203,14 @@ namespace franka_proxy
 			Eigen::Matrix<double, 7, 1> joint_position_error(get_joint_position_error(time_));
 
 			// calculate torque - without gravity as the robot handles it itself
-			Eigen::VectorXd tau_d = coriolis - (stiffness_matrix_ * joint_position_error + damping_matrix_ * joint_velocity); // inertia_matrix * joint_acceleration;
+			Eigen::VectorXd tau_d = coriolis - (stiffness_matrix_ * joint_position_error + damping_matrix_ * joint_velocity);
 
 			std::array<double, 7> tau_d_ar;
 			Eigen::VectorXd::Map(&tau_d_ar[0], 7) = tau_d;
 
 			if (logging_) {
 				// log to csv
-				std::ostringstream tau_d_log;
-				tau_d_log << tau_d(0) << "; " << tau_d(1) << "; " << tau_d(2) << "; " << tau_d(3) << "; " << tau_d(4) << "; " << tau_d(5) << "; " << tau_d(6);
-				std::ostringstream stiffness_matrix_log;
-				stiffness_matrix_log << stiffness_matrix_(0, 0) << "; " << stiffness_matrix_(1, 1) << "; " << stiffness_matrix_(2, 2) << "; " << stiffness_matrix_(3, 3) << "; " << stiffness_matrix_(4, 4) << "; " << stiffness_matrix_(5, 5);
-				std::ostringstream damping_matrix_log;
-				damping_matrix_log << damping_matrix_(0, 0) << "; " << damping_matrix_(1, 1) << "; " << damping_matrix_(2, 2) << "; " << damping_matrix_(3, 3) << "; " << damping_matrix_(4, 4) << "; " << damping_matrix_(5, 5);
-
-				std::ostringstream current_values;
-				current_values << time_ << "; " << tau_d_log.str() << "; " << stiffness_matrix_log.str() << "; " << damping_matrix_log.str();
-
-				csv_log_1_ << current_values.str() << "\n";
+				log(tau_d);
 			}
 
 			return tau_d_ar;
@@ -249,16 +239,7 @@ namespace franka_proxy
 			Eigen::Matrix<double, 7, 1> joint_position_error = q - q_d;
 
 			if (logging_) {
-				std::ostringstream joint_position_d_log;
-				std::ostringstream joint_position_log;
-
-				joint_position_d_log << q_d(0) << "; " << q_d(1) << "; " << q_d(2) << "; " << q_d(3) << "; " << q_d(4) << "; " << q_d(5) << "; " << q_d(6);
-				joint_position_log << q(0) << "; " << q(1) << "; " << q(2) << "; " << q(3) << "; " << q(4) << "; " << q(5) << "; " << q(6);
-
-				std::ostringstream current_values;
-				current_values << time_ << "; " << joint_position_d_log.str() << "; " << joint_position_log.str();
-
-				csv_log_2_ << current_values.str() << "\n";
+				log_pos_error(q_d, q);
 			}
 
 			return joint_position_error;
@@ -280,19 +261,17 @@ namespace franka_proxy
 				damping_matrix_(i, i) = calculate_damping_from_stiffness(K_P_[i]);
 			}
 		}
-
-		bool joint_impedance_motion_generator::set_stiffness(std::array<double, 49> stiffness) {
-			if (initialized_) {
-				// no changes allowed -> return false as operation failed
-				return false;
-			}
-			else {
+		
+		void joint_impedance_motion_generator::set_stiffness(const std::array<double, 49>& stiffness) {
+			if (!initialized_) {
 				// set new value
 				Eigen::Map<const Eigen::Matrix<double, 7, 7>> new_stiffness_matrix(stiffness.data());
 				stiffness_matrix_ = new_stiffness_matrix;
 
-				// operation succeeded -> return true
-				return true;
+				// operation succeeded
+			}
+			else {
+				throw std::runtime_error("(Joint impedance controller) Setting impedance stiffness after initialization is not allowed!");
 			}
 		}
 
@@ -318,6 +297,33 @@ namespace franka_proxy
 			}
 
 			return damping_matrix_ar;
+		}
+
+		void joint_impedance_motion_generator::log(Eigen::Matrix<double, 7, 1> tau_d) {
+			std::ostringstream tau_d_log;
+			tau_d_log << tau_d(0) << "; " << tau_d(1) << "; " << tau_d(2) << "; " << tau_d(3) << "; " << tau_d(4) << "; " << tau_d(5) << "; " << tau_d(6);
+			std::ostringstream stiffness_matrix_log;
+			stiffness_matrix_log << stiffness_matrix_(0, 0) << "; " << stiffness_matrix_(1, 1) << "; " << stiffness_matrix_(2, 2) << "; " << stiffness_matrix_(3, 3) << "; " << stiffness_matrix_(4, 4) << "; " << stiffness_matrix_(5, 5);
+			std::ostringstream damping_matrix_log;
+			damping_matrix_log << damping_matrix_(0, 0) << "; " << damping_matrix_(1, 1) << "; " << damping_matrix_(2, 2) << "; " << damping_matrix_(3, 3) << "; " << damping_matrix_(4, 4) << "; " << damping_matrix_(5, 5);
+
+			std::ostringstream current_values;
+			current_values << time_ << "; " << tau_d_log.str() << "; " << stiffness_matrix_log.str() << "; " << damping_matrix_log.str();
+
+			csv_log_1_ << current_values.str() << "\n";
+		}
+
+		void joint_impedance_motion_generator::log_pos_error(Eigen::Matrix<double, 7, 1> q_d, Eigen::Matrix<double, 7, 1> q) {
+			std::ostringstream joint_position_d_log;
+			std::ostringstream joint_position_log;
+
+			joint_position_d_log << q_d(0) << "; " << q_d(1) << "; " << q_d(2) << "; " << q_d(3) << "; " << q_d(4) << "; " << q_d(5) << "; " << q_d(6);
+			joint_position_log << q(0) << "; " << q(1) << "; " << q(2) << "; " << q(3) << "; " << q(4) << "; " << q(5) << "; " << q(6);
+
+			std::ostringstream current_values;
+			current_values << time_ << "; " << joint_position_d_log.str() << "; " << joint_position_log.str();
+
+			csv_log_2_ << current_values.str() << "\n";
 		}
 
 

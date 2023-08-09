@@ -34,6 +34,14 @@ namespace franka_proxy
 		 * @class cartesian_impedance_motion_generator
 		 *
 		 * in use
+		 * 
+		 * Cartesian impedance controller. A position error calculation callback
+		 * is required within the callback function. The calculate_position_error
+		 * function within the cartesian_impedance_motion_generator class is
+		 * public and is designed to be used to a) hold the current position or
+		 * b) to follow a given path (saved during constructor call). Otherwise it
+		 * is possible to use a different function to calcualte/retrieve the 
+		 * position error for a specific step calculation.
 		 *
 		 ************************************************************************/
 		class cartesian_impedance_motion_generator
@@ -64,8 +72,8 @@ namespace franka_proxy
 			Eigen::Matrix<double, 6, 1> calculate_position_error(const franka::RobotState& robot_state, double time);
 
 			// getter and setter for 'default' stiffness and damping
-			bool set_rotational_stiffness(double rotational_stiffness);
-			bool set_translational_stiffness(double translational_stiffness);
+			void set_rotational_stiffness(double rotational_stiffness);
+			void set_translational_stiffness(double translational_stiffness);
 
 			double get_rotational_stiffness();
 			double get_translational_stiffness();
@@ -75,6 +83,8 @@ namespace franka_proxy
 			void init_impedance_motion_generator(franka::Robot& robot, std::mutex& state_lock, franka::RobotState& robot_state);
 			double optimizeDamping(double l_di, double u_di, double mi, double bi, double x0i_max, double derived_x0i_max);
 			double calculate_stiffness_from_damping(double di, double mi);
+			void log(Eigen::Matrix<double, 6, 1> f_ext, Eigen::Matrix<double, 6, 1> acceleration, Eigen::Matrix<double, 6, 1> velocity);
+			void log_pos_error(Eigen::Vector3d position_d, Eigen::Quaterniond orientation_d, Eigen::Vector3d position, Eigen::Quaterniond orientation);
 
 			franka::Model model_;
 
@@ -110,7 +120,6 @@ namespace franka_proxy
 			std::array<double, 16> current_pose_ = {0};
 			std::list<std::array<double, 16>> poses_;
 
-			//std::list<Eigen::Vector3d> positions_;
 			std::list<Eigen::Quaterniond> orientations_;
 
 			double pose_interval_;

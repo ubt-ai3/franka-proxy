@@ -13,6 +13,8 @@
 
 
 #include <vector>
+#include <iostream>
+#include <fstream>
 
 #include <Eigen/Core>
 #include <Eigen/Dense>
@@ -21,10 +23,6 @@
 #include <franka/model.h>
 
 #include "motion_generator_cartesian_impedance.hpp"
-
-#include <iostream>
-#include <fstream>
-
 
 
 namespace franka_proxy
@@ -39,6 +37,14 @@ namespace franka_proxy
 		 * @class admittance_motion_generator
 		 *
 		 * in use
+		 * 
+		 * Cartesian admittance controller. This controller is using the cartesian
+		 * impedance controller of the motion_generator_cartesian_impedance class
+		 * to reach the calculated xi positions (xi = position output of the
+		 * admittance controller). The required position error calculation callback
+		 * of the impedance controller is handled within this class and differs from
+		 * the 'default' one presented in the motion_generator_cartesian_impedance
+		 * class.
 		 *
 		 ************************************************************************/
 		class admittance_motion_generator
@@ -57,11 +63,11 @@ namespace franka_proxy
 				franka::Duration period);
 
 			// getter and setter for 'default' stiffness and damping parameters
-			bool set_admittance_rotational_stiffness(double rotational_stiffness);
-			bool set_admittance_translational_stiffness(double translational_stiffness);
+			void set_admittance_rotational_stiffness(double rotational_stiffness);
+			void set_admittance_translational_stiffness(double translational_stiffness);
 
-			bool set_impedance_rotational_stiffness(double rotational_stiffness);
-			bool set_impedance_translational_stiffness(double rotational_stiffness);
+			void set_impedance_rotational_stiffness(double rotational_stiffness);
+			void set_impedance_translational_stiffness(double rotational_stiffness);
 
 			double get_admittance_rotational_stiffness();
 			double get_admittance_translational_stiffness();
@@ -71,6 +77,15 @@ namespace franka_proxy
 
 		private:
 			void calculate_stiffness_and_damping();
+			void log(
+				Eigen::Matrix<double, 6, 1> f_ext,
+				Eigen::Matrix<double, 6, 1> x_i,
+				Eigen::Matrix<double, 6, 1> position_eq,
+				Eigen::Matrix<double, 6, 1> x_i_prod2,
+				Eigen::Matrix<double, 6, 1> current_force,
+				const std::array<double, 6>& f_ext_middle,
+				Eigen::Matrix<double, 6, 7> jacobian
+			);
 
 			std::vector<Eigen::Affine3d> fk(const Eigen::Matrix<double, 7, 1>& configuration);
 

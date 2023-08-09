@@ -237,47 +237,7 @@ namespace franka_proxy
 
 			if (logging_) {
 				// log to csv
-				std::ostringstream f_ext_log;
-				f_ext_log << f_ext_(0) << "; " << f_ext_(1) << "; " << f_ext_(2) << "; " << f_ext_(3) << "; " << f_ext_(4) << "; " << f_ext_(5);
-				std::ostringstream x_i_log;
-				x_i_log << x_i(0) << "; " << x_i(1) << "; " << x_i(2) << "; " << x_i(3) << "; " << x_i(4) << "; " << x_i(5);
-				std::ostringstream x_e_log;
-				x_e_log << position_eq(0) << "; " << position_eq(1) << "; " << position_eq(2) << "; " << position_eq(3) << "; " << position_eq(4) << "; " << position_eq(5);
-				std::ostringstream x_i_prod2_log;
-				x_i_prod2_log << x_i_prod2(0) << "; " << x_i_prod2(1) << "; " << x_i_prod2(2) << "; " << x_i_prod2(3) << "; " << x_i_prod2(4) << "; " << x_i_prod2(5);
-				std::ostringstream current_force_log;
-				current_force_log << current_force(0) << "; " << current_force(1) << "; " << current_force(2) << "; " << current_force(3) << "; " << current_force(4) << "; " << current_force(5);
-				std::ostringstream f_ext_middle_log;
-				f_ext_middle_log << f_ext_middle[0] << "; " << f_ext_middle[1] << "; " << f_ext_middle[2] << "; " << f_ext_middle[3] << "; " << f_ext_middle[4] << "; " << f_ext_middle[5];
-
-				std::ostringstream current_values;
-				current_values << time_ << "; " << "; " << f_ext_middle_log.str() << "; " << "; " << x_i_log.str() << "; " << "; " << x_e_log.str(); // << "; " << "; " << current_force_log.str();
-
-				csv_log_ << current_values.str() << "\n";
-
-				// get current joint position
-				Eigen::Map<const Eigen::Matrix<double, 7, 1>> q(state_.q.data());
-
-				std::ostringstream current_joint_values;
-				current_joint_values << time_ << ";" << ";" << q(0) << ";" << q(1) << ";" << q(2) << ";" << q(3) << ";" << q(4) << ";" << q(5) << ";" << q(6);
-
-				joint_log_ << current_joint_values.str() << "\n";
-
-				std::ostringstream jac_log;
-
-				jac_log << time_ << "\n" << ";" << "\n";
-
-				for (int i = 0; i < 6; i++) {
-					for (int j = 0; j < 7; j++) {
-						jac_log << jacobian(i, j) << ";";
-					}
-
-					jac_log << "\n";
-				}
-
-				jac_log << "\n" << ";" << "\n";
-
-				jacobian_log_ << jac_log.str();
+				log(f_ext_, x_i, position_eq, x_i_prod2, current_force, f_ext_middle, jacobian);
 			}
 
 			return impedance_controller_.callback
@@ -298,51 +258,45 @@ namespace franka_proxy
 				Eigen::MatrixXd::Identity(3, 3);
 		}
 
-		bool admittance_motion_generator::set_admittance_rotational_stiffness(double rotational_stiffness) {
-			if (initialized_) {
-				// not allowed after initialization -> operation failed -> return false
-				return false;
-			}
-			else {
+		void admittance_motion_generator::set_admittance_rotational_stiffness(double rotational_stiffness) {
+			if (!initialized_) {
 				rotational_stiffness_ = rotational_stiffness;
 				calculate_stiffness_and_damping();
 
-				// operation succeeded -> return true;
-				return true;
+				// operation succeeded
+			}
+			else {
+				throw std::runtime_error("Setting admittance rotational stiffness after initialization is not allowed!");
 			}
 		}
 
-		bool admittance_motion_generator::set_admittance_translational_stiffness(double translational_stiffness) {
-			if (initialized_) {
-				// not allowed after initialization -> operation failed -> return false;
-				return false;
-			}
-			else {
+		void admittance_motion_generator::set_admittance_translational_stiffness(double translational_stiffness) {
+			if (!initialized_) {
 				translational_stiffness_ = translational_stiffness;
 				calculate_stiffness_and_damping();
 
-				// operation succeeded -> return true
-				return true;
+				// operation succeeded
+			}
+			else {
+				throw std::runtime_error("Setting admittance translational stiffness after initialization is not allowed!");
 			}
 		}
 
-		bool admittance_motion_generator::set_impedance_rotational_stiffness(double rotational_stiffness) {
-			if (initialized_) {
-				// not allowed after initialization -> operation failed -> return false
-				return false;
+		void admittance_motion_generator::set_impedance_rotational_stiffness(double rotational_stiffness) {
+			if (!initialized_) {
+				impedance_controller_.set_rotational_stiffness(rotational_stiffness);
 			}
 			else {
-				return impedance_controller_.set_rotational_stiffness(rotational_stiffness);
+				throw std::runtime_error("(Admittance controller) Setting impedance rotational stiffness after initialization is not allowed!");
 			}
 		}
 
-		bool admittance_motion_generator::set_impedance_translational_stiffness(double translational_stiffness) {
-			if (initialized_) {
-				// not allowed after initialization -> operation failed -> return false
-				return false;
+		void admittance_motion_generator::set_impedance_translational_stiffness(double translational_stiffness) {
+			if (!initialized_) {
+				impedance_controller_.set_translational_stiffness(translational_stiffness);
 			}
 			else {
-				return impedance_controller_.set_translational_stiffness(translational_stiffness);
+				throw std::runtime_error("(Admittance controller) Setting impedance translational stiffness after initialization is not allowed!");
 			}
 		}
 
@@ -360,6 +314,58 @@ namespace franka_proxy
 
 		double admittance_motion_generator::get_impedance_translational_stiffness() {
 			return impedance_controller_.get_translational_stiffness();
+		}
+
+		void admittance_motion_generator::log(
+			Eigen::Matrix<double,6,1> f_ext,
+			Eigen::Matrix<double, 6, 1> x_i,
+			Eigen::Matrix<double, 6, 1> position_eq,
+			Eigen::Matrix<double, 6, 1> x_i_prod2,
+			Eigen::Matrix<double, 6, 1> current_force,
+			const std::array<double, 6>& f_ext_middle,
+			Eigen::Matrix<double, 6, 7> jacobian
+		) {
+			std::ostringstream f_ext_log;
+			f_ext_log << f_ext(0) << "; " << f_ext(1) << "; " << f_ext(2) << "; " << f_ext(3) << "; " << f_ext(4) << "; " << f_ext(5);
+			std::ostringstream x_i_log;
+			x_i_log << x_i(0) << "; " << x_i(1) << "; " << x_i(2) << "; " << x_i(3) << "; " << x_i(4) << "; " << x_i(5);
+			std::ostringstream x_e_log;
+			x_e_log << position_eq(0) << "; " << position_eq(1) << "; " << position_eq(2) << "; " << position_eq(3) << "; " << position_eq(4) << "; " << position_eq(5);
+			std::ostringstream x_i_prod2_log;
+			x_i_prod2_log << x_i_prod2(0) << "; " << x_i_prod2(1) << "; " << x_i_prod2(2) << "; " << x_i_prod2(3) << "; " << x_i_prod2(4) << "; " << x_i_prod2(5);
+			std::ostringstream current_force_log;
+			current_force_log << current_force(0) << "; " << current_force(1) << "; " << current_force(2) << "; " << current_force(3) << "; " << current_force(4) << "; " << current_force(5);
+			std::ostringstream f_ext_middle_log;
+			f_ext_middle_log << f_ext_middle[0] << "; " << f_ext_middle[1] << "; " << f_ext_middle[2] << "; " << f_ext_middle[3] << "; " << f_ext_middle[4] << "; " << f_ext_middle[5];
+
+			std::ostringstream current_values;
+			current_values << time_ << "; " << "; " << f_ext_middle_log.str() << "; " << "; " << x_i_log.str() << "; " << "; " << x_e_log.str(); // << "; " << "; " << current_force_log.str();
+
+			csv_log_ << current_values.str() << "\n";
+
+			// get current joint position
+			Eigen::Map<const Eigen::Matrix<double, 7, 1>> q(state_.q.data());
+
+			std::ostringstream current_joint_values;
+			current_joint_values << time_ << ";" << ";" << q(0) << ";" << q(1) << ";" << q(2) << ";" << q(3) << ";" << q(4) << ";" << q(5) << ";" << q(6);
+
+			joint_log_ << current_joint_values.str() << "\n";
+
+			std::ostringstream jac_log;
+
+			jac_log << time_ << "\n" << ";" << "\n";
+
+			for (int i = 0; i < 6; i++) {
+				for (int j = 0; j < 7; j++) {
+					jac_log << jacobian(i, j) << ";";
+				}
+
+				jac_log << "\n";
+			}
+
+			jac_log << "\n" << ";" << "\n";
+
+			jacobian_log_ << jac_log.str();
 		}
 
 

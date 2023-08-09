@@ -318,7 +318,7 @@ void franka_hardware_controller::apply_z_force
 	{
 		detail::joint_impedance_motion_generator motion_generator(robot_, robot_state_lock_, robot_state_, joint_positions, duration, log);
 
-		motion_generator.set_stiffness(stiffness); // always true
+		motion_generator.set_stiffness(stiffness);
 
 		try
 		{
@@ -390,8 +390,8 @@ void franka_hardware_controller::apply_z_force
 	{
 		detail::cartesian_impedance_motion_generator motion_generator(robot_, robot_state_lock_, robot_state_, duration, log, use_stiff_damp_online_calc);
 
-		motion_generator.set_rotational_stiffness(rotational_stiffness); // always true;
-		motion_generator.set_translational_stiffness(translational_stiffness); // always true;
+		motion_generator.set_rotational_stiffness(rotational_stiffness);
+		motion_generator.set_translational_stiffness(translational_stiffness);
 
 		try
 		{
@@ -463,8 +463,8 @@ void franka_hardware_controller::apply_z_force
 	{
 		detail::cartesian_impedance_motion_generator motion_generator(robot_, robot_state_lock_, robot_state_, poses, duration, log, use_stiff_damp_online_calc);
 
-		motion_generator.set_rotational_stiffness(rotational_stiffness); // always true
-		motion_generator.set_translational_stiffness(translational_stiffness); // always true
+		motion_generator.set_rotational_stiffness(rotational_stiffness);
+		motion_generator.set_translational_stiffness(translational_stiffness);
 
 		try
 		{

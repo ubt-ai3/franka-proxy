@@ -82,58 +82,36 @@ public:
 		 const std::vector<std::array<double, 6>>& selection_vector_sequence);
 
 	/**
-	 * Admittance controller
-	*/
-	void apply_admittance(double duration, bool log);
-
-	/**
-	 * Admittance controller using desired rotational and translational stiffness within the admittance controller
-	*/
-	void apply_admittance(double duration, bool log, double rotational_stiffness, double translational_stiffness);
-
-	/**
 	 * Admittance controller using desired rotational and translational stiffness within the admittance and the impedance controller
 	*/
+	void apply_admittance(double duration, bool log);
+	void apply_admittance(double duration, bool log, double rotational_stiffness, double translational_stiffness);
 	void apply_admittance(double duration, bool log, double adm_rotational_stiffness, double adm_translational_stiffness, double imp_rotational_stiffness, double imp_translational_stiffness);
-
-	/**
-	 * Cartesian impedance controller to hold the current pose
-	*/
-	void cartesian_impedance_hold_pose(double duration, bool log, bool use_stiff_damp_online_calc);
 
 	/**
 	 * Cartesian impedance controller to hold the current pose with desired rotational and translational stiffness
 	*/
+	void cartesian_impedance_hold_pose(double duration, bool log, bool use_stiff_damp_online_calc);
 	void cartesian_impedance_hold_pose(double duration, bool log, bool use_stiff_damp_online_calc, double rotational_stiffness, double translational_stiffness);
 
 	/**
-	*  Cartesian impedance controller to follow path of poses
+	*  Cartesian impedance controller to follow path of poses with desired rotational and translational stiffness
+	*  Duration parameter: duration to follow the complete path -> Example: 10s duration, 5 poses -> 2s per pose
 	*/
 	void cartesian_impedance_poses(std::list<std::array<double, 16>>& positions, double duration, bool log, bool use_stiff_damp_online_calc);
-
-	/**
-	*  Cartesian impedance controller to follow path of poses with desired rotational and translational stiffness
-	*/
 	void cartesian_impedance_poses(std::list<std::array<double, 16>>& positions, double duration, bool log, bool use_stiff_damp_online_calc, double rotational_stiffness, double translational_stiffness);
-
-	/**
-	 * Joint space impedance controller to hold the current position
-	*/
-	void joint_impedance_hold_position(double duration, bool log);
 
 	/**
 	 * Joint space impedance controller to hold the current position with desired stiffness matrix parameter
 	*/
+	void joint_impedance_hold_position(double duration, bool log);
 	void joint_impedance_hold_position(double duration, bool log, std::array<double, 49> stiffness);
 
 	/**
-	*  Joint space impedance controller to follow path of positions
+	*  Joint space impedance controller to follow path of positions with desired stiffness matrix parameter
+	*	Duration parameter: duration to follow the complete path -> Example: 10s duration, 5 positions -> 2s per position
 	*/
 	void joint_impedance_positions(std::list<std::array<double, 7>>& joint_positions, double duration, bool log);
-
-	/**
-	*  Joint space impedance controller to follow path of positions with desired stiffness matrix parameter
-	*/
 	void joint_impedance_positions(std::list<std::array<double, 7>>& joint_positions, double duration, bool log, std::array<double, 49> stiffness);
 
 	/**

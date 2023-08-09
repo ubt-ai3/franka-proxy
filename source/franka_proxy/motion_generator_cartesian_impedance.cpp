@@ -287,22 +287,7 @@ namespace franka_proxy
 
 			if (logging_) {
 				// log to csv
-				std::ostringstream f_ext_log;
-				f_ext_log << f_ext(0) << "; " << f_ext(1) << "; " << f_ext(2) << "; " << f_ext(3) << "; " << f_ext(4) << "; " << f_ext(5);
-				std::ostringstream stiffness_matrix_log;
-				stiffness_matrix_log << stiffness_matrix_(0, 0) << "; " << stiffness_matrix_(1, 1) << "; " << stiffness_matrix_(2, 2) << "; " << stiffness_matrix_(3, 3) << "; " << stiffness_matrix_(4, 4) << "; " << stiffness_matrix_(5, 5);
-				std::ostringstream damping_matrix_log;
-				damping_matrix_log << damping_matrix_(0, 0) << "; " << damping_matrix_(1, 1) << "; " << damping_matrix_(2, 2) << "; " << damping_matrix_(3, 3) << "; " << damping_matrix_(4, 4) << "; " << damping_matrix_(5, 5);
-
-				std::ostringstream current_values;
-				current_values << time_ << "; " << f_ext_log.str() << "; " << stiffness_matrix_log.str() << "; " << damping_matrix_log.str();
-
-				csv_log_1_ << current_values.str() << "\n";
-
-				std::ostringstream acc_vel_values;
-				acc_vel_values << acceleration(1) << "; " << acceleration(2) << "; " << acceleration(3) << "; " << acceleration(4) << "; " << acceleration(5) << "; " << acceleration(6) << "; " << "; " << velocity(1) << "; " << velocity(2) << "; " << velocity(3) << "; " << velocity(4) << "; " << velocity(5) << "; " << velocity(6);
-
-				acc_vel_log_ << time_ << "; " << "; " << acc_vel_values.str() << "\n";
+				log(f_ext, acceleration, velocity);
 			}
 
 			return tau_d_ar;
@@ -350,16 +335,7 @@ namespace franka_proxy
 			position_error.tail(3) << -po_transform.linear() * position_error.tail(3);
 
 			if (logging_) {
-				std::ostringstream position_d_log;
-				std::ostringstream position_log;
-
-				position_d_log << position_d.x() << "; " << position_d.y() << "; " << position_d.z() << "; " << orientation_d.x() << "; " << orientation_d.y() << "; " << orientation_d.z();
-				position_log << position.x() << "; " << position.y() << "; " << position.z() << "; " << orientation.x() << "; " << orientation.y() << "; " << orientation.z();
-
-				std::ostringstream current_values;
-				current_values << time_ << "; " << position_d_log.str() << "; " << position_log.str();
-
-				csv_log_2_ << current_values.str() << "\n";
+				log_pos_error(position_d, orientation_d, position, orientation);
 			}
 
 			return position_error;
@@ -396,18 +372,16 @@ namespace franka_proxy
 				Eigen::MatrixXd::Identity(3, 3);
 		}
 
-		bool cartesian_impedance_motion_generator::set_rotational_stiffness(double rotational_stiffness) {
-			if (initialized_) {
-				// no changes allowed -> return false as operation failed
-				return false;
-			}
-			else {
+		void cartesian_impedance_motion_generator::set_rotational_stiffness(double rotational_stiffness) {
+			if (!initialized_) {
 				// set new value
 				rotational_stiffness_ = rotational_stiffness;
 				calculate_default_stiffness_and_damping();
 
-				// operation succeeded -> return true
-				return true;
+				// operation succeeded
+			}
+			else {
+				throw std::runtime_error("(Cartesian impedance controller) Setting impedance rotational stiffness after initialization is not allowed!");
 			}
 		}
 
@@ -415,23 +389,53 @@ namespace franka_proxy
 			return rotational_stiffness_;
 		}
 
-		bool cartesian_impedance_motion_generator::set_translational_stiffness(double translational_stiffness) {
-			if (initialized_) {
-				// no changes allowed -> return false as operation failed
-				return false;
-			}
-			else {
+		void cartesian_impedance_motion_generator::set_translational_stiffness(double translational_stiffness) {
+			if (!initialized_) {
 				// set new value
 				translational_stiffness_ = translational_stiffness;
 				calculate_default_stiffness_and_damping();
 
-				// operation succeeded -> return true
-				return true;
+				// operation succeeded
+			}
+			else {
+				throw std::runtime_error("(Cartesian impedance controller) Setting impedance translational stiffness after initialization is not allowed!");
 			}
 		}
 
 		double cartesian_impedance_motion_generator::get_translational_stiffness() {
 			return translational_stiffness_;
+		}
+
+		void cartesian_impedance_motion_generator::log(Eigen::Matrix<double, 6, 1> f_ext, Eigen::Matrix<double, 6, 1> acceleration, Eigen::Matrix<double, 6, 1> velocity) {
+			std::ostringstream f_ext_log;
+			f_ext_log << f_ext(0) << "; " << f_ext(1) << "; " << f_ext(2) << "; " << f_ext(3) << "; " << f_ext(4) << "; " << f_ext(5);
+			std::ostringstream stiffness_matrix_log;
+			stiffness_matrix_log << stiffness_matrix_(0, 0) << "; " << stiffness_matrix_(1, 1) << "; " << stiffness_matrix_(2, 2) << "; " << stiffness_matrix_(3, 3) << "; " << stiffness_matrix_(4, 4) << "; " << stiffness_matrix_(5, 5);
+			std::ostringstream damping_matrix_log;
+			damping_matrix_log << damping_matrix_(0, 0) << "; " << damping_matrix_(1, 1) << "; " << damping_matrix_(2, 2) << "; " << damping_matrix_(3, 3) << "; " << damping_matrix_(4, 4) << "; " << damping_matrix_(5, 5);
+
+			std::ostringstream current_values;
+			current_values << time_ << "; " << f_ext_log.str() << "; " << stiffness_matrix_log.str() << "; " << damping_matrix_log.str();
+
+			csv_log_1_ << current_values.str() << "\n";
+
+			std::ostringstream acc_vel_values;
+			acc_vel_values << acceleration(1) << "; " << acceleration(2) << "; " << acceleration(3) << "; " << acceleration(4) << "; " << acceleration(5) << "; " << acceleration(6) << "; " << "; " << velocity(1) << "; " << velocity(2) << "; " << velocity(3) << "; " << velocity(4) << "; " << velocity(5) << "; " << velocity(6);
+
+			acc_vel_log_ << time_ << "; " << "; " << acc_vel_values.str() << "\n";
+		}
+
+		void cartesian_impedance_motion_generator::log_pos_error(Eigen::Vector3d position_d, Eigen::Quaterniond orientation_d, Eigen::Vector3d position, Eigen::Quaterniond orientation) {
+			std::ostringstream position_d_log;
+			std::ostringstream position_log;
+
+			position_d_log << position_d.x() << "; " << position_d.y() << "; " << position_d.z() << "; " << orientation_d.x() << "; " << orientation_d.y() << "; " << orientation_d.z();
+			position_log << position.x() << "; " << position.y() << "; " << position.z() << "; " << orientation.x() << "; " << orientation.y() << "; " << orientation.z();
+
+			std::ostringstream current_values;
+			current_values << time_ << "; " << position_d_log.str() << "; " << position_log.str();
+
+			csv_log_2_ << current_values.str() << "\n";
 		}
 
 
