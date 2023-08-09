@@ -1,4 +1,5 @@
 /build
+/out
 /tools/visual_studio_2017/.vs
 /tools/visual_studio_2017/projects/*.user
 /tools/visual_studio_2019/.vs
@@ -6,4 +7,5 @@
 /external/viral/build
 /tools/visual_studio_2019/*.DotSettings
 /.vs
-/out
+/CMakeSettings.json
+/Folder.DotSettings

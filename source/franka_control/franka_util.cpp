@@ -148,6 +148,15 @@ std::vector<Eigen::Affine3d> franka_util::fk
 	trafo *= Eigen::AngleAxisd(configuration[6], Eigen::Vector3d(0.0f, 0.0f, 1.0f));
 	frames.push_back(trafo);
 
+	//// link 7 to flange
+	//trafo *= Eigen::Translation3d(0.0f, 0.0f, 0.107);
+	//frames.push_back(trafo);
+
+	//// flange to standard end effector
+	//trafo *= Eigen::Translation3d(0.0f, 0.0f, 0.1034f);
+	//trafo *= Eigen::AngleAxisd(pi / 4., Eigen::Vector3d(0.0f, 0.0f, -1.0f));
+	//frames.push_back(trafo);
+
 	return frames;
 }
 

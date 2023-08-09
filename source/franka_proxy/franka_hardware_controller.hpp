@@ -20,7 +20,6 @@
 #include <franka/robot.h>
 #include <franka/gripper.h>
 
-#include "franka_motion_recorder.hpp"
 
 namespace franka_proxy
 {
@@ -30,6 +29,10 @@ namespace franka_proxy
 	using robot_force_config = std::array<double, 6>;
 	using robot_force_selection = std::array<double, 6>;
 
+namespace detail
+{
+	class motion_recorder;
+}
 
 	/**
 	 *************************************************************************
@@ -87,17 +90,18 @@ namespace franka_proxy
 			double mass,
 			double duration);
 
-		/**
-		 * Starts/Stops the recording callback.
-		 */
-		void start_recording();
-		std::pair<std::vector<robot_config_7dof>, std::vector<robot_force_config>> stop_recording();
 
-		/**
-		 * Moves the Panda robot along a given sequence.
-		 */
-		void move_sequence(
-			const std::vector<robot_config_7dof>& q_sequence);
+	/**
+	 * Starts/Stops the recording callback.
+	 */
+	void start_recording();
+	std::pair<std::vector<robot_config_7dof>, std::vector<robot_force_config>> stop_recording();
+	
+	/**
+	 * Moves the Panda robot along a given sequence.
+	 */
+	void move_sequence(
+		const std::vector<robot_config_7dof>& q_sequence);
 
 		void move_sequence(
 			const std::vector<robot_config_7dof>& q_sequence,
@@ -156,7 +160,8 @@ namespace franka_proxy
 		static constexpr double default_gripper_speed = 0.025;
 
 
-	private:
+
+private:
 
 		/**
 		 * Used to update the current robot state while no control loop is
@@ -191,7 +196,7 @@ namespace franka_proxy
 		mutable std::mutex speed_factor_lock_;
 		double speed_factor_;
 
-		detail::motion_recorder motion_recorder_;
+	std::unique_ptr<detail::motion_recorder> motion_recorder_;
 
 		// Gripper
 		mutable std::unique_ptr<franka::Gripper> gripper_;

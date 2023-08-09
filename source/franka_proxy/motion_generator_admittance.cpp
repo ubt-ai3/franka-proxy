@@ -32,8 +32,6 @@ namespace franka_proxy
 		// admittance_motion_generator
 		//
 		//////////////////////////////////////////////////////////////////////////
-
-
 		admittance_motion_generator::admittance_motion_generator
 		(franka::Robot& robot,
 			std::mutex& state_lock,
@@ -71,6 +69,8 @@ namespace franka_proxy
 			if (logging_) {
 				// start logging to csv file
 				csv_log_.open("admittance.csv");
+				joint_log_.open("joints.csv");
+				jacobian_log_.open("jacobian.csv");
 			}
 		}
 
@@ -92,21 +92,41 @@ namespace franka_proxy
 
 				if (logging_) {
 					csv_log_.close();
+					joint_log_.close();
+					jacobian_log_.close();
 				}
 
 				return current_torques;
 			}
 
+			// save timestamp
+			timestamps_.push_back(time_);
+
+			// get current joint position
+			Eigen::Map<const Eigen::Matrix<double, 7, 1>> q(state_.q.data());
+
+
 			// get current position and orientation
 			Eigen::Affine3d po_transform(Eigen::Matrix4d::Map(state_.O_T_EE.data()));
+
 			Eigen::Vector3d current_position(po_transform.translation());
 			Eigen::Quaterniond orientation(po_transform.linear());
+			
+			// todo fix this init
+			if (!initialized_) 
+				previous_quaternion_ = orientation;
+			
+			double flip = ((previous_quaternion_ * orientation.conjugate()).w() > 0 ? -1 : 1);
 
 			Eigen::Matrix<double, 6, 1> position_eq;
 			position_eq.head(3) << current_position;
 			position_eq.tail(3) << orientation.x(), orientation.y(), orientation.z();
-			// Transform to base frame
-			position_eq.tail(3) << -po_transform.linear() * position_eq.tail(3);
+
+			position_eq.tail(3) << po_transform.linear() 
+				* flip
+				* position_eq.tail(3);
+
+			previous_quaternion_.coeffs() << -flip * orientation.coeffs();
 
 			// x_i-1 and x_i-2 are required for further calculations
 			if (!initialized_) {
@@ -132,7 +152,7 @@ namespace franka_proxy
 			// get f ext 
 			std::array<double, 6> f_ext_ar = state_.O_F_ext_hat_K;
 			Eigen::Map<const Eigen::Matrix<double, 6, 1>> f_ext_(f_ext_ar.data());
-
+			
 			// filter model discrepancy noise
 			for (int i = 0; i < 6; i++) {
 				if (i < 3) {
@@ -192,7 +212,13 @@ namespace franka_proxy
 			Eigen::Map<Eigen::Matrix<double, 6, 1>> current_force(f_ext_middle.data());
 
 			// using constant as using actual timestamps causing too much noise
-			double delta_time = 0.001;
+			//double delta_time = 0.001;
+			// calculate delta time for acceleration and joint acceleration calculation
+			double delta_time = timestamps_.back() - timestamps_.front();
+
+			if (timestamps_.size() > 1) {
+			timestamps_.pop_front();
+			}
 
 			// calculate new position
 			const Eigen::Matrix<double, 6, 6> x_i_prod1 = ((stiffness_matrix_ * (delta_time * delta_time))
@@ -225,9 +251,33 @@ namespace franka_proxy
 				f_ext_middle_log << f_ext_middle[0] << "; " << f_ext_middle[1] << "; " << f_ext_middle[2] << "; " << f_ext_middle[3] << "; " << f_ext_middle[4] << "; " << f_ext_middle[5];
 
 				std::ostringstream current_values;
-				current_values << time_ << "; " << "; " << f_ext_log.str() << "; " << "; " << x_i_log.str() << "; " << "; " << x_e_log.str() << "; " << "; " << current_force_log.str();
+				current_values << time_ << "; " << "; " << f_ext_middle_log.str() << "; " << "; " << x_i_log.str() << "; " << "; " << x_e_log.str(); // << "; " << "; " << current_force_log.str();
 
 				csv_log_ << current_values.str() << "\n";
+
+				// get current joint position
+				Eigen::Map<const Eigen::Matrix<double, 7, 1>> q(state_.q.data());
+
+				std::ostringstream current_joint_values;
+				current_joint_values << time_ << ";" << ";" << q(0) << ";" << q(1) << ";" << q(2) << ";" << q(3) << ";" << q(4) << ";" << q(5) << ";" << q(6);
+
+				joint_log_ << current_joint_values.str() << "\n";
+
+				std::ostringstream jac_log;
+
+				jac_log << time_ << "\n" << ";" << "\n";
+
+				for (int i = 0; i < 6; i++) {
+					for (int j = 0; j < 7; j++) {
+						jac_log << jacobian(i, j) << ";";
+					}
+
+					jac_log << "\n";
+				}
+
+				jac_log << "\n" << ";" << "\n";
+
+				jacobian_log_ << jac_log.str();
 			}
 
 			return impedance_controller_.callback
