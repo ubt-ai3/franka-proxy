@@ -87,7 +87,7 @@ namespace franka_proxy
 
 			std::array<double, 6> b_ = { 0.04, 0.04, 0.04,  PI / 6,  PI / 6,  PI / 6 };
 
-			std::array<double, 6> l_d_ = { 32.0, 32.0, 32.0, 5.1, 5.1, 5.1 };
+			std::array<double, 6> l_d_ = { 32.0, 32.0, 32.0, 5.1, 5.1, 5.1 }; 
 			std::array<double, 6> u_d_ = { 150.0, 150.0, 150.0, 50.0, 50.0, 50.0 };
 
 			std::array<double, 6> x0_max_ = { 0.0218, 0.0160, 0.0057, 0.0192, 0.0097, 0.0301 };

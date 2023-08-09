@@ -90,9 +90,9 @@ namespace franka_proxy
 			Eigen::Matrix<double, 7, 7> stiffness_matrix_ = Eigen::Matrix<double, 7, 7>::Zero();
 
 			// Stiffness & Damping
-			const std::array<double, 7> K_P_ = { 150.0, 100.0, 150.0, 100.0, 20.0, 20.0, 20.0 };
+			//const std::array<double, 7> K_P_ = { 150.0, 100.0, 150.0, 100.0, 20.0, 20.0, 20.0 };
 			//const std::array<double, 7> K_P_ = { 300.0, 300.0, 300.0, 300.0, 50.0, 50.0, 50.0 };
-			//const std::array<double, 7> K_P_ = {600.0, 600.0, 600.0, 600.0, 250.0, 150.0, 50.0};
+			const std::array<double, 7> K_P_ = {1350.0, 1350.0, 1350.0, 1350.0, 562.5, 337.5, 112.5}; // {600.0, 600.0, 600.0, 600.0, 250.0, 150.0, 50.0}
 			//const std::array<double, 7> K_D_ = { 34.641, 34.641, 34.641, 34.641, 14.1421, 14.1421, 14.1421 };
 			//const std::array<double, 7> K_D_ = { 34.641, 34.641, 34.641, 34.641, 14.1421, 14.1421, 14.1421 };
 			//const std::array<double, 7> K_D_ = {50.0, 50.0, 50.0, 50.0, 30.0, 25.0, 15.0};
