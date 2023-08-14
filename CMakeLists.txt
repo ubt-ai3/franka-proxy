@@ -31,6 +31,7 @@ if(BUILD_SERVER)
 add_library(
     franky_proxy_ft_sensor
         ${CMAKE_CURRENT_SOURCE_DIR}/source/ft_sensor/schunk_ft.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/source/sensor_calibration/schunk_ft_to_franka_calibration.cpp
 )
 
 target_include_directories(

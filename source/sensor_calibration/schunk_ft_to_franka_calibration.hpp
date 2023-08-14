@@ -1,0 +1,25 @@
+#if !defined(INCLUDED__CALIBRATION__SHUNK_FT_TO_FRANKA_CALIBRATION_HPP)
+#define INCLUDED__CALIBRATION__SHUNK_FT_TO_FRANKA_CALIBRATION_HP
+
+#include <array>
+#include <Eigen/Geometry>
+#include <franka_control/franka_controller.hpp>
+
+class schunk_ft_sensor_to_franka_calibration
+{
+
+public:
+    //todo: implement these
+    static std::array<float, 6> calibrate_bias(franka_control::franka_controller& franka, int record_time_per_pose_seconds = 10);
+    static Eigen::Affine3f calibrate_load(franka_control::franka_controller& franka);
+
+private:
+    static std::array<Eigen::Affine3d, 24> calibration_poses(
+        const franka_control::robot_config_7dof& x_up_position,
+        const franka_control::robot_config_7dof& y_up_position,
+        const franka_control::robot_config_7dof& z_up_position);
+
+    static Eigen::Matrix3d get_axis_aligned_orientation(const Eigen::Vector3f& up, const Eigen::Vector3f& front);
+};
+
+#endif /* !defined(INCLUDED__CALIBRATION__SHUNK_FT_TO_FRANKA_CALIBRATION_HPPP) */
