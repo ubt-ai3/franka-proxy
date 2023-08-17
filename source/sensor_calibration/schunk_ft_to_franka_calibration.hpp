@@ -16,23 +16,10 @@ public:
 	//static Eigen::Affine3d calibrate_load(franka_control::franka_controller& franka);
 
 private:
-	static std::array<Eigen::Affine3d, 24> calibration_poses(const Eigen::Affine3d& x_up_position,
-	                                                         const Eigen::Affine3d& y_up_position,
-	                                                         const Eigen::Affine3d& z_up_position);
+
+	static std::array<Eigen::Affine3d, 24> calibration_poses();
 
 	static Eigen::Matrix3d get_axis_aligned_orientation(const Eigen::Vector3d& up, const Eigen::Vector3d& front);
-
-	const franka_control::robot_config_7dof& x_up_position = {
-		1.88336, 0.0335908, -1.86277, -1.26855, 0.0206543, 1.34875, 0.706602
-	};
-
-	const franka_control::robot_config_7dof& y_up_position = {
-		1.88336, 0.0335908, -1.86277, -1.26855, 0.0206543, 1.34875, 0.706602
-	};
-
-	const franka_control::robot_config_7dof& z_up_position = {
-		1.88336, 0.0335908, -1.86277, -1.26855, 0.0206543, 1.34875, 0.706602
-	};
 };
 
 #endif /* !defined(INCLUDED__CALIBRATION__SHUNK_FT_TO_FRANKA_CALIBRATION_HPPP) */
