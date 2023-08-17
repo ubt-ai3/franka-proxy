@@ -57,7 +57,7 @@ private:
 		}
 	};
 
-	ft_sensor_response current_ft_sensor_response_;
+	std::atomic<ft_sensor_response> current_ft_sensor_response_;
 
 	/* see  table 9.1 in Net F/T user manual. */
 	std::array<unsigned char, 8> start_streaming_msg_ = []()
