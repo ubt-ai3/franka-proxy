@@ -31,10 +31,12 @@ using robot_config_7dof = std::array<double, 7>;
 using robot_force_config = std::array<double, 6>;
 using robot_force_selection = std::array<double, 6>;
 
+
 namespace detail
 {
 	class motion_recorder;
 }
+
 
 /**
  *************************************************************************

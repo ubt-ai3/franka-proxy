@@ -1,15 +1,15 @@
 /**
  *************************************************************************
  *
- * @file franka_remote_controller.hpp
+ * @file franka_remote_interface.hpp
  *
  * Client side implementation of the franka_proxy.
  *
  ************************************************************************/
 
 
-#if !defined(INCLUDED__FRANKA_PROXY_CLIENT__FRANKA_REMOTE_CONTROLLER_HPP)
-#define INCLUDED__FRANKA_PROXY_CLIENT__FRANKA_REMOTE_CONTROLLER_HPP
+#if !defined(INCLUDED__FRANKA_PROXY_CLIENT__FRANKA_REMOTE_INTERFACE_HPP)
+#define INCLUDED__FRANKA_PROXY_CLIENT__FRANKA_REMOTE_INTERFACE_HPP
 
 
 #include <array>
@@ -28,14 +28,14 @@ namespace franka_proxy
 using robot_config_7dof = std::array<double, 7>;
 
 
-class franka_remote_controller
+class franka_remote_interface
 {
 public:
 
-	franka_remote_controller
+	franka_remote_interface
 		(std::string proxy_ip);
 
-	~franka_remote_controller() noexcept;
+	~franka_remote_interface() noexcept;
 
 
 	/**
@@ -249,4 +249,4 @@ private:
 } /* namespace franka_proxy */
 
 
-#endif /* !defined(INCLUDED__FRANKA_PROXY_CLIENT__FRANKA_REMOTE_CONTROLLER_HPP) */
+#endif /* !defined(INCLUDED__FRANKA_PROXY_CLIENT__FRANKA_REMOTE_INTERFACE_HPP) */

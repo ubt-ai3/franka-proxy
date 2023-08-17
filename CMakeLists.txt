@@ -123,7 +123,7 @@ endif()
 add_library(
     franka_proxy_client STATIC
         ${CMAKE_CURRENT_SOURCE_DIR}/source/franka_proxy_client/franka_network_client.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/source/franka_proxy_client/franka_remote_controller.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/source/franka_proxy_client/franka_remote_interface.cpp
 )
 
 target_include_directories(

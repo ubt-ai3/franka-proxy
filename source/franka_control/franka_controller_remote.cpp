@@ -10,7 +10,7 @@
 
 #include "franka_controller_remote.hpp"
 
-#include <franka_proxy_client/franka_remote_controller.hpp>
+#include <franka_proxy_client/franka_remote_interface.hpp>
 
 
 namespace franka_control
@@ -27,7 +27,7 @@ namespace franka_control
 franka_controller_remote::franka_controller_remote
 	(const std::string& ip)
 	:
-	controller_(new franka_proxy::franka_remote_controller(ip)),
+	controller_(new franka_proxy::franka_remote_interface(ip)),
 
 	speed_factor_(0.1)
 {

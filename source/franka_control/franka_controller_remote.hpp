@@ -19,7 +19,7 @@
 
 namespace franka_proxy
 {
-	class franka_remote_controller;
+	class franka_remote_interface;
 }
 
 
@@ -75,7 +75,7 @@ public:
 	
 private:
 
-	std::unique_ptr<franka_proxy::franka_remote_controller> controller_;
+	std::unique_ptr<franka_proxy::franka_remote_interface> controller_;
 
 	mutable std::mutex state_lock_;
 	double speed_factor_;
