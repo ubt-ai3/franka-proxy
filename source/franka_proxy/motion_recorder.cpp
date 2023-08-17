@@ -9,7 +9,7 @@
 
 #include "ft_sensor/ft_sensor.hpp"
 
-#include "franka_motion_recorder.hpp"
+#include "motion_recorder.hpp"
 
 
 namespace franka_proxy

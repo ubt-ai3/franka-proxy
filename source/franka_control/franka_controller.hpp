@@ -93,7 +93,7 @@ public:
 	virtual void update() = 0;
 	
 	virtual void start_recording() = 0;
-	virtual std::pair<std::vector<std::array<double, 7>>, std::vector<std::array<double, 6>>> stop_recording() = 0;
+	virtual std::pair<std::vector<robot_config_7dof>, std::vector<force_torque_config_cartesian>> stop_recording() = 0;
 	virtual void move_sequence(
 		std::vector<std::array<double, 7>> q_sequence,
 		std::vector<std::array<double, 6>> f_sequence, 

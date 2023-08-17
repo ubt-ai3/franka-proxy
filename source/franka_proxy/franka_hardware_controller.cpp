@@ -18,7 +18,7 @@
 #include <franka/exception.h>
 #include <franka/model.h>
 
-#include "franka_motion_recorder.hpp"
+#include "motion_recorder.hpp"
 #include "motion_generator_force.hpp"
 #include "motion_generator_joint_max_accel.hpp"
 #include "motion_generator_seq_cart_vel_tau.hpp"

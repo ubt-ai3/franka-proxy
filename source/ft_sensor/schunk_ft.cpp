@@ -83,9 +83,9 @@ void schunk_ft_sensor::run()
 			ft_sensor_response resp;
 
 			// meta data
-			//resp.sequence_number = ntohl(*reinterpret_cast<uint32_t*>(&recv_buf[0]));						// sequence number, counting send packages
+			//resp.sequence_number = ntohl(*reinterpret_cast<uint32_t*>(&recv_buf[0]));		// sequence number, counting send packages
 			resp.ft_sequence_number = ntohl(*reinterpret_cast<uint32_t*>(&recv_buf[4]));	// sequence number, counting internal control-loop
-			//resp.status = ntohl(*reinterpret_cast<uint32_t*>(&recv_buf[8]));								//www.ati-ia.com/app_content/documents/9610-05-1022.pdf
+			//resp.status = ntohl(*reinterpret_cast<uint32_t*>(&recv_buf[8]));				//www.ati-ia.com/app_content/documents/9610-05-1022.pdf
 
 			// data
 			for (int i = 0; i < 3; i++)

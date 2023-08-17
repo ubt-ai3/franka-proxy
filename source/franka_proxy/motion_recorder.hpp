@@ -8,8 +8,8 @@
  ************************************************************************/
 
 
-#if !defined(INCLUDED__FRANKA_PROXY__FRANKA_MOTION_RECORDER_HPP)
-#define INCLUDED__FRANKA_PROXY__FRANKA_MOTION_RECORDER_HPP
+#if !defined(INCLUDED__FRANKA_PROXY__MOTION_RECORDER_HPP)
+#define INCLUDED__FRANKA_PROXY__MOTION_RECORDER_HPP
 
 
 #include <array>
@@ -68,4 +68,4 @@ private:
 } /* namespace franka_proxy */
 
 
-#endif /* !defined(INCLUDED__FRANKA_PROXY__FRANKA_MOTION_RECORDER_HPP) */
+#endif /* !defined(INCLUDED__FRANKA_PROXY__MOTION_RECORDER_HPP) */

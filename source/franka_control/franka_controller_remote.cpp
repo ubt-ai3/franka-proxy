@@ -123,9 +123,22 @@ void franka_controller_remote::start_recording()
 }
 
 
-std::pair<std::vector<std::array<double, 7>>, std::vector<std::array<double, 6>>> franka_controller_remote::stop_recording()
+std::pair<std::vector<robot_config_7dof>, std::vector<force_torque_config_cartesian>> franka_controller_remote::stop_recording()
 {
-	return controller_->stop_recording();
+	std::vector<robot_config_7dof> joints;
+	std::vector<force_torque_config_cartesian> forces;
+
+	auto [recorded_joints, recorded_forces] = controller_->stop_recording();
+
+	joints.reserve(recorded_joints.size());
+	for (auto datum : recorded_joints)
+		joints.emplace_back(datum.data());
+
+	forces.reserve(recorded_forces.size());
+	for (auto datum : recorded_forces)
+		forces.emplace_back(datum.data());
+
+	return {joints, forces};
 }
 
 

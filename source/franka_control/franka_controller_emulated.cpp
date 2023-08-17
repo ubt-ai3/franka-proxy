@@ -286,7 +286,7 @@ void franka_controller_emulated::start_recording()
 }
 
 	
-std::pair<std::vector<std::array<double, 7>>, std::vector<std::array<double, 6>>>
+std::pair<std::vector<robot_config_7dof>, std::vector<force_torque_config_cartesian>>
 	franka_controller_emulated::stop_recording()
 {
 	std::unique_lock<std::mutex> lk(controller_mutex_);
@@ -297,10 +297,10 @@ std::pair<std::vector<std::array<double, 7>>, std::vector<std::array<double, 6>>
 	const auto duration = std::chrono::steady_clock::now() - recording_start;
 	const auto dur_ms = static_cast<size_t>(std::chrono::duration_cast<std::chrono::milliseconds>(duration).count());
 
-	std::pair<std::vector<std::array<double, 7>>, std::vector<std::array<double, 6>>> result;
+	std::pair<std::vector<robot_config_7dof>, std::vector<force_torque_config_cartesian>> result;
 
-	result.first = std::vector<std::array<double, 7>>(dur_ms, {jc[0], jc[1],jc[2],jc[3],jc[4],jc[5],jc[6]});
-	result.second = std::vector<std::array<double, 6>>(dur_ms, {0,0,0 ,0,0,0});
+	result.first = std::vector<robot_config_7dof>(dur_ms, {jc[0], jc[1],jc[2],jc[3],jc[4],jc[5],jc[6]});
+	result.second = std::vector<force_torque_config_cartesian>(dur_ms, {0,0,0,0,0,0});
 
 	return result;
 }
