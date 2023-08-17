@@ -20,6 +20,7 @@
 #include <franka/robot.h>
 #include <franka/gripper.h>
 
+#include "ft_sensor/ft_sensor.hpp"
 
 
 namespace franka_proxy
@@ -153,11 +154,14 @@ private:
 	mutable std::mutex speed_factor_lock_;
 	double speed_factor_;
 
-	std::unique_ptr<detail::motion_recorder> motion_recorder_;
-
 	// Gripper
 	mutable std::unique_ptr<franka::Gripper> gripper_;
 	double max_width_;
+
+	// FT-Sensor
+	mutable std::unique_ptr<ft_sensor> ft_sensor_;
+
+	std::unique_ptr<detail::motion_recorder> motion_recorder_;
 
 	
 	static constexpr double open_epsilon = 0.1;

@@ -22,10 +22,10 @@
 
 namespace franka_proxy
 {
+class ft_sensor;
+
 namespace detail
 {
-
-
 /**
  *************************************************************************
  *
@@ -38,31 +38,30 @@ class motion_recorder
 {
 public:
 	motion_recorder(
-		double rate,
 		franka::Robot& robot,
-		franka::RobotState& robot_state);
+		franka::RobotState& robot_state,
+		ft_sensor& fts);
+
 
 	void start();
-
-	// todo maybe add a timeout
+	void start(float seconds);
 	void stop();
 
-	std::vector<std::array<double, 7>> latest_record();
 
+	std::vector<std::array<double, 7>> latest_record();
 	std::vector<std::array<double, 6>> latest_fts_record();
 
 private:
 	std::vector<std::array<double, 7>> record_;
 	std::vector<std::array<double, 6>> fts_record_;
 
-	std::thread t_{};
-	std::atomic_bool stop_{false};
 	franka::Robot& robot_;
 	franka::RobotState& robot_state_;
-	//ft_sensor_jr3 fts_;
+	ft_sensor& fts_;
+
+	std::thread t_{};
+	std::atomic_bool stop_{false};
 };
-
-
 } /* namespace detail */
 } /* namespace franka_proxy */
 

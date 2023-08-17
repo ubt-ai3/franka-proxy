@@ -2,13 +2,20 @@
 
 #include <iostream>
 
+#include <asio/connect.hpp>
+#include <asio/registered_buffer.hpp>
+#include <asio/ip/address.hpp>
+#include <asio/system_error.hpp>
+#include <asio/ip/tcp.hpp>
 
 
-schunk_ft_sensor::schunk_ft_sensor(
-	const Eigen::Affine3f& kms_T_flange,
-	const Eigen::Affine3f& EE_T_kms,
-	const std::array<double, 6>& bias,
-	const Eigen::Affine3f& load)
+namespace franka_proxy
+{
+
+schunk_ft_sensor::schunk_ft_sensor(const Eigen::Affine3f& kms_T_flange,
+                                   const Eigen::Affine3f& EE_T_kms,
+                                   const Eigen::Vector<float, 6>& bias,
+                                   const Eigen::Affine3f& load)
 	: ft_sensor(kms_T_flange, EE_T_kms, bias, load),
 	  socket_(io_service_),
 	  receiver_endpoint_(asio::ip::make_address(ip_), port_)
@@ -16,6 +23,8 @@ schunk_ft_sensor::schunk_ft_sensor(
 	socket_.open(asio::ip::udp::v4());
 	socket_.send_to(asio::buffer(start_streaming_msg_), receiver_endpoint_);
 	worker_ = std::thread(&schunk_ft_sensor::run, this);
+
+	set_response_handler([&](const ft_sensor_response& response) {current_ft_sensor_response_.store(response); });
 }
 
 schunk_ft_sensor::~schunk_ft_sensor()
@@ -28,8 +37,6 @@ schunk_ft_sensor::~schunk_ft_sensor()
 		socket_.send_to(asio::buffer(end_streaming_msg_), receiver_endpoint_);
 		socket_.shutdown(asio::ip::udp::socket::shutdown_both);
 		socket_.close();
-
-
 	}
 	catch (const asio::system_error& e)
 	{
@@ -42,64 +49,58 @@ schunk_ft_sensor::~schunk_ft_sensor()
 	}
 }
 
-void schunk_ft_sensor::set_response_handler(const std::function<void(const response&)>& functor)
+ft_sensor_response schunk_ft_sensor::read()
+{
+	return current_ft_sensor_response_.load();
+}
+
+void schunk_ft_sensor::set_response_handler(const std::function<void(const ft_sensor_response&)>& functor)
 {
 	std::unique_lock<std::mutex> lock(functor_lock_);
-	handle_data = functor;
+	handle_data_ = functor;
 }
 
 void schunk_ft_sensor::remove_response_handler()
 {
 	std::unique_lock<std::mutex> lock(functor_lock_);
-	handle_data = [](const response&) {}; // no-op
-}
-
-double schunk_ft_sensor::data_rate() const
-{
-	return data_rate_;
-}
-
-std::array<double, 6> schunk_ft_sensor::bias() const
-{
-	return bias_;
-}
-
-Eigen::Affine3f schunk_ft_sensor::load()
-{
-	return load_;
+	handle_data_ = [](const ft_sensor_response&)
+	{
+	}; //no-op
 }
 
 void schunk_ft_sensor::run()
 {
 	try
 	{
-		std::array<unsigned char, 36> recv_buf{ '\0' };
+		std::array<unsigned char, 36> recv_buf{'\0'};
 		asio::ip::udp::endpoint sender_endpoint;
 
 		while (!stopped_)
 		{
-			using namespace std::chrono_literals;
-
 			size_t len = socket_.receive_from(
 				asio::buffer(recv_buf), sender_endpoint);
 
-			response resp;
-			resp.rdt_sequence = ntohl(*reinterpret_cast<uint32_t*>(&recv_buf[0]));
-			resp.ft_sequence = ntohl(*reinterpret_cast<uint32_t*>(&recv_buf[4]));
-			resp.status = ntohl(*reinterpret_cast<uint32_t*>(&recv_buf[8]));
+			ft_sensor_response resp;
 
-			for (int i = 0; i < 3; i++) 
-				resp.FTData[i] = static_cast<int32_t>(ntohl(*reinterpret_cast<int32_t*>(&recv_buf[12 + i * 4]))) / cpf_;
-			for (int i = 3; i < 6; i++) 
-				resp.FTData[i] = static_cast<int32_t>(ntohl(*reinterpret_cast<int32_t*>(&recv_buf[12 + i * 4]))) / cpt_;
+			// meta data
+			//resp.sequence_number = ntohl(*reinterpret_cast<uint32_t*>(&recv_buf[0]));						// sequence number, counting send packages
+			resp.ft_sequence_number = ntohl(*reinterpret_cast<uint32_t*>(&recv_buf[4]));	// sequence number, counting internal control-loop
+			//resp.status = ntohl(*reinterpret_cast<uint32_t*>(&recv_buf[8]));								//www.ati-ia.com/app_content/documents/9610-05-1022.pdf
+
+			// data
+			for (int i = 0; i < 3; i++)
+				resp.data[i] = static_cast<int32_t>(ntohl(*reinterpret_cast<int32_t*>(&recv_buf[12 + i * 4]))) / cpf_;
+			for (int i = 3; i < 6; i++)
+				resp.data[i] = static_cast<int32_t>(ntohl(*reinterpret_cast<int32_t*>(&recv_buf[12 + i * 4]))) / cpt_;
 
 			std::unique_lock<std::mutex> lock(functor_lock_);
-			handle_data(resp);
+			handle_data_(resp);
 		}
 	}
 	catch (const std::exception& e)
 	{
-		std::cerr << e.what() << std::endl;
+		std::cerr << e.what() << "\n";
 	}
-
 }
+
+} /* namespace franka_proxy */

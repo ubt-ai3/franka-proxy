@@ -38,6 +38,9 @@ namespace franka_proxy
 
 int main()
 {
-	franka_proxy::franka_proxy proxy;
+	//franka_proxy::franka_proxy proxy;
+	franka_proxy::franka_hardware_controller controller("192.168.1.1");
+	controller.start_recording();
+	auto record = controller.stop_recording();
 	return std::cin.get();
 }
