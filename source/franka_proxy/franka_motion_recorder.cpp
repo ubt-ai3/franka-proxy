@@ -56,13 +56,9 @@ void motion_recorder::start()
 
 void motion_recorder::start(float seconds)
 {
-	std::thread([&]()
-	{
-		std::this_thread::sleep_for(std::chrono::duration<float>(seconds));
-		stop();
-	}).detach();
-
-	start();
+	start();	
+	std::this_thread::sleep_for(std::chrono::duration<float>(seconds));
+	stop();
 }
 
 

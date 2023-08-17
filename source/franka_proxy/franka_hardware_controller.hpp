@@ -97,6 +97,7 @@ public:
 	 * Starts/Stops the recording callback.
 	 */
 	void start_recording();
+	std::pair<std::vector<robot_config_7dof>, std::vector<robot_force_config>> start_recording(float seconds);
 	std::pair<std::vector<robot_config_7dof>, std::vector<robot_force_config>> stop_recording();
 	
 	/**

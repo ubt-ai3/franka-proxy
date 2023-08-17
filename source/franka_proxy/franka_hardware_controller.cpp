@@ -281,6 +281,20 @@ void franka_hardware_controller::start_recording()
 	motion_recorder_->start();
 }
 
+std::pair<std::vector<robot_config_7dof>, std::vector<robot_force_config>> franka_hardware_controller::start_recording(float seconds)
+{
+	set_control_loop_running(true);
+	{
+		// Lock the current_state_lock_ to wait for state_thread_ to finish.
+		std::lock_guard<std::mutex> state_guard(robot_state_lock_);
+	}
+
+	motion_recorder_->start(seconds);
+	set_control_loop_running(false);
+
+	return { motion_recorder_->latest_record(), motion_recorder_->latest_fts_record() };
+}
+
 
 std::pair<std::vector<robot_config_7dof>, std::vector<robot_force_config>>
 franka_hardware_controller::stop_recording()

@@ -40,7 +40,7 @@ int main()
 {
 	//franka_proxy::franka_proxy proxy;
 	franka_proxy::franka_hardware_controller controller("192.168.1.1");
-	controller.start_recording();
-	auto record = controller.stop_recording();
+
+	auto record = controller.start_recording(1.23);
 	return std::cin.get();
 }

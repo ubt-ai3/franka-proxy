@@ -44,8 +44,10 @@ public:
 
 
 	void start();
-	void start(float seconds);
 	void stop();
+
+	// this is blocking
+	void start(float seconds);
 
 
 	std::vector<std::array<double, 7>> latest_record();

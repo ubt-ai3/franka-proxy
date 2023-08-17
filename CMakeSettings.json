@@ -10,7 +10,7 @@
       "cmakeCommandArgs": "",
       "buildCommandArgs": "",
       "ctestCommandArgs": "",
-      "cmakeToolchain": "C:/vcpkg/scripts/buildsystems/vcpkg.cmake"
+      "cmakeToolchain": "D:/fischer/vcpkg/scripts/buildsystems/vcpkg.cmake"
     },
     {
       "name": "x64-RelWithDebInfo",
@@ -21,7 +21,7 @@
       "cmakeCommandArgs": "",
       "buildCommandArgs": "",
       "ctestCommandArgs": "",
-      "cmakeToolchain": "C:/vcpkg/scripts/buildsystems/vcpkg.cmake",
+      "cmakeToolchain": "D:/fischer/vcpkg/scripts/buildsystems/vcpkg.cmake",
       "inheritEnvironments": [ "msvc_x64_x64" ]
     }
   ]
