@@ -23,11 +23,14 @@ franka_control::force_torque_config_cartesian schunk_ft_sensor_to_franka_calibra
 		ft_avgs[pose_idx] = {0, 0, 0, 0, 0, 0};
 	}
 
-
-	auto prev_joint_config(franka.current_config());
+	franka.start_recording();
+	std::this_thread::sleep_for(std::chrono::duration<double>(wait_time_seconds));
+	auto prev_joint_config = franka.stop_recording().first.back();
 
 	for (int pose_idx = 0; pose_idx < ft_avgs.size(); pose_idx++)
 	{
+		if (pose_idx % 4 == 0) std::cout << "change axis" << std::endl;
+		std::cout << "pose idx" << pose_idx << std::endl;
 		franka_control::robot_config_7dof q{};
 		// get the closest config matching the pose
 		auto ik_solution = franka_control::franka_util::ik_fast_closest(poses[pose_idx], prev_joint_config);
@@ -105,24 +108,29 @@ std::array<Eigen::Affine3d, 24> schunk_ft_sensor_to_franka_calibration::calibrat
 
 	int step = 4;
 	constexpr double pi = 3.14159265358979323846;
-	/*
+	
 	for (int axis_num = 0; axis_num < axis_vecs.size(); axis_num++)
 	{
 		Eigen::Vector3d up = axis_vecs.at(axis_num);
 		Eigen::Vector3d front = axis_vecs.at((axis_num + 1) % axis_vecs.size());
+		int idx_first_pose_axis = 2 * axis_num * step;
 
-		poses.at(axis_num).linear() = get_axis_aligned_orientation(up, front);
-		for (int i = 1; i < step; i++)
+		poses.at(idx_first_pose_axis).linear() = get_axis_aligned_orientation(up, front);
+		for (int i = idx_first_pose_axis + 1; i < idx_first_pose_axis + step ; i++)
 		{
-			poses.at(axis_num * step + i).linear() = poses.at(i - 1).rotate(Eigen::AngleAxis(0.5 * pi, up)).linear();
+			std::cout << "1. i " << i << std::endl;
+			auto tmp = poses.at(i - 1);
+			poses.at(i).linear() = tmp.rotate(Eigen::AngleAxis(0.5 * pi, up)).linear();
 		}
-		poses.at(axis_num + step).linear() = get_axis_aligned_orientation(-1 * up, front);
-		for (int i = step; i < 2 * step; i++)
+		poses.at(idx_first_pose_axis + step).linear() = get_axis_aligned_orientation(-1 * up, front);
+		for (int i = idx_first_pose_axis + step + 1; i < idx_first_pose_axis + 2*step; i++)
 		{
-			poses.at(i).linear() = poses.at(i - 1).rotate(Eigen::AngleAxis(0.5 * pi, up)).linear();
+			std::cout << "2. i " << i << std::endl;
+			auto tmp = poses.at(i - 1);
+			poses.at(i).linear() = tmp.rotate(Eigen::AngleAxis(0.5 * pi, up)).linear();
 		}
 	}
-	*/
+
 	return poses;
 }
 
@@ -130,6 +138,6 @@ Eigen::Matrix3d schunk_ft_sensor_to_franka_calibration::get_axis_aligned_orienta
 	const Eigen::Vector3d& up, const Eigen::Vector3d& front)
 {
 	Eigen::Matrix3d orientation;
-	orientation << front, front.cross(up), up;
+	orientation << front, up.cross(front), up;
 	return orientation;
 }

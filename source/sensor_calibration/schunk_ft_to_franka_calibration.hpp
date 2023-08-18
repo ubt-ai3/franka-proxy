@@ -11,8 +11,8 @@ public:
 	//todo: implement these
 	static franka_control::force_torque_config_cartesian calibrate_bias(
 		franka_control::franka_controller_remote& franka,
-		double record_time_per_pose_seconds = 2.0,
-		double wait_time_seconds = 0.5);
+		double record_time_per_pose_seconds = 3.0,
+		double wait_time_seconds = 2.0);
 	//static Eigen::Affine3d calibrate_load(franka_control::franka_controller& franka);
 
 private:
