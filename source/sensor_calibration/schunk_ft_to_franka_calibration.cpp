@@ -78,28 +78,19 @@ franka_control::force_torque_config_cartesian schunk_ft_sensor_to_franka_calibra
 std::array<Eigen::Affine3d, 24> schunk_ft_sensor_to_franka_calibration::calibration_poses()
 {
 
-	const franka_control::robot_config_7dof x_up_position{
+	const franka_control::robot_config_7dof position{
 		1.88336, 0.0335908, -1.86277, -1.26855, 0.0206543, 1.34875, 0.706602
 	};
 
-	const franka_control::robot_config_7dof y_up_position = {
-		1.88336, 0.0335908, -1.86277, -1.26855, 0.0206543, 1.34875, 0.706602
-	};
-
-	const franka_control::robot_config_7dof z_up_position = {
-		1.88336, 0.0335908, -1.86277, -1.26855, 0.0206543, 1.34875, 0.706602
-	};
 	// 8 poses per up-axis a to use all other axis-aligned directions as front: 4 with a up and 4 with a down
 	std::array<Eigen::Affine3d, 24> poses;
 
 	//position of the endeffector
-	Eigen::Affine3d x_up_pos(franka_control::franka_util::fk(x_up_position).back());
-	Eigen::Affine3d y_up_pos(franka_control::franka_util::fk(y_up_position).back());
-	Eigen::Affine3d z_up_pos(franka_control::franka_util::fk(z_up_position).back());
+	Eigen::Affine3d pos(franka_control::franka_util::fk(position).back());
 
-	std::fill_n(poses.begin(), 8, x_up_pos);
-	std::fill_n(poses.begin() + 8, 8, y_up_pos);
-	std::fill_n(poses.begin() + 16, 8, z_up_pos);
+
+	std::fill_n(poses.begin(), 24, pos);
+
 
 	//orientation of the endeffector
 	std::array<Eigen::Vector3d, 3> axis_vecs({
@@ -118,14 +109,12 @@ std::array<Eigen::Affine3d, 24> schunk_ft_sensor_to_franka_calibration::calibrat
 		poses.at(idx_first_pose_axis).linear() = get_axis_aligned_orientation(up, front);
 		for (int i = idx_first_pose_axis + 1; i < idx_first_pose_axis + step ; i++)
 		{
-			std::cout << "1. i " << i << std::endl;
 			auto tmp = poses.at(i - 1);
 			poses.at(i).linear() = tmp.rotate(Eigen::AngleAxis(0.5 * pi, up)).linear();
 		}
 		poses.at(idx_first_pose_axis + step).linear() = get_axis_aligned_orientation(-1 * up, front);
 		for (int i = idx_first_pose_axis + step + 1; i < idx_first_pose_axis + 2*step; i++)
 		{
-			std::cout << "2. i " << i << std::endl;
 			auto tmp = poses.at(i - 1);
 			poses.at(i).linear() = tmp.rotate(Eigen::AngleAxis(0.5 * pi, up)).linear();
 		}
