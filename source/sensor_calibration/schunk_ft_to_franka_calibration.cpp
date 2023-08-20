@@ -10,11 +10,9 @@ franka_control::force_torque_config_cartesian schunk_ft_sensor_to_franka_calibra
 	double record_time_per_pose_seconds,
 	double wait_time_seconds)
 {
-	std::cout << "Starting Calibration." << std::endl;
+	std::cout << "Starting bias calibration." << std::endl;
 
-	std::array<Eigen::Affine3d, 24> poses = calibration_poses();
-
-	//franka_proxy::detail::motion_recorder recorder = franka_proxy::detail::motion_recorder(0.5, franka.robot_, franka.robot_state()); //to do: figure out a sensible way to reuse the robot here
+	std::array<Eigen::Affine3d, 24> poses = calibration_poses_bias();
 
 	//calculate the avg forces/torques at rest for each pose to allow for even weighting
 	std::array<std::array<double, 6>, 24> ft_avgs;
@@ -29,8 +27,6 @@ franka_control::force_torque_config_cartesian schunk_ft_sensor_to_franka_calibra
 
 	for (int pose_idx = 0; pose_idx < ft_avgs.size(); pose_idx++)
 	{
-		if (pose_idx % 4 == 0) std::cout << "change axis" << std::endl;
-		std::cout << "pose idx" << pose_idx << std::endl;
 		franka_control::robot_config_7dof q{};
 		// get the closest config matching the pose
 		auto ik_solution = franka_control::franka_util::ik_fast_closest(poses[pose_idx], prev_joint_config);
@@ -72,10 +68,79 @@ franka_control::force_torque_config_cartesian schunk_ft_sensor_to_franka_calibra
 		biases[ft_idx] = biases[ft_idx] / ft_avgs.size();
 	}
 
+	std::cout << "calibrated bias: " << biases.transpose() << std::endl;
+
 	return biases;
 }
 
-std::array<Eigen::Affine3d, 24> schunk_ft_sensor_to_franka_calibration::calibration_poses()
+Eigen::Vector3d schunk_ft_sensor_to_franka_calibration::calibrate_load(
+	franka_control::franka_controller_remote& franka,
+	double record_time_per_pose_seconds,
+	double wait_time_seconds)
+{
+	std::cout << "Starting load calibration." << std::endl;
+	std::array<Eigen::Affine3d, 9> poses = calibration_poses_load();
+
+
+	std::array<Eigen::Vector3d, 9> force_world_avgs;
+	for (int pose_idx = 0; pose_idx < force_world_avgs.size(); pose_idx++)
+	{
+		force_world_avgs[pose_idx] = {0, 0, 0};
+	}
+
+	franka.start_recording();
+	std::this_thread::sleep_for(std::chrono::duration<double>(wait_time_seconds));
+	auto prev_joint_config = franka.stop_recording().first.back();
+
+	for (int pose_idx = 0; pose_idx < force_world_avgs.size(); pose_idx++)
+	{
+		franka_control::robot_config_7dof q{};
+		// get the closest config matching the pose
+		auto ik_solution = franka_control::franka_util::ik_fast_closest(poses[pose_idx], prev_joint_config);
+		Eigen::VectorXd::Map(&q[0], 7) = ik_solution;
+
+
+		franka.move(q);
+
+
+		std::this_thread::sleep_for(std::chrono::duration<double>(wait_time_seconds));
+		franka.start_recording();
+
+		std::this_thread::sleep_for(std::chrono::duration<double>(record_time_per_pose_seconds));
+		auto [joint_record, force_record] = franka.stop_recording();
+
+		Eigen::Affine3d kms_T_world = poses[pose_idx].inverse();
+		for (int record_idx = 0; record_idx < force_record.size(); record_idx++)
+		{
+			Eigen::Vector3d force_kms;
+			force_kms << force_record[record_idx][0], force_record[record_idx][1], force_record[record_idx][2]; 
+			force_world_avgs[pose_idx] += kms_T_world * force_kms;
+		}
+
+
+		for (int force_idx = 0; force_idx < force_world_avgs[0].size(); force_idx++)
+			force_world_avgs[pose_idx][force_idx] = force_world_avgs[pose_idx][force_idx] / force_record.size();
+
+		prev_joint_config = Eigen::Matrix<double, 7, 1>(joint_record.back().data());
+	}
+
+	Eigen::Vector3d load;
+	load << 0, 0, 0;
+	for (int pose_idx = 0; pose_idx < force_world_avgs.size(); pose_idx++)
+	{
+		load += force_world_avgs[pose_idx];
+	}
+
+	load = load / force_world_avgs.size();
+
+
+	std::cout << "calibrated load: " << load.transpose() << std::endl;
+
+	return load;
+
+}
+
+std::array<Eigen::Affine3d, 24> schunk_ft_sensor_to_franka_calibration::calibration_poses_bias()
 {
 
 	const franka_control::robot_config_7dof position{
@@ -117,6 +182,36 @@ std::array<Eigen::Affine3d, 24> schunk_ft_sensor_to_franka_calibration::calibrat
 		{
 			auto tmp = poses.at(i - 1);
 			poses.at(i).linear() = tmp.rotate(Eigen::AngleAxis(0.5 * pi, up)).linear();
+		}
+	}
+
+	return poses;
+}
+
+std::array<Eigen::Affine3d, 9> schunk_ft_sensor_to_franka_calibration::calibration_poses_load()
+{
+	const franka_control::robot_config_7dof position{
+		1.88336, 0.0335908, -1.86277, -1.26855, 0.0206543, 1.34875, 0.706602
+	};
+
+	// 9 poses covering the likely orientations of the robot for force/torque controlled movements (endeffector below the xy-plane)
+	std::array<Eigen::Affine3d, 9> poses;
+
+	Eigen::Affine3d pos(franka_control::franka_util::fk(position).back());
+	std::fill_n(poses.begin(), 9, pos);
+
+	poses.at(0).linear() = get_axis_aligned_orientation(-1 * Eigen::Vector3d::UnitZ(), Eigen::Vector3d::UnitX());
+	
+	int step = 4;
+	constexpr double pi = 3.14159265358979323846;
+
+	for (int i = 0; i < 2; i++){
+		auto tmp = poses.at(i * step);
+		poses.at(i * step + 1).linear() = tmp.rotate(Eigen::AngleAxis(0.25 * pi, Eigen::Vector3d::UnitX())).linear();
+		for (int j = i*step + 2; j < i + 5; j++)
+		{
+			auto tmp = poses.at(j - 1);
+			poses.at(j).linear() = tmp.rotate(Eigen::AngleAxis(0.5 * pi, Eigen::Vector3d::UnitZ())).linear();
 		}
 	}
 

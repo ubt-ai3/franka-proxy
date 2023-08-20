@@ -1,0 +1,10 @@
+{
+  "ExpandedNodes": [
+    "",
+    "\\franka_control",
+    "\\ft_sensor",
+    "\\sensor_calibration"
+  ],
+  "SelectedNode": "\\sensor_calibration",
+  "PreviewInSolutionExplorer": false
+}

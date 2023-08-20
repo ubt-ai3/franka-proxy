@@ -18,8 +18,8 @@ class schunk_ft_sensor final
 public:
 	schunk_ft_sensor(const Eigen::Affine3f& kms_T_flange,
 	                 const Eigen::Affine3f& EE_T_kms,
-	                 const Eigen::Vector<float, 6>& bias,
-	                 const Eigen::Affine3f& load);
+	                 const Eigen::Vector<double, 6>& bias,
+	                 const Eigen::Affine3d& load);
 
 	~schunk_ft_sensor() override;
 

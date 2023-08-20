@@ -65,6 +65,6 @@ void franka_fts_calibration_test(const std::string& ip)
 {
 	franka_control::franka_controller_remote controller(ip);
 	auto biases = schunk_ft_sensor_to_franka_calibration::calibrate_bias(controller);
-	std::cout << "Bias: ";
-	std::cout << biases.transpose() << std::endl;
+	//to do: set kms bias
+	auto load = schunk_ft_sensor_to_franka_calibration::calibrate_load(controller);
 }

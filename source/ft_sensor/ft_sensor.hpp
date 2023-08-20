@@ -30,12 +30,12 @@ public:
 		return ee_t_fts_;
 	}
 
-	Eigen::Vector<float, 6> bias() const
+	Eigen::Vector<double, 6> bias() const
 	{
 		return bias_;
 	}
 
-	Eigen::Affine3f load() const
+	Eigen::Affine3d load() const
 	{
 		return load_;
 	}
@@ -43,8 +43,8 @@ public:
 protected:
 	ft_sensor(Eigen::Affine3f transform,
 	          Eigen::Affine3f affine3_f,
-	          Eigen::Vector<float, 6> bias,
-	          Eigen::Affine3f load)
+	          Eigen::Vector<double, 6> bias,
+	          Eigen::Affine3d load)
 		: fts_t_flange_(std::move(transform)),
 		  ee_t_fts_(std::move(affine3_f)),
 		  bias_(std::move(bias)),
@@ -55,7 +55,7 @@ protected:
 	Eigen::Affine3f fts_t_flange_;
 	Eigen::Affine3f ee_t_fts_;
 	Eigen::Vector<float, 6> bias_; //[fx, fy, fz, tx, ty, tz]
-	Eigen::Affine3f load_;
+	Eigen::Affine3d load_;
 };
 } //franka_proxy
 

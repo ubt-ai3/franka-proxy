@@ -14,8 +14,8 @@ namespace franka_proxy
 
 schunk_ft_sensor::schunk_ft_sensor(const Eigen::Affine3f& kms_T_flange,
                                    const Eigen::Affine3f& EE_T_kms,
-                                   const Eigen::Vector<float, 6>& bias,
-                                   const Eigen::Affine3f& load)
+                                   const Eigen::Vector<double, 6>& bias,
+                                   const Eigen::Affine3d& load)
 	: ft_sensor(kms_T_flange, EE_T_kms, bias, load),
 	  socket_(io_service_),
 	  receiver_endpoint_(asio::ip::make_address(ip_), port_)
