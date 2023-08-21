@@ -19,11 +19,9 @@ public:
 	schunk_ft_sensor(const Eigen::Affine3f& kms_T_flange,
 	                 const Eigen::Affine3f& EE_T_kms,
 	                 const Eigen::Vector<double, 6>& bias,
-	                 const Eigen::Affine3d& load);
+	                 const Eigen::Vector3d& load_mass);
 
 	~schunk_ft_sensor() override;
-
-	ft_sensor_response read() override;
 
 private:
 	void set_response_handler(const std::function<void(const ft_sensor_response&)>& functor);
@@ -57,7 +55,6 @@ private:
 		}
 	};
 
-	std::atomic<ft_sensor_response> current_ft_sensor_response_;
 
 	/* see  table 9.1 in Net F/T user manual. */
 	std::array<unsigned char, 8> start_streaming_msg_ = []()
@@ -79,7 +76,6 @@ private:
 
 		return msg;
 	}();
-
 };
 } /* namespace franka_proxy */
 

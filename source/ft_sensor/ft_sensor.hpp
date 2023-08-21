@@ -18,7 +18,18 @@ class ft_sensor
 public:
 	virtual ~ft_sensor() = default;
 
-	virtual ft_sensor_response read() = 0;
+	ft_sensor_response read() const
+	{
+		auto ret = current_ft_sensor_response_.load();
+		for (int i = 0; i < 6; i++)
+			ret.data[i] -= bias_(i);
+		return ret;
+	}
+
+	ft_sensor_response read_raw() const
+	{
+		return current_ft_sensor_response_.load();
+	}
 
 	Eigen::Affine3f fts_t_flange() const
 	{
@@ -35,27 +46,30 @@ public:
 		return bias_;
 	}
 
-	Eigen::Affine3d load() const
+	Eigen::Vector3d load_mass() const
 	{
-		return load_;
+		return load_mass_;
 	}
 
 protected:
 	ft_sensor(Eigen::Affine3f transform,
 	          Eigen::Affine3f affine3_f,
 	          Eigen::Vector<double, 6> bias,
-	          Eigen::Affine3d load)
+	          Eigen::Vector3d load_mass)
 		: fts_t_flange_(std::move(transform)),
 		  ee_t_fts_(std::move(affine3_f)),
 		  bias_(std::move(bias)),
-		  load_(std::move(load))
+		  load_mass_(std::move(load_mass))
 	{
 	}
 
+	std::atomic<ft_sensor_response> current_ft_sensor_response_;
+
 	Eigen::Affine3f fts_t_flange_;
 	Eigen::Affine3f ee_t_fts_;
-	Eigen::Vector<float, 6> bias_; //[fx, fy, fz, tx, ty, tz]
-	Eigen::Affine3d load_;
+	Eigen::Vector<double, 6> bias_; //[fx, fy, fz, tx, ty, tz]
+	Eigen::Vector3d load_mass_;
+	Eigen::Matrix3d load_inertia_;
 };
 } //franka_proxy
 

@@ -11,12 +11,11 @@
 
 namespace franka_proxy
 {
-
 schunk_ft_sensor::schunk_ft_sensor(const Eigen::Affine3f& kms_T_flange,
                                    const Eigen::Affine3f& EE_T_kms,
                                    const Eigen::Vector<double, 6>& bias,
-                                   const Eigen::Affine3d& load)
-	: ft_sensor(kms_T_flange, EE_T_kms, bias, load),
+                                   const Eigen::Vector3d& load_mass)
+	: ft_sensor(kms_T_flange, EE_T_kms, bias, load_mass),
 	  socket_(io_service_),
 	  receiver_endpoint_(asio::ip::make_address(ip_), port_)
 {
@@ -24,7 +23,7 @@ schunk_ft_sensor::schunk_ft_sensor(const Eigen::Affine3f& kms_T_flange,
 	socket_.send_to(asio::buffer(start_streaming_msg_), receiver_endpoint_);
 	worker_ = std::thread(&schunk_ft_sensor::run, this);
 
-	set_response_handler([&](const ft_sensor_response& response) {current_ft_sensor_response_.store(response); });
+	set_response_handler([&](const ft_sensor_response& response) { current_ft_sensor_response_.store(response); });
 }
 
 schunk_ft_sensor::~schunk_ft_sensor()
@@ -47,11 +46,6 @@ schunk_ft_sensor::~schunk_ft_sensor()
 	{
 		std::cerr << "Unhandled exception, netbox might still be streaming data. " << e.what();
 	}
-}
-
-ft_sensor_response schunk_ft_sensor::read()
-{
-	return current_ft_sensor_response_.load();
 }
 
 void schunk_ft_sensor::set_response_handler(const std::function<void(const ft_sensor_response&)>& functor)
@@ -84,7 +78,8 @@ void schunk_ft_sensor::run()
 
 			// meta data
 			//resp.sequence_number = ntohl(*reinterpret_cast<uint32_t*>(&recv_buf[0]));		// sequence number, counting send packages
-			resp.ft_sequence_number = ntohl(*reinterpret_cast<uint32_t*>(&recv_buf[4]));	// sequence number, counting internal control-loop
+			resp.ft_sequence_number = ntohl(*reinterpret_cast<uint32_t*>(&recv_buf[4]));
+			// sequence number, counting internal control-loop
 			//resp.status = ntohl(*reinterpret_cast<uint32_t*>(&recv_buf[8]));				//www.ati-ia.com/app_content/documents/9610-05-1022.pdf
 
 			// data
@@ -102,5 +97,4 @@ void schunk_ft_sensor::run()
 		std::cerr << e.what() << "\n";
 	}
 }
-
 } /* namespace franka_proxy */
