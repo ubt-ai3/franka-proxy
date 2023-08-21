@@ -20,7 +20,7 @@ int main()
 	//std::string ip("132.180.194.112");
 
 	franka_fts_calibration_test(ip);
-	franka_controller_test(ip);
+	//franka_controller_test(ip);
 
 	return std::cin.get();
 }
@@ -43,7 +43,7 @@ void franka_controller_test(const std::string& ip)
 				print_status(controller);
 
 			using namespace std::chrono_literals;
-			std::this_thread::sleep_for(0.016s);
+			std::this_thread::sleep_for(std::chrono::duration<double>(0.016));
 		}
 	});
 
@@ -64,7 +64,6 @@ void print_status(const franka_control::franka_controller_remote& controller)
 void franka_fts_calibration_test(const std::string& ip)
 {
 	franka_control::franka_controller_remote controller(ip);
-	auto biases = schunk_ft_sensor_to_franka_calibration::calibrate_bias(controller);
-	//to do: set kms bias
+	//auto biases = schunk_ft_sensor_to_franka_calibration::calibrate_bias(controller);
 	auto load = schunk_ft_sensor_to_franka_calibration::calibrate_load(controller);
 }
