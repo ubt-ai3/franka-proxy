@@ -17,12 +17,6 @@ franka_control::force_torque_config_cartesian schunk_ft_sensor_to_franka_calibra
 
 	std::ifstream in_stream(config_file);
 	nlohmann::json config = nlohmann::json::parse(in_stream);
-	//config["bias"] = nlohmann::json::array({ 0, 0, 0, 0, 0, 0 });
-	//config["load_mass"] = nlohmann::json::array({ 0, 0, 0 });
-	//
-	//std::ofstream out_stream(config_file);
-	//out_stream << std::setw(4) << config << std::endl;
-
 
 	std::array<Eigen::Affine3d, 24> poses = calibration_poses_bias();
 
@@ -96,10 +90,6 @@ Eigen::Vector3d schunk_ft_sensor_to_franka_calibration::calibrate_load(
 
 	std::ifstream in_stream(config_file);
 	nlohmann::json config = nlohmann::json::parse(in_stream);
-	//config["load_mass"] = nlohmann::json::array({ 0, 0, 0 });
-
-	//std::ofstream out_stream(config_file);
-	//out_stream << std::setw(4) << config << std::endl;
 	
 	std::array<Eigen::Affine3d, 5> poses = calibration_poses_load();
 
