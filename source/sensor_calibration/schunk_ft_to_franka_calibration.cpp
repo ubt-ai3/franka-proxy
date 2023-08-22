@@ -1,6 +1,9 @@
 #include "schunk_ft_to_franka_calibration.hpp"
 
 #include <iostream>
+#include <fstream>
+#include <nlohmann/json.hpp>
+
 
 #include "franka_control/franka_util.hpp"
 #include "franka_proxy/motion_recorder.hpp"
@@ -11,6 +14,15 @@ franka_control::force_torque_config_cartesian schunk_ft_sensor_to_franka_calibra
 	double wait_time_seconds)
 {
 	std::cout << "Starting bias calibration." << std::endl;
+
+	std::ifstream in_stream(config_file);
+	nlohmann::json config = nlohmann::json::parse(in_stream);
+	//config["bias"] = nlohmann::json::array({ 0, 0, 0, 0, 0, 0 });
+	//config["load_mass"] = nlohmann::json::array({ 0, 0, 0 });
+	//
+	//std::ofstream out_stream(config_file);
+	//out_stream << std::setw(4) << config << std::endl;
+
 
 	std::array<Eigen::Affine3d, 24> poses = calibration_poses_bias();
 
@@ -66,10 +78,12 @@ franka_control::force_torque_config_cartesian schunk_ft_sensor_to_franka_calibra
 	for (int ft_idx = 0; ft_idx < biases.size(); ft_idx++)
 	{
 		biases[ft_idx] = biases[ft_idx] / ft_avgs.size();
+		config["bias"].at(ft_idx) = biases[ft_idx] / ft_avgs.size();
 	}
+	std::ofstream out_stream(config_file);
+	out_stream << std::setw(4) << config << std::endl;
 
 	std::cout << "calibrated bias: " << biases.transpose() << std::endl;
-
 	return biases;
 }
 
@@ -79,6 +93,14 @@ Eigen::Vector3d schunk_ft_sensor_to_franka_calibration::calibrate_load(
 	double wait_time_seconds)
 {
 	std::cout << "Starting load calibration." << std::endl;
+
+	std::ifstream in_stream(config_file);
+	nlohmann::json config = nlohmann::json::parse(in_stream);
+	//config["load_mass"] = nlohmann::json::array({ 0, 0, 0 });
+
+	//std::ofstream out_stream(config_file);
+	//out_stream << std::setw(4) << config << std::endl;
+	
 	std::array<Eigen::Affine3d, 5> poses = calibration_poses_load();
 
 	std::array<Eigen::Vector3d, 5> force_world_avgs;
@@ -136,7 +158,12 @@ Eigen::Vector3d schunk_ft_sensor_to_franka_calibration::calibrate_load(
 
 	load = load / force_world_avgs.size();
 
+	config["load_mass"].clear();
+	for (int i = 0; i < load.size(); i++)
+		config["load_mass"].push_back(load[i]);
 
+	std::ofstream out_stream(config_file);
+	out_stream << std::setw(4) << config << std::endl;
 	std::cout << "calibrated load: " << load.transpose() << std::endl;
 
 	return load;

@@ -42,7 +42,7 @@ franka_hardware_controller::franka_hardware_controller
 	  speed_factor_(0.05),
 
 	  ft_sensor_(std::make_unique<schunk_ft_sensor>(Eigen::Affine3f::Identity(), Eigen::Affine3f::Identity(),
-	                                         Eigen::Vector<double, 6>(-0.556029, -3.17169, 0.895239, -0.051808, -0.0642001, -0.0869519), Eigen::Vector3d())),
+	                                         Eigen::Vector<double, 6>(), Eigen::Vector3d())),
 
 	  motion_recorder_(std::make_unique<detail::motion_recorder>(robot_, robot_state_, *ft_sensor_)),
 
