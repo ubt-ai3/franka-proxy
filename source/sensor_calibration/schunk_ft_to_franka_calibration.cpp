@@ -79,10 +79,11 @@ Eigen::Vector3d schunk_ft_sensor_to_franka_calibration::calibrate_load(
 	double wait_time_seconds)
 {
 	std::cout << "Starting load calibration." << std::endl;
-	std::array<Eigen::Affine3d, 9> poses = calibration_poses_load();
+	//std::array<Eigen::Affine3d, 9> poses = calibration_poses_load();
+	std::array<Eigen::Affine3d, 24> poses = calibration_poses_bias();
 
-
-	std::array<Eigen::Vector3d, 9> force_world_avgs;
+	//std::array<Eigen::Vector3d, 9> force_world_avgs;
+	std::array<Eigen::Vector3d, 24> force_world_avgs;
 	for (int pose_idx = 0; pose_idx < force_world_avgs.size(); pose_idx++)
 	{
 		force_world_avgs[pose_idx] = {0, 0, 0};
@@ -109,12 +110,17 @@ Eigen::Vector3d schunk_ft_sensor_to_franka_calibration::calibrate_load(
 		std::this_thread::sleep_for(std::chrono::duration<double>(record_time_per_pose_seconds));
 		auto [joint_record, force_record] = franka.stop_recording();
 
-		Eigen::Affine3d kms_T_world = poses[pose_idx].inverse();
+		constexpr double pi = 3.14159265358979323846;
+
+		Eigen::Affine3d world_rot_kms(Eigen::Affine3d::Identity());
+		world_rot_kms *= (poses[pose_idx].rotation());
+		world_rot_kms.rotate(Eigen::AngleAxisd(-pi, Eigen::Vector3d::UnitZ()));
+
 		for (int record_idx = 0; record_idx < force_record.size(); record_idx++)
 		{
 			Eigen::Vector3d force_kms;
 			force_kms << force_record[record_idx][0], force_record[record_idx][1], force_record[record_idx][2]; 
-			force_world_avgs[pose_idx] += kms_T_world * force_kms;
+			force_world_avgs[pose_idx] += world_rot_kms * force_kms;
 		}
 
 
@@ -128,6 +134,7 @@ Eigen::Vector3d schunk_ft_sensor_to_franka_calibration::calibrate_load(
 	load << 0, 0, 0;
 	for (int pose_idx = 0; pose_idx < force_world_avgs.size(); pose_idx++)
 	{
+		std::cout << pose_idx << " :" << force_world_avgs[pose_idx].norm() << "\n";
 		load += force_world_avgs[pose_idx];
 	}
 
@@ -200,18 +207,17 @@ std::array<Eigen::Affine3d, 9> schunk_ft_sensor_to_franka_calibration::calibrati
 	Eigen::Affine3d pos(franka_control::franka_util::fk(position).back());
 	std::fill_n(poses.begin(), 9, pos);
 
-	poses.at(0).linear() = get_axis_aligned_orientation(-1 * Eigen::Vector3d::UnitZ(), Eigen::Vector3d::UnitX());
+	poses.at(0).linear() = get_axis_aligned_orientation(-1 * Eigen::Vector3d::UnitZ(), Eigen::Vector3d::UnitY());
 	
 	int step = 4;
 	constexpr double pi = 3.14159265358979323846;
 
+
 	for (int i = 0; i < 2; i++){
-		auto tmp = poses.at(i * step);
-		poses.at(i * step + 1).linear() = tmp.rotate(Eigen::AngleAxis(0.25 * pi, Eigen::Vector3d::UnitX())).linear();
-		for (int j = i*step + 2; j < i + 5; j++)
+		for (int j = 0; j < 4; j++)
 		{
-			auto tmp = poses.at(j - 1);
-			poses.at(j).linear() = tmp.rotate(Eigen::AngleAxis(0.5 * pi, Eigen::Vector3d::UnitZ())).linear();
+			auto tmp = poses.at(0);
+			poses.at(step * i + j + 1).linear() = tmp.rotate(Eigen::AngleAxis((0.5 * j + 0.25)* pi, Eigen::Vector3d::UnitZ())).rotate(Eigen::AngleAxis(0.25 * (i + 1) * pi, Eigen::Vector3d::UnitX())).linear();
 		}
 	}
 

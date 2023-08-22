@@ -59,7 +59,7 @@ private:
 	std::atomic_bool terminate_internal_thread_;
 
 	static constexpr float sleep_seconds_disconnected_ = 0.033f;
-	static constexpr float sleep_seconds_connected_ = 0.002f;
+	static constexpr float sleep_seconds_connected_ = 0.033f;
 };
 
 
