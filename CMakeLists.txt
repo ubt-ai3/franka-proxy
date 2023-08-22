@@ -242,16 +242,15 @@ target_compile_definitions(
 
 
 ## install
+file(GLOB franka_proxy_share_headers
+    "${CMAKE_CURRENT_SOURCE_DIR}/source/franka_proxy_share/*.hpp"
+)
 file(GLOB franka_proxy_client_headers
     "${CMAKE_CURRENT_SOURCE_DIR}/source/franka_proxy_client/*.hpp"
 )
 file(GLOB franka_control_headers
     "${CMAKE_CURRENT_SOURCE_DIR}/source/franka_control/*.hpp"
 )
-file(GLOB franka_proxy_share_headers
-    "${CMAKE_CURRENT_SOURCE_DIR}/source/franka_proxy_share/*.hpp"
-)
-
 
 if(BUILD_SERVER)
 	install(
@@ -270,6 +269,10 @@ else()
 endif()
 	
 install(
+	FILES ${franka_proxy_share_headers}
+	DESTINATION include/franka_proxy_share
+)
+install(
 	FILES ${franka_proxy_client_headers}
 	DESTINATION include/franka_proxy_client
 )
@@ -277,9 +280,38 @@ install(
 	FILES ${franka_control_headers}
 	DESTINATION include/franka_control
 )
-install(
-	FILES ${franka_proxy_share_headers}
-	DESTINATION include/franka_proxy_share
-)
 
 install(EXPORT franka-proxyConfig DESTINATION share FILE franka-proxyTargets.cmake)
+
+
+# assets
+if(BUILD_SERVER)
+    file(GLOB franka_assets
+        "${CMAKE_CURRENT_SOURCE_DIR}/assets/*"
+    )
+
+    file(
+        GENERATE 
+            OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/CopyConfigurationData$<CONFIG>.cmake"
+            CONTENT 
+                "if (NOT EXISTS \"${CMAKE_CURRENT_BINARY_DIR}/assets\")
+                    execute_process(
+                         COMMAND \"${CMAKE_COMMAND}\" -E copy_directory
+                             \"${PROJECT_SOURCE_DIR}/assets\"
+                             \"${CMAKE_CURRENT_BINARY_DIR}/assets\"
+                    )
+                endif()"
+    )
+
+    add_custom_command(
+        TARGET franka_proxy
+        POST_BUILD 
+        COMMAND "${CMAKE_COMMAND}" -P "CopyConfigurationData$<CONFIG>.cmake"
+        WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
+    )
+
+    install(
+	FILES ${franka_assets}
+	DESTINATION bin/assets
+)
+endif()

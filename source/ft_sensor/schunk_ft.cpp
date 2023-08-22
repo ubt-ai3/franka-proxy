@@ -24,6 +24,7 @@ schunk_ft_sensor::schunk_ft_sensor(const Eigen::Affine3f& kms_T_flange,
 	worker_ = std::thread(&schunk_ft_sensor::run, this);
 
 	set_response_handler([&](const ft_sensor_response& response) { current_ft_sensor_response_.store(response); });
+
 }
 
 schunk_ft_sensor::~schunk_ft_sensor()
