@@ -15,6 +15,7 @@
 #include <array>
 #include <mutex>
 #include <string>
+#include <Eigen/Geometry>
 
 #include <franka_proxy_share/franka_proxy_commands.hpp>
 
@@ -134,7 +135,7 @@ public:
 	 * todo docu
 	 */
 	std::pair<std::vector<std::array<double, 7>>, std::vector<std::array<double, 6>>> stop_recording();
-	
+
 	
 	/**
 	 * Send new target speed to robot.
@@ -146,6 +147,29 @@ public:
 	 * @throw viral_core::network_exception if the connection was lost.
 	 */
 	void set_speed_factor(double speed_factor);
+
+	/**
+	* Send new force/torque sensor bias
+	*
+	* @TODO: Check exceptions.
+	*
+	* @param[in] bias of the ft sensor (fx, fy, fz, tx, ty, tz)
+	*
+	* @throw viral_core::network_exception if the connection was lost.
+	*/
+	void set_fts_bias(const std::array<double, 6>& bias);
+
+
+	/**
+	* Send new load mass affecting the force/torque sensor
+	*
+	* @TODO: Check exceptions.
+	*
+	* @param[in] force in world coordinates produced by load mass
+	*
+	* @throw viral_core::network_exception if the connection was lost.
+	*/
+	void set_fts_load_mass(const std::array<double, 3>& load_mass);
 
 
 	/**

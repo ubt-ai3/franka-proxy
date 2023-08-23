@@ -13,6 +13,7 @@
 
 
 #include <mutex>
+#include <Eigen/Geometry>
 
 #include "franka_controller.hpp"
 
@@ -72,6 +73,9 @@ public:
 		std::vector<std::array<double, 7>> q_sequence,
 		std::vector<std::array<double, 6>> f_sequence,
 		std::vector<std::array<double, 6>> selection_vector_sequence) override;
+
+	void set_fts_bias(const Eigen::Vector<double, 6>& bias);
+	void set_fts_load_mass(const Eigen::Vector3d& load_mass);
 	
 private:
 

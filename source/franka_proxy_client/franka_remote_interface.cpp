@@ -88,6 +88,15 @@ bool franka_remote_interface::grasp_gripper(double speed, double force)
 void franka_remote_interface::set_speed_factor(double speed_factor)
 	{ send_command<command_set_speed>(speed_factor); }
 
+
+void franka_remote_interface::set_fts_bias(const std::array<double, 6>& bias)
+	{ send_command<command_set_fts_bias>(bias); }
+
+
+void franka_remote_interface::set_fts_load_mass(const std::array<double, 3>& load_mass)
+	{	send_command<command_set_fts_load_mass>(load_mass);}
+
+
 void franka_remote_interface::automatic_error_recovery()
 	{ send_command<command_recover_from_errors>(); }
 

@@ -277,7 +277,41 @@ struct command_set_speed
 void to_json(nlohmann::json& json, const command_set_speed& object);
 void from_json(const nlohmann::json& json, command_set_speed& object);
 
+/**
+ *************************************************************************
+ *
+ * @class command_set_fts_bias
+ *
+ * Sets the bias of the force/torque sensor
+ *
+ ************************************************************************/
+struct command_set_fts_bias
+{
+	using response_type = command_generic_response;
+	static constexpr char type[] = "set.fts_bias";
 
+	std::array<double, 6> bias;
+};
+void to_json(nlohmann::json& json, const command_set_fts_bias& object);
+void from_json(const nlohmann::json& json, command_set_fts_bias& object);
+
+/**
+ *************************************************************************
+ *
+ * @class command_set_fts_bias
+ *
+ * Sets the load_mass of the force/torque sensor
+ *
+ ************************************************************************/
+struct command_set_fts_load_mass
+{
+	using response_type = command_generic_response;
+	static constexpr char type[] = "set.fts_load_mass";
+
+	std::array<double, 3> load_mass;
+};
+void to_json(nlohmann::json& json, const command_set_fts_load_mass& object);
+void from_json(const nlohmann::json& json, command_set_fts_load_mass& object);
 
 
 /**

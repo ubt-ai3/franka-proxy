@@ -152,5 +152,16 @@ void franka_controller_remote::move_sequence(
 	controller_->move_to(q_sequence.back());
 }
 
+void franka_controller_remote::set_fts_bias(const Eigen::Vector<double, 6>& bias)
+{
+	controller_->set_fts_bias({ bias[0], bias[1], bias[2], bias[3], bias[4], bias[5] });
+}
+
+void franka_controller_remote::set_fts_load_mass(const Eigen::Vector3d& load_mass)
+{
+	controller_->set_fts_load_mass({ load_mass[0], load_mass[1], load_mass[2] });
+}
+
+
 
 } /* namespace franka_control */

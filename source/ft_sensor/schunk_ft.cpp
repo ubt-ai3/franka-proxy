@@ -58,6 +58,22 @@ schunk_ft_sensor::~schunk_ft_sensor()
 	}
 }
 
+void schunk_ft_sensor::update_calibration(const std::string config_file = "./assets/fts-config.json")
+{
+	bias_ = bias_from_config(config_file);
+	load_mass_ = load_mass_from_config(config_file);
+}
+
+void schunk_ft_sensor::set_bias(const Eigen::Vector<double, 6>& bias)
+{
+	bias_ = bias;
+}
+
+void schunk_ft_sensor::set_load_mass(const Eigen::Vector3d& load_mass)
+{
+	load_mass_ = load_mass;
+}
+
 void schunk_ft_sensor::set_response_handler(const std::function<void(const ft_sensor_response&)>& functor)
 {
 	std::unique_lock<std::mutex> lock(functor_lock_);

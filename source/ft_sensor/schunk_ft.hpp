@@ -27,6 +27,14 @@ public:
 
 	~schunk_ft_sensor() override;
 
+	void update_calibration(const std::string config_file = "./assets/fts-config.json");
+
+	
+	//functions to set the calibration parameters without changing the config file
+	void set_bias(const Eigen::Vector<double, 6>& bias);
+	void set_load_mass(const Eigen::Vector3d& load_mass);
+
+
 private:
 	void set_response_handler(const std::function<void(const ft_sensor_response&)>& functor);
 	void remove_response_handler();

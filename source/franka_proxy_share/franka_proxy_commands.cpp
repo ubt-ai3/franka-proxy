@@ -245,6 +245,53 @@ void from_json(const nlohmann::json& json, command_set_speed& object)
 	{ json.at("speed").get_to(object.speed); }
 
 
+//////////////////////////////////////////////////////////////////////////
+//
+// command_set_fts_bias
+//
+//////////////////////////////////////////////////////////////////////////
+
+
+void to_json(nlohmann::json& json, const  command_set_fts_bias& object)
+{
+	json["type"] = command_set_fts_bias::type;
+	json["bias"] = nlohmann::json::array();
+	
+	for (int i = 0; i < object.bias.size(); i++)
+		json["bias"].push_back(object.bias[i]);
+}
+
+
+void from_json(const nlohmann::json& json, command_set_fts_bias& object)
+{
+	object.bias = std::array<double, 6>();
+	for (int i = 0; i < object.bias.size(); i++)
+		json.at("bias").get_to(object.bias[i]);
+}
+
+//////////////////////////////////////////////////////////////////////////
+//
+// command_set_fts_load_mass
+//
+//////////////////////////////////////////////////////////////////////////
+
+
+void to_json(nlohmann::json& json, const  command_set_fts_load_mass& object)
+{
+	json["type"] = command_set_fts_load_mass::type;
+	json["load_mass"] = nlohmann::json::array();
+
+	for (int i = 0; i < object.load_mass.size(); i++)
+		json["load_mass"].push_back(object.load_mass[i]);
+}
+
+
+void from_json(const nlohmann::json& json, command_set_fts_load_mass& object)
+{
+	object.load_mass = std::array<double, 3>();
+	for (int i = 0; i < object.load_mass.size(); i++)
+		json.at("load_mass").get_to(object.load_mass[i]);
+}
 
 
 //////////////////////////////////////////////////////////////////////////
