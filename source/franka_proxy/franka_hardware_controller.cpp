@@ -13,6 +13,7 @@
 #include <iostream>
 
 #include <Eigen/Core>
+#include <Eigen/Geometry>
 
 #include <franka/control_types.h>
 #include <franka/exception.h>
@@ -41,9 +42,9 @@ franka_hardware_controller::franka_hardware_controller
 	  parameters_initialized_(false),
 	  speed_factor_(0.05),
 
-	  ft_sensor_(std::make_unique<schunk_ft_sensor>(Eigen::Affine3f::Identity(), Eigen::Affine3f::Identity())),
+	  ft_sensor_(nullptr),
 
-	  motion_recorder_(std::make_unique<detail::motion_recorder>(robot_, robot_state_, *ft_sensor_)),
+	  motion_recorder_(nullptr),
 
 	  robot_state_(robot_.readOnce()),
 
@@ -54,6 +55,16 @@ franka_hardware_controller::franka_hardware_controller
 	  gripper_state_thread_([this]() { gripper_state_update_loop(); })
 
 {
+
+	try{
+		ft_sensor_ = std::make_unique<schunk_ft_sensor>(Eigen::Affine3f::Identity(), Eigen::Affine3f::Identity());
+		motion_recorder_ = std::make_unique<detail::motion_recorder>(robot_, robot_state_, *ft_sensor_);
+	}
+	catch (ft_sensor_connection_exception)
+	{
+		std::cout << "connection to force/torque sensor could not be established" << std::endl;
+	}
+
 	try
 	{
 		gripper_ = std::make_unique<franka::Gripper>(controller_ip);
@@ -62,6 +73,7 @@ franka_hardware_controller::franka_hardware_controller
 	}
 	catch (...)
 	{
+		std::cout << "connection to gripper could not be established" << std::endl;
 		// todo
 	}
 
@@ -211,6 +223,20 @@ void franka_hardware_controller::set_speed_factor(double speed_factor)
 {
 	std::lock_guard<std::mutex> state_guard(speed_factor_lock_);
 	speed_factor_ = speed_factor;
+}
+
+void franka_hardware_controller::set_bias(const std::array<double, 6>& bias)
+{
+	if (ft_sensor_)
+		ft_sensor_->set_bias(Eigen::Vector<double, 6>(bias.data()));
+	else throw ft_sensor_connection_exception();
+}
+
+void franka_hardware_controller::set_load_mass(const std::array<double, 3>& load_mass)
+{
+	if (ft_sensor_)
+		ft_sensor_->set_load_mass(Eigen::Vector3d(load_mass.data()));
+	else throw ft_sensor_connection_exception();
 }
 
 

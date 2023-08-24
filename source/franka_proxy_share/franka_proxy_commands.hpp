@@ -342,7 +342,7 @@ void from_json(const nlohmann::json& json, command_recover_from_errors& object);
  * Result code sent in `command_generic_response`.
  *
  ************************************************************************/
-enum class command_result: std::uint8_t
+enum class command_result : std::uint8_t
 {
 	success,
 	success_command_failed,
@@ -355,6 +355,7 @@ enum class command_result: std::uint8_t
 	realtime_exception,
 	invalid_operation,
 	franka_exception,
+	force_torque_sensor_exception,
 	unknown_command
 };
 

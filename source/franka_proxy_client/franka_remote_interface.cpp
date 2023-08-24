@@ -181,6 +181,8 @@ command_result franka_remote_interface::check_response(command_generic_response&
 		throw realtime_exception{ std::move(response.reason) };
 	case command_result::invalid_operation:
 		throw invalid_operation_exception{ std::move(response.reason) };
+	case command_result::force_torque_sensor_exception:
+		throw ft_sensor_exception{};
 	case command_result::unknown_command:
 		throw unknown_command_exception{ std::move(response.reason) };
 	default:

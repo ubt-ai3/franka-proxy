@@ -266,7 +266,7 @@ void from_json(const nlohmann::json& json, command_set_fts_bias& object)
 {
 	object.bias = std::array<double, 6>();
 	for (int i = 0; i < object.bias.size(); i++)
-		json.at("bias").get_to(object.bias[i]);
+		object.bias[i] = json.at("bias").at(i);
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -290,7 +290,7 @@ void from_json(const nlohmann::json& json, command_set_fts_load_mass& object)
 {
 	object.load_mass = std::array<double, 3>();
 	for (int i = 0; i < object.load_mass.size(); i++)
-		json.at("load_mass").get_to(object.load_mass[i]);
+		object.load_mass[i] = json.at("load_mass").at(i);
 }
 
 

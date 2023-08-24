@@ -2,6 +2,7 @@
 #define INCLUDED__FT_SENSOR__FT_SENSOR_HPP
 
 #include <functional>
+#include <exception>
 #include <Eigen/Geometry>
 
 namespace franka_proxy
@@ -51,6 +52,15 @@ public:
 		return load_mass_;
 	}
 
+	void set_bias(const Eigen::Vector<double, 6>& bias)
+	{
+		bias_ = bias;
+	}
+	void set_load_mass(const Eigen::Vector3d& load_mass)
+	{
+		load_mass_ = load_mass;
+	}
+
 protected:
 	ft_sensor(Eigen::Affine3f transform,
 	          Eigen::Affine3f affine3_f,
@@ -70,6 +80,14 @@ protected:
 	Eigen::Vector<double, 6> bias_; //[fx, fy, fz, tx, ty, tz]
 	Eigen::Vector3d load_mass_;
 	Eigen::Matrix3d load_inertia_;
+};
+
+class ft_sensor_connection_exception : public std::exception
+{
+public:
+	char* what() {
+		return "no force/torque sensor available";
+	}
 };
 } //franka_proxy
 

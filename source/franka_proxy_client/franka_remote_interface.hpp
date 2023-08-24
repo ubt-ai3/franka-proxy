@@ -155,7 +155,7 @@ public:
 	*
 	* @param[in] bias of the ft sensor (fx, fy, fz, tx, ty, tz)
 	*
-	* @throw viral_core::network_exception if the connection was lost.
+	*  @throw viral_core::force_torque_sensor_exception if force/torque sensor is unavailable.
 	*/
 	void set_fts_bias(const std::array<double, 6>& bias);
 
@@ -167,7 +167,7 @@ public:
 	*
 	* @param[in] force in world coordinates produced by load mass
 	*
-	* @throw viral_core::network_exception if the connection was lost.
+	* @throw viral_core::force_torque_sensor_exception if force/torque sensor is unavailable.
 	*/
 	void set_fts_load_mass(const std::array<double, 3>& load_mass);
 
@@ -226,6 +226,7 @@ private:
 	 * Throws command_exception, if the response indicates an error of this type.
 	 * Throws realtime_exception, if the response indicates an error of this type.
 	 * Throws invalid_operation, if the response indicates an error of this type.
+	 * Throws force_torque_sensor_exception, if the response indicates an error of this type.
 	 * Throws unknown_command, if the response indicates an error of this type.
 	 */
 	template<typename TCommandType, typename... TArgs, typename TReturnType = TResponseType<TCommandType>>

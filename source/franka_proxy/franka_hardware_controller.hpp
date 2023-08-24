@@ -73,6 +73,13 @@ public:
 
 	void set_speed_factor(double speed_factor);
 
+	// @throws ft_sensor_connection_exception
+	void set_bias(const std::array<double, 6>& bias);
+
+	// @throws ft_sensor_connection_exception
+	void set_load_mass(const std::array<double, 3>& load_mass);
+
+
 	franka::RobotState robot_state() const;
 
 

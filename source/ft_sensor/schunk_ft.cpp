@@ -21,7 +21,14 @@ schunk_ft_sensor::schunk_ft_sensor(const Eigen::Affine3f& kms_T_flange,
 	  socket_(io_service_),
 	  receiver_endpoint_(asio::ip::make_address(ip_), port_)
 {
-	socket_.open(asio::ip::udp::v4());
+	try {
+		socket_.open(asio::ip::udp::v4());
+	}
+	catch(...)
+	{
+		throw ft_sensor_connection_exception();
+	}
+
 	socket_.send_to(asio::buffer(start_streaming_msg_), receiver_endpoint_);
 	worker_ = std::thread(&schunk_ft_sensor::run, this);
 
@@ -58,20 +65,10 @@ schunk_ft_sensor::~schunk_ft_sensor()
 	}
 }
 
-void schunk_ft_sensor::update_calibration(const std::string config_file = "./assets/fts-config.json")
+void schunk_ft_sensor::update_calibration(const std::string config_file)
 {
 	bias_ = bias_from_config(config_file);
 	load_mass_ = load_mass_from_config(config_file);
-}
-
-void schunk_ft_sensor::set_bias(const Eigen::Vector<double, 6>& bias)
-{
-	bias_ = bias;
-}
-
-void schunk_ft_sensor::set_load_mass(const Eigen::Vector3d& load_mass)
-{
-	load_mass_ = load_mass;
 }
 
 void schunk_ft_sensor::set_response_handler(const std::function<void(const ft_sensor_response&)>& functor)
@@ -141,7 +138,7 @@ Eigen::Vector3d schunk_ft_sensor::load_mass_from_config(const std::string config
 	nlohmann::json config = nlohmann::json::parse(in_stream);
 	Eigen::Vector3d load_mass;
 
-	for (int i; i < load_mass.size(); i++)
+	for (int i = 0; i < load_mass.size(); i++)
 		load_mass[i] = config["load_mass"].at(i);
 
 	return load_mass;
