@@ -316,8 +316,14 @@ command_generic_response franka_control_server::process_command
 command_generic_response franka_control_server::process_command
 	(const command_start_recording&)
 {
-	controller_.start_recording();
-	return command_result::success;
+	try {
+		controller_.start_recording();
+		return command_result::success;
+	}
+	catch (ft_sensor_connection_exception&)
+	{
+		return command_result::force_torque_sensor_exception;
+	}
 }
 
 

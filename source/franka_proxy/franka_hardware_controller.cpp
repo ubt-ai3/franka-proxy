@@ -297,6 +297,10 @@ void franka_hardware_controller::automatic_error_recovery()
 
 void franka_hardware_controller::start_recording()
 {
+	if (!ft_sensor_)
+	{
+		throw ft_sensor_connection_exception();
+	}
 	set_control_loop_running(true);
 	{
 		// Lock the current_state_lock_ to wait for state_thread_ to finish.
@@ -308,6 +312,11 @@ void franka_hardware_controller::start_recording()
 
 std::pair<std::vector<robot_config_7dof>, std::vector<robot_force_config>> franka_hardware_controller::start_recording(float seconds)
 {
+	if (!ft_sensor_)
+	{
+		throw ft_sensor_connection_exception();
+	}
+
 	set_control_loop_running(true);
 	{
 		// Lock the current_state_lock_ to wait for state_thread_ to finish.
