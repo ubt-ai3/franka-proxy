@@ -35,6 +35,7 @@ private:
 
 	void run();
 
+	void setup_connection();
 
 	std::string ip_ = "192.168.2.1";
 	unsigned short port_ = 49152; // port the net ft sensor always uses

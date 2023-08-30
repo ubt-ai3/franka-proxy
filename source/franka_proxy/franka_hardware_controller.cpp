@@ -55,12 +55,12 @@ franka_hardware_controller::franka_hardware_controller
 	  gripper_state_thread_([this]() { gripper_state_update_loop(); })
 
 {
-
-	try{
+	try
+	{
 		ft_sensor_ = std::make_unique<schunk_ft_sensor>(Eigen::Affine3f::Identity(), Eigen::Affine3f::Identity());
 		motion_recorder_ = std::make_unique<detail::motion_recorder>(robot_, robot_state_, *ft_sensor_);
 	}
-	catch (ft_sensor_connection_exception)
+	catch(ft_sensor_connection_exception& e)
 	{
 		std::cout << "connection to force/torque sensor could not be established" << std::endl;
 	}

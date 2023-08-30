@@ -73,7 +73,7 @@ franka_control::force_torque_config_cartesian schunk_ft_sensor_to_franka_calibra
 	for (int ft_idx = 0; ft_idx < biases.size(); ft_idx++)
 	{
 		biases[ft_idx] = biases[ft_idx] / ft_avgs.size();
-		config["bias"].at(ft_idx) = biases[ft_idx] / ft_avgs.size();
+		config["bias"].at(ft_idx) = biases[ft_idx];
 	}
 	std::ofstream out_stream(config_file);
 	out_stream << std::setw(4) << config << std::endl;
@@ -144,7 +144,6 @@ Eigen::Vector3d schunk_ft_sensor_to_franka_calibration::calibrate_load(
 	load << 0, 0, 0;
 	for (int pose_idx = 0; pose_idx < force_world_avgs.size(); pose_idx++)
 	{
-		std::cout << pose_idx << " :" << force_world_avgs[pose_idx].norm() << "\n";
 		load += force_world_avgs[pose_idx];
 	}
 

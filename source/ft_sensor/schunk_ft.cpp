@@ -1,14 +1,16 @@
 #include "schunk_ft.hpp"
 
-#include <iostream>
+#include <chrono>
 #include <fstream>
-#include <nlohmann/json.hpp>
+#include <future>
+#include <iostream>
 
 #include <asio/connect.hpp>
 #include <asio/registered_buffer.hpp>
 #include <asio/ip/address.hpp>
 #include <asio/system_error.hpp>
 #include <asio/ip/tcp.hpp>
+#include <nlohmann/json.hpp>
 
 
 namespace franka_proxy
@@ -21,27 +23,19 @@ schunk_ft_sensor::schunk_ft_sensor(const Eigen::Affine3f& kms_T_flange,
 	  socket_(io_service_),
 	  receiver_endpoint_(asio::ip::make_address(ip_), port_)
 {
-	try {
-		socket_.open(asio::ip::udp::v4());
-	}
-	catch(...)
-	{
-		throw ft_sensor_connection_exception();
-	}
-
-	socket_.send_to(asio::buffer(start_streaming_msg_), receiver_endpoint_);
-	worker_ = std::thread(&schunk_ft_sensor::run, this);
-
-	set_response_handler([&](const ft_sensor_response& response) { current_ft_sensor_response_.store(response); });
-
+	setup_connection();
 }
 
 schunk_ft_sensor::schunk_ft_sensor(const Eigen::Affine3f& kms_T_flange,
 	const Eigen::Affine3f& EE_T_kms,
 	const std::string config_file)
-	: schunk_ft_sensor::schunk_ft_sensor(kms_T_flange, EE_T_kms, bias_from_config(config_file), load_mass_from_config(config_file))
+	: ft_sensor(kms_T_flange, EE_T_kms, bias_from_config(config_file), load_mass_from_config(config_file)),
+	socket_(io_service_),
+	receiver_endpoint_(asio::ip::make_address(ip_), port_)
 {
+	setup_connection();
 }
+
 
 schunk_ft_sensor::~schunk_ft_sensor()
 {
@@ -120,6 +114,42 @@ void schunk_ft_sensor::run()
 		std::cerr << e.what() << "\n";
 	}
 }
+
+void schunk_ft_sensor::setup_connection()
+{
+	socket_.open(asio::ip::udp::v4());
+	socket_.send_to(asio::buffer(start_streaming_msg_), receiver_endpoint_);
+
+	// read one response to check if the sensor is actively sending data
+	std::array<unsigned char, 36> recv_buf{'\0'};
+	asio::ip::udp::endpoint sender_endpoint;
+
+	socket_.async_receive_from(asio::buffer(recv_buf), sender_endpoint, [](const asio::error_code& error, std::size_t bytes_transferred){});
+	std::this_thread::sleep_for(std::chrono::milliseconds(10));
+
+	ft_sensor_response resp;
+
+	// meta data
+	//resp.sequence_number = ntohl(*reinterpret_cast<uint32_t*>(&recv_buf[0]));		// sequence number, counting send packages
+	resp.ft_sequence_number = ntohl(*reinterpret_cast<uint32_t*>(&recv_buf[4]));
+	// sequence number, counting internal control-loop
+	//resp.status = ntohl(*reinterpret_cast<uint32_t*>(&recv_buf[8]));				//www.ati-ia.com/app_content/documents/9610-05-1022.pdf
+
+	// data
+	for (int i = 0; i < 3; i++)
+		resp.data[i] = static_cast<int32_t>(ntohl(*reinterpret_cast<int32_t*>(&recv_buf[12 + i * 4]))) / cpf_;
+	for (int i = 3; i < 6; i++)
+		resp.data[i] = static_cast<int32_t>(ntohl(*reinterpret_cast<int32_t*>(&recv_buf[12 + i * 4]))) / cpt_;
+
+	if (resp.ft_sequence_number == 0)
+		throw ft_sensor_connection_exception();
+
+	current_ft_sensor_response_.store(resp);
+
+	set_response_handler([&](const ft_sensor_response& response) { current_ft_sensor_response_.store(response); });
+	worker_ = std::thread(&schunk_ft_sensor::run, this);
+}
+
 Eigen::Vector<double, 6> schunk_ft_sensor::bias_from_config(const std::string config_file) const
 {
 	std::ifstream in_stream(config_file);
