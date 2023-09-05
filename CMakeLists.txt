@@ -52,31 +52,6 @@ target_link_libraries(
 
 
 if(BUILD_SERVER)
-add_library(
-    franky_proxy_ft_sensor
-        ${CMAKE_CURRENT_SOURCE_DIR}/source/ft_sensor/schunk_ft.cpp
-)
-
-target_include_directories(
-    franky_proxy_ft_sensor
-    PUBLIC
-        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/source>
-)
-
-target_link_libraries(
-    franky_proxy_ft_sensor
-    PUBLIC
-        asio::asio
-        Eigen3::Eigen
-		franka_proxy_share
-)
-
-target_compile_definitions(
-    franky_proxy_ft_sensor
-    PUBLIC
-		std_cxx_17
-)
-
 ## franka_proxy
 add_executable(
     franka_proxy
@@ -88,6 +63,8 @@ add_executable(
         ${CMAKE_CURRENT_SOURCE_DIR}/source/franka_proxy/motion_generator_joint_max_accel.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/source/franka_proxy/motion_generator_seq_cart_vel_tau.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/source/franka_proxy/motion_recorder.cpp
+
+        ${CMAKE_CURRENT_SOURCE_DIR}/source/ft_sensor/schunk_ft.cpp
 
 )
 
@@ -107,7 +84,6 @@ target_link_libraries(
         Threads::Threads
 		Franka::Franka
 		franka_proxy_share
-        franky_proxy_ft_sensor
 )
 
 target_compile_definitions(
@@ -253,7 +229,7 @@ file(GLOB franka_control_headers
 
 if(BUILD_SERVER)
 	install(
-		TARGETS franka_control franka_proxy franky_proxy_ft_sensor franka_proxy_client franka_proxy_share
+		TARGETS franka_control franka_proxy franka_proxy_client franka_proxy_share
 		EXPORT franka-proxyConfig
 		LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
 		RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}

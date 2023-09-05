@@ -60,7 +60,7 @@ franka_hardware_controller::franka_hardware_controller
 		ft_sensor_ = std::make_unique<schunk_ft_sensor>(Eigen::Affine3f::Identity(), Eigen::Affine3f::Identity());
 		motion_recorder_ = std::make_unique<detail::motion_recorder>(robot_, robot_state_, *ft_sensor_);
 	}
-	catch(ft_sensor_connection_exception& e)
+	catch(const ft_sensor_connection_exception&)
 	{
 		std::cout << "connection to force/torque sensor could not be established" << std::endl;
 	}
