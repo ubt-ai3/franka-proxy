@@ -52,7 +52,6 @@ target_link_libraries(
 
 
 if(BUILD_SERVER)
-## todo add option for ft-sensor support
 add_library(
     franky_proxy_ft_sensor
         ${CMAKE_CURRENT_SOURCE_DIR}/source/ft_sensor/schunk_ft.cpp
@@ -254,7 +253,7 @@ file(GLOB franka_control_headers
 
 if(BUILD_SERVER)
 	install(
-		TARGETS franka_control franka_proxy franka_proxy_client franka_proxy_share
+		TARGETS franka_control franka_proxy franky_proxy_ft_sensor franka_proxy_client franka_proxy_share
 		EXPORT franka-proxyConfig
 		LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
 		RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
