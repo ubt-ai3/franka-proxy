@@ -1,14 +1,14 @@
 /**
  *************************************************************************
  *
- * @file franka_remote_controller.cpp
+ * @file franka_remote_interface.cpp
  *
  * Client side implementation of the franka_proxy, implementation.
  *
  ************************************************************************/
 
 
-#include "franka_remote_controller.hpp"
+#include "franka_remote_interface.hpp"
 
 #include <iostream>
 #include <list>
@@ -25,12 +25,12 @@ namespace franka_proxy
 
 //////////////////////////////////////////////////////////////////////////
 //
-// franka_remote_controller
+// franka_remote_interface
 //
 //////////////////////////////////////////////////////////////////////////
 
 
-franka_remote_controller::franka_remote_controller
+franka_remote_interface::franka_remote_interface
 	(std::string proxy_ip)
 	:
 	franka_ip_(std::move(proxy_ip)),
@@ -42,24 +42,24 @@ franka_remote_controller::franka_remote_controller
 }
 
 
-franka_remote_controller::~franka_remote_controller() noexcept
+franka_remote_interface::~franka_remote_interface() noexcept
 {
 	shutdown_sockets();
 }
 
 
-void franka_remote_controller::move_to(const robot_config_7dof& target)
+void franka_remote_interface::move_to(const robot_config_7dof& target)
 	{ send_command<command_move_to_config>(target); }
 
 
-bool franka_remote_controller::move_to_until_contact
+bool franka_remote_interface::move_to_until_contact
 	(const robot_config_7dof& target)
 {
 	return send_command<command_move_until_contact>(target) == command_result::success;
 }
 
 
-void franka_remote_controller::move_sequence
+void franka_remote_interface::move_sequence
 	(const std::vector<robot_config_7dof>& q_sequence,
 	 const std::vector<std::array<double, 6>>& f_sequence,
 	 const std::vector<std::array<double, 6>>& selection_vector_sequence)
@@ -69,70 +69,79 @@ void franka_remote_controller::move_sequence
 }
 
 
-void franka_remote_controller::apply_z_force(double mass, double duration)
+void franka_remote_interface::apply_z_force(double mass, double duration)
 	{ send_command<command_force_z>(mass, duration); }
 
-void franka_remote_controller::open_gripper(double speed)
+void franka_remote_interface::open_gripper(double speed)
 	{ send_command<command_open_gripper>(speed); }
 
-void franka_remote_controller::close_gripper(double speed)
+void franka_remote_interface::close_gripper(double speed)
 	{ send_command<command_close_gripper>(speed); }
 
 
-bool franka_remote_controller::grasp_gripper(double speed, double force)
+bool franka_remote_interface::grasp_gripper(double speed, double force)
 {
 	return send_command<command_grasp_gripper>(speed, force) == command_result::success;
 }
 
 
-void franka_remote_controller::set_speed_factor(double speed_factor)
+void franka_remote_interface::set_speed_factor(double speed_factor)
 	{ send_command<command_set_speed>(speed_factor); }
 
-void franka_remote_controller::automatic_error_recovery()
+
+void franka_remote_interface::set_fts_bias(const std::array<double, 6>& bias)
+	{ send_command<command_set_fts_bias>(bias); }
+
+
+void franka_remote_interface::set_fts_load_mass(const std::array<double, 3>& load_mass)
+	{	send_command<command_set_fts_load_mass>(load_mass);}
+
+
+void franka_remote_interface::automatic_error_recovery()
 	{ send_command<command_recover_from_errors>(); }
 
 
-robot_config_7dof franka_remote_controller::current_config() const
+robot_config_7dof franka_remote_interface::current_config() const
 {
 	std::lock_guard<std::mutex> state_guard(state_lock_);
 	return current_config_;
 }
 
 
-double franka_remote_controller::current_gripper_pos() const
+double franka_remote_interface::current_gripper_pos() const
 {
 	std::lock_guard<std::mutex> state_guard(state_lock_);
 	return current_gripper_pos_;
 }
 
 
-double franka_remote_controller::max_gripper_pos() const
+double franka_remote_interface::max_gripper_pos() const
 {
 	std::lock_guard<std::mutex> state_guard(state_lock_);
 	return max_gripper_pos_;
 }
 
 
-bool franka_remote_controller::gripper_grasped() const
+bool franka_remote_interface::gripper_grasped() const
 {
 	std::lock_guard<std::mutex> state_guard(state_lock_);
 	return gripper_grasped_;
 }
 
 
-void franka_remote_controller::start_recording()
+void franka_remote_interface::start_recording()
 	{ send_command<command_start_recording>(); }
 
 
 std::pair<std::vector<std::array<double, 7>>, std::vector<std::array<double, 6>>>
-	franka_remote_controller::stop_recording()
+	franka_remote_interface::stop_recording()
 {
 	auto[q_sequence, f_sequence] = send_command<command_stop_recording>();
 	return {q_sequence, f_sequence};
 }
 
 
-void franka_remote_controller::update()
+void franka_remote_interface::update()
 {
 	while (socket_state_->states().empty())
 		socket_state_->update_messages();
@@ -149,7 +158,7 @@ void franka_remote_controller::update()
 	socket_state_->clear_states();
 }
 
-command_result franka_remote_controller::check_response(command_generic_response& response)
+command_result franka_remote_interface::check_response(command_generic_response& response)
 {
 	switch (response.result)
 	{
@@ -172,6 +181,8 @@ command_result franka_remote_controller::check_response(command_generic_response
 		throw realtime_exception{ std::move(response.reason) };
 	case command_result::invalid_operation:
 		throw invalid_operation_exception{ std::move(response.reason) };
+	case command_result::force_torque_sensor_exception:
+		throw ft_sensor_exception{};
 	case command_result::unknown_command:
 		throw unknown_command_exception{ std::move(response.reason) };
 	default:
@@ -180,9 +191,9 @@ command_result franka_remote_controller::check_response(command_generic_response
 }
 
 
-void franka_remote_controller::initialize_sockets()
+void franka_remote_interface::initialize_sockets()
 {
-	std::cout << "franka_remote_controller::initialize_sockets(): " <<
+	std::cout << "franka_remote_interface::initialize_sockets(): " <<
 				"Creating network connections.";
 
 	socket_control_.reset
@@ -193,7 +204,7 @@ void franka_remote_controller::initialize_sockets()
 }
 
 
-void franka_remote_controller::shutdown_sockets() noexcept
+void franka_remote_interface::shutdown_sockets() noexcept
 {
 	socket_control_.reset();
 	socket_state_.reset();

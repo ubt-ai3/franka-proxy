@@ -71,7 +71,7 @@ public:
 	* This returns a motion sampled at 1kHz, but the robot always remains in the position
 	* it was in when stop_playback() was called.
 	**/
-	std::pair<std::vector<std::array<double, 7>>, std::vector<std::array<double, 6>>>
+	std::pair<std::vector<robot_config_7dof>, std::vector<force_torque_config_cartesian>>
 		stop_recording() override;
 
 	/**

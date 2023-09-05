@@ -13,13 +13,14 @@
 
 
 #include <mutex>
+#include <Eigen/Geometry>
 
 #include "franka_controller.hpp"
 
 
 namespace franka_proxy
 {
-	class franka_remote_controller;
+	class franka_remote_interface;
 }
 
 
@@ -67,15 +68,18 @@ public:
 
 
 	void start_recording() override;
-	std::pair<std::vector<std::array<double, 7>>, std::vector<std::array<double, 6>>> stop_recording() override;
+	std::pair<std::vector<robot_config_7dof>, std::vector<force_torque_config_cartesian>> stop_recording() override;
 	void move_sequence(
 		std::vector<std::array<double, 7>> q_sequence,
 		std::vector<std::array<double, 6>> f_sequence,
 		std::vector<std::array<double, 6>> selection_vector_sequence) override;
+
+	void set_fts_bias(const Eigen::Vector<double, 6>& bias);
+	void set_fts_load_mass(const Eigen::Vector3d& load_mass);
 	
 private:
 
-	std::unique_ptr<franka_proxy::franka_remote_controller> controller_;
+	std::unique_ptr<franka_proxy::franka_remote_interface> controller_;
 
 	mutable std::mutex state_lock_;
 	double speed_factor_;
