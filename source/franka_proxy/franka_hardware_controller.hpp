@@ -20,7 +20,7 @@
 #include <franka/robot.h>
 #include <franka/gripper.h>
 
-#include "franka_motion_recorder.hpp"
+#include "ft_sensor/ft_sensor.hpp"
 
 
 namespace franka_proxy
@@ -30,6 +30,12 @@ namespace franka_proxy
 using robot_config_7dof = std::array<double, 7>;
 using robot_force_config = std::array<double, 6>;
 using robot_force_selection = std::array<double, 6>;
+
+
+namespace detail
+{
+	class motion_recorder;
+}
 
 
 /**
@@ -67,6 +73,13 @@ public:
 
 	void set_speed_factor(double speed_factor);
 
+	// @throws ft_sensor_connection_exception
+	void set_bias(const std::array<double, 6>& bias);
+
+	// @throws ft_sensor_connection_exception
+	void set_load_mass(const std::array<double, 3>& load_mass);
+
+
 	franka::RobotState robot_state() const;
 
 
@@ -88,10 +101,12 @@ public:
 		double mass, 
 		double duration);
 
+
 	/**
 	 * Starts/Stops the recording callback.
 	 */
 	void start_recording();
+	std::pair<std::vector<robot_config_7dof>, std::vector<robot_force_config>> start_recording(float seconds);
 	std::pair<std::vector<robot_config_7dof>, std::vector<robot_force_config>> stop_recording();
 	
 	/**
@@ -111,6 +126,7 @@ public:
 
 
 	static constexpr double default_gripper_speed = 0.025;
+
 
 
 private:
@@ -148,11 +164,14 @@ private:
 	mutable std::mutex speed_factor_lock_;
 	double speed_factor_;
 
-	detail::motion_recorder motion_recorder_;
-
 	// Gripper
 	mutable std::unique_ptr<franka::Gripper> gripper_;
 	double max_width_;
+
+	// FT-Sensor
+	mutable std::unique_ptr<ft_sensor> ft_sensor_;
+
+	std::unique_ptr<detail::motion_recorder> motion_recorder_;
 
 	
 	static constexpr double open_epsilon = 0.1;
@@ -173,6 +192,7 @@ private:
 	std::atomic_bool terminate_state_threads_;
 	std::thread robot_state_thread_;
 	std::thread gripper_state_thread_;
+
 
 };
 

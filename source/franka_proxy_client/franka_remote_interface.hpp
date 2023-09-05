@@ -1,20 +1,21 @@
 /**
  *************************************************************************
  *
- * @file franka_remote_controller.hpp
+ * @file franka_remote_interface.hpp
  *
  * Client side implementation of the franka_proxy.
  *
  ************************************************************************/
 
 
-#if !defined(INCLUDED__FRANKA_PROXY_CLIENT__FRANKA_REMOTE_CONTROLLER_HPP)
-#define INCLUDED__FRANKA_PROXY_CLIENT__FRANKA_REMOTE_CONTROLLER_HPP
+#if !defined(INCLUDED__FRANKA_PROXY_CLIENT__FRANKA_REMOTE_INTERFACE_HPP)
+#define INCLUDED__FRANKA_PROXY_CLIENT__FRANKA_REMOTE_INTERFACE_HPP
 
 
 #include <array>
 #include <mutex>
 #include <string>
+#include <Eigen/Geometry>
 
 #include <franka_proxy_share/franka_proxy_commands.hpp>
 
@@ -28,14 +29,14 @@ namespace franka_proxy
 using robot_config_7dof = std::array<double, 7>;
 
 
-class franka_remote_controller
+class franka_remote_interface
 {
 public:
 
-	franka_remote_controller
+	franka_remote_interface
 		(std::string proxy_ip);
 
-	~franka_remote_controller() noexcept;
+	~franka_remote_interface() noexcept;
 
 
 	/**
@@ -134,7 +135,7 @@ public:
 	 * todo docu
 	 */
 	std::pair<std::vector<std::array<double, 7>>, std::vector<std::array<double, 6>>> stop_recording();
-	
+
 	
 	/**
 	 * Send new target speed to robot.
@@ -146,6 +147,29 @@ public:
 	 * @throw viral_core::network_exception if the connection was lost.
 	 */
 	void set_speed_factor(double speed_factor);
+
+	/**
+	* Send new force/torque sensor bias
+	*
+	* @TODO: Check exceptions.
+	*
+	* @param[in] bias of the ft sensor (fx, fy, fz, tx, ty, tz)
+	*
+	*  @throw viral_core::force_torque_sensor_exception if force/torque sensor is unavailable.
+	*/
+	void set_fts_bias(const std::array<double, 6>& bias);
+
+
+	/**
+	* Send new load mass affecting the force/torque sensor
+	*
+	* @TODO: Check exceptions.
+	*
+	* @param[in] force in world coordinates produced by load mass
+	*
+	* @throw viral_core::force_torque_sensor_exception if force/torque sensor is unavailable.
+	*/
+	void set_fts_load_mass(const std::array<double, 3>& load_mass);
 
 
 	/**
@@ -202,6 +226,7 @@ private:
 	 * Throws command_exception, if the response indicates an error of this type.
 	 * Throws realtime_exception, if the response indicates an error of this type.
 	 * Throws invalid_operation, if the response indicates an error of this type.
+	 * Throws force_torque_sensor_exception, if the response indicates an error of this type.
 	 * Throws unknown_command, if the response indicates an error of this type.
 	 */
 	template<typename TCommandType, typename... TArgs, typename TReturnType = TResponseType<TCommandType>>
@@ -249,4 +274,4 @@ private:
 } /* namespace franka_proxy */
 
 
-#endif /* !defined(INCLUDED__FRANKA_PROXY_CLIENT__FRANKA_REMOTE_CONTROLLER_HPP) */
+#endif /* !defined(INCLUDED__FRANKA_PROXY_CLIENT__FRANKA_REMOTE_INTERFACE_HPP) */

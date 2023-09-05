@@ -8,8 +8,8 @@
  ************************************************************************/
 
 
-#if !defined(INCLUDED__FRANKA_PROXY__FRANKA_MOTION_RECORDER_HPP)
-#define INCLUDED__FRANKA_PROXY__FRANKA_MOTION_RECORDER_HPP
+#if !defined(INCLUDED__FRANKA_PROXY__MOTION_RECORDER_HPP)
+#define INCLUDED__FRANKA_PROXY__MOTION_RECORDER_HPP
 
 
 #include <array>
@@ -19,15 +19,13 @@
 
 #include <franka/robot.h>
 
-//#include <jr3_ft_sensor/force_torque_sensor.hpp>
-
 
 namespace franka_proxy
 {
+class ft_sensor;
+
 namespace detail
 {
-
-
 /**
  *************************************************************************
  *
@@ -40,33 +38,34 @@ class motion_recorder
 {
 public:
 	motion_recorder(
-		double rate,
 		franka::Robot& robot,
-		franka::RobotState& robot_state);
+		franka::RobotState& robot_state,
+		ft_sensor& fts);
+
 
 	void start();
-
-	// todo maybe add a timeout
 	void stop();
 
-	std::vector<std::array<double, 7>> latest_record();
+	// this is blocking
+	void start(float seconds);
 
+
+	std::vector<std::array<double, 7>> latest_record();
 	std::vector<std::array<double, 6>> latest_fts_record();
 
 private:
 	std::vector<std::array<double, 7>> record_;
 	std::vector<std::array<double, 6>> fts_record_;
 
-	std::thread t_{};
-	std::atomic_bool stop_{false};
 	franka::Robot& robot_;
 	franka::RobotState& robot_state_;
-	//ft_sensor_jr3 fts_;
+	ft_sensor& fts_;
+
+	std::thread t_{};
+	std::atomic_bool stop_{false};
 };
-
-
 } /* namespace detail */
 } /* namespace franka_proxy */
 
 
-#endif /* !defined(INCLUDED__FRANKA_PROXY__FRANKA_MOTION_RECORDER_HPP) */
+#endif /* !defined(INCLUDED__FRANKA_PROXY__MOTION_RECORDER_HPP) */

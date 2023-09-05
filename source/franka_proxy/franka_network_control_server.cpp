@@ -115,6 +115,8 @@ franka_control_server::franka_control_server
 	register_command_handler<command_start_recording>();
 	register_command_handler<command_stop_recording>();
 	register_command_handler<command_set_speed>();
+	register_command_handler<command_set_fts_bias>();
+	register_command_handler<command_set_fts_load_mass>();
 	register_command_handler<command_recover_from_errors>();
 
 	internal_thread_ = std::thread([this]{task_main();});
@@ -314,8 +316,14 @@ command_generic_response franka_control_server::process_command
 command_generic_response franka_control_server::process_command
 	(const command_start_recording&)
 {
-	controller_.start_recording();
-	return command_result::success;
+	try {
+		controller_.start_recording();
+		return command_result::success;
+	}
+	catch (ft_sensor_connection_exception&)
+	{
+		return command_result::force_torque_sensor_exception;
+	}
 }
 
 
@@ -332,6 +340,32 @@ command_generic_response franka_control_server::process_command
 {
 	controller_.set_speed_factor(cmd.speed);
 	return command_result::success;
+}
+
+command_generic_response franka_control_server::process_command(const command_set_fts_bias& cmd)
+{
+	try
+	{
+		controller_.set_bias(cmd.bias);
+		return command_result::success;
+	}
+	catch (...)
+	{
+		return command_result::force_torque_sensor_exception;
+	}
+}
+
+command_generic_response franka_control_server::process_command(const command_set_fts_load_mass& cmd)
+{
+	try
+	{
+		controller_.set_load_mass(cmd.load_mass);
+		return command_result::success;
+	}
+	catch (...)
+	{
+		return command_result::force_torque_sensor_exception;
+	}
 }
 
 

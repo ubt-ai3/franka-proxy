@@ -17,8 +17,6 @@
 
 namespace franka_control
 {
-
-
 //////////////////////////////////////////////////////////////////////////
 //
 // franka_controller_emulated
@@ -27,18 +25,19 @@ namespace franka_control
 
 
 franka_controller_emulated::franka_controller_emulated()
-	:
-	speed_factor_(0.f),
-	gripper_open_(false),
+	: speed_factor_(0.f),
+	  gripper_open_(false),
 
-	state_joint_values_
-		((Eigen::Matrix<double, 7, 1>() <<
-			0, 0, 0, -0.0698, 0, 0, 0).finished()),
-	state_force_torque_values_
-		((Eigen::Matrix<double, 6, 1>() <<
-			0, 0, 0, 0, 0, 0).finished()),
-	state_gripper_pos_(0)
-{ }
+	  state_joint_values_
+	  ((Eigen::Matrix<double, 7, 1>() <<
+		  0, 0, 0, -0.0698, 0, 0, 0).finished()),
+	  state_force_torque_values_
+	  ((Eigen::Matrix<double, 6, 1>() <<
+		  0, 0, 0, 0, 0, 0).finished()),
+	  state_gripper_pos_(0),
+	  state_position_in_sequence_(0)
+{
+}
 
 
 franka_controller_emulated::~franka_controller_emulated() noexcept = default;
@@ -57,7 +56,7 @@ bool almost_equal(const robot_config_7dof& xes, const robot_config_7dof& array)
 
 
 robot_config_7dof operator+
-	(const robot_config_7dof& xes, const robot_config_7dof& rhs)
+(const robot_config_7dof& xes, const robot_config_7dof& rhs)
 {
 	robot_config_7dof ret;
 	for (int i = 0; i < 7; ++i)
@@ -67,7 +66,7 @@ robot_config_7dof operator+
 
 
 robot_config_7dof operator-
-	(const robot_config_7dof& xes, const robot_config_7dof& rhs)
+(const robot_config_7dof& xes, const robot_config_7dof& rhs)
 {
 	robot_config_7dof ret;
 	for (int i = 0; i < 7; ++i)
@@ -150,7 +149,8 @@ void franka_controller_emulated::move(const robot_config_7dof& target)
 	}
 }
 
-void franka_controller_emulated::move_with_force(const robot_config_7dof& target, const force_torque_config_cartesian& target_force_torques)
+void franka_controller_emulated::move_with_force(const robot_config_7dof& target,
+                                                 const force_torque_config_cartesian& target_force_torques)
 {
 	robot_config_7dof current_joint_values = current_config();
 	force_torque_config_cartesian current_force_torque_values = current_force_torque();
@@ -162,14 +162,14 @@ void franka_controller_emulated::move_with_force(const robot_config_7dof& target
 		auto next_timepoint =
 			std::chrono::steady_clock::now() +
 			std::chrono::duration_cast<std::chrono::milliseconds>
-				(std::chrono::duration<double>(move_update_rate_));
-		
+			(std::chrono::duration<double>(move_update_rate_));
+
 		// Determine joint-space length each joint has moved
 		// since the last iteration.
 		auto now = std::chrono::steady_clock::now();
 		double seconds_passed =
 			std::chrono::duration_cast<std::chrono::duration<double>>
-				(now - last_time).count();
+			(now - last_time).count();
 		double move_length =
 			seconds_passed *
 			speed_factor() *
@@ -193,10 +193,10 @@ void franka_controller_emulated::move_with_force(const robot_config_7dof& target
 			// but don't actually reach it.
 			current_joint_values = current_joint_values +
 				(target - current_joint_values) *
-					(move_length / length_to_next);
+				(move_length / length_to_next);
 			current_force_torque_values = current_force_torque_values +
-					(target_force_torques - current_force_torque_values) *
-					(move_length / length_to_next);
+				(target_force_torques - current_force_torque_values) *
+				(move_length / length_to_next);
 		}
 
 		// Copy from process variables to exposed state.
@@ -212,7 +212,7 @@ void franka_controller_emulated::move_with_force(const robot_config_7dof& target
 
 
 bool franka_controller_emulated::move_until_contact
-	(const robot_config_7dof& target)
+(const robot_config_7dof& target)
 {
 	move(target);
 	return true;
@@ -220,19 +220,27 @@ bool franka_controller_emulated::move_until_contact
 
 
 void franka_controller_emulated::open_gripper()
-	{ move_gripper(max_gripper_pos_, gripper_default_speed_mps_); }
+{
+	move_gripper(max_gripper_pos_, gripper_default_speed_mps_);
+}
 
 
 void franka_controller_emulated::close_gripper()
-	{ move_gripper(0, gripper_default_speed_mps_); }
+{
+	move_gripper(0, gripper_default_speed_mps_);
+}
 
 
 void franka_controller_emulated::grasp_gripper(double speed, double force)
-	{ move_gripper(0, speed); }
+{
+	move_gripper(0, speed);
+}
 
 
 bool franka_controller_emulated::gripper_grasped() const
-	{ return false; }
+{
+	return false;
+}
 
 
 double franka_controller_emulated::speed_factor() const
@@ -249,7 +257,9 @@ void franka_controller_emulated::set_speed_factor(double speed_factor)
 }
 
 
-void franka_controller_emulated::automatic_error_recovery() {}
+void franka_controller_emulated::automatic_error_recovery()
+{
+}
 
 
 robot_config_7dof franka_controller_emulated::current_config() const
@@ -276,18 +286,20 @@ int franka_controller_emulated::max_gripper_pos() const
 }
 
 
-void franka_controller_emulated::update() {}
+void franka_controller_emulated::update()
+{
+}
 
-	
+
 void franka_controller_emulated::start_recording()
 {
 	std::lock_guard<std::mutex> lk(controller_mutex_);
 	recording_start_ = std::chrono::steady_clock::now();
 }
 
-	
-std::pair<std::vector<std::array<double, 7>>, std::vector<std::array<double, 6>>>
-	franka_controller_emulated::stop_recording()
+
+std::pair<std::vector<robot_config_7dof>, std::vector<force_torque_config_cartesian>>
+franka_controller_emulated::stop_recording()
 {
 	std::unique_lock<std::mutex> lk(controller_mutex_);
 	const auto recording_start = recording_start_;
@@ -297,22 +309,22 @@ std::pair<std::vector<std::array<double, 7>>, std::vector<std::array<double, 6>>
 	const auto duration = std::chrono::steady_clock::now() - recording_start;
 	const auto dur_ms = static_cast<size_t>(std::chrono::duration_cast<std::chrono::milliseconds>(duration).count());
 
-	std::pair<std::vector<std::array<double, 7>>, std::vector<std::array<double, 6>>> result;
+	std::pair<std::vector<robot_config_7dof>, std::vector<force_torque_config_cartesian>> result;
 
-	result.first = std::vector<std::array<double, 7>>(dur_ms, {jc[0], jc[1],jc[2],jc[3],jc[4],jc[5],jc[6]});
-	result.second = std::vector<std::array<double, 6>>(dur_ms, {0,0,0 ,0,0,0});
+	result.first = std::vector<robot_config_7dof>(dur_ms, {jc[0], jc[1], jc[2], jc[3], jc[4], jc[5], jc[6]});
+	result.second = std::vector<force_torque_config_cartesian>(dur_ms, {0, 0, 0, 0, 0, 0});
 
 	return result;
 }
 
-	
+
 void franka_controller_emulated::move_sequence
-	(std::vector<std::array<double, 7>> q_sequence,
-	 std::vector<std::array<double, 6>> f_sequence,
-	 std::vector<std::array<double, 6>>)
+(std::vector<std::array<double, 7>> q_sequence,
+ std::vector<std::array<double, 6>> f_sequence,
+ std::vector<std::array<double, 6>>)
 {
 	const auto start_time = std::chrono::steady_clock::now();
-	
+
 	//passed milliseconds since call of function
 	unsigned long long ticks_passed = 0;
 
@@ -322,18 +334,18 @@ void franka_controller_emulated::move_sequence
 		auto now = std::chrono::steady_clock::now();
 		const auto next_timepoint = now +
 			std::chrono::duration_cast<std::chrono::milliseconds>
-				(std::chrono::duration<double>(move_update_rate_));
-		 ticks_passed = std::max(std::chrono::duration_cast<std::chrono::milliseconds>(now - start_time).count(), 0ll);
+			(std::chrono::duration<double>(move_update_rate_));
+		ticks_passed = std::max(std::chrono::duration_cast<std::chrono::milliseconds>(now - start_time).count(), 0ll);
 
 
-		 //stop after sequence is finished
-		 if( ticks_passed >= q_sequence.size())
-			 break;
+		//stop after sequence is finished
+		if (ticks_passed >= q_sequence.size())
+			break;
 
 		// Copy from process variables to exposed state.
 		{
 			std::lock_guard<std::mutex> lk(controller_mutex_);
-			state_joint_values_ = Eigen::Map<const Eigen::Matrix<double, 7,1>>(q_sequence[ticks_passed].data());
+			state_joint_values_ = Eigen::Map<const Eigen::Matrix<double, 7, 1>>(q_sequence[ticks_passed].data());
 			state_force_torque_values_ = Eigen::Map<const Eigen::Matrix<double, 6, 1>>(f_sequence[ticks_passed].data());
 		}
 
@@ -341,7 +353,7 @@ void franka_controller_emulated::move_sequence
 	}
 
 	std::lock_guard<std::mutex> lk(controller_mutex_);
-	state_joint_values_ = Eigen::Map<const Eigen::Matrix<double, 7,1>>(q_sequence.back().data());
+	state_joint_values_ = Eigen::Map<const Eigen::Matrix<double, 7, 1>>(q_sequence.back().data());
 	state_force_torque_values_ = Eigen::Map<const Eigen::Matrix<double, 6, 1>>(f_sequence.back().data());
 }
 
@@ -357,14 +369,14 @@ void franka_controller_emulated::move_gripper(int target, double speed_mps)
 		auto next_timepoint =
 			std::chrono::steady_clock::now() +
 			std::chrono::duration_cast<std::chrono::milliseconds>
-				(std::chrono::duration<double>(move_update_rate_));
-		
+			(std::chrono::duration<double>(move_update_rate_));
+
 		double remaining_distance = target - current_pos;
 		auto now = std::chrono::steady_clock::now();
 		double seconds_passed =
 			std::chrono::duration_cast<std::chrono::duration<double>>
-				(now - last_time).count();
-		double move_length = 
+			(now - last_time).count();
+		double move_length =
 			seconds_passed * gripper_unit_per_m_ * speed_mps;
 
 		last_time = now;
@@ -392,12 +404,8 @@ void franka_controller_emulated::move_gripper(int target, double speed_mps)
 
 		std::this_thread::sleep_until(next_timepoint);
 	}
-	
+
 	std::lock_guard<std::mutex> lk(controller_mutex_);
 	state_gripper_pos_ = target;
 }
-
-
-
-
 } /* namespace franka_control */

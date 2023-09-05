@@ -277,7 +277,41 @@ struct command_set_speed
 void to_json(nlohmann::json& json, const command_set_speed& object);
 void from_json(const nlohmann::json& json, command_set_speed& object);
 
+/**
+ *************************************************************************
+ *
+ * @class command_set_fts_bias
+ *
+ * Sets the bias of the force/torque sensor
+ *
+ ************************************************************************/
+struct command_set_fts_bias
+{
+	using response_type = command_generic_response;
+	static constexpr char type[] = "set.fts_bias";
 
+	std::array<double, 6> bias;
+};
+void to_json(nlohmann::json& json, const command_set_fts_bias& object);
+void from_json(const nlohmann::json& json, command_set_fts_bias& object);
+
+/**
+ *************************************************************************
+ *
+ * @class command_set_fts_bias
+ *
+ * Sets the load_mass of the force/torque sensor
+ *
+ ************************************************************************/
+struct command_set_fts_load_mass
+{
+	using response_type = command_generic_response;
+	static constexpr char type[] = "set.fts_load_mass";
+
+	std::array<double, 3> load_mass;
+};
+void to_json(nlohmann::json& json, const command_set_fts_load_mass& object);
+void from_json(const nlohmann::json& json, command_set_fts_load_mass& object);
 
 
 /**
@@ -308,7 +342,7 @@ void from_json(const nlohmann::json& json, command_recover_from_errors& object);
  * Result code sent in `command_generic_response`.
  *
  ************************************************************************/
-enum class command_result: std::uint8_t
+enum class command_result : std::uint8_t
 {
 	success,
 	success_command_failed,
@@ -321,6 +355,7 @@ enum class command_result: std::uint8_t
 	realtime_exception,
 	invalid_operation,
 	franka_exception,
+	force_torque_sensor_exception,
 	unknown_command
 };
 
