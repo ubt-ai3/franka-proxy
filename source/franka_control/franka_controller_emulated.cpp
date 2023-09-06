@@ -318,10 +318,10 @@ franka_controller_emulated::stop_recording()
 }
 
 
-void franka_controller_emulated::move_sequence
-(std::vector<std::array<double, 7>> q_sequence,
- std::vector<std::array<double, 6>> f_sequence,
- std::vector<std::array<double, 6>>)
+void franka_controller_emulated::move_sequence(
+	const std::vector<robot_config_7dof>& q_sequence,
+	const std::vector<force_torque_config_cartesian>& f_sequence,
+	const std::vector<selection_position_force_vector>& selection_vector_sequence)
 {
 	const auto start_time = std::chrono::steady_clock::now();
 
