@@ -12,7 +12,6 @@
 #define INCLUDED__FRANKA_CONTROL__FRANKA_CONTROLLER_HPP
 
 
-#include <array>
 #include <atomic>
 #include <thread>
 #include <vector>
@@ -26,6 +25,7 @@ namespace franka_control
 
 typedef Eigen::Matrix<double, 7, 1> robot_config_7dof;
 typedef Eigen::Matrix<double, 6, 1> force_torque_config_cartesian;
+typedef Eigen::Matrix<double, 6, 1> selection_position_force_vector;
 
 
 /**
@@ -93,11 +93,11 @@ public:
 	virtual void update() = 0;
 	
 	virtual void start_recording() = 0;
-	virtual std::pair<std::vector<std::array<double, 7>>, std::vector<std::array<double, 6>>> stop_recording() = 0;
+	virtual std::pair<std::vector<robot_config_7dof>, std::vector<force_torque_config_cartesian>> stop_recording() = 0;
 	virtual void move_sequence(
-		std::vector<std::array<double, 7>> q_sequence,
-		std::vector<std::array<double, 6>> f_sequence, 
-		std::vector<std::array<double, 6>> selection_vector_sequence) = 0;
+		const std::vector<robot_config_7dof>& q_sequence,
+		const std::vector<force_torque_config_cartesian>& f_sequence,
+		const std::vector<selection_position_force_vector>& selection_vector_sequence) = 0;
 
 
 	// Legacy functions

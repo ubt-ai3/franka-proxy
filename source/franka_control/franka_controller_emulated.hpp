@@ -71,16 +71,16 @@ public:
 	* This returns a motion sampled at 1kHz, but the robot always remains in the position
 	* it was in when stop_playback() was called.
 	**/
-	std::pair<std::vector<std::array<double, 7>>, std::vector<std::array<double, 6>>>
+	std::pair<std::vector<robot_config_7dof>, std::vector<force_torque_config_cartesian>>
 		stop_recording() override;
 
 	/**
 	* Simulates a playback movement, but ignores force and selection values.
 	**/
-	void move_sequence
-		(std::vector<std::array<double, 7>> q_sequence,
-		 std::vector<std::array<double, 6>> f_sequence,
-		 std::vector<std::array<double, 6>>) override;
+	void move_sequence(
+		const std::vector<robot_config_7dof>& q_sequence,
+		const std::vector<force_torque_config_cartesian>& f_sequence,
+		const std::vector<selection_position_force_vector>& selection_vector_sequence) override;
 	
 private:
 	std::chrono::time_point<std::chrono::steady_clock> recording_start_;

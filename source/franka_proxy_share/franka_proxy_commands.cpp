@@ -84,58 +84,6 @@ void from_json(const nlohmann::json& json, command_move_hybrid_sequence& object)
 
 //////////////////////////////////////////////////////////////////////////
 //
-// command_apply_admittance
-//
-//////////////////////////////////////////////////////////////////////////
-
-
-void to_json(nlohmann::json& json, const command_apply_admittance& object)
-{
-	json["type"] = command_apply_admittance::type;
-	json["duration"] = object.duration;
-	json["log"] = object.log;
-}
-
-
-void from_json(const nlohmann::json& json, command_apply_admittance& object)
-{
-	json.at("duration").get_to(object.duration);
-	json.at("log").get_to(object.log);
-}
-
-
-
-
-//////////////////////////////////////////////////////////////////////////
-//
-// command_apply_admittance_adm_desired_stiffness
-//
-//////////////////////////////////////////////////////////////////////////
-
-
-void to_json(nlohmann::json& json, const command_apply_admittance_adm_desired_stiffness& object)
-{
-	json["type"] = command_apply_admittance_adm_desired_stiffness::type;
-	json["duration"] = object.duration;
-	json["log"] = object.log;
-	json["rotational_stiffness"] = object.rotational_stiffness;
-	json["translational_stiffness"] = object.translational_stiffness;
-}
-
-
-void from_json(const nlohmann::json& json, command_apply_admittance_adm_desired_stiffness& object)
-{
-	json.at("duration").get_to(object.duration);
-	json.at("log").get_to(object.log);
-	json.at("rotational_stiffness").get_to(object.rotational_stiffness);
-	json.at("translational_stiffness").get_to(object.translational_stiffness);
-}
-
-
-
-
-//////////////////////////////////////////////////////////////////////////
-//
 // command_apply_admittance_adm_imp_desired_stiffness
 //
 //////////////////////////////////////////////////////////////////////////
@@ -161,32 +109,6 @@ void from_json(const nlohmann::json& json, command_apply_admittance_adm_imp_desi
 	json.at("adm_translational_stiffness").get_to(object.adm_translational_stiffness);
 	json.at("imp_rotational_stiffness").get_to(object.imp_rotational_stiffness);
 	json.at("imp_translational_stiffness").get_to(object.imp_translational_stiffness);
-}
-
-
-
-
-//////////////////////////////////////////////////////////////////////////
-//
-// command_cartesian_impedance_hold_pose
-//
-//////////////////////////////////////////////////////////////////////////
-
-
-void to_json(nlohmann::json& json, const command_cartesian_impedance_hold_pose& object)
-{
-	json["type"] = command_cartesian_impedance_hold_pose::type;
-	json["duration"] = object.duration;
-	json["log"] = object.log;
-	json["use_stiff_damp_online_calc"] = object.use_stiff_damp_online_calc;
-}
-
-
-void from_json(const nlohmann::json& json, command_cartesian_impedance_hold_pose& object)
-{
-	json.at("duration").get_to(object.duration);
-	json.at("log").get_to(object.log);
-	json.at("use_stiff_damp_online_calc").get_to(object.use_stiff_damp_online_calc);
 }
 
 
@@ -221,31 +143,6 @@ void from_json(const nlohmann::json& json, command_cartesian_impedance_hold_pose
 
 
 
-
-//////////////////////////////////////////////////////////////////////////
-//
-// command_cartesian_impedance_poses
-//
-//////////////////////////////////////////////////////////////////////////
-
-
-void to_json(nlohmann::json& json, const command_cartesian_impedance_poses& object)
-{
-	json["type"] = command_cartesian_impedance_poses::type;
-	json["poses"] = object.poses;
-	json["duration"] = object.duration;
-	json["log"] = object.log;
-	json["use_stiff_damp_online_calc"] = object.use_stiff_damp_online_calc;
-}
-
-
-void from_json(const nlohmann::json& json, command_cartesian_impedance_poses& object)
-{
-	json.at("poses").get_to(object.poses);
-	json.at("duration").get_to(object.duration);
-	json.at("log").get_to(object.log);
-	json.at("use_stiff_damp_online_calc").get_to(object.use_stiff_damp_online_calc);
-}
 
 
 
@@ -282,27 +179,6 @@ void from_json(const nlohmann::json& json, command_cartesian_impedance_poses_des
 
 
 
-//////////////////////////////////////////////////////////////////////////
-//
-// command_joint_impedance_hold_position
-//
-//////////////////////////////////////////////////////////////////////////
-
-
-void to_json(nlohmann::json& json, const command_joint_impedance_hold_position& object)
-{
-	json["type"] = command_joint_impedance_hold_position::type;
-	json["duration"] = object.duration;
-	json["log"] = object.log;
-}
-
-
-void from_json(const nlohmann::json& json, command_joint_impedance_hold_position& object)
-{
-	json.at("duration").get_to(object.duration);
-	json.at("log").get_to(object.log);
-}
-
 
 
 
@@ -331,29 +207,6 @@ void from_json(const nlohmann::json& json, command_joint_impedance_hold_position
 
 
 
-
-//////////////////////////////////////////////////////////////////////////
-//
-// command_joint_impedance_positions
-//
-//////////////////////////////////////////////////////////////////////////
-
-
-void to_json(nlohmann::json& json, const command_joint_impedance_positions& object)
-{
-	json["type"] = command_joint_impedance_positions::type;
-	json["joint_positions"] = object.joint_positions;
-	json["duration"] = object.duration;
-	json["log"] = object.log;
-}
-
-
-void from_json(const nlohmann::json& json, command_joint_impedance_positions& object)
-{
-	json.at("joint_positions").get_to(object.joint_positions);
-	json.at("duration").get_to(object.duration);
-	json.at("log").get_to(object.log);
-}
 
 
 
@@ -548,6 +401,53 @@ void from_json(const nlohmann::json& json, command_set_speed& object)
 	{ json.at("speed").get_to(object.speed); }
 
 
+//////////////////////////////////////////////////////////////////////////
+//
+// command_set_fts_bias
+//
+//////////////////////////////////////////////////////////////////////////
+
+
+void to_json(nlohmann::json& json, const  command_set_fts_bias& object)
+{
+	json["type"] = command_set_fts_bias::type;
+	json["bias"] = nlohmann::json::array();
+	
+	for (int i = 0; i < object.bias.size(); i++)
+		json["bias"].push_back(object.bias[i]);
+}
+
+
+void from_json(const nlohmann::json& json, command_set_fts_bias& object)
+{
+	object.bias = std::array<double, 6>();
+	for (int i = 0; i < object.bias.size(); i++)
+		object.bias[i] = json.at("bias").at(i);
+}
+
+//////////////////////////////////////////////////////////////////////////
+//
+// command_set_fts_load_mass
+//
+//////////////////////////////////////////////////////////////////////////
+
+
+void to_json(nlohmann::json& json, const  command_set_fts_load_mass& object)
+{
+	json["type"] = command_set_fts_load_mass::type;
+	json["load_mass"] = nlohmann::json::array();
+
+	for (int i = 0; i < object.load_mass.size(); i++)
+		json["load_mass"].push_back(object.load_mass[i]);
+}
+
+
+void from_json(const nlohmann::json& json, command_set_fts_load_mass& object)
+{
+	object.load_mass = std::array<double, 3>();
+	for (int i = 0; i < object.load_mass.size(); i++)
+		object.load_mass[i] = json.at("load_mass").at(i);
+}
 
 
 //////////////////////////////////////////////////////////////////////////

@@ -46,8 +46,8 @@ namespace franka_proxy
 			state_lock_(state_lock),
 			state_(robot_state),
 			duration_(duration),
-			logging_(logging),
-			online_parameter_calc_(use_online_parameter_calc)
+			online_parameter_calc_(use_online_parameter_calc),
+			logging_(logging)
 		{
 			init_impedance_motion_generator(robot, state_lock, robot_state);
 
@@ -75,10 +75,10 @@ namespace franka_proxy
 			model_(robot.loadModel()),
 			state_lock_(state_lock),
 			state_(robot_state),
-			poses_(poses),
 			duration_(duration),
-			logging_(logging),
-			online_parameter_calc_(use_online_parameter_calc)
+			poses_(poses),
+			online_parameter_calc_(use_online_parameter_calc),
+			logging_(logging)
 		{
 			init_impedance_motion_generator(robot, state_lock, robot_state);
 

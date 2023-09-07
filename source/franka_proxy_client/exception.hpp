@@ -207,6 +207,18 @@ public:
 		{}
 };
 
+/**
+ *************************************************************************
+ * Thrown if force/troque sensor is unavailable.
+ ************************************************************************/
+class ft_sensor_exception : public remote_exception
+{
+public:
+
+	explicit ft_sensor_exception() noexcept
+		: remote_exception{""}
+	{}
+};
 
 
 	

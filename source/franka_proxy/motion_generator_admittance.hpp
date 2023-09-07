@@ -67,7 +67,7 @@ namespace franka_proxy
 			void set_admittance_translational_stiffness(double translational_stiffness);
 
 			void set_impedance_rotational_stiffness(double rotational_stiffness);
-			void set_impedance_translational_stiffness(double rotational_stiffness);
+			void set_impedance_translational_stiffness(double translational_stiffness);
 
 			double get_admittance_rotational_stiffness();
 			double get_admittance_translational_stiffness();

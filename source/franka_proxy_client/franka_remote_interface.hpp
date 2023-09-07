@@ -1,20 +1,21 @@
 /**
  *************************************************************************
  *
- * @file franka_remote_controller.hpp
+ * @file franka_remote_interface.hpp
  *
  * Client side implementation of the franka_proxy.
  *
  ************************************************************************/
 
 
-#if !defined(INCLUDED__FRANKA_PROXY_CLIENT__FRANKA_REMOTE_CONTROLLER_HPP)
-#define INCLUDED__FRANKA_PROXY_CLIENT__FRANKA_REMOTE_CONTROLLER_HPP
+#if !defined(INCLUDED__FRANKA_PROXY_CLIENT__FRANKA_REMOTE_INTERFACE_HPP)
+#define INCLUDED__FRANKA_PROXY_CLIENT__FRANKA_REMOTE_INTERFACE_HPP
 
 
 #include <array>
 #include <mutex>
 #include <string>
+#include <Eigen/Geometry>
 
 #include <franka_proxy_share/franka_proxy_commands.hpp>
 
@@ -28,14 +29,14 @@ namespace franka_proxy
 using robot_config_7dof = std::array<double, 7>;
 
 
-class franka_remote_controller
+class franka_remote_interface
 {
 public:
 
-	franka_remote_controller
+	franka_remote_interface
 		(std::string proxy_ip);
 
-	~franka_remote_controller() noexcept;
+	~franka_remote_interface() noexcept;
 
 
 	/**
@@ -84,34 +85,28 @@ public:
 	/**
 	 * Admittance controller using desired rotational and translational stiffness within the admittance and the impedance controller
 	*/
-	void apply_admittance(double duration, bool log);
-	void apply_admittance(double duration, bool log, double rotational_stiffness, double translational_stiffness);
 	void apply_admittance(double duration, bool log, double adm_rotational_stiffness, double adm_translational_stiffness, double imp_rotational_stiffness, double imp_translational_stiffness);
 
 	/**
 	 * Cartesian impedance controller to hold the current pose with desired rotational and translational stiffness
 	*/
-	void cartesian_impedance_hold_pose(double duration, bool log, bool use_stiff_damp_online_calc);
 	void cartesian_impedance_hold_pose(double duration, bool log, bool use_stiff_damp_online_calc, double rotational_stiffness, double translational_stiffness);
 
 	/**
 	*  Cartesian impedance controller to follow path of poses with desired rotational and translational stiffness
 	*  Duration parameter: duration to follow the complete path -> Example: 10s duration, 5 poses -> 2s per pose
 	*/
-	void cartesian_impedance_poses(std::list<std::array<double, 16>>& positions, double duration, bool log, bool use_stiff_damp_online_calc);
 	void cartesian_impedance_poses(std::list<std::array<double, 16>>& positions, double duration, bool log, bool use_stiff_damp_online_calc, double rotational_stiffness, double translational_stiffness);
 
 	/**
 	 * Joint space impedance controller to hold the current position with desired stiffness matrix parameter
 	*/
-	void joint_impedance_hold_position(double duration, bool log);
 	void joint_impedance_hold_position(double duration, bool log, std::array<double, 49> stiffness);
 
 	/**
 	*  Joint space impedance controller to follow path of positions with desired stiffness matrix parameter
 	*	Duration parameter: duration to follow the complete path -> Example: 10s duration, 5 positions -> 2s per position
 	*/
-	void joint_impedance_positions(std::list<std::array<double, 7>>& joint_positions, double duration, bool log);
 	void joint_impedance_positions(std::list<std::array<double, 7>>& joint_positions, double duration, bool log, std::array<double, 49> stiffness);
 
 	/**
@@ -166,7 +161,7 @@ public:
 	 * todo docu
 	 */
 	std::pair<std::vector<std::array<double, 7>>, std::vector<std::array<double, 6>>> stop_recording();
-	
+
 	
 	/**
 	 * Send new target speed to robot.
@@ -178,6 +173,29 @@ public:
 	 * @throw viral_core::network_exception if the connection was lost.
 	 */
 	void set_speed_factor(double speed_factor);
+
+	/**
+	* Send new force/torque sensor bias
+	*
+	* @TODO: Check exceptions.
+	*
+	* @param[in] bias of the ft sensor (fx, fy, fz, tx, ty, tz)
+	*
+	*  @throw viral_core::force_torque_sensor_exception if force/torque sensor is unavailable.
+	*/
+	void set_fts_bias(const std::array<double, 6>& bias);
+
+
+	/**
+	* Send new load mass affecting the force/torque sensor
+	*
+	* @TODO: Check exceptions.
+	*
+	* @param[in] load_mass: force in world coordinates produced by load mass
+	*
+	* @throw viral_core::force_torque_sensor_exception if force/torque sensor is unavailable.
+	*/
+	void set_fts_load_mass(const std::array<double, 3>& load_mass);
 
 
 	/**
@@ -234,6 +252,7 @@ private:
 	 * Throws command_exception, if the response indicates an error of this type.
 	 * Throws realtime_exception, if the response indicates an error of this type.
 	 * Throws invalid_operation, if the response indicates an error of this type.
+	 * Throws force_torque_sensor_exception, if the response indicates an error of this type.
 	 * Throws unknown_command, if the response indicates an error of this type.
 	 */
 	template<typename TCommandType, typename... TArgs, typename TReturnType = TResponseType<TCommandType>>
@@ -281,4 +300,4 @@ private:
 } /* namespace franka_proxy */
 
 
-#endif /* !defined(INCLUDED__FRANKA_PROXY_CLIENT__FRANKA_REMOTE_CONTROLLER_HPP) */
+#endif /* !defined(INCLUDED__FRANKA_PROXY_CLIENT__FRANKA_REMOTE_INTERFACE_HPP) */

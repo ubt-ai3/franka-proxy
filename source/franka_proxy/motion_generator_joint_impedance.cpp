@@ -71,8 +71,8 @@ namespace franka_proxy
 			model_(robot.loadModel()),
 			state_lock_(state_lock),
 			state_(robot_state),
-			joint_positions_(joint_positions),
 			duration_(duration),
+			joint_positions_(joint_positions),
 			logging_(logging)
 		{
 			init_impedance_motion_generator(robot, state_lock, robot_state);
