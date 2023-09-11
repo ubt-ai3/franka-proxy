@@ -131,6 +131,7 @@ add_library(
         ${CMAKE_CURRENT_SOURCE_DIR}/source/franka_control/franka_controller_remote.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/source/franka_control/franka_util.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/source/franka_control/ikfast.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/source/franka_control/payload_estimation.cpp
 )
 
 target_include_directories(

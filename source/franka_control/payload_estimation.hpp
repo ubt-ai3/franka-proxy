@@ -11,12 +11,11 @@
  * https://doi.org/10.1109/IROS.2008.4650672
  *
  ************************************************************************/
-
-##if !defined(INCLUDED__FRANKA_CONTROL__PAYLOAD_ESTIMATION)
+#if !defined(INCLUDED__FRANKA_CONTROL__PAYLOAD_ESTIMATION)
 #define INCLUDED__FRANKA_CONTROL__PAYLOAD_ESTIMATION
 
 #include <Eigen/Geometry>
-#include <Eigen/EulerAngles>
+#include <eigen3/unsupported/Eigen/EulerAngles>
 #include <vector>
 #include <array>
 
@@ -56,13 +55,16 @@ namespace payload_estimation
 	*************************************************************/
 	class ple
 	{
-		private static void preprocess(inter& store, std::array<double, 7>& q, Eigen::EulerAnglesXYZd& old_ang, Eigen::Matrix<double, 3, 1>& old_v, double seconds);
+	private:
+		static void preprocess(inter& store, std::array<double, 7>& q, Eigen::EulerAnglesXYZd& old_ang, Eigen::Matrix<double, 3, 1>& old_v, double seconds);
+		
+		static void compute_tls_solution(results& res, Eigen::MatrixXd& S, Eigen::MatrixXd& U);
 
-		public static void estimate_ceres(data& input, results& res);
+		
+	public: 
+		static void estimate_ceres(data& input, results& res);
 
-		private static void compute_tls_solution(results& res, Eigen::MatrixXd& S, Eigen::MatrixXd& U);
-
-		public static void estimate_tls(data& input, results& res);
+		static void estimate_tls(data& input, results& res);
 	};
 
 } /* namespace payload_estimation */
