@@ -19,7 +19,7 @@ namespace payload_estimation
 	* Common preprocessing for all PLE methods
 	*****************************************/
 
-	static void preprocess(inter& store, std::array<double, 7>& q, Eigen::EulerAnglesXYZd& old_ang, Eigen::Matrix<double, 3, 1>& old_v, double seconds) {
+	void ple::preprocess(inter& store, std::array<double, 7>& q, Eigen::EulerAnglesXYZd& old_ang, Eigen::Matrix<double, 3, 1>& old_v, double seconds) {
 		//targets for ikfast ComputerFk()
 		double* trans = new double[3];
 		double* rot = new double[9];
@@ -166,7 +166,7 @@ namespace payload_estimation
 		}
 	};
 
-	static void estimate_ceres(data& input, results& res) {
+	void ple::estimate_ceres(data& input, results& res) {
 		//initial setup
 		Eigen::EulerAnglesXYZd old_ang(0.0, 0.0, 0.0);
 		Eigen::Matrix<double, 3, 1> old_v(0.0, 0.0, 0.0);
@@ -231,7 +231,7 @@ namespace payload_estimation
 	* Payload estimation using TLS
 	*****************************/
 
-	static void compute_tls_solution(results& res, Eigen::MatrixXd& S, Eigen::MatrixXd& U) {
+	void ple::compute_tls_solution(results& res, Eigen::MatrixXd& S, Eigen::MatrixXd& U) {
 		//check for problems with the TLS solution
 		if (U(U.rows() - 1, U.cols() - 1) == 0) { throw std::runtime_error("No TLS solution exists for this data"); }
 		if (S(S.rows() - 1, S.cols() - 1) == S(S.rows() - 2, S.cols() - 2)) { std::cerr << "WARNING: TLS solution may be inaccurate or incorrect"; }
@@ -248,7 +248,7 @@ namespace payload_estimation
 					sol[6], sol[8], sol[9];
 	}
 
-	static void estimate_tls(data& input, results& res) {
+	void ple::estimate_tls(data& input, results& res) {
 		//initial setup
 		std::array<double, 6> ft0 = input[0].first.second;
 		std::array<double, 7> q0 = input[0].first.first;
