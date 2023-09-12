@@ -4,9 +4,8 @@
 #include <fstream>
 #include <nlohmann/json.hpp>
 
-
 #include "franka_control/franka_util.hpp"
-#include "franka_proxy/motion_recorder.hpp"
+
 
 franka_control::force_torque_config_cartesian schunk_ft_sensor_to_franka_calibration::calibrate_bias(
 	franka_control::franka_controller_remote& franka,
