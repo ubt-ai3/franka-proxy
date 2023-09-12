@@ -14,6 +14,7 @@
 
 #include <array>
 #include <cstdint>
+#include <list>
 #include <vector>
 #include <string>
 
@@ -99,6 +100,148 @@ struct command_move_hybrid_sequence
 
 void to_json(nlohmann::json& json, const command_move_hybrid_sequence& object);
 void from_json(const nlohmann::json& json, command_move_hybrid_sequence& object);
+
+
+
+
+/**
+ *************************************************************************
+ *
+ * @class command_apply_admittance_adm_imp_desired_stiffness
+ *
+ * Commands the robot to use the admittance controller with desired
+ * rotational and translational stiffness within the admittance and the
+ * impedance controller
+ *
+ ************************************************************************/
+struct command_apply_admittance_adm_imp_desired_stiffness
+{
+	using response_type = command_generic_response;
+	static constexpr char type[] = "admittance.apply_adm_imp_desired_stiffness";
+
+	double duration;
+	bool log;
+	double adm_rotational_stiffness;
+	double adm_translational_stiffness;
+	double imp_rotational_stiffness;
+	double imp_translational_stiffness;
+};
+
+void to_json(nlohmann::json&, const command_apply_admittance_adm_imp_desired_stiffness& object);
+void from_json(const nlohmann::json& json, command_apply_admittance_adm_imp_desired_stiffness& object);
+
+
+/**
+ *************************************************************************
+ *
+ * @class command_cartesian_impedance_hold_pose_desired_stiffness
+ *
+ * Commands the robot to use the cartesian impedance controller to hold the 
+ * current pose for a given duration using desired rotational and 
+ * translational stiffness
+ *
+ ************************************************************************/
+struct command_cartesian_impedance_hold_pose_desired_stiffness
+{
+	using response_type = command_generic_response;
+	static constexpr char type[] = "cartesian_impedance.hold_desired_stiffness";
+
+	double duration;
+	bool log;
+	bool use_stiff_damp_online_calc;
+	double rotational_stiffness;
+	double translational_stiffness;
+};
+
+void to_json(nlohmann::json&, const command_cartesian_impedance_hold_pose_desired_stiffness& object);
+void from_json(const nlohmann::json& json, command_cartesian_impedance_hold_pose_desired_stiffness& object);
+
+
+
+
+
+/**
+ *************************************************************************
+ *
+ * @class command_cartesian_impedance_poses_desired_stiffness
+ *
+ * Commands the robot to use the cartesian impedance controller to follow 
+ * a path of given poses for a given duration using desired rotational and
+ * translational stiffness
+ *
+ ************************************************************************/
+struct command_cartesian_impedance_poses_desired_stiffness
+{
+	using response_type = command_generic_response;
+	static constexpr char type[] = "cartesian_impedance.poses_desired_stiffness";
+
+	std::list<std::array<double, 16>> poses;
+	double duration;
+	bool log;
+	bool use_stiff_damp_online_calc;
+	double rotational_stiffness;
+	double translational_stiffness;
+};
+
+void to_json(nlohmann::json&, const command_cartesian_impedance_poses_desired_stiffness& object);
+void from_json(const nlohmann::json& json, command_cartesian_impedance_poses_desired_stiffness& object);
+
+
+
+
+/**
+ *************************************************************************
+ *
+ * @class command_joint_impedance_hold_position_desired_stiffness
+ *
+ * Commands the robot to use the joint space impedance controller to hold 
+ * the current position for a given duration using desired stiffness
+ * matrix parameter
+ *
+ ************************************************************************/
+struct command_joint_impedance_hold_position_desired_stiffness
+{
+	using response_type = command_generic_response;
+	static constexpr char type[] = "joint_impedance.hold_desired_stiffness";
+
+	double duration;
+	bool log;
+	std::array<double,  49> stiffness;
+};
+
+void to_json(nlohmann::json&, const command_joint_impedance_hold_position_desired_stiffness& object);
+void from_json(const nlohmann::json& json, command_joint_impedance_hold_position_desired_stiffness& object);
+
+
+
+
+/**
+ *************************************************************************
+ *
+ * @class command_joint_impedance_positions_desired_stiffness
+ *
+ * Commands the robot to use the joint impedance controller to follow a
+ * path of given positions for a given duration using desired stiffness
+ * matrix parameter
+ *
+ ************************************************************************/
+struct command_joint_impedance_positions_desired_stiffness
+{
+	using response_type = command_generic_response;
+	static constexpr char type[] = "joint_impedance.positions_desired_stiffness";
+
+	std::list<std::array<double, 7>> joint_positions;
+	double duration;
+	bool log;
+	std::array<double, 49> stiffness;
+};
+
+void to_json(nlohmann::json&, const command_joint_impedance_positions_desired_stiffness& object);
+void from_json(const nlohmann::json& json, command_joint_impedance_positions_desired_stiffness& object);
+
+
+
+
 
 
 

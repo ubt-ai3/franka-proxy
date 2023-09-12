@@ -19,8 +19,10 @@
 #include <franka/exception.h>
 #include <franka/model.h>
 
+#include "motion_generator_admittance.hpp"
 #include "motion_recorder.hpp"
 #include "motion_generator_force.hpp"
+#include "motion_generator_joint_impedance.hpp"
 #include "motion_generator_joint_max_accel.hpp"
 #include "motion_generator_seq_cart_vel_tau.hpp"
 
@@ -121,8 +123,186 @@ void franka_hardware_controller::apply_z_force
 
 	set_control_loop_running(false);
 }
+void franka_hardware_controller::apply_admittance(const double duration, const bool log, const double adm_rotational_stiffness, const double adm_translational_stiffness, const double imp_rotational_stiffness, const double imp_translational_stiffness)
+{
+	detail::admittance_motion_generator motion_generator(robot_, robot_state_lock_, robot_state_, duration, log);
 
+	motion_generator.set_admittance_rotational_stiffness(adm_rotational_stiffness);
+	motion_generator.set_admittance_translational_stiffness(adm_translational_stiffness);
 
+	motion_generator.set_impedance_rotational_stiffness(imp_rotational_stiffness);
+	motion_generator.set_impedance_translational_stiffness(imp_translational_stiffness);
+
+	try
+	{
+		set_control_loop_running(true);
+		{
+			// Lock the current_state_lock_ to wait for state_thread_ to finish.
+			std::lock_guard<std::mutex> state_guard(robot_state_lock_);
+		}
+
+		robot_.control(
+			[&](const franka::RobotState& robot_state,
+				franka::Duration period) -> franka::Torques
+			{
+				return motion_generator.callback(robot_state, period);
+			}, true, 10.0
+		);
+	}
+	catch (const franka::Exception&)
+	{
+		set_control_loop_running(false);
+		throw;
+	}
+
+	set_control_loop_running(false);
+}
+void franka_hardware_controller::joint_impedance_hold_position(const double duration, const bool log, const std::array<double, 49> stiffness)
+{
+	detail::joint_impedance_motion_generator motion_generator(robot_, robot_state_lock_, robot_state_, duration, log);
+
+	motion_generator.set_stiffness(stiffness); // always true;
+
+	try
+	{
+		set_control_loop_running(true);
+		{
+			// Lock the current_state_lock_ to wait for state_thread_ to finish.
+			std::lock_guard<std::mutex> state_guard(robot_state_lock_);
+		}
+
+		robot_.control(
+			[&](const franka::RobotState& robot_state,
+				franka::Duration period) -> franka::Torques
+			{
+				return motion_generator.callback
+				(robot_state, period,
+					[&](const double time) -> Eigen::Matrix<double, 7, 1>
+					{
+						return motion_generator.calculate_joint_position_error(robot_state, time);
+					}
+				);
+			}, true, 10.0
+		);
+	}
+	catch (const franka::Exception&)
+	{
+		set_control_loop_running(false);
+		throw;
+	}
+
+	set_control_loop_running(false);
+}
+void franka_hardware_controller::joint_impedance_positions(const std::list<std::array<double, 7>>& joint_positions, const double duration, const bool log, const std::array<double, 49> stiffness)
+{
+	detail::joint_impedance_motion_generator motion_generator(robot_, robot_state_lock_, robot_state_, joint_positions, duration, log);
+
+	motion_generator.set_stiffness(stiffness);
+
+	try
+	{
+		set_control_loop_running(true);
+		{
+			// Lock the current_state_lock_ to wait for state_thread_ to finish.
+			std::lock_guard<std::mutex> state_guard(robot_state_lock_);
+		}
+
+		robot_.control(
+			[&](const franka::RobotState& robot_state,
+				franka::Duration period) -> franka::Torques
+			{
+				return motion_generator.callback
+				(robot_state, period,
+					[&](const double time) -> Eigen::Matrix<double, 7, 1>
+					{
+						return motion_generator.calculate_joint_position_error(robot_state, time);
+					}
+				);
+			}, true, 10.0
+		);
+	}
+	catch (const franka::Exception&)
+	{
+		set_control_loop_running(false);
+		throw;
+	}
+
+	set_control_loop_running(false);
+}
+void franka_hardware_controller::cartesian_impedance_hold_pose(const double duration, const bool log, const bool use_stiff_damp_online_calc, const double rotational_stiffness, const double translational_stiffness)
+{
+	detail::cartesian_impedance_motion_generator motion_generator(robot_, robot_state_lock_, robot_state_, duration, log, use_stiff_damp_online_calc);
+
+	motion_generator.set_rotational_stiffness(rotational_stiffness);
+	motion_generator.set_translational_stiffness(translational_stiffness);
+
+	try
+	{
+		set_control_loop_running(true);
+		{
+			// Lock the current_state_lock_ to wait for state_thread_ to finish.
+			std::lock_guard<std::mutex> state_guard(robot_state_lock_);
+		}
+
+		robot_.control(
+			[&](const franka::RobotState& robot_state,
+				franka::Duration period) -> franka::Torques
+			{
+				return motion_generator.callback
+				(robot_state, period,
+					[&](const double time) -> Eigen::Matrix<double, 6, 1>
+					{
+						return motion_generator.calculate_position_error(robot_state, time);
+					}
+				);
+			}, true, 10.0
+		);
+	}
+	catch (const franka::Exception&)
+	{
+		set_control_loop_running(false);
+		throw;
+	}
+
+	set_control_loop_running(false);
+}
+void franka_hardware_controller::cartesian_impedance_poses(const std::list<std::array<double, 16>>& poses, const double duration, const bool log, const bool use_stiff_damp_online_calc, const double rotational_stiffness, const double translational_stiffness)
+{
+	detail::cartesian_impedance_motion_generator motion_generator(robot_, robot_state_lock_, robot_state_, poses, duration, log, use_stiff_damp_online_calc);
+
+	motion_generator.set_rotational_stiffness(rotational_stiffness);
+	motion_generator.set_translational_stiffness(translational_stiffness);
+
+	try
+	{
+		set_control_loop_running(true);
+		{
+			// Lock the current_state_lock_ to wait for state_thread_ to finish.
+			std::lock_guard<std::mutex> state_guard(robot_state_lock_);
+		}
+
+		robot_.control(
+			[&](const franka::RobotState& robot_state,
+				franka::Duration period) -> franka::Torques
+			{
+				return motion_generator.callback
+				(robot_state, period,
+					[&](const double time) -> Eigen::Matrix<double, 6, 1>
+					{
+						return motion_generator.calculate_position_error(robot_state, time);
+					}
+				);
+			}, true, 10.0
+		);
+	}
+	catch (const franka::Exception&)
+	{
+		set_control_loop_running(false);
+		throw;
+	}
+
+	set_control_loop_running(false);
+}
 void franka_hardware_controller::move_to(const robot_config_7dof& target)
 {
 	initialize_parameters();

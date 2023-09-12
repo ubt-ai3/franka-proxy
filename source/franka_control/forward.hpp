@@ -23,8 +23,6 @@ class franka_controller_emulated;
 class franka_controller_remote;
 
 
-
-
 } /* namespace franka_control */
 
 

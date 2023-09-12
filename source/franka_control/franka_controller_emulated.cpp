@@ -12,8 +12,6 @@
 
 #include <iostream>
 
-#include "exception.hpp"
-
 
 namespace franka_control
 {
@@ -318,15 +316,14 @@ franka_controller_emulated::stop_recording()
 }
 
 
-void franka_controller_emulated::move_sequence
-(std::vector<std::array<double, 7>> q_sequence,
- std::vector<std::array<double, 6>> f_sequence,
- std::vector<std::array<double, 6>>)
+void franka_controller_emulated::move_sequence(
+	const std::vector<robot_config_7dof>& q_sequence,
+	const std::vector<force_torque_config_cartesian>& f_sequence,
+	const std::vector<selection_position_force_vector>& selection_vector_sequence)
 {
 	const auto start_time = std::chrono::steady_clock::now();
 
 	//passed milliseconds since call of function
-	unsigned long long ticks_passed = 0;
 
 	for (;;)
 	{
@@ -335,7 +332,8 @@ void franka_controller_emulated::move_sequence
 		const auto next_timepoint = now +
 			std::chrono::duration_cast<std::chrono::milliseconds>
 			(std::chrono::duration<double>(move_update_rate_));
-		ticks_passed = std::max(std::chrono::duration_cast<std::chrono::milliseconds>(now - start_time).count(), 0ll);
+		unsigned long long ticks_passed = std::max(
+			std::chrono::duration_cast<std::chrono::milliseconds>(now - start_time).count(), 0ll);
 
 
 		//stop after sequence is finished

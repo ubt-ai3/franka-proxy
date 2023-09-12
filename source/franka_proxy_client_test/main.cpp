@@ -1,5 +1,4 @@
 #include <atomic>
-#include <fstream>
 #include <iostream>
 #include <thread>
 #include <utility>
@@ -15,8 +14,8 @@ template <class Function> void execute_retry(Function&& f, franka_proxy::franka_
 
 int main()
 {
-	franka_proxy_client_test("132.180.194.112");
-	//franka_proxy_client_test("127.0.0.1");
+	//franka_proxy_client_test("132.180.194.112");
+	franka_proxy_client_test("127.0.0.1");
 	return 0;
 }
 
@@ -83,6 +82,51 @@ void franka_proxy_client_test(const std::string& ip)
 	//robot.apply_z_force(1.0, 5.0);
 
 	std::cout << "Finished Force Test." << std::endl;
+
+
+	std::cout << "Starting Impedance - Hold Position Test." << std::endl;
+
+	std::array<double, 49> stiffness{0.};
+	stiffness[0] = stiffness[8] = stiffness[16] = stiffness[24] = 600.; // first four joints
+	stiffness[32] = 250.; 
+	stiffness[40] = 150.; 
+	stiffness[48] = 50.; 
+	robot.joint_impedance_hold_position(10, false, stiffness);
+
+	std::cout << "Finished Impedance - Hold Position Test." << std::endl;
+
+
+	std::cout << "Starting Impedance - Follow Poses with Cartesian Impedance Test." << std::endl;
+	// positions
+	std::list<std::array<double, 16>> poses_for_cart = {
+		{0.321529, 0.8236, 0.467208, 0, 0.931889, -0.187754, -0.310343, 0, -0.167882, 0.53518, -0.827888, 0, 0.426976, 0.382873, 0.324984, 1},
+		{0.323711, 0.604326, 0.727999, 0, 0.698631, -0.671549, 0.246814, 0, 0.638056, 0.428714, -0.639601, 0, 0.600692, 0.372768, 0.415227, 1},
+		{0.826378, 0.559426, 0.0642109, 0, 0.562775, -0.824385, -0.0604543, 0, 0.0191152, 0.086096, -0.996103, 0, 0.503131, 0.2928, 0.296891, 1}
+	};
+
+	robot.cartesian_impedance_poses(poses_for_cart, 10, false, false, 50., 300.);
+
+	std::cout << "Finished Impedance - Follow Poses with Cartesian Impedance Test." << std::endl;
+
+
+	std::cout << "Starting Impedance - Follow Poses with Joint Impedance Test." << std::endl;
+	// positions
+	std::list<std::array<double, 16>> poses_for_joint = {
+		{0.321529, 0.8236, 0.467208, 0, 0.931889, -0.187754, -0.310343, 0, -0.167882, 0.53518, -0.827888, 0, 0.426976, 0.382873, 0.324984, 1},
+		{0.323711, 0.604326, 0.727999, 0, 0.698631, -0.671549, 0.246814, 0, 0.638056, 0.428714, -0.639601, 0, 0.600692, 0.372768, 0.415227, 1},
+		{0.826378, 0.559426, 0.0642109, 0, 0.562775, -0.824385, -0.0604543, 0, 0.0191152, 0.086096, -0.996103, 0, 0.503131, 0.2928, 0.296891, 1}
+	};
+
+	robot.cartesian_impedance_poses(poses_for_joint, 10, false, false, 50., 300.);
+
+	std::cout << "Finished Impedance - Follow Poses with Joint Impedance Test." << std::endl;
+
+
+	std::cout << "Starting Admittance - Apply Force Test." << std::endl;
+
+	robot.apply_admittance(10, true, 10., 150., 10., 150.);
+
+	std::cout << "Finished Admittance - Apply Force Test." << std::endl;
 
 
 	//std::cout << "Starting FK/IK Test." << std::endl;

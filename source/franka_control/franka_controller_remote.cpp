@@ -143,16 +143,33 @@ std::pair<std::vector<robot_config_7dof>, std::vector<force_torque_config_cartes
 
 
 void franka_controller_remote::move_sequence(
-	std::vector<std::array<double, 7>> q_sequence,
-	std::vector<std::array<double, 6>> f_sequence,
-	std::vector<std::array<double, 6>> selection_vector_sequence)
+	const std::vector<robot_config_7dof>& q_sequence,
+	const std::vector<force_torque_config_cartesian>& f_sequence,
+	const std::vector<selection_position_force_vector>& selection_vector_sequence)
 {
-	controller_->move_to(q_sequence.front());
-	controller_->move_sequence(q_sequence, f_sequence, selection_vector_sequence);
-	controller_->move_to(q_sequence.back());
+	// todo do this efficient
+	std::vector<std::array<double, 7>> joints;
+	std::vector<std::array<double, 6>> forces;
+	std::vector<std::array<double, 6>> selection;
+
+	joints.reserve(q_sequence.size());
+	for (auto datum : q_sequence)
+		joints.emplace_back(std::array<double, 7>{datum(0), datum(1), datum(2), datum(3), datum(4), datum(5), datum(6)});
+
+	forces.reserve(f_sequence.size());
+	for (auto datum : f_sequence)
+		forces.emplace_back(std::array<double, 6>{datum(0), datum(1), datum(2), datum(3), datum(4), datum(5)});
+
+	selection.reserve(selection_vector_sequence.size());
+	for (auto datum : selection_vector_sequence)
+		selection.emplace_back(std::array<double, 6>{datum(0), datum(1), datum(2), datum(3), datum(4), datum(5)});
+
+	controller_->move_to(joints.front());
+	controller_->move_sequence(joints, forces, selection);
+	controller_->move_to(joints.back());
 }
 
-void franka_controller_remote::set_fts_bias(const Eigen::Vector<double, 6>& bias)
+void franka_controller_remote::set_fts_bias(const force_torque_config_cartesian& bias)
 {
 	controller_->set_fts_bias({ bias[0], bias[1], bias[2], bias[3], bias[4], bias[5] });
 }

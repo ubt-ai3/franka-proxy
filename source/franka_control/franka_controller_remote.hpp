@@ -70,11 +70,11 @@ public:
 	void start_recording() override;
 	std::pair<std::vector<robot_config_7dof>, std::vector<force_torque_config_cartesian>> stop_recording() override;
 	void move_sequence(
-		std::vector<std::array<double, 7>> q_sequence,
-		std::vector<std::array<double, 6>> f_sequence,
-		std::vector<std::array<double, 6>> selection_vector_sequence) override;
+		const std::vector<robot_config_7dof>& q_sequence,
+		const std::vector<force_torque_config_cartesian>& f_sequence,
+		const std::vector<selection_position_force_vector>& selection_vector_sequence) override;
 
-	void set_fts_bias(const Eigen::Vector<double, 6>& bias);
+	void set_fts_bias(const force_torque_config_cartesian& bias);
 	void set_fts_load_mass(const Eigen::Vector3d& load_mass);
 	
 private:

@@ -12,83 +12,74 @@
 
 #include <exception>
 #include <string>
-#include <string_view>
 #include <iostream>
 
 #include <asio/read.hpp>
-
 #include <franka/exception.h>
-#include <franka/robot_state.h>
-
 #include <nlohmann/json.hpp>
 
 
 namespace
 {
-	using namespace franka_proxy;
+using namespace franka_proxy;
 
-	/**
-	 * Executes a given functor with given arguments and decays exceptions to meaningful responses.
-	 */
-	template<typename TFunctor, typename... TArgs>
-	nlohmann::json execute_safe(TFunctor functor, TArgs... args)
+/**
+ * Executes a given functor with given arguments and decays exceptions to meaningful responses.
+ */
+template <typename TFunctor, typename... TArgs> nlohmann::json execute_safe(TFunctor functor, TArgs... args)
+{
+	try
 	{
-		try
-		{
-			return functor(std::forward<TArgs>(args)...);
-		}
-		catch (const franka::ControlException& exc)
-		{
-			std::cout << "franka_control_server::receive_requests(): " << "Encountered control exception." << std::endl;
-			return command_generic_response{ command_result::control_exception, exc.what() };
-		}
-		catch (const franka::CommandException& exc)
-		{
-			std::cout << "franka_control_server::receive_requests(): " << "Encountered command exception." << std::endl;
-			return command_generic_response{ command_result::command_exception, exc.what() };
-		}
-		catch (const franka::NetworkException& exc)
-		{
-			std::cout << "franka_control_server::receive_requests(): " << "Encountered command exception." << std::endl;
-			return command_generic_response{ command_result::network_exception, exc.what()};
-		}
-		catch (const franka::RealtimeException& exc)
-		{
-			std::cout << "franka_control_server::receive_requests(): " << "Encountered realtime exception." << std::endl;
-			return command_generic_response{ command_result::realtime_exception, exc.what() };
-		}
-		catch (const franka::ModelException& exc)
-		{
-			std::cout << "franka_control_server::receive_requests(): " << "Encountered model exception." << std::endl;
-			return command_generic_response{ command_result::model_exception, exc.what() };
-		}
-		catch (const franka::ProtocolException& exc)
-		{
-			std::cout << "franka_control_server::receive_requests(): " << "Encountered protocol exception." << std::endl;
-			return command_generic_response{ command_result::protocol_exception, exc.what() };
-		}
-		catch (const franka::IncompatibleVersionException& exc)
-		{
-			std::cout << "franka_control_server::receive_requests(): " << "Encountered incompatible version exception." << std::endl;
-			return command_generic_response{ command_result::incompatible_version, exc.what() };
-		}
-		catch (const franka::Exception& exc)
-		{
-			std::cout << "franka_control_server::receive_requests(): " << "Encountered generic franka exception." << std::endl;
-			return command_generic_response{ command_result::franka_exception, exc.what() };
-		}
+		return functor(std::forward<TArgs>(args)...);
 	}
-
-	
+	catch (const franka::ControlException& exc)
+	{
+		std::cout << "franka_control_server::receive_requests(): " << "Encountered control exception." << std::endl;
+		return command_generic_response{command_result::control_exception, exc.what()};
+	}
+	catch (const franka::CommandException& exc)
+	{
+		std::cout << "franka_control_server::receive_requests(): " << "Encountered command exception." << std::endl;
+		return command_generic_response{command_result::command_exception, exc.what()};
+	}
+	catch (const franka::NetworkException& exc)
+	{
+		std::cout << "franka_control_server::receive_requests(): " << "Encountered command exception." << std::endl;
+		return command_generic_response{command_result::network_exception, exc.what()};
+	}
+	catch (const franka::RealtimeException& exc)
+	{
+		std::cout << "franka_control_server::receive_requests(): " << "Encountered realtime exception." << std::endl;
+		return command_generic_response{command_result::realtime_exception, exc.what()};
+	}
+	catch (const franka::ModelException& exc)
+	{
+		std::cout << "franka_control_server::receive_requests(): " << "Encountered model exception." << std::endl;
+		return command_generic_response{command_result::model_exception, exc.what()};
+	}
+	catch (const franka::ProtocolException& exc)
+	{
+		std::cout << "franka_control_server::receive_requests(): " << "Encountered protocol exception." << std::endl;
+		return command_generic_response{command_result::protocol_exception, exc.what()};
+	}
+	catch (const franka::IncompatibleVersionException& exc)
+	{
+		std::cout << "franka_control_server::receive_requests(): " << "Encountered incompatible version exception." <<
+			std::endl;
+		return command_generic_response{command_result::incompatible_version, exc.what()};
+	}
+	catch (const franka::Exception& exc)
+	{
+		std::cout << "franka_control_server::receive_requests(): " << "Encountered generic franka exception." <<
+			std::endl;
+		return command_generic_response{command_result::franka_exception, exc.what()};
+	}
 }
-
-
+}
 
 
 namespace franka_proxy
 {
-
-
 //////////////////////////////////////////////////////////////////////////
 //
 // franka_control_server
@@ -97,17 +88,21 @@ namespace franka_proxy
 
 
 franka_control_server::franka_control_server
-	(std::uint16_t control_port,
-	 franka_hardware_controller& controller)
-	:
-	controller_(controller),
-	server_(create_server(control_port)),
-	terminate_internal_thread_(false)
+(std::uint16_t control_port,
+ franka_hardware_controller& controller)
+	: controller_(controller),
+	  server_(create_server(control_port)),
+	  terminate_internal_thread_(false)
 {
 	// Register command handlers.
 	register_command_handler<command_move_to_config>();
 	register_command_handler<command_move_hybrid_sequence>();
 	register_command_handler<command_move_until_contact>();
+	register_command_handler<command_apply_admittance_adm_imp_desired_stiffness>();
+	register_command_handler<command_cartesian_impedance_hold_pose_desired_stiffness>();
+	register_command_handler<command_cartesian_impedance_poses_desired_stiffness>();
+	register_command_handler<command_joint_impedance_hold_position_desired_stiffness>();
+	register_command_handler<command_joint_impedance_positions_desired_stiffness>();
 	register_command_handler<command_force_z>();
 	register_command_handler<command_open_gripper>();
 	register_command_handler<command_close_gripper>();
@@ -119,7 +114,7 @@ franka_control_server::franka_control_server
 	register_command_handler<command_set_fts_load_mass>();
 	register_command_handler<command_recover_from_errors>();
 
-	internal_thread_ = std::thread([this]{task_main();});
+	internal_thread_ = std::thread([this] { task_main(); });
 }
 
 
@@ -145,7 +140,7 @@ void franka_control_server::task_main()
 		auto connection =
 			std::make_unique<asio::ip::tcp::socket>(server_.accept(error));
 
-		if(!error)
+		if (!error)
 			connection_ = std::move(connection);
 
 		if (!connection_)
@@ -166,7 +161,8 @@ void franka_control_server::task_main()
 		{
 			std::cout << "franka_control_server::task_main(): ";
 			if (exc.code() == asio::error::connection_reset)
-				std::cout << " The connection was reset by the client. Dropping stream and stopping robot." << std::endl;
+				std::cout << " The connection was reset by the client. Dropping stream and stopping robot." <<
+					std::endl;
 			else if (exc.code() == asio::error::connection_aborted)
 				std::cout << " The connection was aborted. Dropping stream and stopping robot." << std::endl;
 			else if (exc.code() == asio::error::timed_out)
@@ -184,7 +180,7 @@ void franka_control_server::task_main()
 
 			controller_.stop_movement();
 			connection_.reset();
-		} 
+		}
 		catch (...)
 		{
 			std::cerr << "franka_control_server::task_main(): " <<
@@ -200,7 +196,7 @@ void franka_control_server::task_main()
 
 
 asio::ip::tcp::acceptor franka_control_server::create_server
-	(std::uint16_t control_port)
+(std::uint16_t control_port)
 {
 	asio::ip::tcp::acceptor acceptor(io_context_);
 	asio::ip::tcp::endpoint endpoint(asio::ip::tcp::v4(), control_port);
@@ -217,12 +213,12 @@ asio::ip::tcp::acceptor franka_control_server::create_server
 void franka_control_server::receive_requests()
 {
 	std::uint64_t content_length;
-	asio::read
+	read
 		(*connection_, asio::buffer(&content_length, sizeof(std::uint64_t)));
 
 	std::string content{};
 	content.resize(content_length);
-	asio::read(*connection_, asio::buffer(content));
+	read(*connection_, asio::buffer(content));
 
 	const auto send_response =
 		[&](const nlohmann::json& response)
@@ -236,13 +232,14 @@ void franka_control_server::receive_requests()
 
 	const auto message = nlohmann::json::parse(content);
 	const auto fit = command_handlers_.find(message.value("type", ""));
-	if (fit == command_handlers_.end()) {
+	if (fit == command_handlers_.end())
+	{
 		std::cerr <<
 			"franka_control_server::receive_requests(): " <<
 			"Received unknown command of type: " <<
 			message.value("type", "") << std::endl;
-		
-		command_generic_response response{ command_result::unknown_command };
+
+		command_generic_response response{command_result::unknown_command};
 		send_response(response);
 		return;
 	}
@@ -253,7 +250,7 @@ void franka_control_server::receive_requests()
 
 
 command_generic_response franka_control_server::process_command
-	(const command_move_to_config& cmd)
+(const command_move_to_config& cmd)
 {
 	controller_.move_to(cmd.target_joint_config);
 	return command_result::success;
@@ -261,7 +258,7 @@ command_generic_response franka_control_server::process_command
 
 
 command_generic_response franka_control_server::process_command
-	(const command_move_hybrid_sequence& cmd)
+(const command_move_hybrid_sequence& cmd)
 {
 	controller_.move_sequence
 		(cmd.joint_config_sequence, cmd.force_sequence, cmd.selection_sequence);
@@ -270,16 +267,58 @@ command_generic_response franka_control_server::process_command
 
 
 command_generic_response franka_control_server::process_command
-	(const command_move_until_contact& cmd)
+(const command_move_until_contact& cmd)
 {
 	return controller_.move_to_until_contact(cmd.target_joint_config)
-		? command_result::success
-		: command_result::success_command_failed;
+		       ? command_result::success
+		       : command_result::success_command_failed;
 }
 
 
 command_generic_response franka_control_server::process_command
-	(const command_force_z& cmd)
+(const command_apply_admittance_adm_imp_desired_stiffness& cmd)
+{
+	controller_.apply_admittance(cmd.duration, cmd.log, cmd.adm_rotational_stiffness, cmd.adm_translational_stiffness,
+	                             cmd.imp_rotational_stiffness, cmd.imp_translational_stiffness);
+	return command_result::success;
+}
+
+
+command_generic_response franka_control_server::process_command
+(const command_cartesian_impedance_hold_pose_desired_stiffness& cmd)
+{
+	controller_.cartesian_impedance_hold_pose(cmd.duration, cmd.log, cmd.use_stiff_damp_online_calc,
+	                                          cmd.rotational_stiffness, cmd.translational_stiffness);
+	return command_result::success;
+}
+
+
+command_generic_response franka_control_server::process_command
+(const command_cartesian_impedance_poses_desired_stiffness& cmd)
+{
+	controller_.cartesian_impedance_poses(cmd.poses, cmd.duration, cmd.log, cmd.use_stiff_damp_online_calc,
+	                                      cmd.rotational_stiffness, cmd.translational_stiffness);
+	return command_result::success;
+}
+
+
+command_generic_response franka_control_server::process_command
+(const command_joint_impedance_hold_position_desired_stiffness& cmd)
+{
+	controller_.joint_impedance_hold_position(cmd.duration, cmd.log, cmd.stiffness);
+	return command_result::success;
+}
+
+command_generic_response franka_control_server::process_command
+(const command_joint_impedance_positions_desired_stiffness& cmd)
+{
+	controller_.joint_impedance_positions(cmd.joint_positions, cmd.duration, cmd.log, cmd.stiffness);
+	return command_result::success;
+}
+
+
+command_generic_response franka_control_server::process_command
+(const command_force_z& cmd)
 {
 	controller_.apply_z_force(cmd.mass, cmd.duration);
 	return command_result::success;
@@ -287,7 +326,7 @@ command_generic_response franka_control_server::process_command
 
 
 command_generic_response franka_control_server::process_command
-	(const command_open_gripper& cmd)
+(const command_open_gripper& cmd)
 {
 	controller_.open_gripper
 		(cmd.speed ? cmd.speed : franka_hardware_controller::default_gripper_speed);
@@ -296,7 +335,7 @@ command_generic_response franka_control_server::process_command
 
 
 command_generic_response franka_control_server::process_command
-	(const command_close_gripper& cmd)
+(const command_close_gripper& cmd)
 {
 	controller_.close_gripper
 		(cmd.speed ? cmd.speed : franka_hardware_controller::default_gripper_speed);
@@ -305,18 +344,19 @@ command_generic_response franka_control_server::process_command
 
 
 command_generic_response franka_control_server::process_command
-	(const command_grasp_gripper& cmd)
+(const command_grasp_gripper& cmd)
 {
 	return controller_.grasp_gripper(cmd.speed, cmd.force)
-		? command_result::success
-		: command_result::success_command_failed;
+		       ? command_result::success
+		       : command_result::success_command_failed;
 }
 
 
 command_generic_response franka_control_server::process_command
-	(const command_start_recording&)
+(const command_start_recording&)
 {
-	try {
+	try
+	{
 		controller_.start_recording();
 		return command_result::success;
 	}
@@ -328,15 +368,15 @@ command_generic_response franka_control_server::process_command
 
 
 command_stop_recording_response franka_control_server::process_command
-	(const command_stop_recording&)
+(const command_stop_recording&)
 {
-	const auto&[q_seq, f_seq] = controller_.stop_recording();
-	return { q_seq, f_seq };
+	const auto& [q_seq, f_seq] = controller_.stop_recording();
+	return {q_seq, f_seq};
 }
 
 
 command_generic_response franka_control_server::process_command
-	(const command_set_speed& cmd)
+(const command_set_speed& cmd)
 {
 	controller_.set_speed_factor(cmd.speed);
 	return command_result::success;
@@ -370,13 +410,9 @@ command_generic_response franka_control_server::process_command(const command_se
 
 
 command_generic_response franka_control_server::process_command
-	(const command_recover_from_errors&)
+(const command_recover_from_errors&)
 {
 	controller_.automatic_error_recovery();
 	return command_result::success;
 }
-
-
-
-
 } /* namespace franka_proxy */
