@@ -6,6 +6,8 @@
 #include <franka_proxy_client/exception.hpp>
 #include <franka_proxy_client/franka_remote_interface.hpp>
 
+#include <franka_control/payload_estimation.hpp>
+
 
 void franka_proxy_client_test(const std::string& ip);
 void print_status(const franka_proxy::franka_remote_interface& robot);
@@ -22,6 +24,48 @@ int main()
 
 void franka_proxy_client_test(const std::string& ip)
 {
+
+
+	// VERY DIRTY PLE TEST, REMOVE BEFORE FLIGHT
+	std::array<double, 6> f1 = { 0.030176    ,-2.97307    ,10.9486     ,-0.188621    ,-0.166592    ,-0.092337 };
+	std::array<double, 7> j1 = { 2.60759 ,-0.688177 ,-2.04893 ,-1.19268 ,-0.69501  ,1.64645 ,1.16381 };
+	std::array<double, 6> f2 = { 0.041172    ,-2.96951    ,10.9455     ,-0.189406    ,-0.165091    ,-0.091925 };
+	std::array<double, 7> j2 = { 2.60759 ,-0.688177 ,-2.04893 ,-1.19268 ,-0.69501  ,1.64645 ,1.16381 };
+	std::array<double, 6> f3 = { 0.022531    ,-2.96242    ,10.9556     ,-0.190145    ,-0.165851    ,-0.091962 };
+	std::array<double, 7> j3 = { 2.60758 ,-0.688178 ,-2.04893 ,-1.19268 ,-0.695011 ,1.64645 ,1.16381 };
+	std::array<double, 6> f4 = { 0.08, -3.5, 13.97, -0.4, -0.2, -0.01 };
+	std::array<double, 7> j4 = { 2.75, -0.8, -2.5, -1.4, -0.3, 2.2, 0.7 };
+	std::array<double, 6> f5 = { 0.9, -1.8, 6.5, -0.96 , 0.0, -0.9 };
+	std::array<double, 7> j5 = { 1.9, 0.0, -3.0, -0.8, 0.5, 3.7, 0.1 };
+
+	payload_estimation::data stuff = {
+		std::make_pair(std::make_pair(j1,f1),1),
+		std::make_pair(std::make_pair(j2,f2),1),
+		std::make_pair(std::make_pair(j3,f3),1),
+		std::make_pair(std::make_pair(j4,f4),1),
+		std::make_pair(std::make_pair(j5,f5),1),
+	};
+
+	payload_estimation::results rtls;
+	payload_estimation::results rcer;
+
+	payload_estimation::ple::estimate_ceres(stuff, rcer);
+	std::cout << "Ceres estimates a mass of: " + std::to_string(rcer.mass) << std::endl;
+	
+	try {
+		payload_estimation::ple::estimate_tls(stuff, rtls);
+		std::cout << "TLS estimates a mass of: " + std::to_string(rtls.mass) << std::endl;
+	}
+	catch (std::runtime_error e)
+	{
+		std::cout << e.what() << std::endl;
+	}
+
+	if (true) { return; }
+	// VERY DIRTY PLE TEST, REMOVE BEFORE FLIGHT
+
+
+
 	franka_proxy::franka_remote_interface robot(ip);
 
 	// status test
