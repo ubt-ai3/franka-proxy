@@ -64,6 +64,7 @@ add_executable(
         ${CMAKE_CURRENT_SOURCE_DIR}/source/franka_proxy/motion_generator_cartesian_impedance.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/source/franka_proxy/motion_generator_force.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/source/franka_proxy/motion_generator_joint_impedance.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/source/franka_proxy/motion_generator_joint_imp_ple.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/source/franka_proxy/motion_generator_joint_max_accel.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/source/franka_proxy/motion_generator_seq_cart_vel_tau.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/source/franka_proxy/motion_recorder.cpp
