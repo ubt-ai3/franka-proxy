@@ -25,6 +25,7 @@
 #include "motion_generator_joint_impedance.hpp"
 #include "motion_generator_joint_max_accel.hpp"
 #include "motion_generator_seq_cart_vel_tau.hpp"
+#include "motion_generator_joint_imp_ple.hpp"
 
 #include "ft_sensor/schunk_ft.hpp"
 
@@ -303,6 +304,44 @@ void franka_hardware_controller::cartesian_impedance_poses(const std::list<std::
 
 	set_control_loop_running(false);
 }
+
+
+void franka_hardware_controller::run_payload_estimation(double duration, bool log)
+{
+	detail::ple_motion_generator motion_generator(robot_, robot_state_lock_, robot_state_, duration, log);
+
+	try
+	{
+		set_control_loop_running(true);
+		{
+			// Lock the current_state_lock_ to wait for state_thread_ to finish.
+			std::lock_guard<std::mutex> state_guard(robot_state_lock_);
+		}
+
+		robot_.control(
+			[&](const franka::RobotState& robot_state,
+				franka::Duration period) -> franka::Torques
+			{
+				return motion_generator.callback
+				(robot_state, period,
+					[&](const double time) -> Eigen::Matrix<double, 7, 1>
+					{
+						return motion_generator.calculate_ple_motion(robot_state, time);
+					}
+				);
+			}, true, 10.0
+		);
+	}
+	catch (const franka::Exception&)
+	{
+		set_control_loop_running(false);
+		throw;
+	}
+
+	set_control_loop_running(false);
+}
+
+
 void franka_hardware_controller::move_to(const robot_config_7dof& target)
 {
 	initialize_parameters();

@@ -242,6 +242,27 @@ void from_json(const nlohmann::json& json, command_joint_impedance_positions_des
 
 
 
+/**
+ *************************************************************************
+ *
+ * @class command_ple_motion
+ *
+ * Commands the robot to execute the pre-defined motion for
+ * payload estimation
+ *
+ ************************************************************************/
+struct command_ple_motion
+{
+	using response_type = command_generic_response;
+	static constexpr char type[] = "ple_motion";
+
+	double duration;
+	bool log;
+};
+
+void to_json(nlohmann::json&, const command_ple_motion& object);
+void from_json(const nlohmann::json& json, command_ple_motion& object);
+
 
 
 

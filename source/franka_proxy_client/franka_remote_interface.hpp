@@ -110,6 +110,11 @@ public:
 	void joint_impedance_positions(std::list<std::array<double, 7>>& joint_positions, double duration, bool log, std::array<double, 49> stiffness);
 
 	/**
+	 * Joint space impedance controller for executing a pre-defined motion for payload estimation
+	*/
+	void ple_motion(double duration, bool log);
+
+	/**
 	 * todo docu
 	 * todo change to newton
 	 */

@@ -105,6 +105,12 @@ void franka_remote_interface::joint_impedance_positions(std::list<std::array<dou
 	send_command<command_joint_impedance_positions_desired_stiffness>(joint_positions, duration, log, stiffness);
 }
 
+void franka_remote_interface::ple_motion(double duration, bool log)
+{
+	send_command<command_ple_motion>(duration, log);
+}
+
+
 void franka_remote_interface::apply_z_force(double mass, double duration)
 {
 	send_command<command_force_z>(mass, duration);

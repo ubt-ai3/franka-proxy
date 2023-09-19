@@ -237,6 +237,28 @@ void from_json(const nlohmann::json& json, command_joint_impedance_positions_des
 }
 
 
+//////////////////////////////////////////////////////////////////////////
+//
+// command_ple_motion
+//
+//////////////////////////////////////////////////////////////////////////
+
+
+void to_json(nlohmann::json& json, const command_ple_motion& object)
+{
+	json["type"] = command_ple_motion::type;
+	json["duration"] = object.duration;
+	json["log"] = object.log;
+}
+
+
+void from_json(const nlohmann::json& json, command_ple_motion& object)
+{
+	json.at("duration").get_to(object.duration);
+	json.at("log").get_to(object.log);
+}
+
+
 
 //////////////////////////////////////////////////////////////////////////
 //

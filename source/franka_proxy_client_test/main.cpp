@@ -24,7 +24,19 @@ int main()
 
 void franka_proxy_client_test(const std::string& ip)
 {
+	franka_proxy::franka_remote_interface robot(ip);
 
+
+	// PLE MOTION TEST
+	std::array<double, 49> stiff{ 0.0 };
+	std::list<franka_proxy::robot_config_7dof> starting_point;
+	franka_proxy::robot_config_7dof sp{ {0.08000000000000002, 0.2, 0.4, 0.0, 0.029999999999999992, 0.03, 0.0} };
+	starting_point.push_back(sp);
+	robot.joint_impedance_positions(starting_point, 10.0, false, stiff);
+	robot.ple_motion(10.0, false);
+	
+	if (true) { return; }
+	// PLE MOTION TEST
 
 	// VERY DIRTY PLE TEST, REMOVE BEFORE FLIGHT
 	std::array<double, 6> f1 = { 0.030176    ,-2.97307    ,10.9486     ,-0.188621    ,-0.166592    ,-0.092337 };
@@ -65,8 +77,6 @@ void franka_proxy_client_test(const std::string& ip)
 	// VERY DIRTY PLE TEST, REMOVE BEFORE FLIGHT
 
 
-
-	franka_proxy::franka_remote_interface robot(ip);
 
 	// status test
 	std::atomic_bool stop(false);

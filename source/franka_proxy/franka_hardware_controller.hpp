@@ -144,6 +144,10 @@ public:
 	 * Joint space impedacne controller to hold multiple joint positions/ to follow path of multiple joint positions using desired stiffness matrix parameter
 	*/
 	void joint_impedance_positions(const std::list<std::array<double, 7>>& joint_positions, double duration, bool log, std::array<double, 49> stiffness);
+	/**
+	 *  Runs the pre-defined motion for payload estimation
+	*/
+	void run_payload_estimation(double duration, bool log);
 
 	static constexpr double default_gripper_speed = 0.025;
 
