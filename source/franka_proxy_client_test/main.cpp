@@ -25,17 +25,34 @@ int main()
 void franka_proxy_client_test(const std::string& ip)
 {
 	franka_proxy::franka_remote_interface robot(ip);
+	std::atomic_bool stop(false);
+	std::thread t
+	([&stop, &robot]()
+		{
+			int i = 0;
+			while (!stop)
+			{
+				robot.update();
 
+				if (i++ % 30 == 0)
+					print_status(robot);
+
+				using namespace std::chrono_literals;
+				std::this_thread::sleep_for(0.016s);
+			}
+		});
 
 	// PLE MOTION TEST
-	std::array<double, 49> stiff{ 0.0 };
-	std::list<franka_proxy::robot_config_7dof> starting_point;
-	franka_proxy::robot_config_7dof sp{ {0.08000000000000002, 0.2, 0.4, 0.0, 0.029999999999999992, 0.03, 0.0} };
-	starting_point.push_back(sp);
-	robot.joint_impedance_positions(starting_point, 10.0, false, stiff);
-	robot.ple_motion(10.0, false);
-	
-	if (true) { return; }
+	franka_proxy::robot_config_7dof sp{ {0.0346044, -0.0666144, -0.0398886, -2.04985, -0.0229875, 1.99782, 0.778461} };
+	robot.move_to(sp);
+	std::this_thread::sleep_for(std::chrono::seconds(3));
+	robot.ple_motion(30.0, false);
+
+	if (true) {
+		stop = true;
+		t.join(); 
+		return; 
+	}
 	// PLE MOTION TEST
 
 	// VERY DIRTY PLE TEST, REMOVE BEFORE FLIGHT
@@ -79,22 +96,7 @@ void franka_proxy_client_test(const std::string& ip)
 
 
 	// status test
-	std::atomic_bool stop(false);
-	std::thread t
-	([&stop, &robot]()
-	{
-		int i = 0;
-		while (!stop)
-		{
-			robot.update();
 
-			if (i++ % 30 == 0)
-				print_status(robot);
-
-			using namespace std::chrono_literals;
-			std::this_thread::sleep_for(0.016s);
-		}
-	});
 
 
 	std::cout << "Starting Gripper Test." << std::endl;

@@ -171,18 +171,20 @@ namespace franka_proxy
 		}
 
 
-		Eigen::Matrix<double, 7, 1> ple_motion_generator::calculate_ple_motion(const franka::RobotState& robot_state, double time) {
-			{
-				std::lock_guard<std::mutex> state_guard(state_lock_);
-				state_ = robot_state;
-			}
-
+		Eigen::Matrix<double, 7, 1> ple_motion_generator::calculate_ple_motion(const franka::RobotState& robot_state, double time) 
+		{
 			// get current joint position
 			Eigen::Map<const Eigen::Matrix<double, 7, 1>> q(state_.q.data());
 
+			time = time / 3.;
+
+			static int i = 0;
 			// calculate next motion step (i.e., this is where the pre-defined motion is implemented)
-			Eigen::Matrix<double, 7, 1> q_d;
-			q_d << 0.4 * (0.3 * std::sin(time * 0.5 * M_PI) - 0.3 * std::cos(time * 0.5 * M_PI) + 0.2 * std::sin(time * M_PI) + 0.5 * std::cos(time * M_PI)),
+
+			Eigen::Matrix<double, 7, 1> q_d{0.0346044, -0.0666144, -0.0398886, -2.04985, -0.0229875, 1.99782, 0.778461};
+			Eigen::Matrix<double, 7, 1> start_offset{ 0.0800004 , 0.200001   ,  0.4 , 0. ,0.0300006  , 0.0300007, 0. };
+			Eigen::Matrix<double, 7, 1> offset;
+			offset << 0.4 * (0.3 * std::sin(time * 0.5 * M_PI) - 0.3 * std::cos(time * 0.5 * M_PI) + 0.2 * std::sin(time * M_PI) + 0.5 * std::cos(time * M_PI)),
 				0.4 * (0.2 * std::sin(time * 0.5 * M_PI) + 0.1 * std::cos(time * 0.5 * M_PI) + 0.2 * std::sin(time * M_PI) + 0.3 * std::cos(time * M_PI) + 0.2 * std::sin(time * 1.5 * M_PI) + 0.1 * std::cos(time * 1.5 * M_PI)),
 				0.4 * (0.2 * std::sin(time * 0.5 * M_PI) + 0.3 * std::cos(time * 0.5 * M_PI) - 0.2 * std::sin(time * M_PI) + 0.2 * std::cos(time * M_PI) + 0.1 * std::sin(time * 1.5 * M_PI) + 0.3 * std::cos(time * 1.5 * M_PI) - 0.1 * std::sin(time * 2.0 * M_PI) + 0.2 * std::cos(time * 2.0 * M_PI)),
 				0.4 * (0.3 * std::sin(time * 0.5 * M_PI) - 0.2 * std::cos(time * 0.5 * M_PI) + 0.4 * std::sin(time * M_PI) + 0.2 * std::cos(time * M_PI) - 0.2 * std::sin(time * 1.5 * M_PI) + 0.1 * std::cos(time * 1.5 * M_PI) + 0.0 * std::sin(time * 2.0 * M_PI) - 0.1 * std::cos(time * 2.0 * M_PI)),
@@ -190,6 +192,8 @@ namespace franka_proxy
 				0.3 * (0.1 * std::sin(time * 0.5 * M_PI) + 0.0 * std::cos(time * 0.5 * M_PI) + 0.2 * std::sin(time * M_PI) - 0.2 * std::cos(time * M_PI) - 0.1 * std::sin(time * 1.5 * M_PI) + 0.2 * std::cos(time * 1.5 * M_PI) + 0.3 * std::sin(time * 2.0 * M_PI) + 0.1 * std::cos(time * 2.0 * M_PI)),
 				0.3 * (0.0 * std::sin(time * 0.5 * M_PI) + 0.0 * std::cos(time * 0.5 * M_PI) + 0.3 * std::sin(time * M_PI) + 0.1 * std::cos(time * M_PI) + 0.0 * std::sin(time * 1.5 * M_PI) - 0.3 * std::cos(time * 1.5 * M_PI) + 0.1 * std::sin(time * 2.0 * M_PI) + 0.2 * std::cos(time * 2.0 * M_PI));
 
+
+			q_d = q_d + offset - start_offset;
 
 			Eigen::Matrix<double, 7, 1> joint_position_error = q - q_d;
 
