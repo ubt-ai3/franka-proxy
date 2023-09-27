@@ -42,7 +42,7 @@ namespace payload_estimation
 	};
 
 	//input data format
-	typedef std::vector<std::pair<std::pair<std::array<double, 7>, std::array<double, 6>>, int>> data;
+	typedef std::vector<std::pair<std::pair<std::array<double, 7>, std::array<double, 6>>, double>> data;
 
 
 	/*************************************************************
