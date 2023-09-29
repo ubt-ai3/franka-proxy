@@ -24,7 +24,7 @@ namespace payload_estimation
 		double* trans = new double[3];
 		double* rot = new double[9];
 
-		double*joints = new double[7];
+		double* joints = new double[7];
 
 		ComputeFk(joints, trans, rot);
 
