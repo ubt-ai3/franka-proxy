@@ -24,7 +24,7 @@ namespace payload_estimation
 		double* trans = new double[3];
 		double* rot = new double[9];
 
-		double*joints = new double[7];
+		double* joints = new double[7];
 
 		ComputeFk(joints, trans, rot);
 
@@ -170,7 +170,7 @@ namespace payload_estimation
 		//initial setup
 		Eigen::EulerAnglesXYZd old_ang(0.0, 0.0, 0.0);
 		Eigen::Matrix<double, 3, 1> old_v(0.0, 0.0, 0.0);
-		int time = input[0].second;
+		double time = input[0].second;
 		std::array<double, 7> q = input[0].first.first;
 		std::array<double, 6> ft;
 		inter store;
@@ -192,13 +192,13 @@ namespace payload_estimation
 		double izz = 0.0;
 
 		for (int i = 1; i < input.size(); i++) {
-			int next = input[i].second;
-			int dt = next - time;
-			if (dt <= 0) { continue; }
+			double next = input[i].second;
+			double dt = next - time;
+			if (dt <= 0.0) { continue; }
 
 			q = input[i].first.first;
 			ft = input[i].first.second;
-			preprocess(store, q, old_ang, old_v, (dt * 0.001));
+			preprocess(store, q, old_ang, old_v, dt);
 			old_ang = store.angles;
 			old_v = store.v;
 			time = next;
@@ -254,7 +254,7 @@ namespace payload_estimation
 		std::array<double, 7> q0 = input[0].first.first;
 		std::array<double, 6> ft1;
 		std::array<double, 7> q1;
-		int t0 = input[0].second;
+		double t0 = input[0].second;
 		inter i0;
 		inter i1;
 		Eigen::EulerAnglesXYZd old_ang(0.0, 0.0, 0.0);
@@ -266,14 +266,14 @@ namespace payload_estimation
 		//initial SVD
 		int entry = 0;
 		for (int i = 1; i < input.size(); i++) {
-			int t = input[i].second;
-			int dt = t - t0;
-			if (dt > 0) {
+			double t = input[i].second;
+			double dt = t - t0;
+			if (dt > 0.0) {
 				entry = i + 1;
 				ft1 = input[i].first.second;
 				q1 = input[i].first.first;
 				t0 = t;
-				preprocess(i1, q1, old_ang, old_v, dt * 0.001);
+				preprocess(i1, q1, old_ang, old_v, dt);
 				old_ang = i1.angles;
 				old_v = i1.v;
 				break;
@@ -305,13 +305,13 @@ namespace payload_estimation
 
 		//update SVD, incorporating remaining data
 		for (int i = entry; i < input.size(); i++) {
-			int t = input[i].second;
-			int dt = t - t0;
-			if (dt <= 0) { continue; }
+			double t = input[i].second;
+			double dt = t - t0;
+			if (dt <= 0.0) { continue; }
 
 			q0 = input[i].first.first;
 			ft0 = input[i].first.second;
-			preprocess(i0, q0, old_ang, old_v, dt * 0.001);
+			preprocess(i0, q0, old_ang, old_v, dt);
 			Eigen::Matrix<double, 11, 6> N;
 			N << (i0.l(0) - i0.g(0)), (i0.l(1) - i0.g(1)), (i0.l(2) - i0.g(2)), 0, 0, 0,
 					(-pow(i0.v(1), 2) - pow(i0.v(2), 2)), ((i0.v(0) * i0.v(1)) + i0.a(2)), ((i0.v(0) * i0.v(2)) - i0.a(1)), 0, (i0.g(2) - i0.l(2)), (i0.l(1) - i0.g(1)),

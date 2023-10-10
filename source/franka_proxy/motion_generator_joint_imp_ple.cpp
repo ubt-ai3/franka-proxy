@@ -31,26 +31,27 @@ namespace franka_proxy
 			std::mutex& state_lock,
 			franka::RobotState& robot_state,
 			double duration,
-			bool logging)
+			bool logging,
+			std::vector < std::pair < std::pair<std::array<double, 7>, std::array<double, 6>>, double>>* output)
 			:
 			model_(robot.loadModel()),
 			state_lock_(state_lock),
 			state_(robot_state),
 			duration_(duration),
-			logging_(logging)
+			logging_(logging),
+			output_(output),
+			sensor_(kms_t_flange_, ee_t_kms_)
 		{
-			init_impedance_motion_generator(robot, state_lock, robot_state);
+			init_ple_motion_generator(robot, state_lock, robot_state);
 
 			if (logging_) {
 				// start logging to csv file
-				csv_log_1_.open("joint_impedance_log_1.csv");
-				csv_log_1_ << csv_header1_ << "\n";
-				csv_log_2_.open("joint_impedance_log_2.csv");
-				csv_log_2_ << csv_header2_ << "\n";
+				csv_log_.open("ple_log_.csv");
+				csv_log_ << csv_header_ << "\n";
 			}
 		};
 
-		void ple_motion_generator::init_impedance_motion_generator(franka::Robot& robot, std::mutex& state_lock, franka::RobotState& robot_state) {
+		void ple_motion_generator::init_ple_motion_generator(franka::Robot& robot, std::mutex& state_lock, franka::RobotState& robot_state) {
 			{
 				std::lock_guard<std::mutex> state_guard(state_lock_);
 				state_ = robot_state;
@@ -92,8 +93,7 @@ namespace franka_proxy
 
 				if (logging_) {
 					// close log file
-					csv_log_1_.close();
-					csv_log_2_.close();
+					csv_log_.close();
 				}
 
 				return current_torques;
@@ -162,44 +162,44 @@ namespace franka_proxy
 			std::array<double, 7> tau_d_ar;
 			Eigen::VectorXd::Map(&tau_d_ar[0], 7) = tau_d;
 
-			if (logging_) {
-				// log to csv
-				log(tau_d);
-			}
-
 			return tau_d_ar;
 		}
 
 
 		Eigen::Matrix<double, 7, 1> ple_motion_generator::calculate_ple_motion(const franka::RobotState& robot_state, double time) 
 		{
-			// get current joint position
-			Eigen::Map<const Eigen::Matrix<double, 7, 1>> q(state_.q.data());
+			// get current joint position and measurements
+			std::array<double, 7> j = state_.q;
+			std::array<double, 6> ft = sensor_.read().data;
+			if (output_ != nullptr) {
+				output_->push_back(std::make_pair(std::make_pair(j, ft), time));
+			}
 
+			if (logging_) {
+				log(j, ft, time);
+			}
+
+			Eigen::Map<const Eigen::Matrix<double, 7, 1>> q(j.data());
+
+			// speed tuning factor
 			time = time / 3.;
-
-			static int i = 0;
+			
 			// calculate next motion step (i.e., this is where the pre-defined motion is implemented)
-
 			Eigen::Matrix<double, 7, 1> q_d{0.0346044, -0.0666144, -0.0398886, -2.04985, -0.0229875, 1.99782, 0.778461};
 			Eigen::Matrix<double, 7, 1> start_offset{ 0.0800004 , 0.200001   ,  0.4 , 0. ,0.0300006  , 0.0300007, 0. };
 			Eigen::Matrix<double, 7, 1> offset;
 			offset << 0.4 * (0.3 * std::sin(time * 0.5 * M_PI) - 0.3 * std::cos(time * 0.5 * M_PI) + 0.2 * std::sin(time * M_PI) + 0.5 * std::cos(time * M_PI)),
 				0.4 * (0.2 * std::sin(time * 0.5 * M_PI) + 0.1 * std::cos(time * 0.5 * M_PI) + 0.2 * std::sin(time * M_PI) + 0.3 * std::cos(time * M_PI) + 0.2 * std::sin(time * 1.5 * M_PI) + 0.1 * std::cos(time * 1.5 * M_PI)),
 				0.4 * (0.2 * std::sin(time * 0.5 * M_PI) + 0.3 * std::cos(time * 0.5 * M_PI) - 0.2 * std::sin(time * M_PI) + 0.2 * std::cos(time * M_PI) + 0.1 * std::sin(time * 1.5 * M_PI) + 0.3 * std::cos(time * 1.5 * M_PI) - 0.1 * std::sin(time * 2.0 * M_PI) + 0.2 * std::cos(time * 2.0 * M_PI)),
-				0.4 * (0.3 * std::sin(time * 0.5 * M_PI) - 0.2 * std::cos(time * 0.5 * M_PI) + 0.4 * std::sin(time * M_PI) + 0.2 * std::cos(time * M_PI) - 0.2 * std::sin(time * 1.5 * M_PI) + 0.1 * std::cos(time * 1.5 * M_PI) + 0.0 * std::sin(time * 2.0 * M_PI) - 0.1 * std::cos(time * 2.0 * M_PI)),
-				0.3 * (0.0 * std::sin(time * 0.5 * M_PI) - 0.1 * std::cos(time * 0.5 * M_PI) - 0.1 * std::sin(time * M_PI) + 0.3 * std::cos(time * M_PI) + 0.2 * std::sin(time * 1.5 * M_PI) + 0.1 * std::cos(time * 1.5 * M_PI) + 0.2 * std::sin(time * 2.0 * M_PI) - 0.2 * std::cos(time * 2.0 * M_PI)),
-				0.3 * (0.1 * std::sin(time * 0.5 * M_PI) + 0.0 * std::cos(time * 0.5 * M_PI) + 0.2 * std::sin(time * M_PI) - 0.2 * std::cos(time * M_PI) - 0.1 * std::sin(time * 1.5 * M_PI) + 0.2 * std::cos(time * 1.5 * M_PI) + 0.3 * std::sin(time * 2.0 * M_PI) + 0.1 * std::cos(time * 2.0 * M_PI)),
-				0.3 * (0.0 * std::sin(time * 0.5 * M_PI) + 0.0 * std::cos(time * 0.5 * M_PI) + 0.3 * std::sin(time * M_PI) + 0.1 * std::cos(time * M_PI) + 0.0 * std::sin(time * 1.5 * M_PI) - 0.3 * std::cos(time * 1.5 * M_PI) + 0.1 * std::sin(time * 2.0 * M_PI) + 0.2 * std::cos(time * 2.0 * M_PI));
+				0.4 * (0.3 * std::sin(time * 0.5 * M_PI) - 0.2 * std::cos(time * 0.5 * M_PI) + 0.4 * std::sin(time * M_PI) + 0.2 * std::cos(time * M_PI) - 0.2 * std::sin(time * 1.5 * M_PI) + 0.1 * std::cos(time * 1.5 * M_PI) - 0.1 * std::cos(time * 2.0 * M_PI)),
+				0.3 * (-0.1 * std::cos(time * 0.5 * M_PI) - 0.1 * std::sin(time * M_PI) + 0.3 * std::cos(time * M_PI) + 0.2 * std::sin(time * 1.5 * M_PI) + 0.1 * std::cos(time * 1.5 * M_PI) + 0.2 * std::sin(time * 2.0 * M_PI) - 0.2 * std::cos(time * 2.0 * M_PI) + 0.3 * std::sin(time * 3.0 * M_PI)),
+				0.3 * (0.1 * std::sin(time * 0.5 * M_PI) + 0.2 * std::sin(time * M_PI) - 0.2 * std::cos(time * M_PI) - 0.1 * std::sin(time * 1.5 * M_PI) + 0.2 * std::cos(time * 1.5 * M_PI) + 0.3 * std::sin(time * 2.0 * M_PI) + 0.1 * std::cos(time * 2.0 * M_PI) + 0.2 * std::sin(time * 3.0 * M_PI) * std::sin(time * 3.0 * M_PI)),
+				0.3 * (0.3 * std::sin(time * M_PI) + 0.1 * std::cos(time * M_PI) - 0.3 * std::cos(time * 1.5 * M_PI) + 0.1 * std::sin(time * 2.0 * M_PI) + 0.2 * std::cos(time * 2.0 * M_PI) + 0.2 * std::sin(time * 3.0 * M_PI));
 
 
 			q_d = q_d + offset - start_offset;
 
 			Eigen::Matrix<double, 7, 1> joint_position_error = q - q_d;
-
-			if (logging_) {
-				log_pos_error(q_d, q);
-			}
 
 			return joint_position_error;
 		}
@@ -258,33 +258,17 @@ namespace franka_proxy
 			return damping_matrix_ar;
 		}
 
-		void ple_motion_generator::log(Eigen::Matrix<double, 7, 1> tau_d) {
-			std::ostringstream tau_d_log;
-			tau_d_log << tau_d(0) << "; " << tau_d(1) << "; " << tau_d(2) << "; " << tau_d(3) << "; " << tau_d(4) << "; " << tau_d(5) << "; " << tau_d(6);
-			std::ostringstream stiffness_matrix_log;
-			stiffness_matrix_log << stiffness_matrix_(0, 0) << "; " << stiffness_matrix_(1, 1) << "; " << stiffness_matrix_(2, 2) << "; " << stiffness_matrix_(3, 3) << "; " << stiffness_matrix_(4, 4) << "; " << stiffness_matrix_(5, 5);
-			std::ostringstream damping_matrix_log;
-			damping_matrix_log << damping_matrix_(0, 0) << "; " << damping_matrix_(1, 1) << "; " << damping_matrix_(2, 2) << "; " << damping_matrix_(3, 3) << "; " << damping_matrix_(4, 4) << "; " << damping_matrix_(5, 5);
-
+		void ple_motion_generator::log(std::array<double,7> j, std::array<double,6> ft, double time) {
+			std::ostringstream j_log;
+			j_log << j[0] << "," << j[1] << "," << j[2] << "," << j[3] << "," << j[4] << "," << j[5] << "," << j[6];
+			std::ostringstream ft_log;
+			ft_log << ft[0] << "," << ft[1] << "," << ft[2] << "," << ft[3] << "," << ft[4] << "," << ft[5];
+		
 			std::ostringstream current_values;
-			current_values << time_ << "; " << tau_d_log.str() << "; " << stiffness_matrix_log.str() << "; " << damping_matrix_log.str();
+			current_values << j_log.str() << "," << ft_log.str() << "," << time;
 
-			csv_log_1_ << current_values.str() << "\n";
+			csv_log_ << current_values.str() << "\n";
 		}
-
-		void ple_motion_generator::log_pos_error(Eigen::Matrix<double, 7, 1> q_d, Eigen::Matrix<double, 7, 1> q) {
-			std::ostringstream joint_position_d_log;
-			std::ostringstream joint_position_log;
-
-			joint_position_d_log << q_d(0) << "; " << q_d(1) << "; " << q_d(2) << "; " << q_d(3) << "; " << q_d(4) << "; " << q_d(5) << "; " << q_d(6);
-			joint_position_log << q(0) << "; " << q(1) << "; " << q(2) << "; " << q(3) << "; " << q(4) << "; " << q(5) << "; " << q(6);
-
-			std::ostringstream current_values;
-			current_values << time_ << "; " << joint_position_d_log.str() << "; " << joint_position_log.str();
-
-			csv_log_2_ << current_values.str() << "\n";
-		}
-
 
 	} /* namespace detail */
 } /* namespace franka_proxy */

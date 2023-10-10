@@ -306,9 +306,9 @@ void franka_hardware_controller::cartesian_impedance_poses(const std::list<std::
 }
 
 
-void franka_hardware_controller::run_payload_estimation(double duration, bool log)
+void franka_hardware_controller::run_payload_estimation(double duration, bool log, std::vector < std::pair < std::pair<std::array<double, 7>, std::array<double, 6>>, double>>* output)
 {
-	detail::ple_motion_generator motion_generator(robot_, robot_state_lock_, robot_state_, duration, log);
+	detail::ple_motion_generator motion_generator(robot_, robot_state_lock_, robot_state_, duration, log, output);
 
 	try
 	{

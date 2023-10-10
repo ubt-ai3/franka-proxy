@@ -26,6 +26,8 @@
 #include <franka/robot.h>
 #include <franka/model.h>
 
+#include "ft_sensor/schunk_ft.hpp"
+
 
 
 namespace franka_proxy
@@ -51,7 +53,8 @@ namespace franka_proxy
 				std::mutex& state_lock,
 				franka::RobotState& robot_state,
 				double duration,
-				bool logging);
+				bool logging,
+				std::vector < std::pair < std::pair<std::array<double, 7>, std::array<double, 6>>, double>>* output);
 
 			franka::Torques callback
 			(const franka::RobotState& robot_state,
@@ -68,12 +71,15 @@ namespace franka_proxy
 
 		private:
 			void calculate_default_stiffness_and_damping();
-			void init_impedance_motion_generator(franka::Robot& robot, std::mutex& state_lock, franka::RobotState& robot_state);
+			void init_ple_motion_generator(franka::Robot& robot, std::mutex& state_lock, franka::RobotState& robot_state);
 			double calculate_damping_from_stiffness(double ki);
-			void log_pos_error(Eigen::Matrix<double, 7, 1> q_d, Eigen::Matrix<double, 7, 1> q);
-			void log(Eigen::Matrix<double, 7, 1> tau_d);
+			void log(std::array<double, 7> j, std::array<double, 6> ft, double time);
 
 			franka::Model model_;
+
+			franka_proxy::schunk_ft_sensor sensor_;
+			Eigen::Affine3f kms_t_flange_ = Eigen::Affine3f::Identity();
+			Eigen::Affine3f ee_t_kms_ = Eigen::Affine3f::Identity();
 
 			std::mutex& state_lock_;
 			franka::RobotState& state_;
@@ -86,6 +92,8 @@ namespace franka_proxy
 
 			std::list<std::array<double, 7>> measured_joint_velocities_;
 
+			std::vector < std::pair < std::pair<std::array<double, 7>, std::array<double, 6>>, double>>* output_;
+
 			// damping and stiffness matrix
 			Eigen::Matrix<double, 7, 7> damping_matrix_ = Eigen::Matrix<double, 7, 7>::Zero();
 			Eigen::Matrix<double, 7, 7> stiffness_matrix_ = Eigen::Matrix<double, 7, 7>::Zero();
@@ -95,10 +103,8 @@ namespace franka_proxy
 
 			// csv logging
 			bool logging_;
-			std::ofstream csv_log_1_;
-			std::string csv_header1_ = "time; tau j1; tau j2; tau j3; tau j4; tau j5; tau j6; tau j7; s1; s2; s3; s4; s5; s6; s7; d1; d2; d3; d4; d5; d6; d7";
-			std::ofstream csv_log_2_;
-			std::string csv_header2_ = "time; d_joint 1; d_joint 2; d_joint 3; d_joint 4; d_joint 5; d_joint 6; d_joint 7; joint 1; joint 2; joint 3; joint 4; joint 5; joint 6; joint 7";
+			std::ofstream csv_log_;
+			std::string csv_header_ = "joint_1,joint_2,joint_3,joint_4,joint_5,joint_6,joint_7,force_x,force_y,force_z,torque_x,torque_y,torque_z,time";
 		};
 	} /* namespace detail */
 } /* namespace franka_proxy */

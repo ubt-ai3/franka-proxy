@@ -19,6 +19,14 @@
 #include <vector>
 #include <array>
 
+/**
+* offset to flange:
+*  franka_util.cpp
+* offset flange to kms:
+* 5,5 cm
+* 180 deg z rot
+**/
+
 namespace payload_estimation
 {
 
@@ -42,7 +50,7 @@ namespace payload_estimation
 	};
 
 	//input data format
-	typedef std::vector<std::pair<std::pair<std::array<double, 7>, std::array<double, 6>>, int>> data;
+	typedef std::vector<std::pair<std::pair<std::array<double, 7>, std::array<double, 6>>, double>> data;
 
 
 	/*************************************************************
