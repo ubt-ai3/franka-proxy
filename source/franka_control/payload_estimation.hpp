@@ -19,13 +19,8 @@
 #include <vector>
 #include <array>
 
-/**
-* offset to flange:
-*  franka_util.cpp
-* offset flange to kms:
-* 5,5 cm
-* 180 deg z rot
-**/
+#include "franka_util.hpp"
+
 
 namespace payload_estimation
 {
@@ -65,15 +60,17 @@ namespace payload_estimation
 	class ple
 	{
 	private:
-		static void preprocess(inter &store, std::array<double, 7> &q, Eigen::EulerAnglesXYZd &old_ang, Eigen::Matrix<double, 3, 1> &old_v, double seconds);
+		static inter preprocess(std::array<double, 7> &q, Eigen::EulerAnglesXYZd &old_ang, Eigen::Matrix<double, 3, 1> &old_v, double seconds);
 		
-		static void compute_tls_solution(results &res, Eigen::MatrixXd &S, Eigen::MatrixXd &U);
+		static results compute_tls_solution(Eigen::MatrixXd &S, Eigen::MatrixXd &U);
+
+		static franka_control::franka_util util;
 
 		
 	public: 
-		static void estimate_ceres(data &input, results &res);
+		static results estimate_ceres(data &input);
 
-		static void estimate_tls(data &input, results &res);
+		static results estimate_tls(data &input);
 	};
 
 } /* namespace payload_estimation */

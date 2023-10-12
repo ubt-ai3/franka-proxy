@@ -55,11 +55,11 @@ void franka_proxy_client_test(const std::string& ip)
 	payload_estimation::results rtls;
 	payload_estimation::results rcer;
 
-	payload_estimation::ple::estimate_ceres(input, rcer);
+	rcer = payload_estimation::ple::estimate_ceres(input);
 	std::cout << "Ceres estimates a mass of: " + std::to_string(rcer.mass) << std::endl;
 	
 	try {
-		payload_estimation::ple::estimate_tls(input, rtls);
+		rtls = payload_estimation::ple::estimate_tls(input);
 		std::cout << "TLS estimates a mass of: " + std::to_string(rtls.mass) << std::endl;
 	}
 	catch (std::runtime_error e)

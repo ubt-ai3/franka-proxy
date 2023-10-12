@@ -172,7 +172,7 @@ namespace franka_proxy
 			std::array<double, 7> j = state_.q;
 			std::array<double, 6> ft = sensor_.read().data;
 			if (output_ != nullptr) {
-				output_->push_back(std::make_pair(std::make_pair(j, ft), time));
+				(*output_).push_back(std::make_pair(std::make_pair(j, ft), time));
 			}
 
 			if (logging_) {

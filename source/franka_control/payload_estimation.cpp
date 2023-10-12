@@ -4,7 +4,6 @@
 
 #include "payload_estimation.hpp"
 
-#include "ikfast.h"
 #include <cmath>
 #include <stdexcept>
 #include <iostream>
@@ -19,16 +18,19 @@ namespace payload_estimation
 	* Common preprocessing for all PLE methods
 	*****************************************/
 
-	void ple::preprocess(inter &store, std::array<double, 7> &q, Eigen::EulerAnglesXYZd &old_ang, Eigen::Matrix<double, 3, 1> &old_v, double seconds) {
-		//targets for ikfast ComputerFk()
-		double* trans = new double[3];
-		double* rot = new double[9];
+	inter ple::preprocess(std::array<double, 7> &q, Eigen::EulerAnglesXYZd &old_ang, Eigen::Matrix<double, 3, 1> &old_v, double seconds) {
+		
+		Eigen::Matrix<double, 7, 1> config(q.data());
 
-		double* joints = new double[7];
-
-		ComputeFk(joints, trans, rot);
-
-		Eigen::Matrix<double, 3, 3> M = Eigen::Map<Eigen::Matrix<double, 3, 3, Eigen::RowMajor> >(rot);
+		//fk until last joint
+		Eigen::Affine3d trafo = util.fk(config).back();
+		//last joint to flange (c.f. "franka_util.hpp")
+		trafo *= Eigen::Translation3d(0.0, 0.0, 0.107);
+		//flange to fts (offset and rotation)
+		trafo *= Eigen::Translation3d(0.0, 0.0, 0.055);
+		trafo *= Eigen::AngleAxisd(EIGEN_PI, Eigen::Vector3d(0.0, 0.0, 1.0));
+		
+		Eigen::Matrix<double, 3, 3> M = trafo.rotation();
 
 		Eigen::Matrix<double, 3, 1> grav = M * gravity;
 
@@ -52,11 +54,15 @@ namespace payload_estimation
 
 		Eigen::Matrix<double, 3, 1> lin = velo.cross(x) + velo.cross(y) + velo.cross(z);
 
+		inter store;
+
 		store.v = velo;
 		store.a = acc;
 		store.l = lin;
 		store.g = grav;
 		store.angles = euler;
+
+		return store;
 	}
 
 
@@ -166,7 +172,7 @@ namespace payload_estimation
 		}
 	};
 
-	void ple::estimate_ceres(data &input, results &res) {
+	results  ple::estimate_ceres(data &input) {
 		//initial setup
 		Eigen::EulerAnglesXYZd old_ang(0.0, 0.0, 0.0);
 		Eigen::Matrix<double, 3, 1> old_v(0.0, 0.0, 0.0);
@@ -174,7 +180,7 @@ namespace payload_estimation
 		std::array<double, 7> q = input[0].first.first;
 		std::array<double, 6> ft;
 		inter store;
-		preprocess(store, q, old_ang, old_v, 1.0);
+		store = preprocess(q, old_ang, old_v, 1.0);
 		old_ang = store.angles;
 		old_v = store.v;
 
@@ -198,7 +204,7 @@ namespace payload_estimation
 
 			q = input[i].first.first;
 			ft = input[i].first.second;
-			preprocess(store, q, old_ang, old_v, dt);
+			store= preprocess(q, old_ang, old_v, dt);
 			old_ang = store.angles;
 			old_v = store.v;
 			time = next;
@@ -219,11 +225,13 @@ namespace payload_estimation
 
 		ceres::Solve(options, &problem, &summary);
 
+		results res;
 		res.mass = m;
 		res.com = Eigen::Matrix<double, 3, 1>(cx, cy, cz);
 		res.inertia = Eigen::Matrix<double, 3, 3>();
 		res.inertia << ixx, ixy, ixz, ixy, iyy, iyz, ixz, iyz, izz;
 
+		return res;
 	}
 
 
@@ -231,7 +239,7 @@ namespace payload_estimation
 	* Payload estimation using TLS
 	*****************************/
 
-	void ple::compute_tls_solution(results &res, Eigen::MatrixXd &S, Eigen::MatrixXd &U) {
+	results  ple::compute_tls_solution(Eigen::MatrixXd &S, Eigen::MatrixXd &U) {
 		//check for problems with the TLS solution
 		if (U(U.rows() - 1, U.cols() - 1) == 0) { throw std::runtime_error("No TLS solution exists for this data"); }
 		if (S(S.rows() - 1, S.cols() - 1) == S(S.rows() - 2, S.cols() - 2)) { std::cerr << "WARNING: TLS solution may be inaccurate or incorrect"; }
@@ -241,14 +249,16 @@ namespace payload_estimation
 		for (int i = 0; i < sol.size(); i++) {
 			sol[i] = U(i, i) / U(U.rows() - 1, U.cols() - 1);
 		}
+		results res;
 		res.mass = sol[0];
 		res.com << sol[1], sol[2], sol[3];
 		res.inertia << sol[4], sol[5], sol[6],
 					sol[5], sol[7], sol[8],
 					sol[6], sol[8], sol[9];
+		return res;
 	}
 
-	void ple::estimate_tls(data &input, results &res) {
+	results  ple::estimate_tls(data &input) {
 		//initial setup
 		std::array<double, 6> ft0 = input[0].first.second;
 		std::array<double, 7> q0 = input[0].first.first;
@@ -259,7 +269,7 @@ namespace payload_estimation
 		inter i1;
 		Eigen::EulerAnglesXYZd old_ang(0.0, 0.0, 0.0);
 		Eigen::Matrix<double, 3, 1> old_v(0.0, 0.0, 0.0);
-		preprocess(i0, q0, old_ang, old_v, 1.0);
+		i0 = preprocess(q0, old_ang, old_v, 1.0);
 		old_ang = i0.angles;
 		old_v = i0.v;
 
@@ -273,7 +283,7 @@ namespace payload_estimation
 				ft1 = input[i].first.second;
 				q1 = input[i].first.first;
 				t0 = t;
-				preprocess(i1, q1, old_ang, old_v, dt);
+				i1 = preprocess(q1, old_ang, old_v, dt);
 				old_ang = i1.angles;
 				old_v = i1.v;
 				break;
@@ -299,8 +309,7 @@ namespace payload_estimation
 
 		//this is just in case - should not trigger with real input data
 		if (entry >= input.size()) {
-			compute_tls_solution(res, S, U);
-			return;
+			return compute_tls_solution(S, U);
 		}
 
 		//update SVD, incorporating remaining data
@@ -311,7 +320,7 @@ namespace payload_estimation
 
 			q0 = input[i].first.first;
 			ft0 = input[i].first.second;
-			preprocess(i0, q0, old_ang, old_v, dt);
+			i0 = preprocess(q0, old_ang, old_v, dt);
 			Eigen::Matrix<double, 11, 6> N;
 			N << (i0.l(0) - i0.g(0)), (i0.l(1) - i0.g(1)), (i0.l(2) - i0.g(2)), 0, 0, 0,
 					(-pow(i0.v(1), 2) - pow(i0.v(2), 2)), ((i0.v(0) * i0.v(1)) + i0.a(2)), ((i0.v(0) * i0.v(2)) - i0.a(1)), 0, (i0.g(2) - i0.l(2)), (i0.l(1) - i0.g(1)),
@@ -344,7 +353,7 @@ namespace payload_estimation
 			S = sz;
 		}
 
-		compute_tls_solution(res, S, U);
+		return compute_tls_solution(S, U);
 	}
 
 
