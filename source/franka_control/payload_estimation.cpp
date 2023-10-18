@@ -7,12 +7,61 @@
 #include <cmath>
 #include <stdexcept>
 #include <iostream>
+#include <fstream>
 #include <Eigen/SVD>
 #include <Eigen/QR>
 #include <ceres/ceres.h>
 
 namespace payload_estimation
 {
+	/***************************************************
+	* Utility function for reading data from a CSV file,
+	* expects the header as definded in
+	* "motion_generator_joint_imp_ple.hpp"
+	***************************************************/
+
+	data ple::read_from_csv(std::string &filename) {
+
+		std::ifstream input(filename);
+
+		if (!input.is_open()) { throw std::runtime_error("Could not open CSV file: " + filename); }
+
+		data content;
+		std::string line;
+		std::string val;
+
+		std::array<double, 7> q;
+		std::array<double, 6> ft;
+		double time;
+
+		//throw away the header line
+		std::getline(input, line);
+
+		while (std::getline(input, line)) {
+			std::stringstream stream(line);
+			int count = 0;
+			while (std::getline(stream, val, ',')) {
+				if (count < 8){ 
+					q[count] = std::stod(val);
+					count++;
+				}
+				else if (count < 14) {
+					ft[(count - 7)] = std::stod(val);
+					count++;
+				}
+				else {
+					time = std::stod(val);
+					break;
+				}
+			}
+			std::pair<std::array<double, 7>, std::array<double, 6>> measurements(q, ft);
+			std::pair<std::pair<std::array<double, 7>, std::array<double, 6>>, double> entry(measurements, time);
+			content.push_back(entry);
+		}
+
+		return content;
+	}
+
 
 	/*****************************************
 	* Common preprocessing for all PLE methods

@@ -258,7 +258,6 @@ struct command_ple_motion
 
 	double duration;
 	bool log;
-	std::vector < std::pair < std::pair<std::array<double, 7>, std::array<double, 6>>, double>>* output;
 };
 
 void to_json(nlohmann::json&, const command_ple_motion& object);

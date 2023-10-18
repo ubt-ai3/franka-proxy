@@ -43,14 +43,13 @@ void franka_proxy_client_test(const std::string& ip)
 		});
 
 	// PLE TEST
-	payload_estimation::data input;
-
 	franka_proxy::robot_config_7dof sp{ {0.0346044, -0.0666144, -0.0398886, -2.04985, -0.0229875, 1.99782, 0.778461} };
 	robot.move_to(sp);
 	std::this_thread::sleep_for(std::chrono::seconds(3));
-	robot.ple_motion(30.0, false, &input);
+	robot.ple_motion(30.0, true);
 
-	std::cout << "Data points gathered: " << input.size() << std::endl;
+	std::string filename = "ple_log_.csv";
+	payload_estimation::data input = payload_estimation::ple::read_from_csv(filename);
 
 	payload_estimation::results rtls;
 	payload_estimation::results rcer;

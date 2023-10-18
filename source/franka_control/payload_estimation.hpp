@@ -71,6 +71,8 @@ namespace payload_estimation
 		static results estimate_ceres(data &input);
 
 		static results estimate_tls(data &input);
+
+		static data read_from_csv(std::string &filename);
 	};
 
 } /* namespace payload_estimation */

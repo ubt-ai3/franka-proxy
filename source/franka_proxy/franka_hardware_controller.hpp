@@ -147,7 +147,7 @@ public:
 	/**
 	 *  Runs the pre-defined motion for payload estimation
 	*/
-	void run_payload_estimation(double duration, bool log, std::vector < std::pair < std::pair<std::array<double, 7>, std::array<double, 6>>, double>>* output);
+	void run_payload_estimation(double duration, bool log);
 
 	static constexpr double default_gripper_speed = 0.025;
 

@@ -53,8 +53,7 @@ namespace franka_proxy
 				std::mutex& state_lock,
 				franka::RobotState& robot_state,
 				double duration,
-				bool logging,
-				std::vector < std::pair < std::pair<std::array<double, 7>, std::array<double, 6>>, double>>* output);
+				bool logging);
 
 			franka::Torques callback
 			(const franka::RobotState& robot_state,
@@ -78,8 +77,7 @@ namespace franka_proxy
 			franka::Model model_;
 
 			franka_proxy::schunk_ft_sensor sensor_;
-			Eigen::Affine3f kms_t_flange_ = Eigen::Affine3f::Identity();
-			Eigen::Affine3f ee_t_kms_ = Eigen::Affine3f::Identity();
+			Eigen::Affine3f placeholder_ = Eigen::Affine3f::Identity();
 
 			std::mutex& state_lock_;
 			franka::RobotState& state_;
@@ -91,8 +89,6 @@ namespace franka_proxy
 			std::list<double> timestamps_;
 
 			std::list<std::array<double, 7>> measured_joint_velocities_;
-
-			std::vector < std::pair < std::pair<std::array<double, 7>, std::array<double, 6>>, double>>* output_;
 
 			// damping and stiffness matrix
 			Eigen::Matrix<double, 7, 7> damping_matrix_ = Eigen::Matrix<double, 7, 7>::Zero();

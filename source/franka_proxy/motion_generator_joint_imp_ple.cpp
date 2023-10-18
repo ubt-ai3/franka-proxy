@@ -31,16 +31,14 @@ namespace franka_proxy
 			std::mutex& state_lock,
 			franka::RobotState& robot_state,
 			double duration,
-			bool logging,
-			std::vector < std::pair < std::pair<std::array<double, 7>, std::array<double, 6>>, double>>* output)
+			bool logging)
 			:
 			model_(robot.loadModel()),
 			state_lock_(state_lock),
 			state_(robot_state),
 			duration_(duration),
 			logging_(logging),
-			output_(output),
-			sensor_(kms_t_flange_, ee_t_kms_)
+			sensor_(placeholder_, placeholder_)
 		{
 			init_ple_motion_generator(robot, state_lock, robot_state);
 
@@ -171,9 +169,6 @@ namespace franka_proxy
 			// get current joint position and measurements
 			std::array<double, 7> j = state_.q;
 			std::array<double, 6> ft = sensor_.read().data;
-			if (output_ != nullptr) {
-				(*output_).push_back(std::make_pair(std::make_pair(j, ft), time));
-			}
 
 			if (logging_) {
 				log(j, ft, time);
