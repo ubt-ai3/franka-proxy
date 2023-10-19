@@ -48,11 +48,13 @@ void franka_proxy_client_test(const std::string& ip)
 	std::this_thread::sleep_for(std::chrono::seconds(3));
 	robot.ple_motion(30.0, true);
 
-	std::string filename = "ple_log_.csv";
+	std::string filename = "ple_log.csv";
 	payload_estimation::data input = payload_estimation::ple::read_from_csv(filename);
 
 	payload_estimation::results rtls;
 	payload_estimation::results rcer;
+
+	std::cout << "Number of data points:" << input.size() << std::endl;
 
 	rcer = payload_estimation::ple::estimate_ceres(input);
 	std::cout << "Ceres estimates a mass of: " + std::to_string(rcer.mass) << std::endl;

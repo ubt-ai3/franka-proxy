@@ -44,7 +44,7 @@ namespace franka_proxy
 
 			if (logging_) {
 				// start logging to csv file
-				csv_log_.open("ple_log_.csv");
+				csv_log_.open("ple_log.csv");
 				csv_log_ << csv_header_ << "\n";
 			}
 		};
