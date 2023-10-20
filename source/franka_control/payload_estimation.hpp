@@ -27,6 +27,10 @@ namespace payload_estimation
 
 	static Eigen::Matrix<double, 3, 1> gravity(0.0, 0.0, -9.81); //global gravity vector
 
+	static Eigen::Matrix<double, 3, 1> g_init; //gravity vector for starting position
+
+	static Eigen::Matrix<double, 11, 6> M_g; //matrix built from g_init for TLS
+
 	//internal data interchange format
 	struct inter {
 		Eigen::Matrix<double, 3, 1> v = Eigen::Matrix<double, 3, 1>(); //angular velocity
@@ -64,6 +68,8 @@ namespace payload_estimation
 		
 		static results compute_tls_solution(Eigen::MatrixXd &S, Eigen::MatrixXd &U);
 
+		static Eigen::Affine3d fk(Eigen::Matrix<double, 7, 1> &config);
+
 		static franka_control::franka_util util;
 
 		
@@ -73,6 +79,8 @@ namespace payload_estimation
 		static results estimate_tls(data &input);
 
 		static data read_from_csv(std::string &filename);
+
+		static void init(std::array<double, 7> &starting_position);
 	};
 
 } /* namespace payload_estimation */

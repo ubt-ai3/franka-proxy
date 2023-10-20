@@ -24,6 +24,7 @@ int main()
 
 void franka_proxy_client_test(const std::string& ip)
 {
+
 	franka_proxy::franka_remote_interface robot(ip);
 	std::atomic_bool stop(false);
 	std::thread t
@@ -55,6 +56,7 @@ void franka_proxy_client_test(const std::string& ip)
 	payload_estimation::results rcer;
 
 	std::cout << "Number of data points:" << input.size() << std::endl;
+	payload_estimation::ple::init(sp);
 
 	rcer = payload_estimation::ple::estimate_ceres(input);
 	std::cout << "Ceres estimates a mass of: " + std::to_string(rcer.mass) << std::endl;
@@ -78,9 +80,6 @@ void franka_proxy_client_test(const std::string& ip)
 
 
 	// status test
-
-
-
 	std::cout << "Starting Gripper Test." << std::endl;
 
 	robot.grasp_gripper(0.1);

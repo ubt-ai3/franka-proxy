@@ -41,11 +41,11 @@ namespace payload_estimation
 			std::stringstream stream(line);
 			int count = 0;
 			while (std::getline(stream, val, ',')) {
-				if (count < 8){ 
+				if (count < 7){ 
 					q[count] = std::stod(val);
 					count++;
 				}
-				else if (count < 14) {
+				else if (count < 13) {
 					ft[(count - 7)] = std::stod(val);
 					count++;
 				}
@@ -63,14 +63,13 @@ namespace payload_estimation
 	}
 
 
-	/*****************************************
-	* Common preprocessing for all PLE methods
-	*****************************************/
-
-	inter ple::preprocess(std::array<double, 7> &q, Eigen::EulerAnglesXYZd &old_ang, Eigen::Matrix<double, 3, 1> &old_v, double seconds) {
+	/**********************************
+	* Utility function to calculate the
+	* forward transformation inte the
+	* sensor frame
+	**********************************/
+	Eigen::Affine3d ple::fk(Eigen::Matrix<double, 7, 1> &config) {
 		
-		Eigen::Matrix<double, 7, 1> config(q.data());
-
 		//fk until last joint
 		Eigen::Affine3d trafo = util.fk(config).back();
 		//last joint to flange (c.f. "franka_util.hpp")
@@ -78,7 +77,45 @@ namespace payload_estimation
 		//flange to fts (offset and rotation)
 		trafo *= Eigen::Translation3d(0.0, 0.0, 0.055);
 		trafo *= Eigen::AngleAxisd(EIGEN_PI, Eigen::Vector3d(0.0, 0.0, 1.0));
+
+		return trafo;
+	}
+
+
+	/************************************************
+	* Initialization for the starting position of the
+	* measured robot motion, needs to be run before
+	* calling any of the estimation functions
+	************************************************/
+	void ple::init(std::array<double, 7> &starting_position) {
 		
+		Eigen::Matrix<double, 7, 1> config(starting_position.data());
+		Eigen::Affine3d trafo = fk(config);
+		Eigen::Matrix<double, 3, 3> M = trafo.rotation();
+
+		g_init = M * gravity;
+		M_g << g_init(0), g_init(1), g_init(2), 0, 0, 0,
+				0, 0, 0, 0, -g_init(2), g_init(1),
+				0, 0, 0, g_init(2), 0, -g_init(0),
+				0, 0, 0, -g_init(1), g_init(0), 0,
+				0, 0, 0, 0, 0, 0,
+				0, 0, 0, 0, 0, 0,
+				0, 0, 0, 0, 0, 0,
+				0, 0, 0, 0, 0, 0,
+				0, 0, 0, 0, 0, 0,
+				0, 0, 0, 0, 0, 0,
+				0, 0, 0, 0, 0, 0;
+	}
+
+
+	/*****************************************
+	* Common preprocessing for all PLE methods
+	*****************************************/
+
+	inter ple::preprocess(std::array<double, 7> &q, Eigen::EulerAnglesXYZd &old_ang, Eigen::Matrix<double, 3, 1> &old_v, double seconds) {
+		
+		Eigen::Matrix<double, 7, 1> config(q.data());
+		Eigen::Affine3d trafo = fk(config);
 		Eigen::Matrix<double, 3, 3> M = trafo.rotation();
 
 		Eigen::Matrix<double, 3, 1> grav = M * gravity;
@@ -130,7 +167,7 @@ namespace payload_estimation
 			: v(v), a(a), l(l), g(g), fx(fx) {};
 		template <typename T>
 		bool operator()(const T* const m, const T* const cx, const T* const cy, const T* const cz, T* residual) const {
-			residual[0] = (l(0) - g(0)) * m[0] + (-pow(v(1), 2) - pow(v(2), 2)) * cx[0] + ((v(0) * v(1)) - a(2)) * cy[0] + ((v(0) * v(1)) + a(1)) * cz[0] - fx;
+			residual[0] = (l(0) - g(0) + g_init(0)) * m[0] + (-pow(v(1), 2) - pow(v(2), 2)) * cx[0] + ((v(0) * v(1)) - a(2)) * cy[0] + ((v(0) * v(1)) + a(1)) * cz[0] - fx;
 			return true;
 		}
 	};
@@ -146,7 +183,7 @@ namespace payload_estimation
 			: v(v), a(a), l(l), g(g), fy(fy) {};
 		template <typename T>
 		bool operator()(const T* const m, const T* const cx, const T* const cy, const T* const cz, T* residual) const {
-			residual[0] = (l(1) - g(1)) * m[0] + ((v(0) * v(1)) + a(2)) * cx[0] + (-pow(v(0), 2) - pow(v(2), 2)) * cy[0] + ((v(1) * v(2)) - a(1)) * cz[0] - fy;
+			residual[0] = (l(1) - g(1) + g_init(1)) * m[0] + ((v(0) * v(1)) + a(2)) * cx[0] + (-pow(v(0), 2) - pow(v(2), 2)) * cy[0] + ((v(1) * v(2)) - a(1)) * cz[0] - fy;
 			return true;
 		}
 	};
@@ -162,7 +199,7 @@ namespace payload_estimation
 			: v(v), a(a), l(l), g(g), fz(fz) {};
 		template <typename T>
 		bool operator()(const T* const m, const T* const cx, const T* const cy, const T* const cz, T* residual) const {
-			residual[0] = (l(2) - g(2)) * m[0] + ((v(0) * v(2)) - a(1)) * cx[0] + ((v(1) * v(2)) + a(0)) * cy[0] + (-pow(v(1), 2) - pow(v(0), 2)) * cz[0] - fz;
+			residual[0] = (l(2) - g(2) + g_init(2)) * m[0] + ((v(0) * v(2)) - a(1)) * cx[0] + ((v(1) * v(2)) + a(0)) * cy[0] + (-pow(v(1), 2) - pow(v(0), 2)) * cz[0] - fz;
 			return true;
 		}
 	};
@@ -180,7 +217,7 @@ namespace payload_estimation
 		bool operator()(const T* const cy, const T* const cz,
 			const T* const ixx, const T* const ixy, const T* const ixz, const T*
 			const iyy, const T* const iyz, const T* const izz, T* residual) const {
-			residual[0] = (l(2) - g(2)) * cy[0] + (g(1) - l(1)) * cz[0] + (a(0)) * ixx[0] + (a(1) - (v(0) * v(2))) * ixy[0] + (a(2) + (v(0) * v(1))) * ixz[0] + (-(v(1) * v(2))) * iyy[0] + (pow(v(1), 2) - pow(v(2), 2)) * iyz[0] + (v(1) * v(2)) * izz[0] - tx;
+			residual[0] = (l(2) - g(2) + g_init(2)) * cy[0] + (g(1) - l(1) - g_init(1)) * cz[0] + (a(0)) * ixx[0] + (a(1) - (v(0) * v(2))) * ixy[0] + (a(2) + (v(0) * v(1))) * ixz[0] + (-(v(1) * v(2))) * iyy[0] + (pow(v(1), 2) - pow(v(2), 2)) * iyz[0] + (v(1) * v(2)) * izz[0] - tx;
 			return true;
 		}
 	};
@@ -198,7 +235,7 @@ namespace payload_estimation
 		bool operator()(const T* const cx, const T* const cz,
 			const T* const ixx, const T* const ixy, const T* const ixz, const T*
 			const iyy, const T* const iyz, const T* const izz, T* residual) const {
-			residual[0] = (g(2) - l(2)) * cx[0] + (l(0) - g(0)) * cz[0] + (v(0) * v(2)) * ixx[0] + (a(0) + (v(1) * v(2))) * ixy[0] + (pow(v(2), 2) - pow(v(0), 2)) * ixz[0] + (a(1)) * iyy[0] + (a(2) - (v(0) * v(1))) * iyz[0] + (-(v(0) * v(2))) * izz[0] - ty;
+			residual[0] = (g(2) - l(2) - g_init(2)) * cx[0] + (l(0) - g(0) + g_init(0)) * cz[0] + (v(0) * v(2)) * ixx[0] + (a(0) + (v(1) * v(2))) * ixy[0] + (pow(v(2), 2) - pow(v(0), 2)) * ixz[0] + (a(1)) * iyy[0] + (a(2) - (v(0) * v(1))) * iyz[0] + (-(v(0) * v(2))) * izz[0] - ty;
 			return true;
 		}
 	};
@@ -216,12 +253,12 @@ namespace payload_estimation
 		bool operator()(const T* const cx, const T* const cy,
 			const T* const ixx, const T* const ixy, const T* const ixz, const T*
 			const iyy, const T* const iyz, const T* const izz, T* residual) const {
-			residual[0] = (l(1) - g(1)) * cx[0] + (g(0) - l(0)) * cy[0] + (-(v(0) * v(1))) * ixx[0] + (pow(v(0), 2) - pow(v(1), 2)) * ixy[0] + (a(0) - (v(1) * v(2))) * ixz[0] + (v(0) * v(1)) * iyy[0] + (a(1) + (v(0) * v(2))) * iyz[0] + (a(2)) * izz[0] - tz;
+			residual[0] = (l(1) - g(1) + g_init(1)) * cx[0] + (g(0) - l(0) - g_init(0)) * cy[0] + (-(v(0) * v(1))) * ixx[0] + (pow(v(0), 2) - pow(v(1), 2)) * ixy[0] + (a(0) - (v(1) * v(2))) * ixz[0] + (v(0) * v(1)) * iyy[0] + (a(1) + (v(0) * v(2))) * iyz[0] + (a(2)) * izz[0] - tz;
 			return true;
 		}
 	};
 
-	results  ple::estimate_ceres(data &input) {
+	results ple::estimate_ceres(data &input) {
 		//initial setup
 		Eigen::EulerAnglesXYZd old_ang(0.0, 0.0, 0.0);
 		Eigen::Matrix<double, 3, 1> old_v(0.0, 0.0, 0.0);
@@ -268,7 +305,7 @@ namespace payload_estimation
 
 		//solving the problem
 		ceres::Solver::Options options;
-		options.max_num_iterations = 10; //rather low number for quick testing
+		options.max_num_iterations = 1000;
 
 		ceres::Solver::Summary summary;
 
@@ -288,10 +325,10 @@ namespace payload_estimation
 	* Payload estimation using TLS
 	*****************************/
 
-	results  ple::compute_tls_solution(Eigen::MatrixXd &S, Eigen::MatrixXd &U) {
+	results ple::compute_tls_solution(Eigen::MatrixXd &S, Eigen::MatrixXd &U) {
 		//check for problems with the TLS solution
 		if (U(U.rows() - 1, U.cols() - 1) == 0) { throw std::runtime_error("No TLS solution exists for this data"); }
-		if (S(S.rows() - 1, S.cols() - 1) == S(S.rows() - 2, S.cols() - 2)) { std::cerr << "WARNING: TLS solution may be inaccurate or incorrect"; }
+		if (S(S.rows() - 1, S.cols() - 1) == S(S.rows() - 2, S.cols() - 2)) { std::cerr << "WARNING: TLS solution may be inaccurate or incorrect" << std::endl; }
 
 		//obtain the actual solution
 		std::array<double, 10> sol{0.0};
@@ -307,7 +344,7 @@ namespace payload_estimation
 		return res;
 	}
 
-	results  ple::estimate_tls(data &input) {
+	results ple::estimate_tls(data &input) {
 		//initial setup
 		std::array<double, 6> ft0 = input[0].first.second;
 		std::array<double, 7> q0 = input[0].first.first;
@@ -351,6 +388,11 @@ namespace payload_estimation
 				0, 0, 0, (pow(i0.v(1), 2) - pow(i0.v(2), 2)), (i0.a(2) - (i0.v(0) * i0.v(1))), (i0.a(1) - (i0.v(0) * i0.v(2))), 0, 0, 0, (pow(i1.v(1), 2) - pow(i1.v(2), 2)), (i1.a(2) - (i1.v(0) * i1.v(1))), (i1.a(1) - (i1.v(0) * i1.v(2))),
 				0, 0, 0, (i0.v(1) * i0.v(2)), (-i0.v(0) * i0.v(2)), (i0.a(2)), 0, 0, 0, (i1.v(1) * i1.v(2)), (-i1.v(0) * i1.v(2)), (i1.a(2)),
 				ft0[0], ft0[1], ft0[2], ft0[3], ft0[4], ft0[5], ft1[0], ft1[1], ft1[2], ft1[3], ft1[4], ft1[5];
+		
+		Eigen::Matrix<double, 11, 12> Ginit;
+		Ginit << M_g, M_g;
+
+		Minit = Minit + Ginit;
 
 		Eigen::JacobiSVD<Eigen::MatrixXd> svd(Minit, Eigen::ComputeThinU);
 		Eigen::MatrixXd S = svd.singularValues().asDiagonal();
@@ -383,6 +425,8 @@ namespace payload_estimation
 					0, 0, 0, (i0.v(1) * i0.v(2)), (-i0.v(0) * i0.v(2)), (i0.a(2)),
 					ft0[0], ft0[1], ft0[2], ft0[3], ft0[4], ft0[5];
 
+			N = N + M_g;
+
 			Eigen::MatrixXd L = U.transpose() * N;
 			Eigen::MatrixXd M = N - (U * L);
 			Eigen::HouseholderQR<Eigen::MatrixXd> qr(M);
@@ -397,7 +441,9 @@ namespace payload_estimation
 			Eigen::MatrixXd sz = svd.singularValues().asDiagonal();
 			Eigen::MatrixXd uz = svd.matrixU();
 
-			Eigen::MatrixXd nu = (U * J) * uz;
+			Eigen::MatrixXd UJ(U.rows(), (U.cols() + J.cols()));
+			UJ << U, J;
+			Eigen::MatrixXd nu = UJ * uz;
 			U = nu;
 			S = sz;
 		}
