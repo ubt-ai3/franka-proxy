@@ -93,6 +93,9 @@ namespace payload_estimation
 		Eigen::Affine3d trafo = fk(config);
 		Eigen::Matrix<double, 3, 3> M = trafo.rotation();
 
+		Eigen::EulerAnglesXYZd euler(M);
+		ang_init = euler;
+
 		g_init = M * gravity;
 		M_g << g_init(0), g_init(1), g_init(2), 0, 0, 0,
 				0, 0, 0, 0, -g_init(2), g_init(1),
@@ -260,7 +263,7 @@ namespace payload_estimation
 
 	results ple::estimate_ceres(data &input) {
 		//initial setup
-		Eigen::EulerAnglesXYZd old_ang(0.0, 0.0, 0.0);
+		Eigen::EulerAnglesXYZd old_ang = ang_init;
 		Eigen::Matrix<double, 3, 1> old_v(0.0, 0.0, 0.0);
 		double time = input[0].second;
 		std::array<double, 7> q = input[0].first.first;
@@ -353,7 +356,7 @@ namespace payload_estimation
 		double t0 = input[0].second;
 		inter i0;
 		inter i1;
-		Eigen::EulerAnglesXYZd old_ang(0.0, 0.0, 0.0);
+		Eigen::EulerAnglesXYZd old_ang = ang_init;
 		Eigen::Matrix<double, 3, 1> old_v(0.0, 0.0, 0.0);
 		i0 = preprocess(q0, old_ang, old_v, 1.0);
 		old_ang = i0.angles;
@@ -364,6 +367,7 @@ namespace payload_estimation
 		for (int i = 1; i < input.size(); i++) {
 			double t = input[i].second;
 			double dt = t - t0;
+			
 			if (dt > 0.0) {
 				entry = i + 1;
 				ft1 = input[i].first.second;
@@ -408,6 +412,8 @@ namespace payload_estimation
 			double t = input[i].second;
 			double dt = t - t0;
 			if (dt <= 0.0) { continue; }
+
+			std::cout << "TLS at " << i << " of " << input.size() << std::endl;
 
 			q0 = input[i].first.first;
 			ft0 = input[i].first.second;

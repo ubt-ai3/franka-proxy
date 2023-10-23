@@ -35,8 +35,8 @@ void franka_proxy_client_test(const std::string& ip)
 			{
 				robot.update();
 
-				if (i++ % 30 == 0)
-					print_status(robot);
+				//if (i++ % 30 == 0)
+					//print_status(robot);
 
 				using namespace std::chrono_literals;
 				std::this_thread::sleep_for(0.016s);
@@ -47,7 +47,7 @@ void franka_proxy_client_test(const std::string& ip)
 	franka_proxy::robot_config_7dof sp{ {0.0346044, -0.0666144, -0.0398886, -2.04985, -0.0229875, 1.99782, 0.778461} };
 	robot.move_to(sp);
 	std::this_thread::sleep_for(std::chrono::seconds(3));
-	robot.ple_motion(30.0, true);
+	robot.ple_motion(5.0, true);
 
 	std::string filename = "ple_log.csv";
 	payload_estimation::data input = payload_estimation::ple::read_from_csv(filename);
