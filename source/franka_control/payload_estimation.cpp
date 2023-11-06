@@ -347,8 +347,9 @@ namespace payload_estimation
 		return res;
 	}
 
-	results ple::estimate_tls(data &input) {
+	results ple::estimate_tls(data &input, bool fast, int step) {
 		//initial setup
+		if (step < 1) { step = 1;  }
 		std::array<double, 6> ft0 = input[0].first.second;
 		std::array<double, 7> q0 = input[0].first.first;
 		std::array<double, 6> ft1;
@@ -397,10 +398,18 @@ namespace payload_estimation
 		Ginit << M_g, M_g;
 
 		Minit = Minit + Ginit;
-
-		Eigen::JacobiSVD<Eigen::MatrixXd> svd(Minit, Eigen::ComputeThinU);
-		Eigen::MatrixXd S = svd.singularValues().asDiagonal();
-		Eigen::MatrixXd U = svd.matrixU();
+		Eigen::MatrixXd S;
+		Eigen::MatrixXd U;
+		if (fast) {
+			Eigen::BDCSVD<Eigen::MatrixXd> svd(Minit, Eigen::ComputeThinU);
+			S = svd.singularValues().asDiagonal();
+			U = svd.matrixU();
+		}
+		else {
+			Eigen::JacobiSVD<Eigen::MatrixXd> svd(Minit, Eigen::ComputeThinU);
+			S = svd.singularValues().asDiagonal();
+			U = svd.matrixU();
+		}
 
 		//this is just in case - should not trigger with real input data
 		if (entry >= input.size()) {
@@ -408,12 +417,10 @@ namespace payload_estimation
 		}
 
 		//update SVD, incorporating remaining data
-		for (int i = entry; i < input.size(); i++) {
+		for (int i = entry; i < input.size(); i = i + step) {
 			double t = input[i].second;
 			double dt = t - t0;
 			if (dt <= 0.0) { continue; }
-
-			std::cout << "TLS at " << i << " of " << input.size() << std::endl;
 
 			q0 = input[i].first.first;
 			ft0 = input[i].first.second;
@@ -443,9 +450,18 @@ namespace payload_estimation
 			Z << S, L,
 				F, G;
 
-			Eigen::JacobiSVD<Eigen::MatrixXd> svd(Z, Eigen::ComputeThinU);
-			Eigen::MatrixXd sz = svd.singularValues().asDiagonal();
-			Eigen::MatrixXd uz = svd.matrixU();
+			Eigen::MatrixXd sz;
+			Eigen::MatrixXd uz;
+			if (fast) {
+				Eigen::BDCSVD<Eigen::MatrixXd> svd(Z, Eigen::ComputeThinU);
+				sz = svd.singularValues().asDiagonal();
+				uz = svd.matrixU();
+			}
+			else {
+				Eigen::JacobiSVD<Eigen::MatrixXd> svd(Z, Eigen::ComputeThinU);
+				sz = svd.singularValues().asDiagonal();
+				uz = svd.matrixU();
+			}
 
 			Eigen::MatrixXd UJ(U.rows(), (U.cols() + J.cols()));
 			UJ << U, J;

@@ -77,7 +77,7 @@ namespace payload_estimation
 	public: 
 		static results estimate_ceres(data &input);
 
-		static results estimate_tls(data &input);
+		static results estimate_tls(data &input, bool fast, int step);
 
 		static data read_from_csv(std::string &filename);
 

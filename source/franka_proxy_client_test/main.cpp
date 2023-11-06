@@ -7,6 +7,7 @@
 #include <franka_proxy_client/franka_remote_interface.hpp>
 
 #include <franka_control/payload_estimation.hpp>
+#include <fstream>
 
 
 void franka_proxy_client_test(const std::string& ip);
@@ -24,6 +25,221 @@ int main()
 
 void franka_proxy_client_test(const std::string& ip)
 {
+	//PLE PERFORMANCE TEST
+
+	std::string infile = "ple_log.csv";
+	payload_estimation::data indata = payload_estimation::ple::read_from_csv(infile);
+
+	int samples = 200;
+	payload_estimation::data::const_iterator front = indata.begin();
+	payload_estimation::data::const_iterator back = indata.begin() + samples;
+	payload_estimation::data testdata(front, back);
+
+	std::cout << "Commencing PLE performance test with " << testdata.size() << " samples" << std::endl;
+
+	franka_proxy::robot_config_7dof start{ {0.0346044, -0.0666144, -0.0398886, -2.04985, -0.0229875, 1.99782, 0.778461} };
+	payload_estimation::ple::init(start);
+
+	std::string outfile = "ple_test.csv";
+	std::string header = "mode,samples,mass,com_x,com_y,com_z,i_xx,i_xy,i_xz,i_yy,i_yz,i_zz,time";
+	std::ofstream logger(outfile,std::ofstream::out);
+	logger << header << "\n";
+	
+	std::cout << "Running exact TLS estimation (only once)" << std::endl;
+	payload_estimation::results results;
+
+	auto t0 = std::chrono::high_resolution_clock::now();
+	try {
+		results = payload_estimation::ple::estimate_tls(testdata, false, 1);
+	}
+	catch (std::runtime_error e) {
+		std::cout << e.what() << std::endl;
+		results.mass = -13.666;
+	}
+	auto t1 = std::chrono::high_resolution_clock::now();
+	std::chrono::duration<float> time = t1 - t0;
+	logger << "exact," << samples << "," << results.mass << "," << results.com(0) << "," << results.com(1) << "," << results.com(2) << "," << results.inertia.coeff(0, 0) << "," << results.inertia.coeff(0, 1) << "," << results.inertia.coeff(0, 2) << "," << results.inertia.coeff(1, 1) << "," << results.inertia.coeff(1, 2) << "," << results.inertia.coeff(2, 2) << "," << time.count() << "\n";
+
+	std::cout << "Running fast TLS estimation (5 times)" << std::endl;
+	for (int i = 0; i < 5; i++) {
+		t0 = std::chrono::high_resolution_clock::now();
+		try {
+			results = payload_estimation::ple::estimate_tls(testdata, true, 1);
+		}
+		catch (std::runtime_error e) {
+			std::cout << e.what() << std::endl;
+			results.mass = -42.42 + i;
+		}
+		t1 = std::chrono::high_resolution_clock::now();
+		time = t1 - t0;
+		logger << "fast," << samples << "," << results.mass << "," << results.com(0) << "," << results.com(1) << "," << results.com(2) << "," << results.inertia.coeff(0, 0) << "," << results.inertia.coeff(0, 1) << "," << results.inertia.coeff(0, 2) << "," << results.inertia.coeff(1, 1) << "," << results.inertia.coeff(1, 2) << "," << results.inertia.coeff(2, 2) << "," << time.count() << "\n";
+		std::cout << i + 1 << std::endl;
+	}
+
+	std::cout << "Running estimation using Ceres (5 times)" << std::endl;
+	for (int i = 0; i < 5; i++) {
+		t0 = std::chrono::high_resolution_clock::now();
+		results = payload_estimation::ple::estimate_ceres(testdata);
+		t1 = std::chrono::high_resolution_clock::now();
+		time = t1 - t0;
+		logger << "ceres," << samples << "," << results.mass << "," << results.com(0) << "," << results.com(1) << "," << results.com(2) << "," << results.inertia.coeff(0, 0) << "," << results.inertia.coeff(0, 1) << "," << results.inertia.coeff(0, 2) << "," << results.inertia.coeff(1, 1) << "," << results.inertia.coeff(1, 2) << "," << results.inertia.coeff(2, 2) << "," << time.count() << "\n";
+		std::cout << i + 1 << std::endl;
+	}
+	
+	std::cout << "Running Ceres with full data, for reference (only once)" << std::endl;
+	t0 = std::chrono::high_resolution_clock::now();
+	results = payload_estimation::ple::estimate_ceres(indata);
+	t1 = std::chrono::high_resolution_clock::now();
+	time = t1 - t0;
+	logger << "ceres,all," << results.mass << "," << results.com(0) << "," << results.com(1) << "," << results.com(2) << "," << results.inertia.coeff(0, 0) << "," << results.inertia.coeff(0, 1) << "," << results.inertia.coeff(0, 2) << "," << results.inertia.coeff(1, 1) << "," << results.inertia.coeff(1, 2) << "," << results.inertia.coeff(2, 2) << "," << time.count() << "\n";
+	
+	std::cout << " Running fast TLS estimation with step size 2 (5 times)" << std::endl;
+	for (int i = 0; i < 5; i++) {
+		t0 = std::chrono::high_resolution_clock::now();
+		try {
+			results = payload_estimation::ple::estimate_tls(testdata, true, 2);
+		}
+		catch (std::runtime_error e) {
+			std::cout << e.what() << std::endl;
+			results.mass = -42.42 + i;
+		}
+		t1 = std::chrono::high_resolution_clock::now();
+		time = t1 - t0;
+		logger << "step2," << samples << "," << results.mass << "," << results.com(0) << "," << results.com(1) << "," << results.com(2) << "," << results.inertia.coeff(0, 0) << "," << results.inertia.coeff(0, 1) << "," << results.inertia.coeff(0, 2) << "," << results.inertia.coeff(1, 1) << "," << results.inertia.coeff(1, 2) << "," << results.inertia.coeff(2, 2) << "," << time.count() << "\n";
+		std::cout << i + 1 << std::endl;
+	}
+
+	std::cout << " Running fast TLS estimation with step size 5 (5 times)" << std::endl;
+	for (int i = 0; i < 5; i++) {
+		t0 = std::chrono::high_resolution_clock::now();
+		try {
+			results = payload_estimation::ple::estimate_tls(testdata, true, 5);
+		}
+		catch (std::runtime_error e) {
+			std::cout << e.what() << std::endl;
+			results.mass = -42.42 + i;
+		}
+		t1 = std::chrono::high_resolution_clock::now();
+		time = t1 - t0;
+		logger << "step5," << samples << "," << results.mass << "," << results.com(0) << "," << results.com(1) << "," << results.com(2) << "," << results.inertia.coeff(0, 0) << "," << results.inertia.coeff(0, 1) << "," << results.inertia.coeff(0, 2) << "," << results.inertia.coeff(1, 1) << "," << results.inertia.coeff(1, 2) << "," << results.inertia.coeff(2, 2) << "," << time.count() << "\n";
+		std::cout << i + 1 << std::endl;
+	}
+
+	std::cout << " Running fast TLS estimation with step size 10 (5 times)" << std::endl;
+	for (int i = 0; i < 5; i++) {
+		t0 = std::chrono::high_resolution_clock::now();
+		try {
+			results = payload_estimation::ple::estimate_tls(testdata, true, 10);
+		}
+		catch (std::runtime_error e) {
+			std::cout << e.what() << std::endl;
+			results.mass = -42.42 + i;
+		}
+		t1 = std::chrono::high_resolution_clock::now();
+		time = t1 - t0;
+		logger << "step10," << samples << "," << results.mass << "," << results.com(0) << "," << results.com(1) << "," << results.com(2) << "," << results.inertia.coeff(0, 0) << "," << results.inertia.coeff(0, 1) << "," << results.inertia.coeff(0, 2) << "," << results.inertia.coeff(1, 1) << "," << results.inertia.coeff(1, 2) << "," << results.inertia.coeff(2, 2) << "," << time.count() << "\n";
+		std::cout << i + 1 << std::endl;
+	}
+
+	std::cout << "Increasing number of samples to 500" << std::endl;
+	samples = 500;
+	back = indata.begin() + samples;
+	payload_estimation::data testdata2(front, back);
+	testdata = testdata2;
+
+	std::cout << " Running fast TLS estimation with step size 2 (5 times)" << std::endl;
+	for (int i = 0; i < 5; i++) {
+		t0 = std::chrono::high_resolution_clock::now();
+		try {
+			results = payload_estimation::ple::estimate_tls(testdata, true, 2);
+		}
+		catch (std::runtime_error e) {
+			std::cout << e.what() << std::endl;
+			results.mass = -42.42 + i;
+		}
+		t1 = std::chrono::high_resolution_clock::now();
+		time = t1 - t0;
+		logger << "step2," << samples << "," << results.mass << "," << results.com(0) << "," << results.com(1) << "," << results.com(2) << "," << results.inertia.coeff(0, 0) << "," << results.inertia.coeff(0, 1) << "," << results.inertia.coeff(0, 2) << "," << results.inertia.coeff(1, 1) << "," << results.inertia.coeff(1, 2) << "," << results.inertia.coeff(2, 2) << "," << time.count() << "\n";
+		std::cout << i + 1 << std::endl;
+	}
+
+	std::cout << " Running fast TLS estimation with step size 5 (5 times)" << std::endl;
+	for (int i = 0; i < 5; i++) {
+		t0 = std::chrono::high_resolution_clock::now();
+		try {
+			results = payload_estimation::ple::estimate_tls(testdata, true, 5);
+		}
+		catch (std::runtime_error e) {
+			std::cout << e.what() << std::endl;
+			results.mass = -42.42 + i;
+		}
+		t1 = std::chrono::high_resolution_clock::now();
+		time = t1 - t0;
+		logger << "step5," << samples << "," << results.mass << "," << results.com(0) << "," << results.com(1) << "," << results.com(2) << "," << results.inertia.coeff(0, 0) << "," << results.inertia.coeff(0, 1) << "," << results.inertia.coeff(0, 2) << "," << results.inertia.coeff(1, 1) << "," << results.inertia.coeff(1, 2) << "," << results.inertia.coeff(2, 2) << "," << time.count() << "\n";
+		std::cout << i + 1 << std::endl;
+	}
+
+	std::cout << " Running fast TLS estimation with step size 10 (5 times)" << std::endl;
+	for (int i = 0; i < 5; i++) {
+		t0 = std::chrono::high_resolution_clock::now();
+		try {
+			results = payload_estimation::ple::estimate_tls(testdata, true, 10);
+		}
+		catch (std::runtime_error e) {
+			std::cout << e.what() << std::endl;
+			results.mass = -42.42 + i;
+		}
+		t1 = std::chrono::high_resolution_clock::now();
+		time = t1 - t0;
+		logger << "step10," << samples << "," << results.mass << "," << results.com(0) << "," << results.com(1) << "," << results.com(2) << "," << results.inertia.coeff(0, 0) << "," << results.inertia.coeff(0, 1) << "," << results.inertia.coeff(0, 2) << "," << results.inertia.coeff(1, 1) << "," << results.inertia.coeff(1, 2) << "," << results.inertia.coeff(2, 2) << "," << time.count() << "\n";
+		std::cout << i + 1 << std::endl;
+	}
+
+	std::cout << "Increasing number of samples to 1000" << std::endl;
+	samples = 1000;
+	back = indata.begin() + samples;
+	payload_estimation::data testdata3(front, back);
+	testdata = testdata3;
+
+	std::cout << " Running fast TLS estimation with step size 5 (5 times)" << std::endl;
+	for (int i = 0; i < 5; i++) {
+		t0 = std::chrono::high_resolution_clock::now();
+		try {
+			results = payload_estimation::ple::estimate_tls(testdata, true, 5);
+		}
+		catch (std::runtime_error e) {
+			std::cout << e.what() << std::endl;
+			results.mass = -42.42 + i;
+		}
+		t1 = std::chrono::high_resolution_clock::now();
+		time = t1 - t0;
+		logger << "step5," << samples << "," << results.mass << "," << results.com(0) << "," << results.com(1) << "," << results.com(2) << "," << results.inertia.coeff(0, 0) << "," << results.inertia.coeff(0, 1) << "," << results.inertia.coeff(0, 2) << "," << results.inertia.coeff(1, 1) << "," << results.inertia.coeff(1, 2) << "," << results.inertia.coeff(2, 2) << "," << time.count() << "\n";
+		std::cout << i + 1 << std::endl;
+	}
+
+	std::cout << " Running fast TLS estimation with step size 10 (5 times)" << std::endl;
+	for (int i = 0; i < 5; i++) {
+		t0 = std::chrono::high_resolution_clock::now();
+		try {
+			results = payload_estimation::ple::estimate_tls(testdata, true, 10);
+		}
+		catch (std::runtime_error e) {
+			std::cout << e.what() << std::endl;
+			results.mass = -42.42 + i;
+		}
+		t1 = std::chrono::high_resolution_clock::now();
+		time = t1 - t0;
+		logger << "step10," << samples << "," << results.mass << "," << results.com(0) << "," << results.com(1) << "," << results.com(2) << "," << results.inertia.coeff(0, 0) << "," << results.inertia.coeff(0, 1) << "," << results.inertia.coeff(0, 2) << "," << results.inertia.coeff(1, 1) << "," << results.inertia.coeff(1, 2) << "," << results.inertia.coeff(2, 2) << "," << time.count() << "\n";
+		std::cout << i + 1 << std::endl;
+	}
+
+	logger.close();
+	std::cout << "PLE performance test finished" << std::endl;
+
+	if (true) { return; }
+
+	//PLE PERFORMANCE TEST
+
 
 	franka_proxy::franka_remote_interface robot(ip);
 	std::atomic_bool stop(false);
@@ -62,7 +278,7 @@ void franka_proxy_client_test(const std::string& ip)
 	std::cout << "Ceres estimates a mass of: " + std::to_string(rcer.mass) << std::endl;
 	
 	try {
-		rtls = payload_estimation::ple::estimate_tls(input);
+		rtls = payload_estimation::ple::estimate_tls(input, false, 1);
 		std::cout << "TLS estimates a mass of: " + std::to_string(rtls.mass) << std::endl;
 	}
 	catch (std::runtime_error e)
