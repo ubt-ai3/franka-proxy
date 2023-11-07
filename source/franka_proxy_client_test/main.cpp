@@ -8,6 +8,7 @@
 
 #include <franka_control/payload_estimation.hpp>
 #include <fstream>
+#include <sensor_calibration/schunk_ft_to_franka_calibration.hpp>
 
 
 void franka_proxy_client_test(const std::string& ip);
@@ -26,7 +27,7 @@ int main()
 void franka_proxy_client_test(const std::string& ip)
 {
 	//PLE PERFORMANCE TEST
-
+	/**
 	std::string infile = "ple_log.csv";
 	payload_estimation::data indata = payload_estimation::ple::read_from_csv(infile);
 
@@ -237,7 +238,7 @@ void franka_proxy_client_test(const std::string& ip)
 	std::cout << "PLE performance test finished" << std::endl;
 
 	if (true) { return; }
-
+	**/
 	//PLE PERFORMANCE TEST
 
 
@@ -251,8 +252,10 @@ void franka_proxy_client_test(const std::string& ip)
 			{
 				robot.update();
 
-				//if (i++ % 30 == 0)
-					//print_status(robot);
+				/**
+				if (i++ % 30 == 0)
+					print_status(robot);
+				**/
 
 				using namespace std::chrono_literals;
 				std::this_thread::sleep_for(0.016s);
@@ -263,20 +266,18 @@ void franka_proxy_client_test(const std::string& ip)
 	franka_proxy::robot_config_7dof sp{ {0.0346044, -0.0666144, -0.0398886, -2.04985, -0.0229875, 1.99782, 0.778461} };
 	robot.move_to(sp);
 	std::this_thread::sleep_for(std::chrono::seconds(3));
-	robot.ple_motion(5.0, true);
+	robot.ple_motion(30.0, true);
 
 	std::string filename = "ple_log.csv";
 	payload_estimation::data input = payload_estimation::ple::read_from_csv(filename);
-
-	payload_estimation::results rtls;
-	payload_estimation::results rcer;
-
 	std::cout << "Number of data points:" << input.size() << std::endl;
 	payload_estimation::ple::init(sp);
 
-	rcer = payload_estimation::ple::estimate_ceres(input);
+	payload_estimation::results rcer = payload_estimation::ple::estimate_ceres(input);
 	std::cout << "Ceres estimates a mass of: " + std::to_string(rcer.mass) << std::endl;
 	
+	/**
+	payload_estimation::results rtls;
 	try {
 		rtls = payload_estimation::ple::estimate_tls(input, false, 1);
 		std::cout << "TLS estimates a mass of: " + std::to_string(rtls.mass) << std::endl;
@@ -291,6 +292,7 @@ void franka_proxy_client_test(const std::string& ip)
 		t.join();
 		return;
 	}
+	**/
 	// PLE TEST
 
 

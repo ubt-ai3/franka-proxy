@@ -78,6 +78,7 @@ namespace franka_proxy
 
 			franka_proxy::schunk_ft_sensor sensor_;
 			Eigen::Affine3f placeholder_ = Eigen::Affine3f::Identity();
+			Eigen::Vector3d no_mass_ = Eigen::Vector3d::Zero();
 
 			std::mutex& state_lock_;
 			franka::RobotState& state_;
