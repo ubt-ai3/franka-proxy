@@ -96,6 +96,7 @@ namespace payload_estimation
 		Eigen::EulerAnglesXYZd euler(M);
 		ang_init = euler;
 
+		/** counter TVO
 		g_init = M * gravity;
 		M_g << g_init(0), g_init(1), g_init(2), 0, 0, 0,
 				0, 0, 0, 0, -g_init(2), g_init(1),
@@ -108,6 +109,7 @@ namespace payload_estimation
 				0, 0, 0, 0, 0, 0,
 				0, 0, 0, 0, 0, 0,
 				0, 0, 0, 0, 0, 0;
+		**/
 	}
 
 
@@ -170,7 +172,10 @@ namespace payload_estimation
 			: v(v), a(a), l(l), g(g), fx(fx) {};
 		template <typename T>
 		bool operator()(const T* const m, const T* const cx, const T* const cy, const T* const cz, T* residual) const {
-			residual[0] = (l(0) - g(0) + g_init(0)) * m[0] + (-pow(v(1), 2) - pow(v(2), 2)) * cx[0] + ((v(0) * v(1)) - a(2)) * cy[0] + ((v(0) * v(1)) + a(1)) * cz[0] - fx;
+			residual[0] = (l(0) - g(0)) * m[0] + (-pow(v(1), 2) - pow(v(2), 2)) * cx[0] + ((v(0) * v(1)) - a(2)) * cy[0] + ((v(0) * v(1)) + a(1)) * cz[0] - fx;
+
+			//counter TVO variant
+			//residual[0] = (l(0) - g(0) + g_init(0)) * m[0] + (-pow(v(1), 2) - pow(v(2), 2)) * cx[0] + ((v(0) * v(1)) - a(2)) * cy[0] + ((v(0) * v(1)) + a(1)) * cz[0] - fx;
 			return true;
 		}
 	};
@@ -186,7 +191,10 @@ namespace payload_estimation
 			: v(v), a(a), l(l), g(g), fy(fy) {};
 		template <typename T>
 		bool operator()(const T* const m, const T* const cx, const T* const cy, const T* const cz, T* residual) const {
-			residual[0] = (l(1) - g(1) + g_init(1)) * m[0] + ((v(0) * v(1)) + a(2)) * cx[0] + (-pow(v(0), 2) - pow(v(2), 2)) * cy[0] + ((v(1) * v(2)) - a(1)) * cz[0] - fy;
+			residual[0] = (l(1) - g(1)) * m[0] + ((v(0) * v(1)) + a(2)) * cx[0] + (-pow(v(0), 2) - pow(v(2), 2)) * cy[0] + ((v(1) * v(2)) - a(0)) * cz[0] - fy;
+
+			//counter TVO variant
+			//residual[0] = (l(1) - g(1) + g_init(1)) * m[0] + ((v(0) * v(1)) + a(2)) * cx[0] + (-pow(v(0), 2) - pow(v(2), 2)) * cy[0] + ((v(1) * v(2)) - a(0)) * cz[0] - fy;
 			return true;
 		}
 	};
@@ -202,7 +210,10 @@ namespace payload_estimation
 			: v(v), a(a), l(l), g(g), fz(fz) {};
 		template <typename T>
 		bool operator()(const T* const m, const T* const cx, const T* const cy, const T* const cz, T* residual) const {
-			residual[0] = (l(2) - g(2) + g_init(2)) * m[0] + ((v(0) * v(2)) - a(1)) * cx[0] + ((v(1) * v(2)) + a(0)) * cy[0] + (-pow(v(1), 2) - pow(v(0), 2)) * cz[0] - fz;
+			residual[0] = (l(2) - g(2)) * m[0] + ((v(0) * v(2)) - a(1)) * cx[0] + ((v(1) * v(2)) + a(0)) * cy[0] + (-pow(v(1), 2) - pow(v(0), 2)) * cz[0] - fz;
+
+			//counter TVO variant
+			//residual[0] = (l(2) - g(2) + g_init(2)) * m[0] + ((v(0) * v(2)) - a(1)) * cx[0] + ((v(1) * v(2)) + a(0)) * cy[0] + (-pow(v(1), 2) - pow(v(0), 2)) * cz[0] - fz;
 			return true;
 		}
 	};
@@ -220,7 +231,10 @@ namespace payload_estimation
 		bool operator()(const T* const cy, const T* const cz,
 			const T* const ixx, const T* const ixy, const T* const ixz, const T*
 			const iyy, const T* const iyz, const T* const izz, T* residual) const {
-			residual[0] = (l(2) - g(2) + g_init(2)) * cy[0] + (g(1) - l(1) - g_init(1)) * cz[0] + (a(0)) * ixx[0] + (a(1) - (v(0) * v(2))) * ixy[0] + (a(2) + (v(0) * v(1))) * ixz[0] + (-(v(1) * v(2))) * iyy[0] + (pow(v(1), 2) - pow(v(2), 2)) * iyz[0] + (v(1) * v(2)) * izz[0] - tx;
+			residual[0] = (l(2) - g(2)) * cy[0] + (g(1) - l(1)) * cz[0] + (a(0)) * ixx[0] + (a(1) - (v(0) * v(2))) * ixy[0] + (a(2) + (v(0) * v(1))) * ixz[0] + (-(v(1) * v(2))) * iyy[0] + (pow(v(1), 2) - pow(v(2), 2)) * iyz[0] + (v(1) * v(2)) * izz[0] - tx;
+			
+			//counter TVO variant
+			//residual[0] = (l(2) - g(2) + g_init(2)) * cy[0] + (g(1) - l(1) - g_init(1)) * cz[0] + (a(0)) * ixx[0] + (a(1) - (v(0) * v(2))) * ixy[0] + (a(2) + (v(0) * v(1))) * ixz[0] + (-(v(1) * v(2))) * iyy[0] + (pow(v(1), 2) - pow(v(2), 2)) * iyz[0] + (v(1) * v(2)) * izz[0] - tx;
 			return true;
 		}
 	};
@@ -238,7 +252,10 @@ namespace payload_estimation
 		bool operator()(const T* const cx, const T* const cz,
 			const T* const ixx, const T* const ixy, const T* const ixz, const T*
 			const iyy, const T* const iyz, const T* const izz, T* residual) const {
-			residual[0] = (g(2) - l(2) - g_init(2)) * cx[0] + (l(0) - g(0) + g_init(0)) * cz[0] + (v(0) * v(2)) * ixx[0] + (a(0) + (v(1) * v(2))) * ixy[0] + (pow(v(2), 2) - pow(v(0), 2)) * ixz[0] + (a(1)) * iyy[0] + (a(2) - (v(0) * v(1))) * iyz[0] + (-(v(0) * v(2))) * izz[0] - ty;
+			residual[0] = (g(2) - l(2)) * cx[0] + (l(0) - g(0)) * cz[0] + (v(0) * v(2)) * ixx[0] + (a(0) + (v(1) * v(2))) * ixy[0] + (pow(v(2), 2) - pow(v(0), 2)) * ixz[0] + (a(1)) * iyy[0] + (a(2) - (v(0) * v(1))) * iyz[0] + (-(v(0) * v(2))) * izz[0] - ty;
+
+			//counter TVO variant
+			//residual[0] = (g(2) - l(2) - g_init(2)) * cx[0] + (l(0) - g(0) + g_init(0)) * cz[0] + (v(0) * v(2)) * ixx[0] + (a(0) + (v(1) * v(2))) * ixy[0] + (pow(v(2), 2) - pow(v(0), 2)) * ixz[0] + (a(1)) * iyy[0] + (a(2) - (v(0) * v(1))) * iyz[0] + (-(v(0) * v(2))) * izz[0] - ty;
 			return true;
 		}
 	};
@@ -256,7 +273,10 @@ namespace payload_estimation
 		bool operator()(const T* const cx, const T* const cy,
 			const T* const ixx, const T* const ixy, const T* const ixz, const T*
 			const iyy, const T* const iyz, const T* const izz, T* residual) const {
-			residual[0] = (l(1) - g(1) + g_init(1)) * cx[0] + (g(0) - l(0) - g_init(0)) * cy[0] + (-(v(0) * v(1))) * ixx[0] + (pow(v(0), 2) - pow(v(1), 2)) * ixy[0] + (a(0) - (v(1) * v(2))) * ixz[0] + (v(0) * v(1)) * iyy[0] + (a(1) + (v(0) * v(2))) * iyz[0] + (a(2)) * izz[0] - tz;
+			residual[0] = (l(1) - g(1)) * cx[0] + (g(0) - l(0)) * cy[0] + (-(v(0) * v(1))) * ixx[0] + (pow(v(0), 2) - pow(v(1), 2)) * ixy[0] + (a(0) - (v(1) * v(2))) * ixz[0] + (v(0) * v(1)) * iyy[0] + (a(1) + (v(0) * v(2))) * iyz[0] + (a(2)) * izz[0] - tz;
+
+			//counter TVO variant
+			//residual[0] = (l(1) - g(1) + g_init(1)) * cx[0] + (g(0) - l(0) - g_init(0)) * cy[0] + (-(v(0) * v(1))) * ixx[0] + (pow(v(0), 2) - pow(v(1), 2)) * ixy[0] + (a(0) - (v(1) * v(2))) * ixz[0] + (v(0) * v(1)) * iyy[0] + (a(1) + (v(0) * v(2))) * iyz[0] + (a(2)) * izz[0] - tz;
 			return true;
 		}
 	};
@@ -386,18 +406,20 @@ namespace payload_estimation
 				(-pow(i0.v(1), 2) - pow(i0.v(2), 2)), ((i0.v(0) * i0.v(1)) + i0.a(2)), ((i0.v(0) * i0.v(2)) - i0.a(1)), 0, (i0.g(2) - i0.l(2)), (i0.l(1) - i0.g(1)), (-pow(i1.v(1), 2) - pow(i1.v(2), 2)), ((i1.v(0) * i1.v(1)) + i1.a(2)), ((i1.v(0) * i1.v(2)) - i1.a(1)), 0, (i1.g(2) - i1.l(2)), (i1.l(1) - i1.g(1)),
 				((i0.v(0) - i0.v(1)) - i0.a(2)), (-pow(i0.v(0), 2) - pow(i0.v(2), 2)), ((i0.v(1) * i0.v(2)) + i0.a(0)), (i0.l(2) - i0.g(2)), 0, (i0.g(0) - i0.l(0)), ((i1.v(0) - i1.v(1)) - i1.a(2)), (-pow(i1.v(0), 2) - pow(i1.v(2), 2)), ((i1.v(1) * i1.v(2)) + i1.a(0)), (i1.l(2) - i1.g(2)), 0, (i1.g(0) - i1.l(0)),
 				((i0.v(0) * i0.v(2)) + i0.a(1)), ((i0.v(1) * i0.v(2)) - i0.a(0)), (-pow(i0.v(1), 2) - pow(i0.v(0), 2)), (i0.g(1) - i0.l(1)), (i0.l(0) - i0.g(0)), 0, ((i1.v(0) * i1.v(2)) + i1.a(1)), ((i1.v(1) * i1.v(2)) - i1.a(0)), (-pow(i1.v(1), 2) - pow(i1.v(0), 2)), (i1.g(1) - i1.l(1)), (i1.l(0) - i1.g(0)), 0,
-				0, 0, 0, (i0.a(0)), (i1.v(0) * i1.v(2)), (-i1.v(0) + i1.v(1)), 0, 0, 0, (i1.a(0)), (i1.v(0) * i1.v(2)), (-i1.v(0) + i1.v(1)),
+				0, 0, 0, (i0.a(0)), (i1.v(0) * i1.v(2)), (-i1.v(0) * i1.v(1)), 0, 0, 0, (i1.a(0)), (i1.v(0) * i1.v(2)), (-i1.v(0) * i1.v(1)),
 				0, 0, 0, (i0.a(1) - (i0.v(0) * i0.v(2))), (i0.a(0) + (i0.v(1) * i0.v(2))), (pow(i0.v(0), 2) - pow(i0.v(1), 2)), 0, 0, 0, (i1.a(1) - (i1.v(0) * i1.v(2))), (i1.a(0) + (i1.v(1) * i1.v(2))), (pow(i1.v(0), 2) - pow(i1.v(1), 2)),
 				0, 0, 0, (i0.a(2) + (i0.v(0) * i0.v(1))), (pow(i0.v(2), 2) - pow(i0.v(0), 2)), (i0.a(0) - (i0.v(1) * i0.v(2))), 0, 0, 0, (i1.a(2) + (i1.v(0) * i1.v(1))), (pow(i1.v(2), 2) - pow(i1.v(0), 2)), (i1.a(0) - (i1.v(1) * i1.v(2))),
 				0, 0, 0, (-i0.v(1) * i0.v(2)), (i0.a(1)), (i0.v(0) * i0.v(1)), 0, 0, 0, (-i1.v(1) * i1.v(2)), (i1.a(1)), (i1.v(0) * i1.v(1)),
-				0, 0, 0, (pow(i0.v(1), 2) - pow(i0.v(2), 2)), (i0.a(2) - (i0.v(0) * i0.v(1))), (i0.a(1) - (i0.v(0) * i0.v(2))), 0, 0, 0, (pow(i1.v(1), 2) - pow(i1.v(2), 2)), (i1.a(2) - (i1.v(0) * i1.v(1))), (i1.a(1) - (i1.v(0) * i1.v(2))),
+				0, 0, 0, (pow(i0.v(1), 2) - pow(i0.v(2), 2)), (i0.a(2) - (i0.v(0) * i0.v(1))), (i0.a(1) + (i0.v(0) * i0.v(2))), 0, 0, 0, (pow(i1.v(1), 2) - pow(i1.v(2), 2)), (i1.a(2) - (i1.v(0) * i1.v(1))), (i1.a(1) + (i1.v(0) * i1.v(2))),
 				0, 0, 0, (i0.v(1) * i0.v(2)), (-i0.v(0) * i0.v(2)), (i0.a(2)), 0, 0, 0, (i1.v(1) * i1.v(2)), (-i1.v(0) * i1.v(2)), (i1.a(2)),
 				ft0[0], ft0[1], ft0[2], ft0[3], ft0[4], ft0[5], ft1[0], ft1[1], ft1[2], ft1[3], ft1[4], ft1[5];
 		
+		/** counter TVO
 		Eigen::Matrix<double, 11, 12> Ginit;
 		Ginit << M_g, M_g;
-
 		Minit = Minit + Ginit;
+		**/
+		
 		Eigen::MatrixXd S;
 		Eigen::MatrixXd U;
 		if (fast) {
@@ -430,16 +452,18 @@ namespace payload_estimation
 					(-pow(i0.v(1), 2) - pow(i0.v(2), 2)), ((i0.v(0) * i0.v(1)) + i0.a(2)), ((i0.v(0) * i0.v(2)) - i0.a(1)), 0, (i0.g(2) - i0.l(2)), (i0.l(1) - i0.g(1)),
 					((i0.v(0) - i0.v(1)) - i0.a(2)), (-pow(i0.v(0), 2) - pow(i0.v(2), 2)), ((i0.v(1) * i0.v(2)) + i0.a(0)), (i0.l(2) - i0.g(2)), 0, (i0.g(0) - i0.l(0)),
 					((i0.v(0) * i0.v(2)) + i0.a(1)), ((i0.v(1) * i0.v(2)) - i0.a(0)), (-pow(i0.v(1), 2) - pow(i0.v(0), 2)), (i0.g(1) - i0.l(1)), (i0.l(0) - i0.g(0)), 0,
-					0, 0, 0, (i0.a(0)), (i1.v(0) * i1.v(2)), (-i1.v(0) + i1.v(1)),
+					0, 0, 0, (i0.a(0)), (i1.v(0) * i1.v(2)), (-i1.v(0) * i1.v(1)),
 					0, 0, 0, (i0.a(1) - (i0.v(0) * i0.v(2))), (i0.a(0) + (i0.v(1) * i0.v(2))), (pow(i0.v(0), 2) - pow(i0.v(1), 2)),
 					0, 0, 0, (i0.a(2) + (i0.v(0) * i0.v(1))), (pow(i0.v(2), 2) - pow(i0.v(0), 2)), (i0.a(0) - (i0.v(1) * i0.v(2))),
 					0, 0, 0, (-i0.v(1) * i0.v(2)), (i0.a(1)), (i0.v(0) * i0.v(1)),
-					0, 0, 0, (pow(i0.v(1), 2) - pow(i0.v(2), 2)), (i0.a(2) - (i0.v(0) * i0.v(1))), (i0.a(1) - (i0.v(0) * i0.v(2))),
+					0, 0, 0, (pow(i0.v(1), 2) - pow(i0.v(2), 2)), (i0.a(2) - (i0.v(0) * i0.v(1))), (i0.a(1) + (i0.v(0) * i0.v(2))),
 					0, 0, 0, (i0.v(1) * i0.v(2)), (-i0.v(0) * i0.v(2)), (i0.a(2)),
 					ft0[0], ft0[1], ft0[2], ft0[3], ft0[4], ft0[5];
-
+			
+			/** counter TVO
 			N = N + M_g;
-
+			**/
+			
 			Eigen::MatrixXd L = U.transpose() * N;
 			Eigen::MatrixXd M = N - (U * L);
 			Eigen::HouseholderQR<Eigen::MatrixXd> qr(M);

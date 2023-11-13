@@ -28,9 +28,11 @@ namespace payload_estimation
 	static Eigen::Matrix<double, 3, 1> gravity(0.0, 0.0, -9.81); //global gravity vector
 
 	//some intital values for payload estimation, please use init function or set manually before running any estimation functions
+	static Eigen::EulerAnglesXYZd ang_init; //euler angles for starting position
+	/** This is to counter time-varying sensor offsets (TVO), requires zeroing of sensor data
 	static Eigen::Matrix<double, 3, 1> g_init; //gravity vector for starting position
 	static Eigen::Matrix<double, 11, 6> M_g; //matrix built from g_init for TLS
-	static Eigen::EulerAnglesXYZd ang_init; //euler angles for starting position
+	**/
 
 	//internal data interchange format
 	struct inter {

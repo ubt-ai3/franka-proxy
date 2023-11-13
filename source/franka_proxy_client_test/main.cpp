@@ -8,8 +8,6 @@
 
 #include <franka_control/payload_estimation.hpp>
 #include <fstream>
-#include <sensor_calibration/schunk_ft_to_franka_calibration.hpp>
-
 
 void franka_proxy_client_test(const std::string& ip);
 void print_status(const franka_proxy::franka_remote_interface& robot);
@@ -26,6 +24,72 @@ int main()
 
 void franka_proxy_client_test(const std::string& ip)
 {
+	//PLE CALCULATION
+	std::cout << "Starting PLE calculations" << std::endl;
+
+	std::string infile = "ple_log.csv";
+	payload_estimation::data indata = payload_estimation::ple::read_from_csv(infile);
+	payload_estimation::data::const_iterator front = indata.begin();
+	payload_estimation::data::const_iterator back = indata.begin();
+
+	std::cout << "Total number of samples: " << indata.size() << std::endl;
+
+	franka_proxy::robot_config_7dof start{ {0.0346044, -0.0666144, -0.0398886, -2.04985, -0.0229875, 1.99782, 0.778461} };
+	payload_estimation::ple::init(start);
+
+	std::string outfile = "ple_test.csv";
+	std::string header = "mode,samples,steps,mass,com_x,com_y,com_z,i_xx,i_xy,i_xz,i_yy,i_yz,i_zz,time";
+	std::ofstream logger(outfile, std::ofstream::out);
+	logger << header << "\n";
+
+	std::vector<int> params = { 1, 200, 2, 400, 5, 1000, 10, 2000};
+	payload_estimation::results res;
+	
+	std::cout << "Calculating solution using Ceres, full data set, step size 1" << std::endl;
+	auto t0 = std::chrono::high_resolution_clock::now();
+	res = payload_estimation::ple::estimate_ceres(indata);
+	auto t1 = std::chrono::high_resolution_clock::now();
+	std::chrono::duration<float> time = t1 - t0;
+	logger << "ceres," << indata.size() << ",1," << res.mass << "," << res.com(0) << "," << res.com(1) << "," << res.com(2) << "," << res.inertia.coeff(0, 0) << "," << res.inertia.coeff(0, 1) << "," << res.inertia.coeff(0, 2) << "," << res.inertia.coeff(1, 1) << "," << res.inertia.coeff(1, 2) << "," << res.inertia.coeff(2, 2) << "," << time.count() << "\n";
+	
+	
+	for (int i = 0; i < params.size(); i = i + 2) {
+		int steps = params[i];
+		int samples = params[i + 1];
+		back = front + samples;
+		payload_estimation::data testdata(front, back);
+		
+		std::cout << "Calculating solution using exact TLS, " << samples << " samples, step size " << steps << std::endl;
+
+		t0 = std::chrono::high_resolution_clock::now();
+		try {
+			res = payload_estimation::ple::estimate_tls(testdata, false, steps);
+		}
+		catch (std::runtime_error e) {
+			std::cout << e.what() << std::endl;
+		}
+		t1 = std::chrono::high_resolution_clock::now();
+		time = t1 - t0;
+		logger << "exact," << samples << "," << steps << "," << res.mass << "," << res.com(0) << "," << res.com(1) << "," << res.com(2) << "," << res.inertia.coeff(0, 0) << "," << res.inertia.coeff(0, 1) << "," << res.inertia.coeff(0, 2) << "," << res.inertia.coeff(1, 1) << "," << res.inertia.coeff(1, 2) << "," << res.inertia.coeff(2, 2) << "," << time.count() << "\n";
+		
+		std::cout << "Calculating solution using fast TLS, " << samples << " samples, step size " << steps << std::endl;
+
+		t0 = std::chrono::high_resolution_clock::now();
+		try {
+			res = payload_estimation::ple::estimate_tls(testdata, true, steps);
+		}
+		catch (std::runtime_error e) {
+			std::cout << e.what() << std::endl;
+		}
+		t1 = std::chrono::high_resolution_clock::now();
+		time = t1 - t0;
+		logger << "fast," << samples << "," << steps << "," << res.mass << "," << res.com(0) << "," << res.com(1) << "," << res.com(2) << "," << res.inertia.coeff(0, 0) << "," << res.inertia.coeff(0, 1) << "," << res.inertia.coeff(0, 2) << "," << res.inertia.coeff(1, 1) << "," << res.inertia.coeff(1, 2) << "," << res.inertia.coeff(2, 2) << "," << time.count() << "\n";
+
+	}
+	
+	if (true) { return; }
+	//PLE CALCULATION
+
 	//PLE PERFORMANCE TEST
 	/**
 	std::string infile = "ple_log.csv";
@@ -286,13 +350,14 @@ void franka_proxy_client_test(const std::string& ip)
 	{
 		std::cout << e.what() << std::endl;
 	}
+	**/
 
 	if (true) {
 		stop = true;
 		t.join();
 		return;
 	}
-	**/
+	
 	// PLE TEST
 
 
