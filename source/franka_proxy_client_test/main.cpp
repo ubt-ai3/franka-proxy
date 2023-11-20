@@ -45,18 +45,17 @@ void franka_proxy_client_test(const std::string& ip)
 		sets.push_back(set);
 		small++;
 	}
+	front = indata.begin();
+	back = front;
 	for (int i = 0; i < samples - 1000; i = i + 1000) {
 		front = back;
-		back += 200;
+		back += 1000;
 		payload_estimation::data set(front, back);
 		sets.push_back(set);
 		medium++;
 	}
 	sets.push_back(indata);
 	std::cout << "Done" << std::endl;
-
-	franka_proxy::robot_config_7dof start{ {0.0346044, -0.0666144, -0.0398886, -2.04985, -0.0229875, 1.99782, 0.778461} };
-	payload_estimation::ple::init(start);
 
 	std::string outfile = "ple_test.csv";
 	std::string header = "mode,samples,steps,mass,com_x,com_y,com_z,i_xx,i_xy,i_xz,i_yy,i_yz,i_zz,time";
@@ -68,14 +67,16 @@ void franka_proxy_client_test(const std::string& ip)
 	std::cout << "Calculating PLE solutions for " << small << " small data sets (200 samples), " << medium << " medium data sets (1000 samples), and the full data set" << std::endl;
 	for (int i = 0; i < sets.size(); i++) {
 		if (i < small) {
-			std::cout << "Small data set " << i << " of " << small << "..." << std::endl;
+			std::cout << "Small data set " << (i + 1) << " of " << small << "..." << std::endl;
 		}
 		else if (i < (small + medium)) {
-			std::cout << "Medium data set " << (i - small) << " of " << medium << "..." << std::endl;
+			std::cout << "Medium data set " << (i - small + 1) << " of " << medium << "..." << std::endl;
 		}
 		else {
 			std::cout << "Full data set..." << std::endl;
 		}
+
+		std::cout << "Exact TLS..." << std::endl;
 
 		auto t0 = std::chrono::high_resolution_clock::now();
 		try {
@@ -86,7 +87,11 @@ void franka_proxy_client_test(const std::string& ip)
 		}
 		auto t1 = std::chrono::high_resolution_clock::now();
 		std::chrono::duration<float> time = t1 - t0;
-		logger << "exact," << indata.size() << ",1," << res.mass << "," << res.com(0) << "," << res.com(1) << "," << res.com(2) << "," << res.inertia.coeff(0, 0) << "," << res.inertia.coeff(0, 1) << "," << res.inertia.coeff(0, 2) << "," << res.inertia.coeff(1, 1) << "," << res.inertia.coeff(1, 2) << "," << res.inertia.coeff(2, 2) << "," << time.count() << "\n";
+		logger << "exact," << sets[i].size() << ",1," << res.mass << "," << res.com(0) << "," << res.com(1) << "," << res.com(2) << "," << res.inertia.coeff(0, 0) << "," << res.inertia.coeff(0, 1) << "," << res.inertia.coeff(0, 2) << "," << res.inertia.coeff(1, 1) << "," << res.inertia.coeff(1, 2) << "," << res.inertia.coeff(2, 2) << "," << time.count() << "\n";
+
+		std::cout << "Time taken: " << time.count() << std::endl;
+		
+		std::cout << "Fast TLS..." << std::endl;
 
 		t0 = std::chrono::high_resolution_clock::now();
 		try {
@@ -97,14 +102,17 @@ void franka_proxy_client_test(const std::string& ip)
 		}
 		t1 = std::chrono::high_resolution_clock::now();
 		time = t1 - t0;
-		logger << "fast," << indata.size() << ",1," << res.mass << "," << res.com(0) << "," << res.com(1) << "," << res.com(2) << "," << res.inertia.coeff(0, 0) << "," << res.inertia.coeff(0, 1) << "," << res.inertia.coeff(0, 2) << "," << res.inertia.coeff(1, 1) << "," << res.inertia.coeff(1, 2) << "," << res.inertia.coeff(2, 2) << "," << time.count() << "\n";
+		logger << "fast," << sets[i].size() << ",1," << res.mass << "," << res.com(0) << "," << res.com(1) << "," << res.com(2) << "," << res.inertia.coeff(0, 0) << "," << res.inertia.coeff(0, 1) << "," << res.inertia.coeff(0, 2) << "," << res.inertia.coeff(1, 1) << "," << res.inertia.coeff(1, 2) << "," << res.inertia.coeff(2, 2) << "," << time.count() << "\n";
+
+		std::cout << "Time taken: " << time.count() << std::endl;
+
+		std::cout << "Ceres..." << std::endl;
 
 		t0 = std::chrono::high_resolution_clock::now();
 		res = payload_estimation::ple::estimate_ceres(sets[i]);
 		t1 = std::chrono::high_resolution_clock::now();
 		time = t1 - t0;
-		logger << "ceres," << indata.size() << ",1," << res.mass << "," << res.com(0) << "," << res.com(1) << "," << res.com(2) << "," << res.inertia.coeff(0, 0) << "," << res.inertia.coeff(0, 1) << "," << res.inertia.coeff(0, 2) << "," << res.inertia.coeff(1, 1) << "," << res.inertia.coeff(1, 2) << "," << res.inertia.coeff(2, 2) << "," << time.count() << "\n";
-
+		logger << "ceres," << sets[i].size() << ",1," << res.mass << "," << res.com(0) << "," << res.com(1) << "," << res.com(2) << "," << res.inertia.coeff(0, 0) << "," << res.inertia.coeff(0, 1) << "," << res.inertia.coeff(0, 2) << "," << res.inertia.coeff(1, 1) << "," << res.inertia.coeff(1, 2) << "," << res.inertia.coeff(2, 2) << "," << time.count() << "\n";
 
 		std::cout << "Time taken: " << time.count() << std::endl;
 	}
@@ -143,7 +151,6 @@ void franka_proxy_client_test(const std::string& ip)
 	std::string filename = "ple_log.csv";
 	payload_estimation::data input = payload_estimation::ple::read_from_csv(filename);
 	std::cout << "Number of data points:" << input.size() << std::endl;
-	payload_estimation::ple::init(sp);
 
 	payload_estimation::results rcer = payload_estimation::ple::estimate_ceres(input);
 	std::cout << "Ceres estimates a mass of: " + std::to_string(rcer.mass) << std::endl;

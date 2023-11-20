@@ -87,16 +87,19 @@ namespace payload_estimation
 	* measured robot motion, needs to be run before
 	* calling any of the estimation functions
 	************************************************/
-	void ple::init(std::array<double, 7> &starting_position) {
+
+	void ple::init(std::pair<std::pair<std::array<double, 7>, std::array<double, 6>>, double> sample) {
 		
-		Eigen::Matrix<double, 7, 1> config(starting_position.data());
+		ft_init = sample.first.second;
+		t_init = sample.second;
+
+		Eigen::Matrix<double, 7, 1> config(sample.first.first.data());
 		Eigen::Affine3d trafo = fk(config);
 		Eigen::Matrix<double, 3, 3> M = trafo.rotation();
 
 		Eigen::EulerAnglesXYZd euler(M);
 		ang_init = euler;
 
-		/** counter TVO
 		g_init = M * gravity;
 		M_g << g_init(0), g_init(1), g_init(2), 0, 0, 0,
 				0, 0, 0, 0, -g_init(2), g_init(1),
@@ -109,7 +112,6 @@ namespace payload_estimation
 				0, 0, 0, 0, 0, 0,
 				0, 0, 0, 0, 0, 0,
 				0, 0, 0, 0, 0, 0;
-		**/
 	}
 
 
@@ -172,10 +174,10 @@ namespace payload_estimation
 			: v(v), a(a), l(l), g(g), fx(fx) {};
 		template <typename T>
 		bool operator()(const T* const m, const T* const cx, const T* const cy, const T* const cz, T* residual) const {
-			residual[0] = (l(0) - g(0)) * m[0] + (-pow(v(1), 2) - pow(v(2), 2)) * cx[0] + ((v(0) * v(1)) - a(2)) * cy[0] + ((v(0) * v(1)) + a(1)) * cz[0] - fx;
+			//without zeroing
+			//residual[0] = (l(0) - g(0)) * m[0] + (-pow(v(1), 2) - pow(v(2), 2)) * cx[0] + ((v(0) * v(1)) - a(2)) * cy[0] + ((v(0) * v(1)) + a(1)) * cz[0] - fx;
 
-			//counter TVO variant
-			//residual[0] = (l(0) - g(0) + g_init(0)) * m[0] + (-pow(v(1), 2) - pow(v(2), 2)) * cx[0] + ((v(0) * v(1)) - a(2)) * cy[0] + ((v(0) * v(1)) + a(1)) * cz[0] - fx;
+			residual[0] = (l(0) - g(0) + g_init(0)) * m[0] + (-pow(v(1), 2) - pow(v(2), 2)) * cx[0] + ((v(0) * v(1)) - a(2)) * cy[0] + ((v(0) * v(1)) + a(1)) * cz[0] - (fx - ft_init[0]);
 			return true;
 		}
 	};
@@ -191,10 +193,10 @@ namespace payload_estimation
 			: v(v), a(a), l(l), g(g), fy(fy) {};
 		template <typename T>
 		bool operator()(const T* const m, const T* const cx, const T* const cy, const T* const cz, T* residual) const {
-			residual[0] = (l(1) - g(1)) * m[0] + ((v(0) * v(1)) + a(2)) * cx[0] + (-pow(v(0), 2) - pow(v(2), 2)) * cy[0] + ((v(1) * v(2)) - a(0)) * cz[0] - fy;
+			//without zeroing
+			//residual[0] = (l(1) - g(1)) * m[0] + ((v(0) * v(1)) + a(2)) * cx[0] + (-pow(v(0), 2) - pow(v(2), 2)) * cy[0] + ((v(1) * v(2)) - a(0)) * cz[0] - fy;
 
-			//counter TVO variant
-			//residual[0] = (l(1) - g(1) + g_init(1)) * m[0] + ((v(0) * v(1)) + a(2)) * cx[0] + (-pow(v(0), 2) - pow(v(2), 2)) * cy[0] + ((v(1) * v(2)) - a(0)) * cz[0] - fy;
+			residual[0] = (l(1) - g(1) + g_init(1)) * m[0] + ((v(0) * v(1)) + a(2)) * cx[0] + (-pow(v(0), 2) - pow(v(2), 2)) * cy[0] + ((v(1) * v(2)) - a(0)) * cz[0] - (fy - ft_init[1]);
 			return true;
 		}
 	};
@@ -210,10 +212,10 @@ namespace payload_estimation
 			: v(v), a(a), l(l), g(g), fz(fz) {};
 		template <typename T>
 		bool operator()(const T* const m, const T* const cx, const T* const cy, const T* const cz, T* residual) const {
-			residual[0] = (l(2) - g(2)) * m[0] + ((v(0) * v(2)) - a(1)) * cx[0] + ((v(1) * v(2)) + a(0)) * cy[0] + (-pow(v(1), 2) - pow(v(0), 2)) * cz[0] - fz;
+			//without zeroing
+			//residual[0] = (l(2) - g(2)) * m[0] + ((v(0) * v(2)) - a(1)) * cx[0] + ((v(1) * v(2)) + a(0)) * cy[0] + (-pow(v(1), 2) - pow(v(0), 2)) * cz[0] - fz;
 
-			//counter TVO variant
-			//residual[0] = (l(2) - g(2) + g_init(2)) * m[0] + ((v(0) * v(2)) - a(1)) * cx[0] + ((v(1) * v(2)) + a(0)) * cy[0] + (-pow(v(1), 2) - pow(v(0), 2)) * cz[0] - fz;
+			residual[0] = (l(2) - g(2) + g_init(2)) * m[0] + ((v(0) * v(2)) - a(1)) * cx[0] + ((v(1) * v(2)) + a(0)) * cy[0] + (-pow(v(1), 2) - pow(v(0), 2)) * cz[0] - (fz - ft_init[2]);
 			return true;
 		}
 	};
@@ -231,10 +233,10 @@ namespace payload_estimation
 		bool operator()(const T* const cy, const T* const cz,
 			const T* const ixx, const T* const ixy, const T* const ixz, const T*
 			const iyy, const T* const iyz, const T* const izz, T* residual) const {
-			residual[0] = (l(2) - g(2)) * cy[0] + (g(1) - l(1)) * cz[0] + (a(0)) * ixx[0] + (a(1) - (v(0) * v(2))) * ixy[0] + (a(2) + (v(0) * v(1))) * ixz[0] + (-(v(1) * v(2))) * iyy[0] + (pow(v(1), 2) - pow(v(2), 2)) * iyz[0] + (v(1) * v(2)) * izz[0] - tx;
+			//without zeroing
+			//residual[0] = (l(2) - g(2)) * cy[0] + (g(1) - l(1)) * cz[0] + (a(0)) * ixx[0] + (a(1) - (v(0) * v(2))) * ixy[0] + (a(2) + (v(0) * v(1))) * ixz[0] + (-(v(1) * v(2))) * iyy[0] + (pow(v(1), 2) - pow(v(2), 2)) * iyz[0] + (v(1) * v(2)) * izz[0] - tx;
 			
-			//counter TVO variant
-			//residual[0] = (l(2) - g(2) + g_init(2)) * cy[0] + (g(1) - l(1) - g_init(1)) * cz[0] + (a(0)) * ixx[0] + (a(1) - (v(0) * v(2))) * ixy[0] + (a(2) + (v(0) * v(1))) * ixz[0] + (-(v(1) * v(2))) * iyy[0] + (pow(v(1), 2) - pow(v(2), 2)) * iyz[0] + (v(1) * v(2)) * izz[0] - tx;
+			residual[0] = (l(2) - g(2) + g_init(2)) * cy[0] + (g(1) - l(1) - g_init(1)) * cz[0] + (a(0)) * ixx[0] + (a(1) - (v(0) * v(2))) * ixy[0] + (a(2) + (v(0) * v(1))) * ixz[0] + (-(v(1) * v(2))) * iyy[0] + (pow(v(1), 2) - pow(v(2), 2)) * iyz[0] + (v(1) * v(2)) * izz[0] - (tx - ft_init[3]);
 			return true;
 		}
 	};
@@ -252,10 +254,10 @@ namespace payload_estimation
 		bool operator()(const T* const cx, const T* const cz,
 			const T* const ixx, const T* const ixy, const T* const ixz, const T*
 			const iyy, const T* const iyz, const T* const izz, T* residual) const {
-			residual[0] = (g(2) - l(2)) * cx[0] + (l(0) - g(0)) * cz[0] + (v(0) * v(2)) * ixx[0] + (a(0) + (v(1) * v(2))) * ixy[0] + (pow(v(2), 2) - pow(v(0), 2)) * ixz[0] + (a(1)) * iyy[0] + (a(2) - (v(0) * v(1))) * iyz[0] + (-(v(0) * v(2))) * izz[0] - ty;
+			//without zeroing
+#			//residual[0] = (g(2) - l(2)) * cx[0] + (l(0) - g(0)) * cz[0] + (v(0) * v(2)) * ixx[0] + (a(0) + (v(1) * v(2))) * ixy[0] + (pow(v(2), 2) - pow(v(0), 2)) * ixz[0] + (a(1)) * iyy[0] + (a(2) - (v(0) * v(1))) * iyz[0] + (-(v(0) * v(2))) * izz[0] - ty;
 
-			//counter TVO variant
-			//residual[0] = (g(2) - l(2) - g_init(2)) * cx[0] + (l(0) - g(0) + g_init(0)) * cz[0] + (v(0) * v(2)) * ixx[0] + (a(0) + (v(1) * v(2))) * ixy[0] + (pow(v(2), 2) - pow(v(0), 2)) * ixz[0] + (a(1)) * iyy[0] + (a(2) - (v(0) * v(1))) * iyz[0] + (-(v(0) * v(2))) * izz[0] - ty;
+			residual[0] = (g(2) - l(2) - g_init(2)) * cx[0] + (l(0) - g(0) + g_init(0)) * cz[0] + (v(0) * v(2)) * ixx[0] + (a(0) + (v(1) * v(2))) * ixy[0] + (pow(v(2), 2) - pow(v(0), 2)) * ixz[0] + (a(1)) * iyy[0] + (a(2) - (v(0) * v(1))) * iyz[0] + (-(v(0) * v(2))) * izz[0] - (ty - ft_init[4]);
 			return true;
 		}
 	};
@@ -273,25 +275,24 @@ namespace payload_estimation
 		bool operator()(const T* const cx, const T* const cy,
 			const T* const ixx, const T* const ixy, const T* const ixz, const T*
 			const iyy, const T* const iyz, const T* const izz, T* residual) const {
-			residual[0] = (l(1) - g(1)) * cx[0] + (g(0) - l(0)) * cy[0] + (-(v(0) * v(1))) * ixx[0] + (pow(v(0), 2) - pow(v(1), 2)) * ixy[0] + (a(0) - (v(1) * v(2))) * ixz[0] + (v(0) * v(1)) * iyy[0] + (a(1) + (v(0) * v(2))) * iyz[0] + (a(2)) * izz[0] - tz;
+			//without zeroing
+			//residual[0] = (l(1) - g(1)) * cx[0] + (g(0) - l(0)) * cy[0] + (-(v(0) * v(1))) * ixx[0] + (pow(v(0), 2) - pow(v(1), 2)) * ixy[0] + (a(0) - (v(1) * v(2))) * ixz[0] + (v(0) * v(1)) * iyy[0] + (a(1) + (v(0) * v(2))) * iyz[0] + (a(2)) * izz[0] - tz;
 
-			//counter TVO variant
-			//residual[0] = (l(1) - g(1) + g_init(1)) * cx[0] + (g(0) - l(0) - g_init(0)) * cy[0] + (-(v(0) * v(1))) * ixx[0] + (pow(v(0), 2) - pow(v(1), 2)) * ixy[0] + (a(0) - (v(1) * v(2))) * ixz[0] + (v(0) * v(1)) * iyy[0] + (a(1) + (v(0) * v(2))) * iyz[0] + (a(2)) * izz[0] - tz;
+			residual[0] = (l(1) - g(1) + g_init(1)) * cx[0] + (g(0) - l(0) - g_init(0)) * cy[0] + (-(v(0) * v(1))) * ixx[0] + (pow(v(0), 2) - pow(v(1), 2)) * ixy[0] + (a(0) - (v(1) * v(2))) * ixz[0] + (v(0) * v(1)) * iyy[0] + (a(1) + (v(0) * v(2))) * iyz[0] + (a(2)) * izz[0] - (tz - ft_init[5]);
 			return true;
 		}
 	};
 
 	results ple::estimate_ceres(data &input) {
 		//initial setup
+		auto sample = input[0];
+		init(sample);
 		Eigen::EulerAnglesXYZd old_ang = ang_init;
 		Eigen::Matrix<double, 3, 1> old_v(0.0, 0.0, 0.0);
-		double time = input[0].second;
-		std::array<double, 7> q = input[0].first.first;
+		double time = t_init;
+		std::array<double, 7> q;
 		std::array<double, 6> ft;
 		inter store;
-		store = preprocess(q, old_ang, old_v, 1.0);
-		old_ang = store.angles;
-		old_v = store.v;
 
 		//defining the problem
 		ceres::Problem problem;
@@ -370,22 +371,25 @@ namespace payload_estimation
 	results ple::estimate_tls(data &input, bool fast, int step) {
 		//initial setup
 		if (step < 1) { step = 1;  }
-		std::array<double, 6> ft0 = input[0].first.second;
-		std::array<double, 7> q0 = input[0].first.first;
+		auto sample = input[0];
+		init(sample);
+
+		//initial SVD
+		std::array<double, 6> ft0 = input[1].first.second;
+		std::array<double, 7> q0 = input[1].first.first;
 		std::array<double, 6> ft1;
 		std::array<double, 7> q1;
-		double t0 = input[0].second;
+		double t0 = input[1].second - t_init;
 		inter i0;
 		inter i1;
 		Eigen::EulerAnglesXYZd old_ang = ang_init;
 		Eigen::Matrix<double, 3, 1> old_v(0.0, 0.0, 0.0);
-		i0 = preprocess(q0, old_ang, old_v, 1.0);
+		i0 = preprocess(q0, old_ang, old_v, t0);
 		old_ang = i0.angles;
 		old_v = i0.v;
 
-		//initial SVD
 		int entry = 0;
-		for (int i = 1; i < input.size(); i++) {
+		for (int i = 2; i < input.size(); i++) {
 			double t = input[i].second;
 			double dt = t - t0;
 			
@@ -412,13 +416,13 @@ namespace payload_estimation
 				0, 0, 0, (-i0.v(1) * i0.v(2)), (i0.a(1)), (i0.v(0) * i0.v(1)), 0, 0, 0, (-i1.v(1) * i1.v(2)), (i1.a(1)), (i1.v(0) * i1.v(1)),
 				0, 0, 0, (pow(i0.v(1), 2) - pow(i0.v(2), 2)), (i0.a(2) - (i0.v(0) * i0.v(1))), (i0.a(1) + (i0.v(0) * i0.v(2))), 0, 0, 0, (pow(i1.v(1), 2) - pow(i1.v(2), 2)), (i1.a(2) - (i1.v(0) * i1.v(1))), (i1.a(1) + (i1.v(0) * i1.v(2))),
 				0, 0, 0, (i0.v(1) * i0.v(2)), (-i0.v(0) * i0.v(2)), (i0.a(2)), 0, 0, 0, (i1.v(1) * i1.v(2)), (-i1.v(0) * i1.v(2)), (i1.a(2)),
-				ft0[0], ft0[1], ft0[2], ft0[3], ft0[4], ft0[5], ft1[0], ft1[1], ft1[2], ft1[3], ft1[4], ft1[5];
+				(ft0[0] - ft_init[0]), (ft0[1] - ft_init[1]), (ft0[2] - ft_init[2]), (ft0[3] - ft_init[3]), (ft0[4] - ft_init[4]), (ft0[5] - ft_init[5]), (ft1[0] - ft_init[0]), (ft1[1] - ft_init[1]), (ft1[2] - ft_init[2]), (ft1[3] - ft_init[3]), (ft1[4] - ft_init[4]), (ft1[5] - ft_init[5]);
 		
-		/** counter TVO
+		
 		Eigen::Matrix<double, 11, 12> Ginit;
 		Ginit << M_g, M_g;
 		Minit = Minit + Ginit;
-		**/
+		
 		
 		Eigen::MatrixXd S;
 		Eigen::MatrixXd U;
@@ -458,11 +462,11 @@ namespace payload_estimation
 					0, 0, 0, (-i0.v(1) * i0.v(2)), (i0.a(1)), (i0.v(0) * i0.v(1)),
 					0, 0, 0, (pow(i0.v(1), 2) - pow(i0.v(2), 2)), (i0.a(2) - (i0.v(0) * i0.v(1))), (i0.a(1) + (i0.v(0) * i0.v(2))),
 					0, 0, 0, (i0.v(1) * i0.v(2)), (-i0.v(0) * i0.v(2)), (i0.a(2)),
-					ft0[0], ft0[1], ft0[2], ft0[3], ft0[4], ft0[5];
+					(ft0[0] - ft_init[0]), (ft0[1] - ft_init[1]), (ft0[2] - ft_init[2]), (ft0[3] - ft_init[3]), (ft0[4] - ft_init[4]), (ft0[5] - ft_init[5]);
 			
-			/** counter TVO
+			
 			N = N + M_g;
-			**/
+			
 			
 			Eigen::MatrixXd L = U.transpose() * N;
 			Eigen::MatrixXd M = N - (U * L);

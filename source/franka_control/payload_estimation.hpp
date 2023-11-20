@@ -27,12 +27,12 @@ namespace payload_estimation
 
 	static Eigen::Matrix<double, 3, 1> gravity(0.0, 0.0, -9.81); //global gravity vector
 
-	//some intital values for payload estimation, please use init function or set manually before running any estimation functions
+	//some intital values for payload estimation, will be set whenever running any estimation function
 	static Eigen::EulerAnglesXYZd ang_init; //euler angles for starting position
-	/** This is to counter time-varying sensor offsets (TVO), requires zeroing of sensor data
 	static Eigen::Matrix<double, 3, 1> g_init; //gravity vector for starting position
 	static Eigen::Matrix<double, 11, 6> M_g; //matrix built from g_init for TLS
-	**/
+	static std::array<double, 6> ft_init; //initial sensor values
+	static double t_init; //starting time
 
 	//internal data interchange format
 	struct inter {
@@ -67,6 +67,8 @@ namespace payload_estimation
 	class ple
 	{
 	private:
+		static void init(std::pair<std::pair<std::array<double, 7>, std::array<double, 6>>, double> sample);
+
 		static inter preprocess(std::array<double, 7> &q, Eigen::EulerAnglesXYZd &old_ang, Eigen::Matrix<double, 3, 1> &old_v, double seconds);
 		
 		static results compute_tls_solution(Eigen::MatrixXd &S, Eigen::MatrixXd &U);
@@ -83,7 +85,6 @@ namespace payload_estimation
 
 		static data read_from_csv(std::string &filename);
 
-		static void init(std::array<double, 7> &starting_position);
 	};
 
 } /* namespace payload_estimation */
