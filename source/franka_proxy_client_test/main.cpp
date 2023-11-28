@@ -79,7 +79,7 @@ void franka_proxy_client_test(const std::string& ip)
 		payload_estimation::results res = payload_estimation::ple::estimate_tls(indata, false, 1);
 		auto time1 = std::chrono::high_resolution_clock::now();
 		double delta = (time1 - time0).count();
-		std::string line = "exact_full," + std::to_string(indata.size()) + ",1," + std::to_string(res.mass) + std::to_string(res.com(0)) + std::to_string(res.com(1)) + std::to_string(res.com(2)) + std::to_string(res.inertia.coeff(0, 0)) + std::to_string(res.inertia.coeff(0, 1)) + std::to_string(res.inertia.coeff(0, 2)) + std::to_string(res.inertia.coeff(1, 1)) + std::to_string(res.inertia.coeff(1, 2)) + std::to_string(res.inertia.coeff(2, 2)) + std::to_string(delta);
+		std::string line = "exact_full," + std::to_string(indata.size()) + ",1," + std::to_string(res.mass) + "," + std::to_string(res.com(0)) + "," + std::to_string(res.com(1)) + "," + std::to_string(res.com(2)) + "," + std::to_string(res.inertia.coeff(0, 0)) + "," + std::to_string(res.inertia.coeff(0, 1)) + "," + std::to_string(res.inertia.coeff(0, 2)) + "," + std::to_string(res.inertia.coeff(1, 1)) + "," + std::to_string(res.inertia.coeff(1, 2)) + "," + std::to_string(res.inertia.coeff(2, 2)) + std::to_string(delta);
 		mut.lock();
 		logger << line << "\n";
 		mut.unlock();
@@ -92,11 +92,11 @@ void franka_proxy_client_test(const std::string& ip)
 		payload_estimation::results res = payload_estimation::ple::estimate_tls(indata, false, 1);
 		auto t1 = std::chrono::high_resolution_clock::now();
 		double delta = (t1 - t0).count();
-		std::string line = "exact_full," + std::to_string(indata.size()) + ",1," + std::to_string(res.mass) + std::to_string(res.com(0)) + std::to_string(res.com(1)) + std::to_string(res.com(2)) + std::to_string(res.inertia.coeff(0, 0)) + std::to_string(res.inertia.coeff(0, 1)) + std::to_string(res.inertia.coeff(0, 2)) + std::to_string(res.inertia.coeff(1, 1)) + std::to_string(res.inertia.coeff(1, 2)) + std::to_string(res.inertia.coeff(2, 2)) + std::to_string(delta);
+		std::string line = "fast_full," + std::to_string(indata.size()) + ",1," + std::to_string(res.mass) + "," + std::to_string(res.com(0)) + "," + std::to_string(res.com(1)) + "," + std::to_string(res.com(2)) + "," + std::to_string(res.inertia.coeff(0, 0)) + "," + std::to_string(res.inertia.coeff(0, 1)) + "," + std::to_string(res.inertia.coeff(0, 2)) + "," + std::to_string(res.inertia.coeff(1, 1)) + "," + std::to_string(res.inertia.coeff(1, 2)) + "," + std::to_string(res.inertia.coeff(2, 2)) + std::to_string(delta);
 		mut.lock();
 		logger << line << "\n";
 		mut.unlock();
-		std::cout << "Finished exact TLS calculation for full data set in " << delta << " seconds" << std::endl;
+		std::cout << "Finished fast TLS calculation for full data set in " << delta << " seconds" << std::endl;
 		});
 
 	std::thread t3
@@ -105,7 +105,7 @@ void franka_proxy_client_test(const std::string& ip)
 		payload_estimation::results res = payload_estimation::ple::estimate_tls(med_sets[0], true, 1);
 		auto time1 = std::chrono::high_resolution_clock::now();
 		double delta = (time1 - time0).count();
-		std::string line = "fast_1000_1," + std::to_string(med_sets[0].size()) + ",1," + std::to_string(res.mass) + std::to_string(res.com(0)) + std::to_string(res.com(1)) + std::to_string(res.com(2)) + std::to_string(res.inertia.coeff(0, 0)) + std::to_string(res.inertia.coeff(0, 1)) + std::to_string(res.inertia.coeff(0, 2)) + std::to_string(res.inertia.coeff(1, 1)) + std::to_string(res.inertia.coeff(1, 2)) + std::to_string(res.inertia.coeff(2, 2)) + std::to_string(delta);
+		std::string line = "fast_1000_1," + std::to_string(med_sets[0].size()) + ",1," + std::to_string(res.mass) + "," + std::to_string(res.com(0)) + "," + std::to_string(res.com(1)) + "," + std::to_string(res.com(2)) + "," + std::to_string(res.inertia.coeff(0, 0)) + "," + std::to_string(res.inertia.coeff(0, 1)) + "," + std::to_string(res.inertia.coeff(0, 2)) + "," + std::to_string(res.inertia.coeff(1, 1)) + "," + std::to_string(res.inertia.coeff(1, 2)) + "," + std::to_string(res.inertia.coeff(2, 2)) + std::to_string(delta);
 		mut.lock();
 		logger << line << "\n";
 		mut.unlock();
@@ -114,7 +114,7 @@ void franka_proxy_client_test(const std::string& ip)
 		res = payload_estimation::ple::estimate_tls(med_sets[0], false, 1);
 		time1 = std::chrono::high_resolution_clock::now();
 		delta = (time1 - time0).count();
-		line = "exact_1000_1," + std::to_string(med_sets[0].size()) + ",1," + std::to_string(res.mass) + std::to_string(res.com(0)) + std::to_string(res.com(1)) + std::to_string(res.com(2)) + std::to_string(res.inertia.coeff(0, 0)) + std::to_string(res.inertia.coeff(0, 1)) + std::to_string(res.inertia.coeff(0, 2)) + std::to_string(res.inertia.coeff(1, 1)) + std::to_string(res.inertia.coeff(1, 2)) + std::to_string(res.inertia.coeff(2, 2)) + std::to_string(delta);
+		line = "exact_1000_1," + std::to_string(med_sets[0].size()) + ",1," + std::to_string(res.mass) + "," + std::to_string(res.com(0)) + "," + std::to_string(res.com(1)) + "," + std::to_string(res.com(2)) + "," + std::to_string(res.inertia.coeff(0, 0)) + "," + std::to_string(res.inertia.coeff(0, 1)) + "," + std::to_string(res.inertia.coeff(0, 2)) + "," + std::to_string(res.inertia.coeff(1, 1)) + "," + std::to_string(res.inertia.coeff(1, 2)) + "," + std::to_string(res.inertia.coeff(2, 2)) + std::to_string(delta);
 		mut.lock();
 		logger << line << "\n";
 		mut.unlock();
@@ -127,7 +127,7 @@ void franka_proxy_client_test(const std::string& ip)
 		payload_estimation::results res = payload_estimation::ple::estimate_tls(med_sets[1], true, 1);
 		auto time1 = std::chrono::high_resolution_clock::now();
 		double delta = (time1 - time0).count();
-		std::string line = "fast_1000_2," + std::to_string(med_sets[1].size()) + ",1," + std::to_string(res.mass) + std::to_string(res.com(0)) + std::to_string(res.com(1)) + std::to_string(res.com(2)) + std::to_string(res.inertia.coeff(0, 0)) + std::to_string(res.inertia.coeff(0, 1)) + std::to_string(res.inertia.coeff(0, 2)) + std::to_string(res.inertia.coeff(1, 1)) + std::to_string(res.inertia.coeff(1, 2)) + std::to_string(res.inertia.coeff(2, 2)) + std::to_string(delta);
+		std::string line = "fast_1000_2," + std::to_string(med_sets[1].size()) + ",1," + std::to_string(res.mass) + "," + std::to_string(res.com(0)) + "," + std::to_string(res.com(1)) + "," + std::to_string(res.com(2)) + "," + std::to_string(res.inertia.coeff(0, 0)) + "," + std::to_string(res.inertia.coeff(0, 1)) + "," + std::to_string(res.inertia.coeff(0, 2)) + "," + std::to_string(res.inertia.coeff(1, 1)) + "," + std::to_string(res.inertia.coeff(1, 2)) + "," + std::to_string(res.inertia.coeff(2, 2)) + std::to_string(delta);
 		mut.lock();
 		logger << line << "\n";
 		mut.unlock();
@@ -136,7 +136,7 @@ void franka_proxy_client_test(const std::string& ip)
 		res = payload_estimation::ple::estimate_tls(med_sets[1], false, 1);
 		time1 = std::chrono::high_resolution_clock::now();
 		delta = (time1 - time0).count();
-		line = "exact_1000_2," + std::to_string(med_sets[1].size()) + ",1," + std::to_string(res.mass) + std::to_string(res.com(0)) + std::to_string(res.com(1)) + std::to_string(res.com(2)) + std::to_string(res.inertia.coeff(0, 0)) + std::to_string(res.inertia.coeff(0, 1)) + std::to_string(res.inertia.coeff(0, 2)) + std::to_string(res.inertia.coeff(1, 1)) + std::to_string(res.inertia.coeff(1, 2)) + std::to_string(res.inertia.coeff(2, 2)) + std::to_string(delta);
+		line = "exact_1000_2," + std::to_string(med_sets[1].size()) + ",1," + std::to_string(res.mass) + "," + std::to_string(res.com(0)) + "," + std::to_string(res.com(1)) + "," + std::to_string(res.com(2)) + "," + std::to_string(res.inertia.coeff(0, 0)) + "," + std::to_string(res.inertia.coeff(0, 1)) + "," + std::to_string(res.inertia.coeff(0, 2)) + "," + std::to_string(res.inertia.coeff(1, 1)) + "," + std::to_string(res.inertia.coeff(1, 2)) + "," + std::to_string(res.inertia.coeff(2, 2)) + std::to_string(delta);
 		mut.lock();
 		logger << line << "\n";
 		mut.unlock();
@@ -149,7 +149,7 @@ void franka_proxy_client_test(const std::string& ip)
 		payload_estimation::results res = payload_estimation::ple::estimate_tls(med_sets[2], true, 1);
 		auto time1 = std::chrono::high_resolution_clock::now();
 		double delta = (time1 - time0).count();
-		std::string line = "fast_1000_3," + std::to_string(med_sets[2].size()) + ",1," + std::to_string(res.mass) + std::to_string(res.com(0)) + std::to_string(res.com(1)) + std::to_string(res.com(2)) + std::to_string(res.inertia.coeff(0, 0)) + std::to_string(res.inertia.coeff(0, 1)) + std::to_string(res.inertia.coeff(0, 2)) + std::to_string(res.inertia.coeff(1, 1)) + std::to_string(res.inertia.coeff(1, 2)) + std::to_string(res.inertia.coeff(2, 2)) + std::to_string(delta);
+		std::string line = "fast_1000_3," + std::to_string(med_sets[2].size()) + ",1," + std::to_string(res.mass) + "," + std::to_string(res.com(0)) + "," + std::to_string(res.com(1)) + "," + std::to_string(res.com(2)) + "," + std::to_string(res.inertia.coeff(0, 0)) + "," + std::to_string(res.inertia.coeff(0, 1)) + "," + std::to_string(res.inertia.coeff(0, 2)) + "," + std::to_string(res.inertia.coeff(1, 1)) + "," + std::to_string(res.inertia.coeff(1, 2)) + "," + std::to_string(res.inertia.coeff(2, 2)) + std::to_string(delta);
 		mut.lock();
 		logger << line << "\n";
 		mut.unlock();
@@ -158,7 +158,7 @@ void franka_proxy_client_test(const std::string& ip)
 		res = payload_estimation::ple::estimate_tls(med_sets[2], false, 1);
 		time1 = std::chrono::high_resolution_clock::now();
 		delta = (time1 - time0).count();
-		line = "exact_1000_3," + std::to_string(med_sets[2].size()) + ",1," + std::to_string(res.mass) + std::to_string(res.com(0)) + std::to_string(res.com(1)) + std::to_string(res.com(2)) + std::to_string(res.inertia.coeff(0, 0)) + std::to_string(res.inertia.coeff(0, 1)) + std::to_string(res.inertia.coeff(0, 2)) + std::to_string(res.inertia.coeff(1, 1)) + std::to_string(res.inertia.coeff(1, 2)) + std::to_string(res.inertia.coeff(2, 2)) + std::to_string(delta);
+		line = "exact_1000_3," + std::to_string(med_sets[2].size()) + ",1," + std::to_string(res.mass) + "," + std::to_string(res.com(0)) + "," + std::to_string(res.com(1)) + "," + std::to_string(res.com(2)) + "," + std::to_string(res.inertia.coeff(0, 0)) + "," + std::to_string(res.inertia.coeff(0, 1)) + "," + std::to_string(res.inertia.coeff(0, 2)) + "," + std::to_string(res.inertia.coeff(1, 1)) + "," + std::to_string(res.inertia.coeff(1, 2)) + "," + std::to_string(res.inertia.coeff(2, 2)) + std::to_string(delta);
 		mut.lock();
 		logger << line << "\n";
 		mut.unlock();
@@ -171,7 +171,7 @@ void franka_proxy_client_test(const std::string& ip)
 		payload_estimation::results res = payload_estimation::ple::estimate_tls(med_sets[3], true, 1);
 		auto time1 = std::chrono::high_resolution_clock::now();
 		double delta = (time1 - time0).count();
-		std::string line = "fast_1000_4," + std::to_string(med_sets[3].size()) + ",1," + std::to_string(res.mass) + std::to_string(res.com(0)) + std::to_string(res.com(1)) + std::to_string(res.com(2)) + std::to_string(res.inertia.coeff(0, 0)) + std::to_string(res.inertia.coeff(0, 1)) + std::to_string(res.inertia.coeff(0, 2)) + std::to_string(res.inertia.coeff(1, 1)) + std::to_string(res.inertia.coeff(1, 2)) + std::to_string(res.inertia.coeff(2, 2)) + std::to_string(delta);
+		std::string line = "fast_1000_4," + std::to_string(med_sets[3].size()) + ",1," + std::to_string(res.mass) + "," + std::to_string(res.com(0)) + "," + std::to_string(res.com(1)) + "," + std::to_string(res.com(2)) + "," + std::to_string(res.inertia.coeff(0, 0)) + "," + std::to_string(res.inertia.coeff(0, 1)) + "," + std::to_string(res.inertia.coeff(0, 2)) + "," + std::to_string(res.inertia.coeff(1, 1)) + "," + std::to_string(res.inertia.coeff(1, 2)) + "," + std::to_string(res.inertia.coeff(2, 2)) + std::to_string(delta);
 		mut.lock();
 		logger << line << "\n";
 		mut.unlock();
@@ -180,7 +180,7 @@ void franka_proxy_client_test(const std::string& ip)
 		res = payload_estimation::ple::estimate_tls(med_sets[3], false, 1);
 		time1 = std::chrono::high_resolution_clock::now();
 		delta = (time1 - time0).count();
-		line = "exact_1000_4," + std::to_string(med_sets[0].size()) + ",1," + std::to_string(res.mass) + std::to_string(res.com(0)) + std::to_string(res.com(1)) + std::to_string(res.com(2)) + std::to_string(res.inertia.coeff(0, 0)) + std::to_string(res.inertia.coeff(0, 1)) + std::to_string(res.inertia.coeff(0, 2)) + std::to_string(res.inertia.coeff(1, 1)) + std::to_string(res.inertia.coeff(1, 2)) + std::to_string(res.inertia.coeff(2, 2)) + std::to_string(delta);
+		line = "exact_1000_4," + std::to_string(med_sets[0].size()) + ",1," + std::to_string(res.mass) + "," + std::to_string(res.com(0)) + "," + std::to_string(res.com(1)) + "," + std::to_string(res.com(2)) + "," + std::to_string(res.inertia.coeff(0, 0)) + "," + std::to_string(res.inertia.coeff(0, 1)) + "," + std::to_string(res.inertia.coeff(0, 2)) + "," + std::to_string(res.inertia.coeff(1, 1)) + "," + std::to_string(res.inertia.coeff(1, 2)) + "," + std::to_string(res.inertia.coeff(2, 2)) + std::to_string(delta);
 		mut.lock();
 		logger << line << "\n";
 		mut.unlock();
@@ -193,7 +193,7 @@ void franka_proxy_client_test(const std::string& ip)
 		payload_estimation::results res = payload_estimation::ple::estimate_tls(med_sets[4], true, 1);
 		auto time1 = std::chrono::high_resolution_clock::now();
 		double delta = (time1 - time0).count();
-		std::string line = "fast_1000_5," + std::to_string(med_sets[4].size()) + ",1," + std::to_string(res.mass) + std::to_string(res.com(0)) + std::to_string(res.com(1)) + std::to_string(res.com(2)) + std::to_string(res.inertia.coeff(0, 0)) + std::to_string(res.inertia.coeff(0, 1)) + std::to_string(res.inertia.coeff(0, 2)) + std::to_string(res.inertia.coeff(1, 1)) + std::to_string(res.inertia.coeff(1, 2)) + std::to_string(res.inertia.coeff(2, 2)) + std::to_string(delta);
+		std::string line = "fast_1000_5," + std::to_string(med_sets[4].size()) + ",1," + std::to_string(res.mass) + "," + std::to_string(res.com(0)) + "," + std::to_string(res.com(1)) + "," + std::to_string(res.com(2)) + "," + std::to_string(res.inertia.coeff(0, 0)) + "," + std::to_string(res.inertia.coeff(0, 1)) + "," + std::to_string(res.inertia.coeff(0, 2)) + "," + std::to_string(res.inertia.coeff(1, 1)) + "," + std::to_string(res.inertia.coeff(1, 2)) + "," + std::to_string(res.inertia.coeff(2, 2)) + std::to_string(delta);
 		mut.lock();
 		logger << line << "\n";
 		mut.unlock();
@@ -202,7 +202,7 @@ void franka_proxy_client_test(const std::string& ip)
 		res = payload_estimation::ple::estimate_tls(med_sets[4], false, 1);
 		time1 = std::chrono::high_resolution_clock::now();
 		delta = (time1 - time0).count();
-		line = "exact_1000_5," + std::to_string(med_sets[4].size()) + ",1," + std::to_string(res.mass) + std::to_string(res.com(0)) + std::to_string(res.com(1)) + std::to_string(res.com(2)) + std::to_string(res.inertia.coeff(0, 0)) + std::to_string(res.inertia.coeff(0, 1)) + std::to_string(res.inertia.coeff(0, 2)) + std::to_string(res.inertia.coeff(1, 1)) + std::to_string(res.inertia.coeff(1, 2)) + std::to_string(res.inertia.coeff(2, 2)) + std::to_string(delta);
+		line = "exact_1000_5," + std::to_string(med_sets[4].size()) + ",1," + std::to_string(res.mass) + "," + std::to_string(res.com(0)) + "," + std::to_string(res.com(1)) + "," + std::to_string(res.com(2)) + "," + std::to_string(res.inertia.coeff(0, 0)) + "," + std::to_string(res.inertia.coeff(0, 1)) + "," + std::to_string(res.inertia.coeff(0, 2)) + "," + std::to_string(res.inertia.coeff(1, 1)) + "," + std::to_string(res.inertia.coeff(1, 2)) + "," + std::to_string(res.inertia.coeff(2, 2)) + std::to_string(delta);
 		mut.lock();
 		logger << line << "\n";
 		mut.unlock();
@@ -215,7 +215,7 @@ void franka_proxy_client_test(const std::string& ip)
 		payload_estimation::results res = payload_estimation::ple::estimate_tls(med_sets[5], true, 1);
 		auto time1 = std::chrono::high_resolution_clock::now();
 		double delta = (time1 - time0).count();
-		std::string line = "fast_1000_6," + std::to_string(med_sets[4].size()) + ",1," + std::to_string(res.mass) + std::to_string(res.com(0)) + std::to_string(res.com(1)) + std::to_string(res.com(2)) + std::to_string(res.inertia.coeff(0, 0)) + std::to_string(res.inertia.coeff(0, 1)) + std::to_string(res.inertia.coeff(0, 2)) + std::to_string(res.inertia.coeff(1, 1)) + std::to_string(res.inertia.coeff(1, 2)) + std::to_string(res.inertia.coeff(2, 2)) + std::to_string(delta);
+		std::string line = "fast_1000_6," + std::to_string(med_sets[4].size()) + ",1," + std::to_string(res.mass) + "," + std::to_string(res.com(0)) + "," + std::to_string(res.com(1)) + "," + std::to_string(res.com(2)) + "," + std::to_string(res.inertia.coeff(0, 0)) + "," + std::to_string(res.inertia.coeff(0, 1)) + "," + std::to_string(res.inertia.coeff(0, 2)) + "," + std::to_string(res.inertia.coeff(1, 1)) + "," + std::to_string(res.inertia.coeff(1, 2)) + "," + std::to_string(res.inertia.coeff(2, 2)) + std::to_string(delta);
 		mut.lock();
 		logger << line << "\n";
 		mut.unlock();
@@ -224,7 +224,7 @@ void franka_proxy_client_test(const std::string& ip)
 		res = payload_estimation::ple::estimate_tls(med_sets[5], false, 1);
 		time1 = std::chrono::high_resolution_clock::now();
 		delta = (time1 - time0).count();
-		line = "exact_1000_6," + std::to_string(med_sets[5].size()) + ",1," + std::to_string(res.mass) + std::to_string(res.com(0)) + std::to_string(res.com(1)) + std::to_string(res.com(2)) + std::to_string(res.inertia.coeff(0, 0)) + std::to_string(res.inertia.coeff(0, 1)) + std::to_string(res.inertia.coeff(0, 2)) + std::to_string(res.inertia.coeff(1, 1)) + std::to_string(res.inertia.coeff(1, 2)) + std::to_string(res.inertia.coeff(2, 2)) + std::to_string(delta);
+		line = "exact_1000_6," + std::to_string(med_sets[5].size()) + ",1," + std::to_string(res.mass) + "," + std::to_string(res.com(0)) + "," + std::to_string(res.com(1)) + "," + std::to_string(res.com(2)) + "," + std::to_string(res.inertia.coeff(0, 0)) + "," + std::to_string(res.inertia.coeff(0, 1)) + "," + std::to_string(res.inertia.coeff(0, 2)) + "," + std::to_string(res.inertia.coeff(1, 1)) + "," + std::to_string(res.inertia.coeff(1, 2)) + "," + std::to_string(res.inertia.coeff(2, 2)) + std::to_string(delta);
 		mut.lock();
 		logger << line << "\n";
 		mut.unlock();
@@ -237,7 +237,7 @@ void franka_proxy_client_test(const std::string& ip)
 		payload_estimation::results res = payload_estimation::ple::estimate_tls(med_sets[6], true, 1);
 		auto time1 = std::chrono::high_resolution_clock::now();
 		double delta = (time1 - time0).count();
-		std::string line = "fast_1000_7," + std::to_string(med_sets[6].size()) + ",1," + std::to_string(res.mass) + std::to_string(res.com(0)) + std::to_string(res.com(1)) + std::to_string(res.com(2)) + std::to_string(res.inertia.coeff(0, 0)) + std::to_string(res.inertia.coeff(0, 1)) + std::to_string(res.inertia.coeff(0, 2)) + std::to_string(res.inertia.coeff(1, 1)) + std::to_string(res.inertia.coeff(1, 2)) + std::to_string(res.inertia.coeff(2, 2)) + std::to_string(delta);
+		std::string line = "fast_1000_7," + std::to_string(med_sets[6].size()) + ",1," + std::to_string(res.mass) + "," + std::to_string(res.com(0)) + "," + std::to_string(res.com(1)) + "," + std::to_string(res.com(2)) + "," + std::to_string(res.inertia.coeff(0, 0)) + "," + std::to_string(res.inertia.coeff(0, 1)) + "," + std::to_string(res.inertia.coeff(0, 2)) + "," + std::to_string(res.inertia.coeff(1, 1)) + "," + std::to_string(res.inertia.coeff(1, 2)) + "," + std::to_string(res.inertia.coeff(2, 2)) + std::to_string(delta);
 		mut.lock();
 		logger << line << "\n";
 		mut.unlock();
@@ -246,7 +246,7 @@ void franka_proxy_client_test(const std::string& ip)
 		res = payload_estimation::ple::estimate_tls(med_sets[6], false, 1);
 		time1 = std::chrono::high_resolution_clock::now();
 		delta = (time1 - time0).count();
-		line = "exact_1000_7," + std::to_string(med_sets[6].size()) + ",1," + std::to_string(res.mass) + std::to_string(res.com(0)) + std::to_string(res.com(1)) + std::to_string(res.com(2)) + std::to_string(res.inertia.coeff(0, 0)) + std::to_string(res.inertia.coeff(0, 1)) + std::to_string(res.inertia.coeff(0, 2)) + std::to_string(res.inertia.coeff(1, 1)) + std::to_string(res.inertia.coeff(1, 2)) + std::to_string(res.inertia.coeff(2, 2)) + std::to_string(delta);
+		line = "exact_1000_7," + std::to_string(med_sets[6].size()) + ",1," + std::to_string(res.mass) + "," + std::to_string(res.com(0)) + "," + std::to_string(res.com(1)) + "," + std::to_string(res.com(2)) + "," + std::to_string(res.inertia.coeff(0, 0)) + "," + std::to_string(res.inertia.coeff(0, 1)) + "," + std::to_string(res.inertia.coeff(0, 2)) + "," + std::to_string(res.inertia.coeff(1, 1)) + "," + std::to_string(res.inertia.coeff(1, 2)) + "," + std::to_string(res.inertia.coeff(2, 2)) + std::to_string(delta);
 		mut.lock();
 		logger << line << "\n";
 		mut.unlock();
@@ -259,7 +259,7 @@ void franka_proxy_client_test(const std::string& ip)
 		payload_estimation::results res = payload_estimation::ple::estimate_tls(med_sets[7], true, 1);
 		auto time1 = std::chrono::high_resolution_clock::now();
 		double delta = (time1 - time0).count();
-		std::string line = "fast_1000_8," + std::to_string(med_sets[7].size()) + ",1," + std::to_string(res.mass) + std::to_string(res.com(0)) + std::to_string(res.com(1)) + std::to_string(res.com(2)) + std::to_string(res.inertia.coeff(0, 0)) + std::to_string(res.inertia.coeff(0, 1)) + std::to_string(res.inertia.coeff(0, 2)) + std::to_string(res.inertia.coeff(1, 1)) + std::to_string(res.inertia.coeff(1, 2)) + std::to_string(res.inertia.coeff(2, 2)) + std::to_string(delta);
+		std::string line = "fast_1000_8," + std::to_string(med_sets[7].size()) + ",1," + std::to_string(res.mass) + "," + std::to_string(res.com(0)) + "," + std::to_string(res.com(1)) + "," + std::to_string(res.com(2)) + "," + std::to_string(res.inertia.coeff(0, 0)) + "," + std::to_string(res.inertia.coeff(0, 1)) + "," + std::to_string(res.inertia.coeff(0, 2)) + "," + std::to_string(res.inertia.coeff(1, 1)) + "," + std::to_string(res.inertia.coeff(1, 2)) + "," + std::to_string(res.inertia.coeff(2, 2)) + std::to_string(delta);
 		mut.lock();
 		logger << line << "\n";
 		mut.unlock();
@@ -268,7 +268,7 @@ void franka_proxy_client_test(const std::string& ip)
 		res = payload_estimation::ple::estimate_tls(med_sets[7], false, 1);
 		time1 = std::chrono::high_resolution_clock::now();
 		delta = (time1 - time0).count();
-		line = "exact_1000_8," + std::to_string(med_sets[7].size()) + ",1," + std::to_string(res.mass) + std::to_string(res.com(0)) + std::to_string(res.com(1)) + std::to_string(res.com(2)) + std::to_string(res.inertia.coeff(0, 0)) + std::to_string(res.inertia.coeff(0, 1)) + std::to_string(res.inertia.coeff(0, 2)) + std::to_string(res.inertia.coeff(1, 1)) + std::to_string(res.inertia.coeff(1, 2)) + std::to_string(res.inertia.coeff(2, 2)) + std::to_string(delta);
+		line = "exact_1000_8," + std::to_string(med_sets[7].size()) + ",1," + std::to_string(res.mass) + "," + std::to_string(res.com(0)) + "," + std::to_string(res.com(1)) + "," + std::to_string(res.com(2)) + "," + std::to_string(res.inertia.coeff(0, 0)) + "," + std::to_string(res.inertia.coeff(0, 1)) + "," + std::to_string(res.inertia.coeff(0, 2)) + "," + std::to_string(res.inertia.coeff(1, 1)) + "," + std::to_string(res.inertia.coeff(1, 2)) + "," + std::to_string(res.inertia.coeff(2, 2)) + std::to_string(delta);
 		mut.lock();
 		logger << line << "\n";
 		mut.unlock();
@@ -281,7 +281,7 @@ void franka_proxy_client_test(const std::string& ip)
 		payload_estimation::results res = payload_estimation::ple::estimate_tls(med_sets[8], true, 1);
 		auto time1 = std::chrono::high_resolution_clock::now();
 		double delta = (time1 - time0).count();
-		std::string line = "fast_1000_9," + std::to_string(med_sets[8].size()) + ",1," + std::to_string(res.mass) + std::to_string(res.com(0)) + std::to_string(res.com(1)) + std::to_string(res.com(2)) + std::to_string(res.inertia.coeff(0, 0)) + std::to_string(res.inertia.coeff(0, 1)) + std::to_string(res.inertia.coeff(0, 2)) + std::to_string(res.inertia.coeff(1, 1)) + std::to_string(res.inertia.coeff(1, 2)) + std::to_string(res.inertia.coeff(2, 2)) + std::to_string(delta);
+		std::string line = "fast_1000_9," + std::to_string(med_sets[8].size()) + ",1," + std::to_string(res.mass) + "," + std::to_string(res.com(0)) + "," + std::to_string(res.com(1)) + "," + std::to_string(res.com(2)) + "," + std::to_string(res.inertia.coeff(0, 0)) + "," + std::to_string(res.inertia.coeff(0, 1)) + "," + std::to_string(res.inertia.coeff(0, 2)) + "," + std::to_string(res.inertia.coeff(1, 1)) + "," + std::to_string(res.inertia.coeff(1, 2)) + "," + std::to_string(res.inertia.coeff(2, 2)) + std::to_string(delta);
 		mut.lock();
 		logger << line << "\n";
 		mut.unlock();
@@ -290,7 +290,7 @@ void franka_proxy_client_test(const std::string& ip)
 		res = payload_estimation::ple::estimate_tls(med_sets[8], false, 1);
 		time1 = std::chrono::high_resolution_clock::now();
 		delta = (time1 - time0).count();
-		line = "exact_1000_9," + std::to_string(med_sets[8].size()) + ",1," + std::to_string(res.mass) + std::to_string(res.com(0)) + std::to_string(res.com(1)) + std::to_string(res.com(2)) + std::to_string(res.inertia.coeff(0, 0)) + std::to_string(res.inertia.coeff(0, 1)) + std::to_string(res.inertia.coeff(0, 2)) + std::to_string(res.inertia.coeff(1, 1)) + std::to_string(res.inertia.coeff(1, 2)) + std::to_string(res.inertia.coeff(2, 2)) + std::to_string(delta);
+		line = "exact_1000_9," + std::to_string(med_sets[8].size()) + ",1," + std::to_string(res.mass) + "," + std::to_string(res.com(0)) + "," + std::to_string(res.com(1)) + "," + std::to_string(res.com(2)) + "," + std::to_string(res.inertia.coeff(0, 0)) + "," + std::to_string(res.inertia.coeff(0, 1)) + "," + std::to_string(res.inertia.coeff(0, 2)) + "," + std::to_string(res.inertia.coeff(1, 1)) + "," + std::to_string(res.inertia.coeff(1, 2)) + "," + std::to_string(res.inertia.coeff(2, 2)) + std::to_string(delta);
 		mut.lock();
 		logger << line << "\n";
 		mut.unlock();;
@@ -302,7 +302,7 @@ void franka_proxy_client_test(const std::string& ip)
 	payload_estimation::results res = payload_estimation::ple::estimate_ceres(indata);
 	auto time1 = std::chrono::high_resolution_clock::now();
 	double delta = (time1 - time0).count();
-	std::string line = "ceres_full," + std::to_string(med_sets[8].size()) + ",1," + std::to_string(res.mass) + std::to_string(res.com(0)) + std::to_string(res.com(1)) + std::to_string(res.com(2)) + std::to_string(res.inertia.coeff(0, 0)) + std::to_string(res.inertia.coeff(0, 1)) + std::to_string(res.inertia.coeff(0, 2)) + std::to_string(res.inertia.coeff(1, 1)) + std::to_string(res.inertia.coeff(1, 2)) + std::to_string(res.inertia.coeff(2, 2)) + std::to_string(delta);
+	std::string line = "ceres_full," + std::to_string(med_sets[8].size()) + ",1," + std::to_string(res.mass) + "," + std::to_string(res.com(0)) + "," + std::to_string(res.com(1)) + "," + std::to_string(res.com(2)) + "," + std::to_string(res.inertia.coeff(0, 0)) + "," + std::to_string(res.inertia.coeff(0, 1)) + "," + std::to_string(res.inertia.coeff(0, 2)) + "," + std::to_string(res.inertia.coeff(1, 1)) + "," + std::to_string(res.inertia.coeff(1, 2)) + "," + std::to_string(res.inertia.coeff(2, 2)) + std::to_string(delta);
 	mut.lock();
 	logger << line << "\n";
 	mut.unlock();
@@ -312,7 +312,7 @@ void franka_proxy_client_test(const std::string& ip)
 		res = payload_estimation::ple::estimate_ceres(med_sets[i]);
 		time1 = std::chrono::high_resolution_clock::now();
 		delta = (time1 - time0).count();
-		line = "ceres_1000_" + std::to_string(i+1) + "," + std::to_string(med_sets[8].size()) + ",1," + std::to_string(res.mass) + std::to_string(res.com(0)) + std::to_string(res.com(1)) + std::to_string(res.com(2)) + std::to_string(res.inertia.coeff(0, 0)) + std::to_string(res.inertia.coeff(0, 1)) + std::to_string(res.inertia.coeff(0, 2)) + std::to_string(res.inertia.coeff(1, 1)) + std::to_string(res.inertia.coeff(1, 2)) + std::to_string(res.inertia.coeff(2, 2)) + std::to_string(delta);
+		line = "ceres_1000_" + std::to_string(i+1) + "," + std::to_string(med_sets[8].size()) + ",1," + std::to_string(res.mass) + "," + std::to_string(res.com(0)) + "," + std::to_string(res.com(1)) + "," + std::to_string(res.com(2)) + "," + std::to_string(res.inertia.coeff(0, 0)) + "," + std::to_string(res.inertia.coeff(0, 1)) + "," + std::to_string(res.inertia.coeff(0, 2)) + "," + std::to_string(res.inertia.coeff(1, 1)) + "," + std::to_string(res.inertia.coeff(1, 2)) + "," + std::to_string(res.inertia.coeff(2, 2)) + std::to_string(delta);
 		mut.lock();
 		logger << line << "\n";
 		mut.unlock();
@@ -323,7 +323,7 @@ void franka_proxy_client_test(const std::string& ip)
 		res = payload_estimation::ple::estimate_ceres(sml_sets[i]);
 		time1 = std::chrono::high_resolution_clock::now();
 		delta = (time1 - time0).count();
-		line = "ceres_200_" + std::to_string(i + 1) + "," + std::to_string(med_sets[8].size()) + ",1," + std::to_string(res.mass) + std::to_string(res.com(0)) + std::to_string(res.com(1)) + std::to_string(res.com(2)) + std::to_string(res.inertia.coeff(0, 0)) + std::to_string(res.inertia.coeff(0, 1)) + std::to_string(res.inertia.coeff(0, 2)) + std::to_string(res.inertia.coeff(1, 1)) + std::to_string(res.inertia.coeff(1, 2)) + std::to_string(res.inertia.coeff(2, 2)) + std::to_string(delta);
+		line = "ceres_200_" + std::to_string(i + 1) + "," + std::to_string(med_sets[8].size()) + ",1," + std::to_string(res.mass) + "," + std::to_string(res.com(0)) + "," + std::to_string(res.com(1)) + "," + std::to_string(res.com(2)) + "," + std::to_string(res.inertia.coeff(0, 0)) + "," + std::to_string(res.inertia.coeff(0, 1)) + "," + std::to_string(res.inertia.coeff(0, 2)) + "," + std::to_string(res.inertia.coeff(1, 1)) + "," + std::to_string(res.inertia.coeff(1, 2)) + "," + std::to_string(res.inertia.coeff(2, 2)) + std::to_string(delta);
 		mut.lock();
 		logger << line << "\n";
 		mut.unlock();
@@ -337,7 +337,7 @@ void franka_proxy_client_test(const std::string& ip)
 		res = payload_estimation::ple::estimate_tls(sml_sets[i], false, 1);
 		time1 = std::chrono::high_resolution_clock::now();
 		delta = (time1 - time0).count();
-		line = "exact_200_" + std::to_string(i + 1) + "," + std::to_string(med_sets[8].size()) + ",1," + std::to_string(res.mass) + std::to_string(res.com(0)) + std::to_string(res.com(1)) + std::to_string(res.com(2)) + std::to_string(res.inertia.coeff(0, 0)) + std::to_string(res.inertia.coeff(0, 1)) + std::to_string(res.inertia.coeff(0, 2)) + std::to_string(res.inertia.coeff(1, 1)) + std::to_string(res.inertia.coeff(1, 2)) + std::to_string(res.inertia.coeff(2, 2)) + std::to_string(delta);
+		line = "exact_200_" + std::to_string(i + 1) + "," + std::to_string(med_sets[8].size()) + ",1," + std::to_string(res.mass) + "," + std::to_string(res.com(0)) + "," + std::to_string(res.com(1)) + "," + std::to_string(res.com(2)) + "," + std::to_string(res.inertia.coeff(0, 0)) + "," + std::to_string(res.inertia.coeff(0, 1)) + "," + std::to_string(res.inertia.coeff(0, 2)) + "," + std::to_string(res.inertia.coeff(1, 1)) + "," + std::to_string(res.inertia.coeff(1, 2)) + "," + std::to_string(res.inertia.coeff(2, 2)) + std::to_string(delta);
 		mut.lock();
 		logger << line << "\n";
 		mut.unlock();
@@ -347,7 +347,7 @@ void franka_proxy_client_test(const std::string& ip)
 		res = payload_estimation::ple::estimate_tls(sml_sets[i], true, 1);
 		time1 = std::chrono::high_resolution_clock::now();
 		delta = (time1 - time0).count();
-		line = "fast_200_" + std::to_string(i + 1) + "," + std::to_string(med_sets[8].size()) + ",1," + std::to_string(res.mass) + std::to_string(res.com(0)) + std::to_string(res.com(1)) + std::to_string(res.com(2)) + std::to_string(res.inertia.coeff(0, 0)) + std::to_string(res.inertia.coeff(0, 1)) + std::to_string(res.inertia.coeff(0, 2)) + std::to_string(res.inertia.coeff(1, 1)) + std::to_string(res.inertia.coeff(1, 2)) + std::to_string(res.inertia.coeff(2, 2)) + std::to_string(delta);
+		line = "fast_200_" + std::to_string(i + 1) + "," + std::to_string(med_sets[8].size()) + ",1," + std::to_string(res.mass) + "," + std::to_string(res.com(0)) + "," + std::to_string(res.com(1)) + "," + std::to_string(res.com(2)) + "," + std::to_string(res.inertia.coeff(0, 0)) + "," + std::to_string(res.inertia.coeff(0, 1)) + "," + std::to_string(res.inertia.coeff(0, 2)) + "," + std::to_string(res.inertia.coeff(1, 1)) + "," + std::to_string(res.inertia.coeff(1, 2)) + "," + std::to_string(res.inertia.coeff(2, 2)) + std::to_string(delta);
 		mut.lock();
 		logger << line << "\n";
 		mut.unlock();
