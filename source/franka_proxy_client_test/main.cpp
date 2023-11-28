@@ -24,6 +24,13 @@ int main()
 
 void franka_proxy_client_test(const std::string& ip)
 {
+	/**
+	std::string inf = "ple_log_gripper.csv";
+	payload_estimation::data ind = payload_estimation::ple::read_from_csv(inf);
+	payload_estimation::ple::generate_training_data(ind);
+	if (true) { return; }
+	**/
+
 	//PLE CALCULATION TEST
 	std::cout << "Starting PLE calculation test" << std::endl;
 
@@ -33,16 +40,18 @@ void franka_proxy_client_test(const std::string& ip)
 	auto front = indata.begin();
 	auto back = front;
 	std::cout << "Total number of samples: " << samples << std::endl;
-
+	
 	std::cout << "Preparing data sets for testing...";
-	std::vector<payload_estimation::data> sets;
+	
+	std::vector<payload_estimation::data> sml_sets;
+	std::vector<payload_estimation::data> med_sets;
 	int small = 0;
 	int medium = 0;
 	for (int i = 0; i < samples - 200; i = i + 200) {
 		front = back;
 		back += 200;
 		payload_estimation::data set(front, back);
-		sets.push_back(set);
+		sml_sets.push_back(set);
 		small++;
 	}
 	front = indata.begin();
@@ -51,73 +60,270 @@ void franka_proxy_client_test(const std::string& ip)
 		front = back;
 		back += 1000;
 		payload_estimation::data set(front, back);
-		sets.push_back(set);
+		med_sets.push_back(set);
 		medium++;
 	}
-	sets.push_back(indata);
 	std::cout << "Done" << std::endl;
 
 	std::string outfile = "ple_test.csv";
 	std::string header = "mode,samples,steps,mass,com_x,com_y,com_z,i_xx,i_xy,i_xz,i_yy,i_yz,i_zz,time";
 	std::ofstream logger(outfile, std::ofstream::out);
 	logger << header << "\n";
+	std::vector<std::string> lines;
 
-	payload_estimation::results res;
-	
 	std::cout << "Calculating PLE solutions for " << small << " small data sets (200 samples), " << medium << " medium data sets (1000 samples), and the full data set" << std::endl;
-	for (int i = 0; i < sets.size(); i++) {
-		if (i < small) {
-			std::cout << "Small data set " << (i + 1) << " of " << small << "..." << std::endl;
-		}
-		else if (i < (small + medium)) {
-			std::cout << "Medium data set " << (i - small + 1) << " of " << medium << "..." << std::endl;
-		}
-		else {
-			std::cout << "Full data set..." << std::endl;
-		}
-
-		std::cout << "Exact TLS..." << std::endl;
-
-		auto t0 = std::chrono::high_resolution_clock::now();
-		try {
-			res = payload_estimation::ple::estimate_tls(sets[i], false, 1);
-		}
-		catch (std::runtime_error e) {
-			std::cout << e.what() << std::endl;
-		}
-		auto t1 = std::chrono::high_resolution_clock::now();
-		std::chrono::duration<float> time = t1 - t0;
-		logger << "exact," << sets[i].size() << ",1," << res.mass << "," << res.com(0) << "," << res.com(1) << "," << res.com(2) << "," << res.inertia.coeff(0, 0) << "," << res.inertia.coeff(0, 1) << "," << res.inertia.coeff(0, 2) << "," << res.inertia.coeff(1, 1) << "," << res.inertia.coeff(1, 2) << "," << res.inertia.coeff(2, 2) << "," << time.count() << "\n";
-
-		std::cout << "Time taken: " << time.count() << std::endl;
-		
-		std::cout << "Fast TLS..." << std::endl;
-
-		t0 = std::chrono::high_resolution_clock::now();
-		try {
-			res = payload_estimation::ple::estimate_tls(sets[i], true, 1);
-		}
-		catch (std::runtime_error e) {
-			std::cout << e.what() << std::endl;
-		}
-		t1 = std::chrono::high_resolution_clock::now();
-		time = t1 - t0;
-		logger << "fast," << sets[i].size() << ",1," << res.mass << "," << res.com(0) << "," << res.com(1) << "," << res.com(2) << "," << res.inertia.coeff(0, 0) << "," << res.inertia.coeff(0, 1) << "," << res.inertia.coeff(0, 2) << "," << res.inertia.coeff(1, 1) << "," << res.inertia.coeff(1, 2) << "," << res.inertia.coeff(2, 2) << "," << time.count() << "\n";
-
-		std::cout << "Time taken: " << time.count() << std::endl;
-
-		std::cout << "Ceres..." << std::endl;
-
-		t0 = std::chrono::high_resolution_clock::now();
-		res = payload_estimation::ple::estimate_ceres(sets[i]);
-		t1 = std::chrono::high_resolution_clock::now();
-		time = t1 - t0;
-		logger << "ceres," << sets[i].size() << ",1," << res.mass << "," << res.com(0) << "," << res.com(1) << "," << res.com(2) << "," << res.inertia.coeff(0, 0) << "," << res.inertia.coeff(0, 1) << "," << res.inertia.coeff(0, 2) << "," << res.inertia.coeff(1, 1) << "," << res.inertia.coeff(1, 2) << "," << res.inertia.coeff(2, 2) << "," << time.count() << "\n";
-
-		std::cout << "Time taken: " << time.count() << std::endl;
-	}
 	
-	if (true) { return; }
+	std::thread t1
+	([&lines, &indata] {
+		auto time0 = std::chrono::high_resolution_clock::now();
+		payload_estimation::results res = payload_estimation::ple::estimate_tls(indata, false, 1);
+		auto time1 = std::chrono::high_resolution_clock::now();
+		double delta = (time1 - time0).count();
+		std::string line = "exact_full," + std::to_string(indata.size()) + ",1," + std::to_string(res.mass) + std::to_string(res.com(0)) + std::to_string(res.com(1)) + std::to_string(res.com(2)) + std::to_string(res.inertia.coeff(0, 0)) + std::to_string(res.inertia.coeff(0, 1)) + std::to_string(res.inertia.coeff(0, 2)) + std::to_string(res.inertia.coeff(1, 1)) + std::to_string(res.inertia.coeff(1, 2)) + std::to_string(res.inertia.coeff(2, 2)) + std::to_string(delta);
+		lines.push_back(line);
+		std::cout << "Finished exact TLS calculation for full data set in " << delta << " seconds" << std::endl;
+		});
+
+	std::thread t2
+	([&lines, &indata] {
+		auto t0 = std::chrono::high_resolution_clock::now();
+		payload_estimation::results res = payload_estimation::ple::estimate_tls(indata, false, 1);
+		auto t1 = std::chrono::high_resolution_clock::now();
+		double delta = (t1 - t0).count();
+		std::string line = "exact_full," + std::to_string(indata.size()) + ",1," + std::to_string(res.mass) + std::to_string(res.com(0)) + std::to_string(res.com(1)) + std::to_string(res.com(2)) + std::to_string(res.inertia.coeff(0, 0)) + std::to_string(res.inertia.coeff(0, 1)) + std::to_string(res.inertia.coeff(0, 2)) + std::to_string(res.inertia.coeff(1, 1)) + std::to_string(res.inertia.coeff(1, 2)) + std::to_string(res.inertia.coeff(2, 2)) + std::to_string(delta);
+		lines.push_back(line);
+		std::cout << "Finished exact TLS calculation for full data set in " << delta << " seconds" << std::endl;
+		});
+
+	std::thread t3
+	([&lines, &med_sets] {
+		auto time0 = std::chrono::high_resolution_clock::now();
+		payload_estimation::results res = payload_estimation::ple::estimate_tls(med_sets[0], true, 1);
+		auto time1 = std::chrono::high_resolution_clock::now();
+		double delta = (time1 - time0).count();
+		std::string line = "fast_1000_1," + std::to_string(med_sets[0].size()) + ",1," + std::to_string(res.mass) + std::to_string(res.com(0)) + std::to_string(res.com(1)) + std::to_string(res.com(2)) + std::to_string(res.inertia.coeff(0, 0)) + std::to_string(res.inertia.coeff(0, 1)) + std::to_string(res.inertia.coeff(0, 2)) + std::to_string(res.inertia.coeff(1, 1)) + std::to_string(res.inertia.coeff(1, 2)) + std::to_string(res.inertia.coeff(2, 2)) + std::to_string(delta);
+		lines.push_back(line);
+		std::cout << "Finished fast TLS calculation for medium data set 1 in " << delta << " seconds" << std::endl;
+		time0 = std::chrono::high_resolution_clock::now();
+		res = payload_estimation::ple::estimate_tls(med_sets[0], false, 1);
+		time1 = std::chrono::high_resolution_clock::now();
+		delta = (time1 - time0).count();
+		line = "exact_1000_1," + std::to_string(med_sets[0].size()) + ",1," + std::to_string(res.mass) + std::to_string(res.com(0)) + std::to_string(res.com(1)) + std::to_string(res.com(2)) + std::to_string(res.inertia.coeff(0, 0)) + std::to_string(res.inertia.coeff(0, 1)) + std::to_string(res.inertia.coeff(0, 2)) + std::to_string(res.inertia.coeff(1, 1)) + std::to_string(res.inertia.coeff(1, 2)) + std::to_string(res.inertia.coeff(2, 2)) + std::to_string(delta);
+		lines.push_back(line);
+		std::cout << "Finished exact TLS calculation for medium data set 1 in " << delta << " seconds" << std::endl;
+		});
+
+	std::thread t4
+	([&lines, &med_sets] {
+		auto time0 = std::chrono::high_resolution_clock::now();
+		payload_estimation::results res = payload_estimation::ple::estimate_tls(med_sets[1], true, 1);
+		auto time1 = std::chrono::high_resolution_clock::now();
+		double delta = (time1 - time0).count();
+		std::string line = "fast_1000_2," + std::to_string(med_sets[1].size()) + ",1," + std::to_string(res.mass) + std::to_string(res.com(0)) + std::to_string(res.com(1)) + std::to_string(res.com(2)) + std::to_string(res.inertia.coeff(0, 0)) + std::to_string(res.inertia.coeff(0, 1)) + std::to_string(res.inertia.coeff(0, 2)) + std::to_string(res.inertia.coeff(1, 1)) + std::to_string(res.inertia.coeff(1, 2)) + std::to_string(res.inertia.coeff(2, 2)) + std::to_string(delta);
+		lines.push_back(line);
+		std::cout << "Finished fast TLS calculation for medium data set 2 in " << delta << " seconds" << std::endl;
+		time0 = std::chrono::high_resolution_clock::now();
+		res = payload_estimation::ple::estimate_tls(med_sets[1], false, 1);
+		time1 = std::chrono::high_resolution_clock::now();
+		delta = (time1 - time0).count();
+		line = "exact_1000_2," + std::to_string(med_sets[1].size()) + ",1," + std::to_string(res.mass) + std::to_string(res.com(0)) + std::to_string(res.com(1)) + std::to_string(res.com(2)) + std::to_string(res.inertia.coeff(0, 0)) + std::to_string(res.inertia.coeff(0, 1)) + std::to_string(res.inertia.coeff(0, 2)) + std::to_string(res.inertia.coeff(1, 1)) + std::to_string(res.inertia.coeff(1, 2)) + std::to_string(res.inertia.coeff(2, 2)) + std::to_string(delta);
+		lines.push_back(line);
+		std::cout << "Finished exact TLS calculation for medium data set 2 in " << delta << " seconds" << std::endl;
+		});
+
+	std::thread t5
+	([&lines, &med_sets] {
+		auto time0 = std::chrono::high_resolution_clock::now();
+		payload_estimation::results res = payload_estimation::ple::estimate_tls(med_sets[2], true, 1);
+		auto time1 = std::chrono::high_resolution_clock::now();
+		double delta = (time1 - time0).count();
+		std::string line = "fast_1000_3," + std::to_string(med_sets[2].size()) + ",1," + std::to_string(res.mass) + std::to_string(res.com(0)) + std::to_string(res.com(1)) + std::to_string(res.com(2)) + std::to_string(res.inertia.coeff(0, 0)) + std::to_string(res.inertia.coeff(0, 1)) + std::to_string(res.inertia.coeff(0, 2)) + std::to_string(res.inertia.coeff(1, 1)) + std::to_string(res.inertia.coeff(1, 2)) + std::to_string(res.inertia.coeff(2, 2)) + std::to_string(delta);
+		lines.push_back(line);
+		std::cout << "Finished fast TLS calculation for medium data set 3 in " << delta << " seconds" << std::endl;
+		time0 = std::chrono::high_resolution_clock::now();
+		res = payload_estimation::ple::estimate_tls(med_sets[2], false, 1);
+		time1 = std::chrono::high_resolution_clock::now();
+		delta = (time1 - time0).count();
+		line = "exact_1000_3," + std::to_string(med_sets[2].size()) + ",1," + std::to_string(res.mass) + std::to_string(res.com(0)) + std::to_string(res.com(1)) + std::to_string(res.com(2)) + std::to_string(res.inertia.coeff(0, 0)) + std::to_string(res.inertia.coeff(0, 1)) + std::to_string(res.inertia.coeff(0, 2)) + std::to_string(res.inertia.coeff(1, 1)) + std::to_string(res.inertia.coeff(1, 2)) + std::to_string(res.inertia.coeff(2, 2)) + std::to_string(delta);
+		lines.push_back(line);
+		std::cout << "Finished exact TLS calculation for medium data set 3 in " << delta << " seconds" << std::endl;
+		});
+
+	std::thread t6
+	([&lines, &med_sets] {
+		auto time0 = std::chrono::high_resolution_clock::now();
+		payload_estimation::results res = payload_estimation::ple::estimate_tls(med_sets[3], true, 1);
+		auto time1 = std::chrono::high_resolution_clock::now();
+		double delta = (time1 - time0).count();
+		std::string line = "fast_1000_4," + std::to_string(med_sets[3].size()) + ",1," + std::to_string(res.mass) + std::to_string(res.com(0)) + std::to_string(res.com(1)) + std::to_string(res.com(2)) + std::to_string(res.inertia.coeff(0, 0)) + std::to_string(res.inertia.coeff(0, 1)) + std::to_string(res.inertia.coeff(0, 2)) + std::to_string(res.inertia.coeff(1, 1)) + std::to_string(res.inertia.coeff(1, 2)) + std::to_string(res.inertia.coeff(2, 2)) + std::to_string(delta);
+		lines.push_back(line);
+		std::cout << "Finished fast TLS calculation for medium data set 4 in " << delta << " seconds" << std::endl;
+		time0 = std::chrono::high_resolution_clock::now();
+		res = payload_estimation::ple::estimate_tls(med_sets[3], false, 1);
+		time1 = std::chrono::high_resolution_clock::now();
+		delta = (time1 - time0).count();
+		line = "exact_1000_4," + std::to_string(med_sets[0].size()) + ",1," + std::to_string(res.mass) + std::to_string(res.com(0)) + std::to_string(res.com(1)) + std::to_string(res.com(2)) + std::to_string(res.inertia.coeff(0, 0)) + std::to_string(res.inertia.coeff(0, 1)) + std::to_string(res.inertia.coeff(0, 2)) + std::to_string(res.inertia.coeff(1, 1)) + std::to_string(res.inertia.coeff(1, 2)) + std::to_string(res.inertia.coeff(2, 2)) + std::to_string(delta);
+		lines.push_back(line);
+		std::cout << "Finished exact TLS calculation for medium data set 4 in " << delta << " seconds" << std::endl;
+		});
+
+	std::thread t7
+	([&lines, &med_sets] {
+		auto time0 = std::chrono::high_resolution_clock::now();
+		payload_estimation::results res = payload_estimation::ple::estimate_tls(med_sets[4], true, 1);
+		auto time1 = std::chrono::high_resolution_clock::now();
+		double delta = (time1 - time0).count();
+		std::string line = "fast_1000_5," + std::to_string(med_sets[4].size()) + ",1," + std::to_string(res.mass) + std::to_string(res.com(0)) + std::to_string(res.com(1)) + std::to_string(res.com(2)) + std::to_string(res.inertia.coeff(0, 0)) + std::to_string(res.inertia.coeff(0, 1)) + std::to_string(res.inertia.coeff(0, 2)) + std::to_string(res.inertia.coeff(1, 1)) + std::to_string(res.inertia.coeff(1, 2)) + std::to_string(res.inertia.coeff(2, 2)) + std::to_string(delta);
+		lines.push_back(line);
+		std::cout << "Finished fast TLS calculation for medium data set 5 in " << delta << " seconds" << std::endl;
+		time0 = std::chrono::high_resolution_clock::now();
+		res = payload_estimation::ple::estimate_tls(med_sets[4], false, 1);
+		time1 = std::chrono::high_resolution_clock::now();
+		delta = (time1 - time0).count();
+		line = "exact_1000_5," + std::to_string(med_sets[4].size()) + ",1," + std::to_string(res.mass) + std::to_string(res.com(0)) + std::to_string(res.com(1)) + std::to_string(res.com(2)) + std::to_string(res.inertia.coeff(0, 0)) + std::to_string(res.inertia.coeff(0, 1)) + std::to_string(res.inertia.coeff(0, 2)) + std::to_string(res.inertia.coeff(1, 1)) + std::to_string(res.inertia.coeff(1, 2)) + std::to_string(res.inertia.coeff(2, 2)) + std::to_string(delta);
+		lines.push_back(line);
+		std::cout << "Finished exact TLS calculation for medium data set 5 in " << delta << " seconds" << std::endl;
+		});
+
+	std::thread t8
+	([&lines, &med_sets] {
+		auto time0 = std::chrono::high_resolution_clock::now();
+		payload_estimation::results res = payload_estimation::ple::estimate_tls(med_sets[5], true, 1);
+		auto time1 = std::chrono::high_resolution_clock::now();
+		double delta = (time1 - time0).count();
+		std::string line = "fast_1000_6," + std::to_string(med_sets[4].size()) + ",1," + std::to_string(res.mass) + std::to_string(res.com(0)) + std::to_string(res.com(1)) + std::to_string(res.com(2)) + std::to_string(res.inertia.coeff(0, 0)) + std::to_string(res.inertia.coeff(0, 1)) + std::to_string(res.inertia.coeff(0, 2)) + std::to_string(res.inertia.coeff(1, 1)) + std::to_string(res.inertia.coeff(1, 2)) + std::to_string(res.inertia.coeff(2, 2)) + std::to_string(delta);
+		lines.push_back(line);
+		std::cout << "Finished fast TLS calculation for medium data set 6 in " << delta << " seconds" << std::endl;
+		time0 = std::chrono::high_resolution_clock::now();
+		res = payload_estimation::ple::estimate_tls(med_sets[5], false, 1);
+		time1 = std::chrono::high_resolution_clock::now();
+		delta = (time1 - time0).count();
+		line = "exact_1000_6," + std::to_string(med_sets[5].size()) + ",1," + std::to_string(res.mass) + std::to_string(res.com(0)) + std::to_string(res.com(1)) + std::to_string(res.com(2)) + std::to_string(res.inertia.coeff(0, 0)) + std::to_string(res.inertia.coeff(0, 1)) + std::to_string(res.inertia.coeff(0, 2)) + std::to_string(res.inertia.coeff(1, 1)) + std::to_string(res.inertia.coeff(1, 2)) + std::to_string(res.inertia.coeff(2, 2)) + std::to_string(delta);
+		lines.push_back(line);
+		std::cout << "Finished exact TLS calculation for medium data set 6 in " << delta << " seconds" << std::endl;
+		});
+
+	std::thread t9
+	([&lines, &med_sets] {
+		auto time0 = std::chrono::high_resolution_clock::now();
+		payload_estimation::results res = payload_estimation::ple::estimate_tls(med_sets[6], true, 1);
+		auto time1 = std::chrono::high_resolution_clock::now();
+		double delta = (time1 - time0).count();
+		std::string line = "fast_1000_7," + std::to_string(med_sets[6].size()) + ",1," + std::to_string(res.mass) + std::to_string(res.com(0)) + std::to_string(res.com(1)) + std::to_string(res.com(2)) + std::to_string(res.inertia.coeff(0, 0)) + std::to_string(res.inertia.coeff(0, 1)) + std::to_string(res.inertia.coeff(0, 2)) + std::to_string(res.inertia.coeff(1, 1)) + std::to_string(res.inertia.coeff(1, 2)) + std::to_string(res.inertia.coeff(2, 2)) + std::to_string(delta);
+		lines.push_back(line);
+		std::cout << "Finished fast TLS calculation for medium data set 7 in " << delta << " seconds" << std::endl;
+		time0 = std::chrono::high_resolution_clock::now();
+		res = payload_estimation::ple::estimate_tls(med_sets[6], false, 1);
+		time1 = std::chrono::high_resolution_clock::now();
+		delta = (time1 - time0).count();
+		line = "exact_1000_7," + std::to_string(med_sets[6].size()) + ",1," + std::to_string(res.mass) + std::to_string(res.com(0)) + std::to_string(res.com(1)) + std::to_string(res.com(2)) + std::to_string(res.inertia.coeff(0, 0)) + std::to_string(res.inertia.coeff(0, 1)) + std::to_string(res.inertia.coeff(0, 2)) + std::to_string(res.inertia.coeff(1, 1)) + std::to_string(res.inertia.coeff(1, 2)) + std::to_string(res.inertia.coeff(2, 2)) + std::to_string(delta);
+		lines.push_back(line);
+		std::cout << "Finished exact TLS calculation for medium data set 7 in " << delta << " seconds" << std::endl;
+		});
+
+	std::thread t10
+	([&lines, &med_sets] {
+		auto time0 = std::chrono::high_resolution_clock::now();
+		payload_estimation::results res = payload_estimation::ple::estimate_tls(med_sets[7], true, 1);
+		auto time1 = std::chrono::high_resolution_clock::now();
+		double delta = (time1 - time0).count();
+		std::string line = "fast_1000_8," + std::to_string(med_sets[7].size()) + ",1," + std::to_string(res.mass) + std::to_string(res.com(0)) + std::to_string(res.com(1)) + std::to_string(res.com(2)) + std::to_string(res.inertia.coeff(0, 0)) + std::to_string(res.inertia.coeff(0, 1)) + std::to_string(res.inertia.coeff(0, 2)) + std::to_string(res.inertia.coeff(1, 1)) + std::to_string(res.inertia.coeff(1, 2)) + std::to_string(res.inertia.coeff(2, 2)) + std::to_string(delta);
+		lines.push_back(line);
+		std::cout << "Finished fast TLS calculation for medium data set 8 in " << delta << " seconds" << std::endl;
+		time0 = std::chrono::high_resolution_clock::now();
+		res = payload_estimation::ple::estimate_tls(med_sets[7], false, 1);
+		time1 = std::chrono::high_resolution_clock::now();
+		delta = (time1 - time0).count();
+		line = "exact_1000_8," + std::to_string(med_sets[7].size()) + ",1," + std::to_string(res.mass) + std::to_string(res.com(0)) + std::to_string(res.com(1)) + std::to_string(res.com(2)) + std::to_string(res.inertia.coeff(0, 0)) + std::to_string(res.inertia.coeff(0, 1)) + std::to_string(res.inertia.coeff(0, 2)) + std::to_string(res.inertia.coeff(1, 1)) + std::to_string(res.inertia.coeff(1, 2)) + std::to_string(res.inertia.coeff(2, 2)) + std::to_string(delta);
+		lines.push_back(line);
+		std::cout << "Finished exact TLS calculation for medium data set 8 in " << delta << " seconds" << std::endl;
+		});
+
+	std::thread t11
+	([&lines, &med_sets] {
+		auto time0 = std::chrono::high_resolution_clock::now();
+		payload_estimation::results res = payload_estimation::ple::estimate_tls(med_sets[8], true, 1);
+		auto time1 = std::chrono::high_resolution_clock::now();
+		double delta = (time1 - time0).count();
+		std::string line = "fast_1000_9," + std::to_string(med_sets[8].size()) + ",1," + std::to_string(res.mass) + std::to_string(res.com(0)) + std::to_string(res.com(1)) + std::to_string(res.com(2)) + std::to_string(res.inertia.coeff(0, 0)) + std::to_string(res.inertia.coeff(0, 1)) + std::to_string(res.inertia.coeff(0, 2)) + std::to_string(res.inertia.coeff(1, 1)) + std::to_string(res.inertia.coeff(1, 2)) + std::to_string(res.inertia.coeff(2, 2)) + std::to_string(delta);
+		lines.push_back(line);
+		std::cout << "Finished fast TLS calculation for medium data set 9 in " << delta << " seconds" << std::endl;
+		time0 = std::chrono::high_resolution_clock::now();
+		res = payload_estimation::ple::estimate_tls(med_sets[8], false, 1);
+		time1 = std::chrono::high_resolution_clock::now();
+		delta = (time1 - time0).count();
+		line = "exact_1000_9," + std::to_string(med_sets[8].size()) + ",1," + std::to_string(res.mass) + std::to_string(res.com(0)) + std::to_string(res.com(1)) + std::to_string(res.com(2)) + std::to_string(res.inertia.coeff(0, 0)) + std::to_string(res.inertia.coeff(0, 1)) + std::to_string(res.inertia.coeff(0, 2)) + std::to_string(res.inertia.coeff(1, 1)) + std::to_string(res.inertia.coeff(1, 2)) + std::to_string(res.inertia.coeff(2, 2)) + std::to_string(delta);
+		lines.push_back(line);
+		std::cout << "Finished exact TLS calculation for medium data set 9 in " << delta << " seconds" << std::endl;
+		});
+
+	auto cer_time0 = std::chrono::high_resolution_clock::now();
+	auto time0 = std::chrono::high_resolution_clock::now();
+	payload_estimation::results res = payload_estimation::ple::estimate_ceres(indata);
+	auto time1 = std::chrono::high_resolution_clock::now();
+	double delta = (time1 - time0).count();
+	std::string line = "ceres_full," + std::to_string(med_sets[8].size()) + ",1," + std::to_string(res.mass) + std::to_string(res.com(0)) + std::to_string(res.com(1)) + std::to_string(res.com(2)) + std::to_string(res.inertia.coeff(0, 0)) + std::to_string(res.inertia.coeff(0, 1)) + std::to_string(res.inertia.coeff(0, 2)) + std::to_string(res.inertia.coeff(1, 1)) + std::to_string(res.inertia.coeff(1, 2)) + std::to_string(res.inertia.coeff(2, 2)) + std::to_string(delta);
+	lines.push_back(line);
+
+	for (int i = 0; i < med_sets.size(); i++) {
+		time0 = std::chrono::high_resolution_clock::now();
+		res = payload_estimation::ple::estimate_ceres(med_sets[i]);
+		time1 = std::chrono::high_resolution_clock::now();
+		delta = (time1 - time0).count();
+		line = "ceres_1000_" + std::to_string(i+1) + "," + std::to_string(med_sets[8].size()) + ",1," + std::to_string(res.mass) + std::to_string(res.com(0)) + std::to_string(res.com(1)) + std::to_string(res.com(2)) + std::to_string(res.inertia.coeff(0, 0)) + std::to_string(res.inertia.coeff(0, 1)) + std::to_string(res.inertia.coeff(0, 2)) + std::to_string(res.inertia.coeff(1, 1)) + std::to_string(res.inertia.coeff(1, 2)) + std::to_string(res.inertia.coeff(2, 2)) + std::to_string(delta);
+		lines.push_back(line);
+	}
+
+	for (int i = 0; i < sml_sets.size(); i++) {
+		time0 = std::chrono::high_resolution_clock::now();
+		res = payload_estimation::ple::estimate_ceres(sml_sets[i]);
+		time1 = std::chrono::high_resolution_clock::now();
+		delta = (time1 - time0).count();
+		line = "ceres_200_" + std::to_string(i + 1) + "," + std::to_string(med_sets[8].size()) + ",1," + std::to_string(res.mass) + std::to_string(res.com(0)) + std::to_string(res.com(1)) + std::to_string(res.com(2)) + std::to_string(res.inertia.coeff(0, 0)) + std::to_string(res.inertia.coeff(0, 1)) + std::to_string(res.inertia.coeff(0, 2)) + std::to_string(res.inertia.coeff(1, 1)) + std::to_string(res.inertia.coeff(1, 2)) + std::to_string(res.inertia.coeff(2, 2)) + std::to_string(delta);
+		lines.push_back(line);
+	}
+	auto cer_time1 = std::chrono::high_resolution_clock::now();
+	double cer_delta = (cer_time1 - cer_time0).count();
+	std::cout << "Finished all Ceres calculations in " << cer_delta << " seconds" << std::endl;
+
+	for (int i = 0; i < sml_sets.size(); i++) {
+		time0 = std::chrono::high_resolution_clock::now();
+		res = payload_estimation::ple::estimate_tls(sml_sets[i], false, 1);
+		time1 = std::chrono::high_resolution_clock::now();
+		delta = (time1 - time0).count();
+		line = "exact_200_" + std::to_string(i + 1) + "," + std::to_string(med_sets[8].size()) + ",1," + std::to_string(res.mass) + std::to_string(res.com(0)) + std::to_string(res.com(1)) + std::to_string(res.com(2)) + std::to_string(res.inertia.coeff(0, 0)) + std::to_string(res.inertia.coeff(0, 1)) + std::to_string(res.inertia.coeff(0, 2)) + std::to_string(res.inertia.coeff(1, 1)) + std::to_string(res.inertia.coeff(1, 2)) + std::to_string(res.inertia.coeff(2, 2)) + std::to_string(delta);
+		lines.push_back(line);
+		std::cout << "Finished exact TLS calculation for small data set " << (i + 1) << " in " << delta << " seconds" << std::endl;
+
+		time0 = std::chrono::high_resolution_clock::now();
+		res = payload_estimation::ple::estimate_tls(sml_sets[i], true, 1);
+		time1 = std::chrono::high_resolution_clock::now();
+		delta = (time1 - time0).count();
+		line = "fast_200_" + std::to_string(i + 1) + "," + std::to_string(med_sets[8].size()) + ",1," + std::to_string(res.mass) + std::to_string(res.com(0)) + std::to_string(res.com(1)) + std::to_string(res.com(2)) + std::to_string(res.inertia.coeff(0, 0)) + std::to_string(res.inertia.coeff(0, 1)) + std::to_string(res.inertia.coeff(0, 2)) + std::to_string(res.inertia.coeff(1, 1)) + std::to_string(res.inertia.coeff(1, 2)) + std::to_string(res.inertia.coeff(2, 2)) + std::to_string(delta);
+		lines.push_back(line);
+		std::cout << "Finished fast TLS calculation for small data set " << (i + 1) << " in " << delta << " seconds" << std::endl;
+	}
+	std::cout << "Finished calculations for all small data sets" << std::endl;
+	
+	if (true) { 
+		t11.join();
+		t10.join();
+		t9.join();
+		t8.join();
+		t7.join();
+		t6.join();
+		t5.join();
+		t4.join();
+		t3.join();
+		t2.join();
+		t1.join();
+
+		for (int i = 0; i < lines.size(); i++) {
+			logger << line[i] << "\n";
+		}
+
+		return; 
+	}
 	//PLE CALCULATION TEST
 
 

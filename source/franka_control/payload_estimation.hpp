@@ -27,7 +27,8 @@ namespace payload_estimation
 
 	static Eigen::Matrix<double, 3, 1> gravity(0.0, 0.0, -9.81); //global gravity vector
 
-	//some intital values for payload estimation, will be set whenever running any estimation function
+	//some intital values for payload estimation, can be set manually or by running any estimation function
+	static bool is_init = false;
 	static Eigen::EulerAnglesXYZd ang_init; //euler angles for starting position
 	static Eigen::Matrix<double, 3, 1> g_init; //gravity vector for starting position
 	static Eigen::Matrix<double, 11, 6> M_g; //matrix built from g_init for TLS
@@ -67,8 +68,6 @@ namespace payload_estimation
 	class ple
 	{
 	private:
-		static void init(std::pair<std::pair<std::array<double, 7>, std::array<double, 6>>, double> sample);
-
 		static inter preprocess(std::array<double, 7> &q, Eigen::EulerAnglesXYZd &old_ang, Eigen::Matrix<double, 3, 1> &old_v, double seconds);
 		
 		static results compute_tls_solution(Eigen::MatrixXd &S, Eigen::MatrixXd &U);
@@ -79,11 +78,15 @@ namespace payload_estimation
 
 		
 	public: 
+		static void init(std::pair<std::pair<std::array<double, 7>, std::array<double, 6>>, double> sample);
+
 		static results estimate_ceres(data &input);
 
 		static results estimate_tls(data &input, bool fast, int step);
 
 		static data read_from_csv(std::string &filename);
+
+		static void generate_training_data(data &input);
 
 	};
 

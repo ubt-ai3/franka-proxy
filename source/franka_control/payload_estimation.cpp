@@ -2,6 +2,10 @@
 #define GLOG_NO_ABBREVIATED_SEVERITIES
 #endif
 
+#ifndef _USE_MATH_DEFINES
+#define _USE_MATH_DEFINES
+#endif
+
 #include "payload_estimation.hpp"
 
 #include <cmath>
@@ -65,7 +69,7 @@ namespace payload_estimation
 
 	/**********************************
 	* Utility function to calculate the
-	* forward transformation inte the
+	* forward transformation into the
 	* sensor frame
 	**********************************/
 	Eigen::Affine3d ple::fk(Eigen::Matrix<double, 7, 1> &config) {
@@ -85,7 +89,9 @@ namespace payload_estimation
 	/************************************************
 	* Initialization for the starting position of the
 	* measured robot motion, needs to be run before
-	* calling any of the estimation functions
+	* any estimations can be made and will be run
+	* automatically by any estimation method, using
+	* the first sample of data, if necessary
 	************************************************/
 
 	void ple::init(std::pair<std::pair<std::array<double, 7>, std::array<double, 6>>, double> sample) {
@@ -112,6 +118,8 @@ namespace payload_estimation
 				0, 0, 0, 0, 0, 0,
 				0, 0, 0, 0, 0, 0,
 				0, 0, 0, 0, 0, 0;
+
+		is_init = true;
 	}
 
 
@@ -130,8 +138,14 @@ namespace payload_estimation
 		Eigen::EulerAnglesXYZd euler(M);
 
 		double dz = euler.alpha() - old_ang.alpha();
+		if (dz > M_PI) { dz = dz - (2 * M_PI); }
+		else if (dz < -M_PI) { dz = dz + (2 * M_PI); }
 		double dy = euler.beta() - old_ang.beta();
+		if (dy > M_PI) { dy = dy - (2 * M_PI); }
+		else if (dy < -M_PI) { dy = dy + (2 * M_PI); }
 		double dx = euler.gamma() - old_ang.gamma();
+		if (dx > M_PI) { dx = dx - (2 * M_PI); }
+		else if (dx < -M_PI) { dx = dx + (2 * M_PI); }
 
 		double vx = (dx * std::sin(euler.beta()) * std::sin(euler.alpha()) + dy * std::cos(euler.alpha())) / seconds;
 		double vy = (dx * std::sin(euler.beta()) * std::cos(euler.alpha()) - dy * std::sin(euler.alpha())) / seconds;
@@ -156,6 +170,49 @@ namespace payload_estimation
 		store.angles = euler;
 
 		return store;
+	}
+
+
+	/*********************************************
+	* Utility function that outputs preprocessed
+	* data into a .csv file for use in ML training
+	*********************************************/
+
+	void ple::generate_training_data(data &input) {
+		//initial setup
+		auto sample = input[0];
+		init(sample);
+		Eigen::EulerAnglesXYZd old_ang = ang_init;
+		Eigen::Matrix<double, 3, 1> old_v(0.0, 0.0, 0.0);
+		double time = t_init;
+		std::array<double, 7> q;
+		std::array<double, 6> ft;
+		inter store;
+
+		std::string outfile = "ple_training.csv";
+		std::string header = "ang_v_x,ang_v_y,ang_v_z,ang_a_x,ang_a_y,ang_a_z,lin_a_x,lin_a_y,lin_a_z,grav_x,grav_y,grav_z,f_x,f_y,f_z,t_x,t_y,t_z,time";
+		std::ofstream logger(outfile, std::ofstream::out);
+		logger << header << "\n";
+
+		for (int i = 1; i < input.size(); i++) {
+			double next = input[i].second;
+			double dt = next - time;
+			if (dt <= 0.0) { continue; }
+
+			q = input[i].first.first;
+			ft = input[i].first.second;
+			store = preprocess(q, old_ang, old_v, dt);
+			old_ang = store.angles;
+			old_v = store.v;
+			time = next;
+
+			logger << store.v(0) << "," << store.v(1) << "," << store.v(2) << "," 
+				<< store.a(0) << "," << store.a(1) << "," << store.a(2) << "," 
+				<< store.l(0) << "," << store.l(1) << "," << store.l(2) << "," 
+				<< store.g(0) << "," << store.g(1) << "," << store.g(2) << "," 
+				<< ft[0] << "," << ft[1] << "," << ft[2] << "," << ft[3] 
+				<< "," << ft[4] << "," << ft[5] << "," << time << "\n";
+		}
 	}
 
 
@@ -285,8 +342,10 @@ namespace payload_estimation
 
 	results ple::estimate_ceres(data &input) {
 		//initial setup
-		auto sample = input[0];
-		init(sample);
+		if (!is_init) {
+			auto sample = input[0];
+			init(sample);
+		}
 		Eigen::EulerAnglesXYZd old_ang = ang_init;
 		Eigen::Matrix<double, 3, 1> old_v(0.0, 0.0, 0.0);
 		double time = t_init;
@@ -371,8 +430,10 @@ namespace payload_estimation
 	results ple::estimate_tls(data &input, bool fast, int step) {
 		//initial setup
 		if (step < 1) { step = 1;  }
-		auto sample = input[0];
-		init(sample);
+		if (!is_init) {
+			auto sample = input[0];
+			init(sample);
+		}
 
 		//initial SVD
 		std::array<double, 6> ft0 = input[1].first.second;
