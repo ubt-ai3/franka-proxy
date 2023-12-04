@@ -14,7 +14,6 @@ find_package(asio CONFIG REQUIRED)
 find_package(Eigen3 CONFIG REQUIRED)
 find_package(nlohmann_json REQUIRED)
 find_package(Threads REQUIRED)
-find_package(Ceres REQUIRED)
 
 
 ## TODO convert to modern cmake
@@ -136,7 +135,6 @@ add_library(
         ${CMAKE_CURRENT_SOURCE_DIR}/source/franka_control/franka_controller_remote.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/source/franka_control/franka_util.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/source/franka_control/ikfast.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/source/franka_control/payload_estimation.cpp
 )
 
 target_include_directories(
@@ -151,7 +149,6 @@ target_link_libraries(
         asio::asio
         Eigen3::Eigen
         franka_proxy_client
-        ceres
 )
 
 target_compile_definitions(
@@ -182,7 +179,6 @@ target_link_libraries(
         Threads::Threads
 		franka_proxy_share
 		franka_proxy_client
-        franka_control ##only for ple testing
 )
 
 target_compile_definitions(
