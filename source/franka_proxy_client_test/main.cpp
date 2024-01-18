@@ -241,8 +241,10 @@ void franka_proxy_client_test(const std::string& ip)
 	**/
 	//PLE PERFORMANCE TEST
 
-
+	
 	franka_proxy::franka_remote_interface robot(ip);
+	
+	// status test
 	std::atomic_bool stop(false);
 	std::thread t
 	([&stop, &robot]()
@@ -252,21 +254,30 @@ void franka_proxy_client_test(const std::string& ip)
 			{
 				robot.update();
 
-				/**
+				
 				if (i++ % 30 == 0)
 					print_status(robot);
-				**/
+				
 
 				using namespace std::chrono_literals;
 				std::this_thread::sleep_for(0.016s);
 			}
 		});
 
+	std::cout << ("--- starting record 10s ---");
+	robot.start_recording();
+	std::this_thread::sleep_for(std::chrono::seconds(10));
+
+	std::cout << ("--- stopped demonstration ---");
+	std::pair<std::vector<std::array<double, 7>>, std::vector<std::array<double, 6>>> 
+		record(robot.stop_recording());
+
+
 	// PLE TEST
 	franka_proxy::robot_config_7dof sp{ {0.0346044, -0.0666144, -0.0398886, -2.04985, -0.0229875, 1.99782, 0.778461} };
 	robot.move_to(sp);
 	std::this_thread::sleep_for(std::chrono::seconds(3));
-	robot.ple_motion(10.0, true);
+	robot.ple_motion(30.0, true);
 
 	std::string filename = "ple_log.csv";
 	payload_estimation::data input = payload_estimation::ple::read_from_csv(filename);
@@ -296,8 +307,8 @@ void franka_proxy_client_test(const std::string& ip)
 	// PLE TEST
 
 
-
-	// status test
+	/*
+	// gripper test
 	std::cout << "Starting Gripper Test." << std::endl;
 
 	robot.grasp_gripper(0.1);
@@ -439,7 +450,7 @@ void franka_proxy_client_test(const std::string& ip)
 
 	std::cout << ("Finished Playback Test.");
 
-
+	*/
 	// cleanup status test
 	stop = true;
 	t.join();
