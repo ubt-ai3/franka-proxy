@@ -16,7 +16,8 @@
 
 #include <asio/ip/tcp.hpp>
 
-#include <nlohmann/json_fwd.hpp>
+#include <nlohmann/json.hpp>
+//#include <nlohmann/json_fwd.hpp>
 
 #include <franka_proxy_share/franka_proxy_commands.hpp>
 

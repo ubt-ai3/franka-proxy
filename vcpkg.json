@@ -1,0 +1,11 @@
+{
+"name": "franka-proxy",
+  "version": "0.0.1",
+  "dependencies": [
+    "boost-signals2",
+    "eigen3",
+    "franka",
+    "asio",
+    "nlohmann-json"
+  ]
+}

@@ -15,18 +15,22 @@
 namespace asio
 {
 
-
+	/*
 class io_context;
 class execution_context;
-
+*/
 
 namespace ip
 	{ class tcp; }
 
-
+	class any_io_executor;
+	template <typename Protocol, typename Executor>
+	class basic_stream_socket;
+	class io_context;
+/*
 namespace execution
 {
-
+	
 
 template <typename... SupportableProperties>
 	class any_executor;
@@ -72,8 +76,8 @@ template <typename Protocol, typename Executor>
 	class basic_stream_socket;
 
 
-
-} /* namespace asio */
+	*/
+}  /* namespace asio */
 
 
 

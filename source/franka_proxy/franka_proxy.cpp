@@ -167,4 +167,6 @@ int main2(int argc, char* argv[])
 	}
 	f.close();
 	std::cout <<argv[0]<< "wrote to file";
+
+	return 0;
 }

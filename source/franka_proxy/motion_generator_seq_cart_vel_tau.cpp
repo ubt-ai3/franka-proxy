@@ -307,7 +307,7 @@ franka::Torques seq_cart_vel_tau_generator::step
 
 
 	std::array<double, 7> tau_d_array{};
-	Eigen::VectorXd::Map(&tau_d_array[0], 7) = tau_d;
+	Eigen::VectorXd::Map(tau_d_array.data(), 7) = tau_d;
 	franka::Torques output(tau_d_array);
 	output.motion_finished = motion_finished;
 	return output;
@@ -322,7 +322,7 @@ void seq_cart_vel_tau_generator::update_dq_filter(const franka::RobotState& robo
 }
 
 
-Eigen::Matrix<double, 7, 1> seq_cart_vel_tau_generator::compute_dq_filtered()
+Eigen::Matrix<double, 7, 1> seq_cart_vel_tau_generator::compute_dq_filtered() const
 {
 	eigen_vector7d value(eigen_vector7d::Zero());
 
@@ -341,7 +341,7 @@ void seq_cart_vel_tau_generator::update_ft_filter(const Eigen::Matrix<double, 6,
 }
 
 
-Eigen::Matrix<double, 6, 1> seq_cart_vel_tau_generator::compute_ft_filtered()
+Eigen::Matrix<double, 6, 1> seq_cart_vel_tau_generator::compute_ft_filtered() const
 {
 	Eigen::Matrix<double, 6, 1> value(Eigen::Matrix<double, 6, 1>::Zero());
 
@@ -558,7 +558,7 @@ franka::Torques seq_cart_vel_tau_generator_wo_fts::step
 
 
 	std::array<double, 7> tau_d_array{};
-	Eigen::VectorXd::Map(&tau_d_array[0], 7) = tau_d;
+	Eigen::VectorXd::Map(tau_d_array.data(), 7) = tau_d;
 	franka::Torques output(tau_d_array);
 	output.motion_finished = motion_finished;
 	return output;
@@ -573,7 +573,7 @@ void seq_cart_vel_tau_generator_wo_fts::update_dq_filter(const franka::RobotStat
 }
 
 
-Eigen::Matrix<double, 7, 1> seq_cart_vel_tau_generator_wo_fts::compute_dq_filtered()
+Eigen::Matrix<double, 7, 1> seq_cart_vel_tau_generator_wo_fts::compute_dq_filtered() const
 {
 	eigen_vector7d value(eigen_vector7d::Zero());
 
@@ -592,7 +592,7 @@ void seq_cart_vel_tau_generator_wo_fts::update_ft_filter(const Eigen::Matrix<dou
 }
 
 
-Eigen::Matrix<double, 6, 1> seq_cart_vel_tau_generator_wo_fts::compute_ft_filtered()
+Eigen::Matrix<double, 6, 1> seq_cart_vel_tau_generator_wo_fts::compute_ft_filtered() const
 {
 	Eigen::Matrix<double, 6, 1> value(Eigen::Matrix<double, 6, 1>::Zero());
 

@@ -1,0 +1,23 @@
+From acc327bfd44fa594e0dbad4dc4b5b9837c6010e6 Mon Sep 17 00:00:00 2001
+From: David Harrer <david.harrer@uni-bayreuth.de>
+Date: Thu, 24 Sep 2020 15:54:47 +0200
+Subject: [PATCH] fix_cmake
+
+---
+ CMakeLists.txt | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 8903fb1..c9699ca 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -2,5 +2,5 @@ cmake_minimum_required(VERSION 2.8.3)
+ 
+ add_library(libfranka-common INTERFACE)
+ set_target_properties(libfranka-common PROPERTIES
+-  INTERFACE_INCLUDE_DIRECTORIES ${CMAKE_CURRENT_LIST_DIR}/include
++  INTERFACE_INCLUDE_DIRECTORIES $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/include>
+ )
+-- 
+2.25.0.windows.1
+

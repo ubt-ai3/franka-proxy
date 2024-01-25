@@ -1,0 +1,36 @@
+From ce802df9ff4926be75e8d1f83476160b6cb5dc90 Mon Sep 17 00:00:00 2001
+From: David Harrer <david.harrer@uni-bayreuth.de>
+Date: Wed, 23 Sep 2020 14:04:54 +0200
+Subject: [PATCH 3/4] missing_includes
+
+---
+ include/franka/control_tools.h | 1 +
+ src/control_types.cpp          | 1 +
+ 2 files changed, 2 insertions(+)
+
+diff --git a/include/franka/control_tools.h b/include/franka/control_tools.h
+index dc5017c..0bd2c30 100644
+--- a/include/franka/control_tools.h
++++ b/include/franka/control_tools.h
+@@ -4,6 +4,7 @@
+ 
+ #include <array>
+ #include <cmath>
++#include <string>
+ 
+ /**
+  * @file control_tools.h
+diff --git a/src/control_types.cpp b/src/control_types.cpp
+index 046062e..fd7d016 100644
+--- a/src/control_types.cpp
++++ b/src/control_types.cpp
+@@ -1,5 +1,6 @@
+ // Copyright (c) 2017 Franka Emika GmbH
+ // Use of this source code is governed by the Apache-2.0 license, see LICENSE
++#include <stdexcept>
+ #include <type_traits>
+ 
+ #include <franka/control_types.h>
+-- 
+2.25.0.windows.1
+

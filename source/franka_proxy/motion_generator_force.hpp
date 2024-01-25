@@ -50,7 +50,7 @@ public:
 private:
 
 	void update_dq_filter(const franka::RobotState& robot_state);
-	double compute_dq_filtered(int j);
+	[[nodiscard]] double compute_dq_filtered(int j) const;
 
 	double time_{0.0};
 	double desired_mass{0.0};

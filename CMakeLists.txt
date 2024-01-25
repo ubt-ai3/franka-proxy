@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.11)
+cmake_minimum_required(VERSION 3.20)
 project(franka-proxy)
 
 
@@ -12,10 +12,11 @@ find_package(asio CONFIG REQUIRED)
 find_package(Eigen3 CONFIG REQUIRED)
 find_package(nlohmann_json REQUIRED)
 find_package(Threads REQUIRED)
+#find_package(Poco REQUIRED COMPONENTS Foundation Net)
 
 
 ## TODO convert to modern cmake
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
@@ -50,8 +51,8 @@ target_link_libraries(
     PUBLIC
         asio::asio
         Eigen3::Eigen
-		Poco::Foundation
-		Poco::Net
+		#Poco::Foundation
+		#Poco::Net
         Threads::Threads
 		Franka::Franka
 		franka_proxy_share
@@ -60,7 +61,7 @@ target_link_libraries(
 target_compile_definitions(
     franka_proxy
     PUBLIC
-		std_cxx_17
+		std_cxx_20
 )
 endif()
 
@@ -89,7 +90,7 @@ target_link_libraries(
 target_compile_definitions(
     franka_proxy_client
     PUBLIC
-        std_cxx_17
+        std_cxx_20
 )
 
 
@@ -117,7 +118,7 @@ target_link_libraries(
 target_compile_definitions(
     franka_proxy_client_test
     PUBLIC
-		std_cxx_17
+		std_cxx_20
 )
 
 
@@ -149,7 +150,7 @@ target_link_libraries(
 target_compile_definitions(
     franka_control
     PUBLIC
-		std_cxx_17
+		std_cxx_20
 )
 
 add_library(
@@ -190,14 +191,14 @@ file(GLOB franka_proxy_share_headers
 
 if(BUILD_SERVER)
 	install(
-		TARGETS franka_control franka_proxy franka_proxy_client
+		TARGETS franka_control franka_proxy franka_proxy_client franka_proxy_share
 		EXPORT franka-proxyConfig
 		LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
 		RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
 	)
 else()
 	install(
-		TARGETS franka_control franka_proxy_client
+		TARGETS franka_control franka_proxy_client franka_proxy_share
 		EXPORT franka-proxyConfig
 		LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
 		RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}

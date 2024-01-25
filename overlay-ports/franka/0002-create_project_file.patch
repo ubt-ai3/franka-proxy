@@ -1,0 +1,148 @@
+From 9b79a86955142ae42453d5fa697488afab582930 Mon Sep 17 00:00:00 2001
+From: David Harrer <david.harrer@uni-bayreuth.de>
+Date: Mon, 21 Sep 2020 17:26:39 +0200
+Subject: [PATCH 2/4] create_project_file
+
+---
+ libfranka.vcxproj | 128 ++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 128 insertions(+)
+ create mode 100644 libfranka.vcxproj
+
+diff --git a/libfranka.vcxproj b/libfranka.vcxproj
+new file mode 100644
+index 0000000..02e0428
+--- /dev/null
++++ b/libfranka.vcxproj
+@@ -0,0 +1,128 @@
++<?xml version="1.0" encoding="utf-8"?>
++<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
++  <ItemGroup Label="ProjectConfigurations">
++    <ProjectConfiguration Include="Debug|x64">
++      <Configuration>Debug</Configuration>
++      <Platform>x64</Platform>
++    </ProjectConfiguration>
++    <ProjectConfiguration Include="Release|x64">
++      <Configuration>Release</Configuration>
++      <Platform>x64</Platform>
++    </ProjectConfiguration>
++  </ItemGroup>
++  <PropertyGroup Label="Globals">
++    <VCProjectVersion>15.0</VCProjectVersion>
++    <ProjectGuid>{E6B1D37A-4D6F-4BE7-9B9F-F07D664AFB0E}</ProjectGuid>
++    <RootNamespace>libfranka</RootNamespace>
++    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
++  </PropertyGroup>
++  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
++  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
++    <ConfigurationType>StaticLibrary</ConfigurationType>
++    <UseDebugLibraries>true</UseDebugLibraries>
++    <PlatformToolset>v142</PlatformToolset>
++    <CharacterSet>MultiByte</CharacterSet>
++  </PropertyGroup>
++  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
++    <ConfigurationType>StaticLibrary</ConfigurationType>
++    <UseDebugLibraries>false</UseDebugLibraries>
++    <PlatformToolset>v142</PlatformToolset>
++    <WholeProgramOptimization>true</WholeProgramOptimization>
++    <CharacterSet>MultiByte</CharacterSet>
++  </PropertyGroup>
++  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
++  <ImportGroup Label="ExtensionSettings">
++  </ImportGroup>
++  <ImportGroup Label="Shared">
++  </ImportGroup>
++  <PropertyGroup>
++    <OutDir>$(ProjectDir)build\$(Platform)_$(Configuration)\</OutDir>
++    <IntDir>$(ProjectDir)build\temp\$(Platform)_$(Configuration)\$(ProjectName)\</IntDir>
++    <LibraryPath>$(ProjectDir)build\$(Platform)_$(Configuration)\;$(LibraryPath)</LibraryPath>
++	<IncludePath>$(ProjectDir)include;$(ProjectDir)common/include;$(IncludePath)</IncludePath>
++  </PropertyGroup>
++  <PropertyGroup Label="UserMacros" />
++  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
++    <ClCompile>
++      <WarningLevel>Level3</WarningLevel>
++      <Optimization>Disabled</Optimization>
++      <SDLCheck>true</SDLCheck>
++      <ConformanceMode>true</ConformanceMode>
++      <PreprocessorDefinitions>_USE_MATH_DEFINES;_CRT_SECURE_NO_WARNINGS;NOMINMAX;%(PreprocessorDefinitions)</PreprocessorDefinitions>
++    </ClCompile>
++  </ItemDefinitionGroup>
++  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
++    <ClCompile>
++      <WarningLevel>Level3</WarningLevel>
++      <Optimization>MaxSpeed</Optimization>
++      <FunctionLevelLinking>true</FunctionLevelLinking>
++      <IntrinsicFunctions>true</IntrinsicFunctions>
++      <SDLCheck>true</SDLCheck>
++      <ConformanceMode>true</ConformanceMode>
++      <PreprocessorDefinitions>_USE_MATH_DEFINES;_CRT_SECURE_NO_WARNINGS;NOMINMAX;%(PreprocessorDefinitions)</PreprocessorDefinitions>
++    </ClCompile>
++    <Link>
++      <EnableCOMDATFolding>true</EnableCOMDATFolding>
++      <OptimizeReferences>true</OptimizeReferences>
++    </Link>
++  </ItemDefinitionGroup>
++  <ItemGroup>
++    <ClInclude Include="common\include\research_interface\gripper\types.h" />
++    <ClInclude Include="common\include\research_interface\robot\error.h" />
++    <ClInclude Include="common\include\research_interface\robot\rbk_types.h" />
++    <ClInclude Include="common\include\research_interface\robot\service_traits.h" />
++    <ClInclude Include="common\include\research_interface\robot\service_types.h" />
++    <ClInclude Include="include\franka\command_types.h" />
++    <ClInclude Include="include\franka\control_tools.h" />
++    <ClInclude Include="include\franka\control_types.h" />
++    <ClInclude Include="include\franka\duration.h" />
++    <ClInclude Include="include\franka\errors.h" />
++    <ClInclude Include="include\franka\exception.h" />
++    <ClInclude Include="include\franka\gripper.h" />
++    <ClInclude Include="include\franka\gripper_state.h" />
++    <ClInclude Include="include\franka\log.h" />
++    <ClInclude Include="include\franka\lowpass_filter.h" />
++    <ClInclude Include="include\franka\model.h" />
++    <ClInclude Include="include\franka\rate_limiting.h" />
++    <ClInclude Include="include\franka\robot.h" />
++    <ClInclude Include="include\franka\robot_state.h" />
++    <ClInclude Include="src\control_loop.h" />
++    <ClInclude Include="src\libfcimodels.h" />
++    <ClInclude Include="src\library_downloader.h" />
++    <ClInclude Include="src\library_loader.h" />
++    <ClInclude Include="src\load_calculations.h" />
++    <ClInclude Include="src\logger.h" />
++    <ClInclude Include="src\model_library.h" />
++    <ClInclude Include="src\motion_generator_traits.h" />
++    <ClInclude Include="src\network.h" />
++    <ClInclude Include="src\platform.h" />
++    <ClInclude Include="src\robot_control.h" />
++    <ClInclude Include="src\robot_impl.h" />
++  </ItemGroup>
++  <ItemGroup>
++    <ClCompile Include="src\control_loop.cpp" />
++    <ClCompile Include="src\control_tools.cpp" />
++    <ClCompile Include="src\control_types.cpp" />
++    <ClCompile Include="src\duration.cpp" />
++    <ClCompile Include="src\errors.cpp" />
++    <ClCompile Include="src\exception.cpp" />
++    <ClCompile Include="src\gripper.cpp" />
++    <ClCompile Include="src\gripper_state.cpp" />
++    <ClCompile Include="src\library_downloader.cpp" />
++    <ClCompile Include="src\library_loader.cpp" />
++    <ClCompile Include="src\load_calculations.cpp" />
++    <ClCompile Include="src\log.cpp" />
++    <ClCompile Include="src\logger.cpp" />
++    <ClCompile Include="src\lowpass_filter.cpp" />
++    <ClCompile Include="src\model.cpp" />
++    <ClCompile Include="src\model_library.cpp" />
++    <ClCompile Include="src\network.cpp" />
++    <ClCompile Include="src\rate_limiting.cpp" />
++    <ClCompile Include="src\robot.cpp" />
++    <ClCompile Include="src\robot_impl.cpp" />
++    <ClCompile Include="src\robot_state.cpp" />
++  </ItemGroup>
++  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
++  <ImportGroup Label="ExtensionTargets">
++  </ImportGroup>
++</Project>
+\ No newline at end of file
+-- 
+2.25.0.windows.1
+

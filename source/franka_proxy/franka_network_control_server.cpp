@@ -20,7 +20,6 @@
 #include <franka/exception.h>
 #include <franka/robot_state.h>
 
-#include <nlohmann/json.hpp>
 
 
 namespace

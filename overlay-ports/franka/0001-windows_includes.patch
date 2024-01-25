@@ -1,0 +1,29 @@
+From 53c61dbb4f0443c02ec691c0ac2880a02bc6242a Mon Sep 17 00:00:00 2001
+From: David Harrer <david.harrer@uni-bayreuth.de>
+Date: Mon, 21 Sep 2020 17:20:30 +0200
+Subject: [PATCH 1/4] windows_includes
+
+---
+ src/control_tools.cpp | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/src/control_tools.cpp b/src/control_tools.cpp
+index c95a7d6..44ac5de 100644
+--- a/src/control_tools.cpp
++++ b/src/control_tools.cpp
+@@ -8,6 +8,12 @@
+ 
+ #include "platform.h"
+ 
++#ifdef LIBFRANKA_WINDOWS
++#include <Windows.h>
++#else
++#include <pthread.h>
++#endif
++
+ // `using std::string_literals::operator""s` produces a GCC warning that cannot be disabled, so we
+ // have to use `using namespace ...`.
+ // See https://gcc.gnu.org/bugzilla/show_bug.cgi?id=65923#c0
+-- 
+2.25.0.windows.1
+
