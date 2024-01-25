@@ -2,7 +2,9 @@
 #define INCLUDED__CALIBRATION__SHUNK_FT_TO_FRANKA_CALIBRATION_HP
 
 #include <array>
+
 #include <Eigen/Geometry>
+
 #include <franka_control/franka_controller_remote.hpp>
 
 class schunk_ft_sensor_to_franka_calibration
