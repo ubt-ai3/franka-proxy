@@ -23,6 +23,29 @@ int main()
 	//franka_controller_test(ip);
 
 	return std::cin.get();
+
+	// TODO this testcode was last tested in franka client not in control and is not adapted!
+	//std::cout << "Starting FK/IK Test." << std::endl;
+
+	//Eigen::Affine3d pose
+	//(franka_control::franka_util::fk
+	//(
+	//	(franka_control::robot_config_7dof()
+	//		<< 1.08615, 0.044619, 0.227112, -2.26678, -0.059792, 2.27532, 0.605723).finished()).back());
+
+	//pose.linear() << 0.707107, 0.707107, 0,
+	//	0.707107, -0.707107, -0,
+	//	0, 0, -1;
+
+	//auto ik_solution = franka_control::franka_util::ik_fast_closest
+	//(pose,
+	//	franka_control::robot_config_7dof(robot.current_config().data()));
+
+	//franka_proxy::robot_config_7dof q{};
+	//Eigen::VectorXd::Map(&q[0], 7) = ik_solution;
+	//robot.move_to(q);
+
+	//std::cout << ("Finished FK/IK Test.");
 }
 
 

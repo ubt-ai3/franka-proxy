@@ -260,9 +260,10 @@ namespace franka_proxy
 			j_log << j[0] << "," << j[1] << "," << j[2] << "," << j[3] << "," << j[4] << "," << j[5] << "," << j[6];
 			std::ostringstream ft_log;
 			ft_log << ft[0] << "," << ft[1] << "," << ft[2] << "," << ft[3] << "," << ft[4] << "," << ft[5];
-		
+			
+			double sum = ft[0] * ft[0] + ft[1] * ft[1] + ft[2] * ft[2];
 			std::ostringstream current_values;
-			current_values << j_log.str() << "," << ft_log.str() << "," << time;
+			current_values << j_log.str() << "," << ft_log.str() << "," << time << "," << sum;
 
 			csv_log_ << current_values.str() << "\n";
 		}
