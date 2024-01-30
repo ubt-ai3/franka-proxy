@@ -59,8 +59,8 @@ void franka_proxy_client_test(const std::string& ip)
 	//ptp_test(robot); // TODO new test positions needed
 	//force_test(robot); // TODO new test positions needed
 	//impedance_admittance_tests_ermer_ba(robot); // TODO untested Code since BA of Dominik Ermer
-	playback_test(robot);
-	//ple_motion_record(robot);
+	//playback_test(robot);
+	ple_motion_record(robot);
 
 	// --- cleanup status thread ---
 	stop = true;

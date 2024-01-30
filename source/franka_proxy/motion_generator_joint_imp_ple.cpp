@@ -111,7 +111,7 @@ namespace franka_proxy
 			//Eigen::Map<const Eigen::Matrix<double, 7, 7>> mass_matrix(mass_ar.data());
 			Eigen::Map<const Eigen::Matrix<double, 7, 7>> mass_matrix(mass_ar.data());
 
-			// get jacobian
+			// get jacobian EE
 			std::array<double, 42> jac_ar = model_.zeroJacobian(franka::Frame::kEndEffector, state_);
 			Eigen::Map<const Eigen::Matrix<double, 6, 7>> jacobian(jac_ar.data());
 
@@ -172,8 +172,35 @@ namespace franka_proxy
 			std::array<double, 7> j = state_.q;
 			std::array<double, 6> ft = sensor_.read().data;
 
+			static int i = 0;
+			i++;
+			if (i % 1000 == 0)
+				std::cout << model_.pose(franka::Frame::kFlange, state_).at(12) << " " << model_.pose(franka::Frame::kFlange, state_).at(13) << " " << model_.pose(franka::Frame::kFlange, state_).at(14) << " " << "\n";
+
+
+			// get jacobian flange
+			std::array<double, 42> jac_ar = model_.zeroJacobian(franka::Frame::kFlange, state_);
+			Eigen::Map<const Eigen::Matrix<double, 6, 7>> jacobian_flange(jac_ar.data());
+			// get current joint velocity
+			Eigen::Map<const Eigen::Matrix<double, 7, 1>> joint_velocity(state_.dq.data());
+
+			Eigen::Matrix<double, 6, 1> flange_velocities = jacobian_flange * joint_velocity;
+
+			Eigen::Affine3d trafo = Eigen::Translation3d(0.0, 0.0, 0.55) * Eigen::AngleAxisd(EIGEN_PI, Eigen::Vector3d(0.0, 0.0, 1.0));
+
+			Eigen::Matrix<double, 3, 1> v;
+			v << flange_velocities(0), flange_velocities(1), flange_velocities(2);
+			Eigen::Matrix<double, 3, 1> w;
+			w << flange_velocities(3), flange_velocities(4), flange_velocities(5);
+
+			v == trafo.rotation() * v;
+			w == trafo.rotation() * w;
+
+			Eigen::Matrix<double, 6, 1> sensor_velocities;
+			sensor_velocities << v, w;
+
 			if (logging_) {
-				log(j, ft, time);
+				log(j, ft, time, sensor_velocities);
 			}
 
 			Eigen::Map<const Eigen::Matrix<double, 7, 1>> q(j.data());
@@ -255,15 +282,18 @@ namespace franka_proxy
 			return damping_matrix_ar;
 		}
 
-		void ple_motion_generator::log(std::array<double,7> j, std::array<double,6> ft, double time) {
+		void ple_motion_generator::log(std::array<double,7> j, std::array<double,6> ft, double time, Eigen::Matrix<double, 6, 1> sensor_velocities) {
 			std::ostringstream j_log;
 			j_log << j[0] << "," << j[1] << "," << j[2] << "," << j[3] << "," << j[4] << "," << j[5] << "," << j[6];
 			std::ostringstream ft_log;
 			ft_log << ft[0] << "," << ft[1] << "," << ft[2] << "," << ft[3] << "," << ft[4] << "," << ft[5];
+
+			std::ostringstream v_log;
+			v_log << sensor_velocities(0) << "," << sensor_velocities(1) << "," << sensor_velocities(2) << "," << sensor_velocities(3) << "," << sensor_velocities(4) << "," << sensor_velocities(5);
 			
-			double sum = ft[0] * ft[0] + ft[1] * ft[1] + ft[2] * ft[2];
+			//double sum = ft[0] * ft[0] + ft[1] * ft[1] + ft[2] * ft[2];
 			std::ostringstream current_values;
-			current_values << j_log.str() << "," << ft_log.str() << "," << time << "," << sum;
+			current_values << j_log.str() << "," << ft_log.str() << "," << time << "," << v_log.str();
 
 			csv_log_ << current_values.str() << "\n";
 		}
