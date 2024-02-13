@@ -72,7 +72,7 @@ namespace franka_proxy
 			void calculate_default_stiffness_and_damping();
 			void init_ple_motion_generator(franka::Robot& robot, std::mutex& state_lock, franka::RobotState& robot_state);
 			double calculate_damping_from_stiffness(double ki);
-			void log(std::array<double, 7> j, std::array<double, 6> ft, double time, Eigen::Matrix<double, 6, 1> sensor_velocities);
+			void log(std::array<double, 7> j, std::array<double, 6> ft, double time, Eigen::Matrix<double, 6, 1> sensor_velocities, Eigen::Vector3d grav);
 
 			franka::Model model_;
 
@@ -101,7 +101,7 @@ namespace franka_proxy
 			// csv logging
 			bool logging_;
 			std::ofstream csv_log_;
-			std::string csv_header_ = "joint_1,joint_2,joint_3,joint_4,joint_5,joint_6,joint_7,force_x,force_y,force_z,torque_x,torque_y,torque_z,time,v_x,v_y,v_z,w_x,w_y,w_z";
+			std::string csv_header_ = "joint_1,joint_2,joint_3,joint_4,joint_5,joint_6,joint_7,force_x,force_y,force_z,torque_x,torque_y,torque_z,time,v_x,v_y,v_z,w_x,w_y,w_z,g_x,g_y,g_z";
 		};
 	} /* namespace detail */
 } /* namespace franka_proxy */

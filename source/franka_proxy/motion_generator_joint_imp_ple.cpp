@@ -172,11 +172,6 @@ namespace franka_proxy
 			std::array<double, 7> j = state_.q;
 			std::array<double, 6> ft = sensor_.read().data;
 
-			static int i = 0;
-			i++;
-			if (i % 1000 == 0)
-				std::cout << model_.pose(franka::Frame::kFlange, state_).at(12) << " " << model_.pose(franka::Frame::kFlange, state_).at(13) << " " << model_.pose(franka::Frame::kFlange, state_).at(14) << " " << "\n";
-
 
 			// get jacobian flange
 			std::array<double, 42> jac_ar = model_.zeroJacobian(franka::Frame::kFlange, state_);
@@ -186,21 +181,33 @@ namespace franka_proxy
 
 			Eigen::Matrix<double, 6, 1> flange_velocities = jacobian_flange * joint_velocity;
 
-			Eigen::Affine3d trafo = Eigen::Translation3d(0.0, 0.0, 0.55) * Eigen::AngleAxisd(EIGEN_PI, Eigen::Vector3d(0.0, 0.0, 1.0));
+			Eigen::Affine3d trafo = Eigen::Translation3d(0.0, 0.0, 0.055) * Eigen::AngleAxisd(EIGEN_PI, Eigen::Vector3d(0.0, 0.0, 1.0));
 
 			Eigen::Matrix<double, 3, 1> v;
 			v << flange_velocities(0), flange_velocities(1), flange_velocities(2);
 			Eigen::Matrix<double, 3, 1> w;
 			w << flange_velocities(3), flange_velocities(4), flange_velocities(5);
 
-			v == trafo.rotation() * v;
-			w == trafo.rotation() * w;
+			v = trafo.rotation() * v;
+			w = trafo.rotation() * w;
 
 			Eigen::Matrix<double, 6, 1> sensor_velocities;
 			sensor_velocities << v, w;
 
+			std::array<double, 16> fp = model_.pose(franka::Frame::kFlange, state_);
+			Eigen::Map<const Eigen::Matrix<double, 4, 4>> flange_pose(fp.data());
+
+			Eigen::Matrix<double, 3, 1> g;
+			g << 0,0,-1;
+			g = (flange_pose * trafo).rotation() * g;
+
+			//static int i = 900;
+			//i++;
+			//if (i % 1000 == 0)
+			//	std::cout << g.transpose() << "\n";
+
 			if (logging_) {
-				log(j, ft, time, sensor_velocities);
+				log(j, ft, time, sensor_velocities, g);
 			}
 
 			Eigen::Map<const Eigen::Matrix<double, 7, 1>> q(j.data());
@@ -212,16 +219,17 @@ namespace franka_proxy
 			Eigen::Matrix<double, 7, 1> q_d{0.0346044, -0.0666144, -0.0398886, -2.04985, -0.0229875, 1.99782, 0.778461};
 			Eigen::Matrix<double, 7, 1> start_offset{ 0.0800004 , 0.200001   ,  0.4 , 0. ,0.0300006  , 0.0300007, 0. };
 			Eigen::Matrix<double, 7, 1> offset;
-			offset << 0.4 * (0.3 * std::sin(time * 0.5 * M_PI) - 0.3 * std::cos(time * 0.5 * M_PI) + 0.2 * std::sin(time * M_PI) + 0.5 * std::cos(time * M_PI)),
+			offset << 0.4 * (0.3 * std::sin(time * 0.6 * M_PI) - 0.3 * std::cos(time * 0.5 * M_PI) + 0.2 * std::sin(time * M_PI) + 0.5 * std::cos(time * M_PI)),
 				0.4 * (0.2 * std::sin(time * 0.5 * M_PI) + 0.1 * std::cos(time * 0.5 * M_PI) + 0.2 * std::sin(time * M_PI) + 0.3 * std::cos(time * M_PI) + 0.2 * std::sin(time * 1.5 * M_PI) + 0.1 * std::cos(time * 1.5 * M_PI)),
-				0.4 * (0.2 * std::sin(time * 0.5 * M_PI) + 0.3 * std::cos(time * 0.5 * M_PI) - 0.2 * std::sin(time * M_PI) + 0.2 * std::cos(time * M_PI) + 0.1 * std::sin(time * 1.5 * M_PI) + 0.3 * std::cos(time * 1.5 * M_PI) - 0.1 * std::sin(time * 2.0 * M_PI) + 0.2 * std::cos(time * 2.0 * M_PI)),
-				0.4 * (0.3 * std::sin(time * 0.5 * M_PI) - 0.2 * std::cos(time * 0.5 * M_PI) + 0.4 * std::sin(time * M_PI) + 0.2 * std::cos(time * M_PI) - 0.2 * std::sin(time * 1.5 * M_PI) + 0.1 * std::cos(time * 1.5 * M_PI) - 0.1 * std::cos(time * 2.0 * M_PI)),
+				0.4 * (0.2 * std::sin(time * 0.7 * M_PI) + 0.3 * std::cos(time * 0.5 * M_PI) - 0.2 * std::sin(time * M_PI) + 0.2 * std::cos(time * M_PI) + 0.1 * std::sin(time * 1.5 * M_PI) + 0.3 * std::cos(time * 1.5 * M_PI) - 0.1 * std::sin(time * 2.0 * M_PI) + 0.2 * std::cos(time * 2.0 * M_PI)),
+				2. * (0.4 * (0.3 * std::sin(time * 0.8 * M_PI) - 0.2 * std::cos(time * 0.5 * M_PI) + 0.4 * std::sin(time * M_PI) + 0.2 * std::cos(time * M_PI) - 0.2 * std::sin(time * 1.5 * M_PI) + 0.1 * std::cos(time * 1.5 * M_PI) - 0.1 * std::cos(time * 2.0 * M_PI))),
 				0.3 * (-0.1 * std::cos(time * 0.5 * M_PI) - 0.1 * std::sin(time * M_PI) + 0.3 * std::cos(time * M_PI) + 0.2 * std::sin(time * 1.5 * M_PI) + 0.1 * std::cos(time * 1.5 * M_PI) + 0.2 * std::sin(time * 2.0 * M_PI) - 0.2 * std::cos(time * 2.0 * M_PI) + 0.3 * std::sin(time * 3.0 * M_PI)),
 				0.3 * (0.1 * std::sin(time * 0.5 * M_PI) + 0.2 * std::sin(time * M_PI) - 0.2 * std::cos(time * M_PI) - 0.1 * std::sin(time * 1.5 * M_PI) + 0.2 * std::cos(time * 1.5 * M_PI) + 0.3 * std::sin(time * 2.0 * M_PI) + 0.1 * std::cos(time * 2.0 * M_PI) + 0.2 * std::sin(time * 3.0 * M_PI) * std::sin(time * 3.0 * M_PI)),
 				0.3 * (0.3 * std::sin(time * M_PI) + 0.1 * std::cos(time * M_PI) - 0.3 * std::cos(time * 1.5 * M_PI) + 0.1 * std::sin(time * 2.0 * M_PI) + 0.2 * std::cos(time * 2.0 * M_PI) + 0.2 * std::sin(time * 3.0 * M_PI));
 
 
 			q_d = q_d + offset - start_offset;
+
 
 			Eigen::Matrix<double, 7, 1> joint_position_error = q - q_d;
 
@@ -282,14 +290,14 @@ namespace franka_proxy
 			return damping_matrix_ar;
 		}
 
-		void ple_motion_generator::log(std::array<double,7> j, std::array<double,6> ft, double time, Eigen::Matrix<double, 6, 1> sensor_velocities) {
+		void ple_motion_generator::log(std::array<double,7> j, std::array<double,6> ft, double time, Eigen::Matrix<double, 6, 1> sensor_velocities, Eigen::Vector3d grav) {
 			std::ostringstream j_log;
 			j_log << j[0] << "," << j[1] << "," << j[2] << "," << j[3] << "," << j[4] << "," << j[5] << "," << j[6];
 			std::ostringstream ft_log;
 			ft_log << ft[0] << "," << ft[1] << "," << ft[2] << "," << ft[3] << "," << ft[4] << "," << ft[5];
 
 			std::ostringstream v_log;
-			v_log << sensor_velocities(0) << "," << sensor_velocities(1) << "," << sensor_velocities(2) << "," << sensor_velocities(3) << "," << sensor_velocities(4) << "," << sensor_velocities(5);
+			v_log << sensor_velocities(0) << "," << sensor_velocities(1) << "," << sensor_velocities(2) << "," << sensor_velocities(3) << "," << sensor_velocities(4) << "," << sensor_velocities(5) << "," << grav(0) << "," << grav(1) << "," << grav(2);
 			
 			//double sum = ft[0] * ft[0] + ft[1] * ft[1] + ft[2] * ft[2];
 			std::ostringstream current_values;
