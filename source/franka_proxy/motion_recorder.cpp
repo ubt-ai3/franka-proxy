@@ -1,7 +1,7 @@
 /**
  *************************************************************************
  *
- * @file franka_motion_recorder.cpp
+ * @file motion_recorder.cpp
  *
  * todo..., implementation.
  *
@@ -34,7 +34,7 @@ motion_recorder::motion_recorder(franka::Robot& robot,
 void motion_recorder::start()
 {
 	stop_ = false;
-	record_.clear();
+	joints_record_.clear();
 	fts_record_.clear();
 
 	t_ = std::thread
@@ -43,7 +43,7 @@ void motion_recorder::start()
 		while (!stop_)
 		{
 			franka::RobotState current_state(robot_.readOnce()); // sync call with approx. 1kHz
-			record_.emplace_back(current_state.q);
+			joints_record_.emplace_back(current_state.q);
 
 			ft_sensor_response current_ft(fts_.read());
 			fts_record_.emplace_back(current_ft.data);
@@ -56,7 +56,7 @@ void motion_recorder::start()
 
 void motion_recorder::start(float seconds)
 {
-	start();	
+	start();
 	std::this_thread::sleep_for(std::chrono::duration<float>(seconds));
 	stop();
 }
@@ -69,12 +69,12 @@ void motion_recorder::stop()
 }
 
 
-std::vector<std::array<double, 7>> motion_recorder::latest_record()
+std::vector<std::array<double, 7>> motion_recorder::latest_joints_record()
 {
 	if (!stop_)
 		throw std::exception("record is still running");
 
-	return record_;
+	return joints_record_;
 }
 
 std::vector<std::array<double, 6>> motion_recorder::latest_fts_record()
@@ -84,5 +84,6 @@ std::vector<std::array<double, 6>> motion_recorder::latest_fts_record()
 
 	return fts_record_;
 }
+
 } /* namespace detail */
 } /* namespace franka_proxy */

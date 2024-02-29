@@ -545,7 +545,7 @@ std::pair<std::vector<robot_config_7dof>, std::vector<robot_force_config>> frank
 	motion_recorder_->start(seconds);
 	set_control_loop_running(false);
 
-	return { motion_recorder_->latest_record(), motion_recorder_->latest_fts_record() };
+	return { motion_recorder_->latest_joints_record(), motion_recorder_->latest_fts_record() };
 }
 
 
@@ -555,7 +555,7 @@ franka_hardware_controller::stop_recording()
 	motion_recorder_->stop();
 	set_control_loop_running(false);
 
-	return {motion_recorder_->latest_record(), motion_recorder_->latest_fts_record()};
+	return {motion_recorder_->latest_joints_record(), motion_recorder_->latest_fts_record()};
 }
 
 

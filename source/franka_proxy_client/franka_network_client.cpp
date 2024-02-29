@@ -28,8 +28,6 @@
 
 namespace franka_proxy
 {
-
-
 //////////////////////////////////////////////////////////////////////////
 //
 // franka_state_client
@@ -38,15 +36,15 @@ namespace franka_proxy
 
 
 franka_state_client::franka_state_client
-	(std::string remote_ip,
-	 std::uint16_t remote_port)
-	:
-	io_context_(new asio::io_context),
+(std::string remote_ip,
+ std::uint16_t remote_port)
+	: io_context_(new asio::io_context),
 
-	remote_ip_(std::move(remote_ip)),
-	remote_port_(remote_port),
-	connection_(connect(remote_ip_, remote_port_))
-{}
+	  remote_ip_(std::move(remote_ip)),
+	  remote_port_(remote_port),
+	  connection_(connect(remote_ip_, remote_port_))
+{
+}
 
 
 franka_state_client::~franka_state_client() noexcept
@@ -84,7 +82,8 @@ const std::list<command_get_config_response>& franka_state_client::states() cons
 }
 
 
-void franka_state_client::clear_states() noexcept {
+void franka_state_client::clear_states() noexcept
+{
 	states_.clear();
 }
 
@@ -92,12 +91,12 @@ void franka_state_client::clear_states() noexcept {
 void franka_state_client::update_messages_buffer()
 {
 	std::uint64_t content_length;
-	asio::read(*connection_, asio::buffer(&content_length, sizeof(std::uint64_t)));
+	read(*connection_, asio::buffer(&content_length, sizeof(std::uint64_t)));
 
 	std::string buffer;
 	buffer.resize(content_length);
 
-	asio::read(*connection_, asio::buffer(buffer));
+	read(*connection_, asio::buffer(buffer));
 
 	try
 	{
@@ -106,15 +105,15 @@ void franka_state_client::update_messages_buffer()
 	}
 	catch (...)
 	{
-		std::cerr << "franka_state_client::update_messages_buffer(): " 
-			<< "State message discarted due to bad JSON." 
+		std::cerr << "franka_state_client::update_messages_buffer(): "
+			<< "State message discarted due to bad JSON."
 			<< std::endl;
 	}
 }
 
 
 std::unique_ptr<asio::ip::tcp::socket> franka_state_client::connect
-	(const std::string& ip, std::uint16_t port)
+(const std::string& ip, std::uint16_t port)
 {
 	asio::ip::tcp::resolver resolver(*io_context_);
 	asio::ip::tcp::resolver::results_type endpoints =
@@ -126,7 +125,7 @@ std::unique_ptr<asio::ip::tcp::socket> franka_state_client::connect
 	{
 		asio::connect(*s, endpoints);
 	}
-	catch(const std::system_error& e)
+	catch (const std::system_error& e)
 	{
 		std::cerr << "franka_control_client::connect(): Failed to connect: "
 			<< e.what() << std::endl;
@@ -145,15 +144,15 @@ std::unique_ptr<asio::ip::tcp::socket> franka_state_client::connect
 
 
 franka_control_client::franka_control_client
-	(const std::string& remote_ip,
-	 std::uint16_t remote_port)
-	:
-	io_context_(new asio::io_context),
+(const std::string& remote_ip,
+ std::uint16_t remote_port)
+	: io_context_(new asio::io_context),
 
-	remote_ip_(remote_ip),
-	remote_port_(remote_port),
-	connection_(connect(remote_ip_, remote_port_))
-{}
+	  remote_ip_(remote_ip),
+	  remote_port_(remote_port),
+	  connection_(connect(remote_ip_, remote_port_))
+{
+}
 
 
 franka_control_client::~franka_control_client() noexcept
@@ -163,37 +162,37 @@ franka_control_client::~franka_control_client() noexcept
 
 
 nlohmann::json franka_control_client::send_json
-	(const nlohmann::json& json, float timeout_seconds)
+(const nlohmann::json& json, float timeout_seconds)
 {
 	try
 	{
-		if(!connection_)
+		if (!connection_)
 			connection_ = connect(remote_ip_, remote_port_);
 
 		std::string message = json.dump();
 		std::uint64_t content_length = message.size();
-		asio::write
-			(*connection_,
-			 asio::buffer(&content_length, sizeof(std::uint64_t)));
+		write
+		(*connection_,
+		 asio::buffer(&content_length, sizeof(std::uint64_t)));
 
-		asio::write(*connection_, asio::buffer(message));
+		write(*connection_, asio::buffer(message));
 
-		asio::read
+		read
 			(*connection_, asio::buffer(&content_length, sizeof(std::uint64_t)));
 
 		std::string response{};
 		response.resize(content_length);
-		asio::read(*connection_, asio::buffer(response));
+		read(*connection_, asio::buffer(response));
 
 		return nlohmann::json::parse(response);
 	}
-	catch(const asio::system_error&)
+	catch (const asio::system_error&)
 	{
 		connection_.reset();
 		std::cerr << "franka_control_client::send_json(): Failed to send.";
 		throw network_exception("Failed to send command.");
 	}
-	catch(const nlohmann::json::exception&)
+	catch (const nlohmann::json::exception&)
 	{
 		connection_.reset();
 		std::cerr << "franka_control_client::send_json(): Failed to parse response.";
@@ -203,7 +202,7 @@ nlohmann::json franka_control_client::send_json
 
 
 std::unique_ptr<asio::ip::tcp::socket> franka_control_client::connect
-	(const std::string& ip, std::uint16_t port)
+(const std::string& ip, std::uint16_t port)
 {
 	asio::ip::tcp::resolver resolver(*io_context_);
 	asio::ip::tcp::resolver::results_type endpoints =
@@ -215,7 +214,7 @@ std::unique_ptr<asio::ip::tcp::socket> franka_control_client::connect
 	{
 		asio::connect(*s, endpoints);
 	}
-	catch(const std::system_error& e)
+	catch (const std::system_error& e)
 	{
 		std::cerr << "franka_control_client::connect(): Failed to connect: "
 			<< e.what() << std::endl;
@@ -224,8 +223,4 @@ std::unique_ptr<asio::ip::tcp::socket> franka_control_client::connect
 
 	return s;
 }
-
-
-
-
 } /* namespace franka_proxy */

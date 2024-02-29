@@ -190,7 +190,7 @@ target_compile_definitions(
 ## franka_control_test
 add_executable(
     franka_control_test
-        ${CMAKE_CURRENT_SOURCE_DIR}/source/franka_control/franka_control_test.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/source/franka_control_test/franka_control_test.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/source/sensor_calibration/schunk_ft_to_franka_calibration.cpp
 )
 

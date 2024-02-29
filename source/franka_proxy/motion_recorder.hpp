@@ -1,15 +1,13 @@
 /**
  *************************************************************************
  *
- * @file franka_motion_recorder.hpp
+ * @file motion_recorder.hpp
  * 
  * todo
  *
  ************************************************************************/
 
-
-#if !defined(INCLUDED__FRANKA_PROXY__MOTION_RECORDER_HPP)
-#define INCLUDED__FRANKA_PROXY__MOTION_RECORDER_HPP
+#pragma once
 
 
 #include <array>
@@ -42,19 +40,18 @@ public:
 		franka::RobotState& robot_state,
 		ft_sensor& fts);
 
-
 	void start();
 	void stop();
 
 	// this is blocking
 	void start(float seconds);
 
-
-	std::vector<std::array<double, 7>> latest_record();
+	std::vector<std::array<double, 7>> latest_joints_record();
 	std::vector<std::array<double, 6>> latest_fts_record();
+	std::vector<std::array<double, 6>> latest_raw_fts_record();
 
 private:
-	std::vector<std::array<double, 7>> record_;
+	std::vector<std::array<double, 7>> joints_record_;
 	std::vector<std::array<double, 6>> fts_record_;
 
 	franka::Robot& robot_;
@@ -66,6 +63,3 @@ private:
 };
 } /* namespace detail */
 } /* namespace franka_proxy */
-
-
-#endif /* !defined(INCLUDED__FRANKA_PROXY__MOTION_RECORDER_HPP) */

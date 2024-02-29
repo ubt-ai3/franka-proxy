@@ -5,23 +5,23 @@
             "generator": "Ninja",
             "configurationType": "Debug",
             "inheritEnvironments": [ "msvc_x64_x64" ],
-            "buildRoot": "${projectDir}\\out\\build\\${name}",
-            "installRoot": "${projectDir}\\out\\install\\${name}",
+            "buildRoot": "${projectDir}\\build\\${name}",
+            "installRoot": "${projectDir}\\install\\${name}",
             "cmakeCommandArgs": "",
             "buildCommandArgs": "",
             "ctestCommandArgs": "",
-            "cmakeToolchain": "./tools/vcpkg/scripts/buildsystems/vcpkg.cmake"
+            "cmakeToolchain": "C:/vcpkg/scripts/buildsystems/vcpkg.cmake"
         },
         {
             "name": "x64-Release",
             "generator": "Ninja",
             "configurationType": "RelWithDebInfo",
-            "buildRoot": "${projectDir}\\out\\build\\${name}",
-            "installRoot": "${projectDir}\\out\\install\\${name}",
+            "buildRoot": "${projectDir}\\build\\${name}",
+            "installRoot": "${projectDir}\\install\\${name}",
             "cmakeCommandArgs": "",
             "buildCommandArgs": "",
             "ctestCommandArgs": "",
-            "cmakeToolchain": "./tools/vcpkg/scripts/buildsystems/vcpkg.cmake",
+            "cmakeToolchain": "C:/vcpkg/scripts/buildsystems/vcpkg.cmake",
             "inheritEnvironments": [ "msvc_x64_x64" ]
         }
     ]

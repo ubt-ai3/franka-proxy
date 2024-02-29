@@ -7,10 +7,7 @@
  *
  ************************************************************************/
 
-
-#if !defined(INCLUDED__FRANKA_PROXY__FRANKA_HARDWARE_CONTROLLER_HPP)
-#define INCLUDED__FRANKA_PROXY__FRANKA_HARDWARE_CONTROLLER_HPP
-
+#pragma once
 
 #include <atomic>
 #include <condition_variable>
@@ -222,6 +219,3 @@ private:
 
 
 } /* namespace franka_proxy */
-
-
-#endif /* !defined(INCLUDED__FRANKA_PROXY__FRANKA_HARDWARE_CONTROLLER_HPP) */
