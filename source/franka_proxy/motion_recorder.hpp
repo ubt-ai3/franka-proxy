@@ -48,7 +48,6 @@ public:
 
 	std::vector<std::array<double, 7>> latest_joints_record();
 	std::vector<std::array<double, 6>> latest_fts_record();
-	std::vector<std::array<double, 6>> latest_raw_fts_record();
 
 private:
 	std::vector<std::array<double, 7>> joints_record_;
