@@ -174,32 +174,32 @@ namespace franka_proxy
 
 
 			// get jacobian flange
-			std::array<double, 42> jac_ar = model_.zeroJacobian(franka::Frame::kFlange, state_);
+			std::array<double, 42> jac_ar = model_.zeroJacobian(franka::Frame::kEndEffector, state_);
 			Eigen::Map<const Eigen::Matrix<double, 6, 7>> jacobian_flange(jac_ar.data());
 			// get current joint velocity
 			Eigen::Map<const Eigen::Matrix<double, 7, 1>> joint_velocity(state_.dq.data());
 
 			Eigen::Matrix<double, 6, 1> flange_velocities = jacobian_flange * joint_velocity;
 
-			Eigen::Affine3d trafo = Eigen::Translation3d(0.0, 0.0, 0.055) * Eigen::AngleAxisd(EIGEN_PI, Eigen::Vector3d(0.0, 0.0, 1.0));
+			//Eigen::Affine3d trafo = Eigen::Translation3d(0.0, 0.0, 0.055) * Eigen::AngleAxisd(EIGEN_PI, Eigen::Vector3d(0.0, 0.0, 1.0));
 
 			Eigen::Matrix<double, 3, 1> v;
 			v << flange_velocities(0), flange_velocities(1), flange_velocities(2);
 			Eigen::Matrix<double, 3, 1> w;
 			w << flange_velocities(3), flange_velocities(4), flange_velocities(5);
 
-			v = trafo.rotation() * v;
-			w = trafo.rotation() * w;
+			//v = trafo.rotation() * v;
+			//w = trafo.rotation() * w;
 
 			Eigen::Matrix<double, 6, 1> sensor_velocities;
 			sensor_velocities << v, w;
 
-			std::array<double, 16> fp = model_.pose(franka::Frame::kFlange, state_);
-			Eigen::Map<const Eigen::Matrix<double, 4, 4>> flange_pose(fp.data());
+			std::array<double, 16> ee_p = model_.pose(franka::Frame::kEndEffector, state_);
+			Eigen::Map<const Eigen::Matrix<double, 4, 4>> ee_pose(ee_p.data());
 
 			Eigen::Matrix<double, 3, 1> g;
 			g << 0,0,-1;
-			g = (flange_pose * trafo).rotation() * g;
+			g = (ee_pose * Eigen::Affine3d::Identity()).rotation() * g;
 
 			//static int i = 900;
 			//i++;
