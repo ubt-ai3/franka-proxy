@@ -8,8 +8,7 @@
  ************************************************************************/
 
 
-#if !defined(INCLUDED__FRANKA_PROXY_SHARE__ASIO_FORWARD_HPP)
-#define INCLUDED__FRANKA_PROXY_SHARE__ASIO_FORWARD_HPP
+#pragma once
 
 
 namespace asio
@@ -79,6 +78,3 @@ using asio_tcp_socket = asio::basic_stream_socket<asio::ip::tcp, asio::any_io_ex
 
 
 } /* namespace franka_proxy */
-
-
-#endif /* !defined(INCLUDED__FRANKA_PROXY_SHARE__ASIO_FORWARD_HPP) */

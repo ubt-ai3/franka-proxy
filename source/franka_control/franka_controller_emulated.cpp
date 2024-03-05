@@ -23,7 +23,7 @@ namespace franka_control
 
 
 franka_controller_emulated::franka_controller_emulated()
-	: speed_factor_(0.f),
+	: speed_factor_(0.1f),
 	  gripper_open_(false),
 
 	  state_joint_values_

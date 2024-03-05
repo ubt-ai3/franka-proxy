@@ -1,5 +1,4 @@
-#if !defined(INCLUDED__CALIBRATION__SHUNK_FT_TO_FRANKA_CALIBRATION_HPP)
-#define INCLUDED__CALIBRATION__SHUNK_FT_TO_FRANKA_CALIBRATION_HP
+#pragma once
 
 #include <array>
 
@@ -29,7 +28,6 @@ public:
 	);
 
 private:
-
 	static constexpr double pi = 3.14159265358979323846;
 
 	inline static const std::string config_file = "./assets/fts-config.json";
@@ -37,8 +35,4 @@ private:
 	static std::array<Eigen::Affine3d, 24> calibration_poses_bias();
 	static std::array<Eigen::Affine3d, 5> calibration_poses_load();
 	static Eigen::Matrix3d get_axis_aligned_orientation(const Eigen::Vector3d& up, const Eigen::Vector3d& front);
-
-
 };
-
-#endif /* !defined(INCLUDED__CALIBRATION__SHUNK_FT_TO_FRANKA_CALIBRATION_HPPP) */

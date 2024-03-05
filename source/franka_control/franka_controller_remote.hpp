@@ -7,12 +7,10 @@
  *
  ************************************************************************/
 
-
-#if !defined(INCLUDED__FRANKA_CONTROL__FRANKA_CONTROLLER_REMOTE_HPP)
-#define INCLUDED__FRANKA_CONTROL__FRANKA_CONTROLLER_REMOTE_HPP
-
+#pragma once
 
 #include <mutex>
+
 #include <Eigen/Geometry>
 
 #include "franka_controller.hpp"
@@ -20,14 +18,12 @@
 
 namespace franka_proxy
 {
-	class franka_remote_interface;
+class franka_remote_interface;
 }
 
 
 namespace franka_control
 {
-
-
 /**
  *************************************************************************
  *
@@ -36,18 +32,17 @@ namespace franka_control
  * Control a franka emika panda robot via the franka_proxy server.
  *
  ************************************************************************/
-class franka_controller_remote :
-	public franka_controller
+class franka_controller_remote : public franka_controller
 {
 public:
-
 	franka_controller_remote
-		(const std::string& ip);
+	(const std::string& ip);
 	~franka_controller_remote() noexcept override;
 
 
 	void move(const robot_config_7dof& target) override;
-	void move_with_force(const robot_config_7dof& target, const force_torque_config_cartesian& target_force_torques) override;
+	void move_with_force(const robot_config_7dof& target,
+	                     const force_torque_config_cartesian& target_force_torques) override;
 	bool move_until_contact(const robot_config_7dof& target) override;
 
 	void open_gripper() override;
@@ -76,19 +71,11 @@ public:
 
 	void set_fts_bias(const force_torque_config_cartesian& bias);
 	void set_fts_load_mass(const Eigen::Vector3d& load_mass);
-	
-private:
 
+private:
 	std::unique_ptr<franka_proxy::franka_remote_interface> controller_;
 
 	mutable std::mutex state_lock_;
 	double speed_factor_;
 };
-
-
-
-
 } /* namespace franka_control */
-
-
-#endif /* !defined(INCLUDED__FRANKA_CONTROL__FRANKA_CONTROLLER_REMOTE_HPP) */

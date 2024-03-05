@@ -7,9 +7,7 @@
  *
  ************************************************************************/
 
-
-#if !defined(INCLUDED__FRANKA_PROXY__FRANKA_PROXY_HPP)
-#define INCLUDED__FRANKA_PROXY__FRANKA_PROXY_HPP
+#pragma once
 
 
 #include "franka_hardware_controller.hpp"
@@ -57,5 +55,3 @@ private:
 
 } /* namespace franka_proxy */
 
-
-#endif /* !defined(INCLUDED__FRANKA_PROXY__FRANKA_PROXY_HPP) */

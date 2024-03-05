@@ -7,9 +7,7 @@
  *
  ************************************************************************/
 
-
-#if !defined(INCLUDED__FRANKA_PROXY__FRANKA_NETWORK_CONTROL_SERVER_HPP)
-#define INCLUDED__FRANKA_PROXY__FRANKA_NETWORK_CONTROL_SERVER_HPP
+#pragma once
 
 
 #include <map>
@@ -118,5 +116,3 @@ private:
 
 } /* namespace franka_proxy */
 
-
-#endif /* !defined(INCLUDED__FRANKA_PROXY__FRANKA_NETWORK_CONTROL_SERVER_HPP) */

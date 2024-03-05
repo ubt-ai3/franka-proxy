@@ -27,11 +27,11 @@ schunk_ft_sensor::schunk_ft_sensor(const Eigen::Affine3f& kms_T_flange,
 }
 
 schunk_ft_sensor::schunk_ft_sensor(const Eigen::Affine3f& kms_T_flange,
-	const Eigen::Affine3f& EE_T_kms,
-	const std::string config_file)
+                                   const Eigen::Affine3f& EE_T_kms,
+                                   const std::string config_file)
 	: ft_sensor(kms_T_flange, EE_T_kms, bias_from_config(config_file), load_mass_from_config(config_file)),
-	socket_(io_service_),
-	receiver_endpoint_(asio::ip::make_address(ip_), port_)
+	  socket_(io_service_),
+	  receiver_endpoint_(asio::ip::make_address(ip_), port_)
 {
 	setup_connection();
 }
@@ -124,7 +124,10 @@ void schunk_ft_sensor::setup_connection()
 	std::array<unsigned char, 36> recv_buf{'\0'};
 	asio::ip::udp::endpoint sender_endpoint;
 
-	socket_.async_receive_from(asio::buffer(recv_buf), sender_endpoint, [](const asio::error_code& error, std::size_t bytes_transferred){});
+	socket_.async_receive_from(asio::buffer(recv_buf), sender_endpoint,
+	                           [](const asio::error_code& error, std::size_t bytes_transferred)
+	                           {
+	                           });
 	std::this_thread::sleep_for(std::chrono::milliseconds(10));
 
 	ft_sensor_response resp;

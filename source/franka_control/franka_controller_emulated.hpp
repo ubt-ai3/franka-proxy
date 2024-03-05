@@ -19,8 +19,6 @@
 
 namespace franka_control
 {
-
-
 /**
  *************************************************************************
  *
@@ -33,17 +31,16 @@ namespace franka_control
  *		and uses an implementation-specific maximum speed.
  *
  ************************************************************************/
-class franka_controller_emulated :
-	public franka_controller
+class franka_controller_emulated : public franka_controller
 {
 public:
-
 	franka_controller_emulated();
 	~franka_controller_emulated() noexcept override;
 
 
-	void move(const robot_config_7dof& target);
-	void move_with_force(const robot_config_7dof& target, const force_torque_config_cartesian& target_force_torques) override;
+	void move(const robot_config_7dof& target) override;
+	void move_with_force(const robot_config_7dof& target,
+	                     const force_torque_config_cartesian& target_force_torques) override;
 	bool move_until_contact(const robot_config_7dof& target) override;
 
 	void open_gripper() override;
@@ -72,7 +69,7 @@ public:
 	* it was in when stop_playback() was called.
 	**/
 	std::pair<std::vector<robot_config_7dof>, std::vector<force_torque_config_cartesian>>
-		stop_recording() override;
+	stop_recording() override;
 
 	/**
 	* Simulates a playback movement, but ignores force and selection values.
@@ -81,7 +78,7 @@ public:
 		const std::vector<robot_config_7dof>& q_sequence,
 		const std::vector<force_torque_config_cartesian>& f_sequence,
 		const std::vector<selection_position_force_vector>& selection_vector_sequence) override;
-	
+
 private:
 	std::chrono::time_point<std::chrono::steady_clock> recording_start_;
 
@@ -103,10 +100,6 @@ private:
 	static constexpr int max_gripper_pos_ = 50;
 	static constexpr double gripper_default_speed_mps_ = 0.025;
 };
-
-
-
-
 } /* namespace franka_control */
 
 

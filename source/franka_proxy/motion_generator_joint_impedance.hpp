@@ -7,9 +7,7 @@
  *
  ************************************************************************/
 
-
-#if !defined(INCLUDED__FRANKA_PROXY__MOTION_GENERATOR_JOINT_IMPEDANCE_HPP)
-#define INCLUDED__FRANKA_PROXY__MOTION_GENERATOR_JOINT_IMPEDANCE_HPP
+#pragma once
 
 
 #include <vector>
@@ -119,6 +117,3 @@ namespace franka_proxy
 		};
 	} /* namespace detail */
 } /* namespace franka_proxy */
-
-
-#endif /* !defined(INCLUDED__FRANKA_PROXY__MOTION_GENERATOR_JOINT_IMPEDANCE_HPP) */

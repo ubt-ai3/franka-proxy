@@ -7,9 +7,7 @@
  *
  ************************************************************************/
 
-
-#if !defined(INCLUDED__FRANKA_PROXY_CLIENT__FRANKA_REMOTE_INTERFACE_HPP)
-#define INCLUDED__FRANKA_PROXY_CLIENT__FRANKA_REMOTE_INTERFACE_HPP
+#pragma once
 
 
 #include <array>
@@ -24,17 +22,14 @@
 
 namespace franka_proxy
 {
-
-
 using robot_config_7dof = std::array<double, 7>;
 
 
 class franka_remote_interface
 {
 public:
-
 	franka_remote_interface
-		(std::string proxy_ip);
+	(std::string proxy_ip);
 
 	~franka_remote_interface() noexcept;
 
@@ -78,25 +73,30 @@ public:
 	 * @throw viral_core::network_exception if the connection was lost.
 	 */
 	void move_sequence
-		(const std::vector<robot_config_7dof>& q_sequence,
-		 const std::vector<std::array<double, 6>>& f_sequence,
-		 const std::vector<std::array<double, 6>>& selection_vector_sequence);
+	(const std::vector<robot_config_7dof>& q_sequence,
+	 const std::vector<std::array<double, 6>>& f_sequence,
+	 const std::vector<std::array<double, 6>>& selection_vector_sequence);
 
 	/**
 	 * Admittance controller using desired rotational and translational stiffness within the admittance and the impedance controller
 	*/
-	void apply_admittance(double duration, bool log, double adm_rotational_stiffness, double adm_translational_stiffness, double imp_rotational_stiffness, double imp_translational_stiffness);
+	void apply_admittance(double duration, bool log, double adm_rotational_stiffness,
+	                      double adm_translational_stiffness, double imp_rotational_stiffness,
+	                      double imp_translational_stiffness);
 
 	/**
 	 * Cartesian impedance controller to hold the current pose with desired rotational and translational stiffness
 	*/
-	void cartesian_impedance_hold_pose(double duration, bool log, bool use_stiff_damp_online_calc, double rotational_stiffness, double translational_stiffness);
+	void cartesian_impedance_hold_pose(double duration, bool log, bool use_stiff_damp_online_calc,
+	                                   double rotational_stiffness, double translational_stiffness);
 
 	/**
 	*  Cartesian impedance controller to follow path of poses with desired rotational and translational stiffness
 	*  Duration parameter: duration to follow the complete path -> Example: 10s duration, 5 poses -> 2s per pose
 	*/
-	void cartesian_impedance_poses(std::list<std::array<double, 16>>& positions, double duration, bool log, bool use_stiff_damp_online_calc, double rotational_stiffness, double translational_stiffness);
+	void cartesian_impedance_poses(std::list<std::array<double, 16>>& positions, double duration, bool log,
+	                               bool use_stiff_damp_online_calc, double rotational_stiffness,
+	                               double translational_stiffness);
 
 	/**
 	 * Joint space impedance controller to hold the current position with desired stiffness matrix parameter
@@ -107,7 +107,8 @@ public:
 	*  Joint space impedance controller to follow path of positions with desired stiffness matrix parameter
 	*	Duration parameter: duration to follow the complete path -> Example: 10s duration, 5 positions -> 2s per position
 	*/
-	void joint_impedance_positions(std::list<std::array<double, 7>>& joint_positions, double duration, bool log, std::array<double, 49> stiffness);
+	void joint_impedance_positions(std::list<std::array<double, 7>>& joint_positions, double duration, bool log,
+	                               std::array<double, 49> stiffness);
 
 	/**
 	 * Joint space impedance controller for executing a pre-defined motion for payload estimation
@@ -120,7 +121,7 @@ public:
 	 */
 	void apply_z_force(double mass, double duration);
 
-	
+
 	/**
 	 * Open the gripper by moving it to max_width.
 	 *
@@ -133,8 +134,8 @@ public:
 	 * @throw viral_core::network_exception if the connection was lost.
 	 */
 	void open_gripper(double speed = 0.025);
-	
-	
+
+
 	/**
 	 * todo
 	 */
@@ -167,7 +168,7 @@ public:
 	 */
 	std::pair<std::vector<std::array<double, 7>>, std::vector<std::array<double, 6>>> stop_recording();
 
-	
+
 	/**
 	 * Send new target speed to robot.
 	 *
@@ -232,12 +233,8 @@ public:
 	 */
 	void update();
 
-
 private:
-	
-
-	template<typename TCommandType>
-	using TResponseType = std::conditional_t<
+	template <typename TCommandType> using TResponseType = std::conditional_t<
 		std::is_same_v<typename TCommandType::response_type, command_generic_response>,
 		command_result,
 		typename TCommandType::response_type
@@ -260,10 +257,10 @@ private:
 	 * Throws force_torque_sensor_exception, if the response indicates an error of this type.
 	 * Throws unknown_command, if the response indicates an error of this type.
 	 */
-	template<typename TCommandType, typename... TArgs, typename TReturnType = TResponseType<TCommandType>>
-	TReturnType send_command(TArgs&&... args)
+	template <typename TCommandType, typename... TArgs, typename TReturnType = TResponseType<TCommandType>> TReturnType
+	send_command(TArgs&&... args)
 	{
-		const TCommandType cmd{ std::forward<TArgs>(args)... };
+		const TCommandType cmd{std::forward<TArgs>(args)...};
 		auto response = socket_control_->send_command(cmd);
 
 		if constexpr (std::is_same_v<typename TCommandType::response_type, command_generic_response>)
@@ -276,9 +273,9 @@ private:
 	 * Checks whether the response indicates that the command was processed successfully.
 	 * Otherwise throws an exception indicated by the result code.
 	 */
-	static command_result check_response(command_generic_response& response);
-	
-	
+	static command_result check_response(const command_generic_response& response);
+
+
 	void initialize_sockets();
 	void shutdown_sockets() noexcept;
 
@@ -298,11 +295,4 @@ private:
 	static constexpr unsigned short franka_control_port = 4711;
 	static constexpr unsigned short franka_state_port = 4712;
 };
-
-
-
-
 } /* namespace franka_proxy */
-
-
-#endif /* !defined(INCLUDED__FRANKA_PROXY_CLIENT__FRANKA_REMOTE_INTERFACE_HPP) */
