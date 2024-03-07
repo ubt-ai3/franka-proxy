@@ -241,7 +241,7 @@ public:
 	/*
 		returns the current vacuum gripper state
 	*/
-	vacuum_gripper_state get_vacuum_gripper_state();
+	vacuum_gripper_state get_vacuum_gripper_state() const;
 
 private:
 	

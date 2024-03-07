@@ -134,10 +134,10 @@ bool franka_remote_controller::gripper_grasped() const
 	return gripper_grasped_;
 }
 
-vacuum_gripper_state franka_remote_controller::get_vacuum_gripper_state()
+vacuum_gripper_state franka_remote_controller::get_vacuum_gripper_state() const
 {
 	std::lock_guard<std::mutex> state_guard(state_lock_);
-	return vacuum_gripper_state();
+	return vacuum_gripper_state_;
 }
 
 void franka_remote_controller::start_recording()
@@ -215,10 +215,10 @@ void franka_remote_controller::initialize_sockets()
 				"Creating network connections.";
 
 	socket_control_.reset
-		(new franka_control_client(franka_ip_.data(), franka_control_port));
+		(new franka_control_client(franka_ip_, franka_control_port));
 
 	socket_state_.reset
-		(new franka_state_client(franka_ip_.data(), franka_state_port));
+		(new franka_state_client(franka_ip_, franka_state_port));
 }
 
 
