@@ -87,6 +87,8 @@ namespace franka_proxy
 			double time_ = 0.0;
 			std::list<double> timestamps_;
 
+			const double speed_factor_ = 0.033; // 0.33 is a safe choice
+
 			std::list<std::array<double, 7>> measured_joint_velocities_;
 
 			// damping and stiffness matrix

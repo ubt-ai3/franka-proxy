@@ -22,8 +22,8 @@ int main()
 	std::string ip("127.0.0.1");
 	//std::string ip("132.180.194.112");
 
-	franka_controller_emulated_test();
-	//franka_fts_calibration_test(ip);
+	franka_fts_calibration_test(ip);
+	//franka_controller_emulated_test();
 	//franka_controller_remote_test(ip);
 
 	std::cout << "Press Enter to end program." << std::endl;

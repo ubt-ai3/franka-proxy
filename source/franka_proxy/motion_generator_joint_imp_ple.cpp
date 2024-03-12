@@ -213,19 +213,19 @@ namespace franka_proxy
 			Eigen::Map<const Eigen::Matrix<double, 7, 1>> q(j.data());
 
 			// speed tuning factor
-			time = time / 3.;
+			double x = speed_factor_ * time;
 			
 			// calculate next motion step (i.e., this is where the pre-defined motion is implemented)
 			Eigen::Matrix<double, 7, 1> q_d{0.0346044, -0.0666144, -0.0398886, -2.04985, -0.0229875, 1.99782, 0.778461};
 			Eigen::Matrix<double, 7, 1> start_offset{ 0.0800004 , 0.200001   ,  0.4 , 0. ,0.0300006  , 0.0300007, 0. };
 			Eigen::Matrix<double, 7, 1> offset;
-			offset << 0.4 * (0.3 * std::sin(time * 0.6 * M_PI) - 0.3 * std::cos(time * 0.5 * M_PI) + 0.2 * std::sin(time * M_PI) + 0.5 * std::cos(time * M_PI)),
-				0.4 * (0.2 * std::sin(time * 0.5 * M_PI) + 0.1 * std::cos(time * 0.5 * M_PI) + 0.2 * std::sin(time * M_PI) + 0.3 * std::cos(time * M_PI) + 0.2 * std::sin(time * 1.5 * M_PI) + 0.1 * std::cos(time * 1.5 * M_PI)),
-				0.4 * (0.2 * std::sin(time * 0.7 * M_PI) + 0.3 * std::cos(time * 0.5 * M_PI) - 0.2 * std::sin(time * M_PI) + 0.2 * std::cos(time * M_PI) + 0.1 * std::sin(time * 1.5 * M_PI) + 0.3 * std::cos(time * 1.5 * M_PI) - 0.1 * std::sin(time * 2.0 * M_PI) + 0.2 * std::cos(time * 2.0 * M_PI)),
-				2. * (0.4 * (0.3 * std::sin(time * 0.8 * M_PI) - 0.2 * std::cos(time * 0.5 * M_PI) + 0.4 * std::sin(time * M_PI) + 0.2 * std::cos(time * M_PI) - 0.2 * std::sin(time * 1.5 * M_PI) + 0.1 * std::cos(time * 1.5 * M_PI) - 0.1 * std::cos(time * 2.0 * M_PI))),
-				0.3 * (-0.1 * std::cos(time * 0.5 * M_PI) - 0.1 * std::sin(time * M_PI) + 0.3 * std::cos(time * M_PI) + 0.2 * std::sin(time * 1.5 * M_PI) + 0.1 * std::cos(time * 1.5 * M_PI) + 0.2 * std::sin(time * 2.0 * M_PI) - 0.2 * std::cos(time * 2.0 * M_PI) + 0.3 * std::sin(time * 3.0 * M_PI)),
-				0.3 * (0.1 * std::sin(time * 0.5 * M_PI) + 0.2 * std::sin(time * M_PI) - 0.2 * std::cos(time * M_PI) - 0.1 * std::sin(time * 1.5 * M_PI) + 0.2 * std::cos(time * 1.5 * M_PI) + 0.3 * std::sin(time * 2.0 * M_PI) + 0.1 * std::cos(time * 2.0 * M_PI) + 0.2 * std::sin(time * 3.0 * M_PI) * std::sin(time * 3.0 * M_PI)),
-				0.3 * (0.3 * std::sin(time * M_PI) + 0.1 * std::cos(time * M_PI) - 0.3 * std::cos(time * 1.5 * M_PI) + 0.1 * std::sin(time * 2.0 * M_PI) + 0.2 * std::cos(time * 2.0 * M_PI) + 0.2 * std::sin(time * 3.0 * M_PI));
+			offset << 0.4 * (0.3 * std::sin(x * 0.6 * M_PI) - 0.3 * std::cos(x * 0.5 * M_PI) + 0.2 * std::sin(x * M_PI) + 0.5 * std::cos(x * M_PI)),
+				0.4 * (0.2 * std::sin(x * 0.5 * M_PI) + 0.1 * std::cos(x * 0.5 * M_PI) + 0.2 * std::sin(x * M_PI) + 0.3 * std::cos(x * M_PI) + 0.2 * std::sin(x * 1.5 * M_PI) + 0.1 * std::cos(x * 1.5 * M_PI)),
+				0.4 * (0.2 * std::sin(x * 0.7 * M_PI) + 0.3 * std::cos(x * 0.5 * M_PI) - 0.2 * std::sin(x * M_PI) + 0.2 * std::cos(x * M_PI) + 0.1 * std::sin(x * 1.5 * M_PI) + 0.3 * std::cos(x * 1.5 * M_PI) - 0.1 * std::sin(x * 2.0 * M_PI) + 0.2 * std::cos(x * 2.0 * M_PI)),
+				2. * (0.4 * (0.3 * std::sin(x * 0.8 * M_PI) - 0.2 * std::cos(x * 0.5 * M_PI) + 0.4 * std::sin(x * M_PI) + 0.2 * std::cos(x * M_PI) - 0.2 * std::sin(x * 1.5 * M_PI) + 0.1 * std::cos(x * 1.5 * M_PI) - 0.1 * std::cos(x * 2.0 * M_PI))),
+				0.3 * (-0.1 * std::cos(x * 0.5 * M_PI) - 0.1 * std::sin(x * M_PI) + 0.3 * std::cos(x * M_PI) + 0.2 * std::sin(x * 1.5 * M_PI) + 0.1 * std::cos(x * 1.5 * M_PI) + 0.2 * std::sin(x * 2.0 * M_PI) - 0.2 * std::cos(x * 2.0 * M_PI) + 0.3 * std::sin(x * 3.0 * M_PI)),
+				0.3 * (0.1 * std::sin(x * 0.5 * M_PI) + 0.2 * std::sin(x * M_PI) - 0.2 * std::cos(x * M_PI) - 0.1 * std::sin(x * 1.5 * M_PI) + 0.2 * std::cos(x * 1.5 * M_PI) + 0.3 * std::sin(x * 2.0 * M_PI) + 0.1 * std::cos(x * 2.0 * M_PI) + 0.2 * std::sin(x * 3.0 * M_PI) * std::sin(x * 3.0 * M_PI)),
+				0.3 * (0.3 * std::sin(x * M_PI) + 0.1 * std::cos(x * M_PI) - 0.3 * std::cos(x * 1.5 * M_PI) + 0.1 * std::sin(x * 2.0 * M_PI) + 0.2 * std::cos(x * 2.0 * M_PI) + 0.2 * std::sin(x * 3.0 * M_PI));
 
 
 			q_d = q_d + offset - start_offset;

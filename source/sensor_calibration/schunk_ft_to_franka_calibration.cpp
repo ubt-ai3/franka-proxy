@@ -33,14 +33,27 @@ franka_control::force_torque_config_cartesian schunk_ft_sensor_to_franka_calibra
 
 	for (int pose_idx = 0; pose_idx < ft_avgs.size(); pose_idx++)
 	{
+		std::cout << "calibrate_bias progress: " << pose_idx << " / " << ft_avgs.size() << std::endl;
+
 		franka_control::robot_config_7dof q{};
 		// get the closest config matching the pose
 		auto ik_solution = franka_control::franka_util::ik_fast_closest(poses[pose_idx], prev_joint_config);
 		Eigen::VectorXd::Map(&q[0], 7) = ik_solution;
 
-
-		franka.move(q);
-
+		bool move_finished = false;
+		while (!move_finished)
+		{
+			try 
+			{
+				franka.move(q);
+				move_finished = true;
+			}
+			catch (const std::exception&)
+			{
+				std::this_thread::sleep_for(std::chrono::milliseconds(100));
+				franka.automatic_error_recovery();
+			}
+		}
 
 		std::this_thread::sleep_for(std::chrono::duration<double>(wait_time_seconds));
 		franka.start_recording();
@@ -106,13 +119,28 @@ Eigen::Vector3d schunk_ft_sensor_to_franka_calibration::calibrate_load(
 
 	for (int pose_idx = 0; pose_idx < force_world_avgs.size(); pose_idx++)
 	{
+		std::cout << "calibrate_load progress: " << pose_idx << " / " << force_world_avgs.size() << std::endl;
+
 		franka_control::robot_config_7dof q{};
 		// get the closest config matching the pose
 		auto ik_solution = franka_control::franka_util::ik_fast_closest(poses[pose_idx], prev_joint_config);
 		Eigen::VectorXd::Map(&q[0], 7) = ik_solution;
 
 
-		franka.move(q);
+		bool move_finished = false;
+		while (!move_finished)
+		{
+			try
+			{
+				franka.move(q);
+				move_finished = true;
+			}
+			catch (const std::exception&)
+			{
+				std::this_thread::sleep_for(std::chrono::milliseconds(100));
+				franka.automatic_error_recovery();
+			}
+		}
 
 
 		std::this_thread::sleep_for(std::chrono::duration<double>(wait_time_seconds));
