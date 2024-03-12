@@ -16,9 +16,6 @@
 
 
 
-#include <franka/exception.h>
-
-
 namespace franka_proxy
 {
 /**

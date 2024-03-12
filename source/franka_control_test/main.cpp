@@ -20,14 +20,15 @@ void franka_control_ik_test(franka_control::franka_controller& controller);
 int main()
 {
 	std::string ip("127.0.0.1");
-	//std::string ip("132.180.194.112");
+	//std::string ip("132.180.194.112"); // franka1-proxy@resy-lab
 
 	franka_fts_calibration_test(ip);
 	//franka_controller_emulated_test();
 	//franka_controller_remote_test(ip);
 
-	std::cout << "Press Enter to end program." << std::endl;
-	return std::cin.get();
+	std::cout << "Press Enter to end test exe." << std::endl;
+	std::cin.get();
+	return 0;
 }
 
 
@@ -73,7 +74,6 @@ void franka_controller_emulated_test()
 		while (!stop)
 		{
 			print_status(*robot);
-
 			std::this_thread::sleep_for(std::chrono::duration<double>(1));
 		}
 	});
@@ -87,13 +87,8 @@ void franka_controller_emulated_test()
 
 void print_status(const franka_control::franka_controller& controller)
 {
-	const auto joints = controller.current_config();
-	std::cout << "POS JOINTS: ";
-	std::cout << joints.transpose() << std::endl;
-	std::cout << "CART: \n";
-	std::cout << franka_control::franka_util::fk(controller.current_config()).rbegin()->matrix() << std::endl;
-
-	std::cout << std::endl;
+	std::cout << "Current robot joints: "
+		<< controller.current_config().transpose() << std::endl;
 }
 
 void franka_fts_calibration_test(const std::string& ip)
@@ -117,8 +112,8 @@ void franka_control_ik_test(franka_control::franka_controller& controller)
 		0.707107, -0.707107, 0,
 		0, 0, -1;
 
-	const auto ik_solution =
-		franka_control::franka_util::ik_fast_closest(pose, franka_control::robot_config_7dof(joints));
+	const auto ik_solution = franka_control::franka_util::ik_fast_closest(
+		pose, franka_control::robot_config_7dof(joints));
 	controller.move(ik_solution);
 
 	std::cout << "--- Finished FK/IK Test. ---" << std::endl;

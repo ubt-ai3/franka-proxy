@@ -10,23 +10,32 @@
 
 void franka_proxy_client_test(const std::string& ip);
 
-void print_status(const franka_proxy::franka_remote_interface& robot);
-template <class Function> void execute_retry(Function&& f, franka_proxy::franka_remote_interface& robot);
 
-void ple_motion_record(franka_proxy::franka_remote_interface& robot);
+void print_status(const franka_proxy::franka_remote_interface& robot);
+
+template <class Function> void execute_retry(
+	Function&& f, franka_proxy::franka_remote_interface& robot);
+
+void ple_motion_record_test(franka_proxy::franka_remote_interface& robot);
 void playback_test(franka_proxy::franka_remote_interface& robot);
 void gripper_test(franka_proxy::franka_remote_interface& robot);
 void ptp_test(franka_proxy::franka_remote_interface& robot);
 void force_test(franka_proxy::franka_remote_interface& robot);
-void impedance_admittance_tests_ermer_ba(franka_proxy::franka_remote_interface& robot);
+void impedance_admittance_ermer_ba_tests(franka_proxy::franka_remote_interface& robot);
 
+// TODO we need a csv-motion-logger for franka-proxy and tests.
 void log(std::ofstream& csv_log, std::array<double, 7> j, std::array<double, 6> ft, double time);
 
 
 int main()
 {
-	//franka_proxy_client_test("132.180.194.112");
-	franka_proxy_client_test("127.0.0.1");
+	std::string ip("127.0.0.1");
+	//std::string ip("132.180.194.112"); // franka1-proxy@resy-lab
+
+	franka_proxy_client_test(ip);
+
+	std::cout << "Press Enter to end test exe." << std::endl;
+	std::cin.get();
 	return 0;
 }
 
@@ -35,11 +44,10 @@ void franka_proxy_client_test(const std::string& ip)
 {
 	franka_proxy::franka_remote_interface robot(ip);
 
-	// --- starting mandatory status thread with debug output ---
-	int print_every_ith_status = 0;
+	// --- mandatory status thread with debug output ---
+	int print_every_ith_status = 30;
 	std::atomic_bool stop(false);
-	std::thread t
-	([&stop, &robot, print_every_ith_status]()
+	std::thread t([&stop, &robot, print_every_ith_status]()
 	{
 		int i = 0;
 		while (!stop)
@@ -58,9 +66,9 @@ void franka_proxy_client_test(const std::string& ip)
 	//gripper_test(robot);
 	//ptp_test(robot); // TODO new test positions needed
 	//force_test(robot); // TODO new test positions needed
-	//impedance_admittance_tests_ermer_ba(robot); // TODO untested Code since BA of Dominik Ermer
+	//impedance_admittance_ermer_ba_tests(robot); // TODO untested Code since BA of Dominik Ermer
 	//playback_test(robot);
-	ple_motion_record(robot);
+	ple_motion_record_test(robot);
 
 	// --- cleanup status thread ---
 	stop = true;
@@ -70,16 +78,17 @@ void franka_proxy_client_test(const std::string& ip)
 
 void print_status(const franka_proxy::franka_remote_interface& robot)
 {
-	std::cout << "POS: ";
 	auto config = robot.current_config();
-	for (int i = 0; i < 7; ++i)
-		std::cout << config[i] << " ";
 
-	std::cout << std::endl;
+	std::cout << "Current robot joints: ";
+	for (int i = 0; i < 6; ++i)
+		std::cout << config[i] << ", ";
+	std::cout << config[7] << std::endl;
 }
 
 
-template <class Function> void execute_retry(Function&& f, franka_proxy::franka_remote_interface& robot)
+template <class Function> void execute_retry(
+	Function&& f, franka_proxy::franka_remote_interface& robot)
 {
 	bool finished = false;
 	while (!finished)
@@ -98,8 +107,9 @@ template <class Function> void execute_retry(Function&& f, franka_proxy::franka_
 		}
 		catch (const franka_proxy::command_exception&)
 		{
-			std::cout << "Encountered command exception. Probably because of wrong working mode. Waiting before retry."
-				<< std::endl;
+			std::cout << "Encountered command exception. "
+				"Probably because of wrong working mode. "
+				"Waiting before retry." << std::endl;
 			using namespace std::chrono_literals;
 			std::this_thread::sleep_for(1s);
 		}
@@ -107,9 +117,11 @@ template <class Function> void execute_retry(Function&& f, franka_proxy::franka_
 }
 
 
-void ple_motion_record(franka_proxy::franka_remote_interface& robot)
+void ple_motion_record_test(franka_proxy::franka_remote_interface& robot)
 {
-	franka_proxy::robot_config_7dof sp{{0.0346044, -0.0666144, -0.0398886, -2.04985, -0.0229875, 1.99782, 0.778461}};
+	franka_proxy::robot_config_7dof sp{
+		{0.0346044, -0.0666144, -0.0398886, -2.04985, -0.0229875, 1.99782, 0.778461}
+	};
 	robot.move_to(sp);
 	std::this_thread::sleep_for(std::chrono::seconds(3));
 	robot.ple_motion(10.0, true);
@@ -129,9 +141,7 @@ void playback_test(franka_proxy::franka_remote_interface& robot)
 	std::this_thread::sleep_for(std::chrono::seconds(10));
 
 	std::cout << ("--- stopped demonstration ---") << std::endl;
-	std::pair<std::vector<std::array<double, 7>>, std::vector<std::array<double, 6>>> record
-	(
-		robot.stop_recording());
+	std::pair record(robot.stop_recording());
 
 	std::cout << ("--- press to start reproduction in 3s ---") << std::endl;
 	std::cin.get();
@@ -139,8 +149,8 @@ void playback_test(franka_proxy::franka_remote_interface& robot)
 
 
 	robot.move_to(record.first.front());
-	const std::vector<std::array<double, 6>> selection_vectors(record.second.size(),
-	                                                           std::array<double, 6>{1, 1, 1, 1, 1, 1});
+	const std::vector selection_vectors(
+		record.second.size(), std::array<double, 6>{1, 1, 1, 1, 1, 1});
 	robot.move_sequence(record.first, record.second, selection_vectors);
 
 	std::cout << ("Finished Playback Test.");
@@ -148,7 +158,8 @@ void playback_test(franka_proxy::franka_remote_interface& robot)
 	std::ofstream csv_log;
 	csv_log.open("hand_guided_log.csv");
 	const std::string csv_header_ =
-		"joint_1,joint_2,joint_3,joint_4,joint_5,joint_6,joint_7,force_x,force_y,force_z,torque_x,torque_y,torque_z,time";
+		"joint_1,joint_2,joint_3,joint_4,joint_5,joint_6,joint_7,"
+		"force_x,force_y,force_z,torque_x,torque_y,torque_z,time";
 	csv_log << csv_header_ << "\n";
 	for (size_t i = 0; i < record.first.size(); i++)
 		log(csv_log, record.first.at(i), record.second.at(i), 0.001 * static_cast<double>(i));
@@ -157,7 +168,8 @@ void playback_test(franka_proxy::franka_remote_interface& robot)
 void log(std::ofstream& csv_log, std::array<double, 7> j, std::array<double, 6> ft, double time)
 {
 	std::ostringstream j_log;
-	j_log << j[0] << "," << j[1] << "," << j[2] << "," << j[3] << "," << j[4] << "," << j[5] << "," << j[6];
+	j_log << j[0] << "," << j[1] << "," << j[2] << "," << j[3]
+		<< "," << j[4] << "," << j[5] << "," << j[6];
 	std::ostringstream ft_log;
 	ft_log << ft[0] << "," << ft[1] << "," << ft[2] << "," << ft[3] << "," << ft[4] << "," << ft[5];
 
@@ -221,7 +233,7 @@ void force_test(franka_proxy::franka_remote_interface& robot)
 }
 
 
-void impedance_admittance_tests_ermer_ba(franka_proxy::franka_remote_interface& robot)
+void impedance_admittance_ermer_ba_tests(franka_proxy::franka_remote_interface& robot)
 {
 	std::cout << "Starting Impedance - Hold Position Test." << std::endl;
 
@@ -239,15 +251,21 @@ void impedance_admittance_tests_ermer_ba(franka_proxy::franka_remote_interface& 
 	// positions
 	std::list<std::array<double, 16>> poses_for_cart = {
 		{
-			0.321529, 0.8236, 0.467208, 0, 0.931889, -0.187754, -0.310343, 0, -0.167882, 0.53518, -0.827888, 0,
+			0.321529, 0.8236, 0.467208, 0,
+			0.931889, -0.187754, -0.310343, 0,
+			-0.167882, 0.53518, -0.827888, 0,
 			0.426976, 0.382873, 0.324984, 1
 		},
 		{
-			0.323711, 0.604326, 0.727999, 0, 0.698631, -0.671549, 0.246814, 0, 0.638056, 0.428714, -0.639601, 0,
+			0.323711, 0.604326, 0.727999, 0,
+			0.698631, -0.671549, 0.246814, 0,
+			0.638056, 0.428714, -0.639601, 0,
 			0.600692, 0.372768, 0.415227, 1
 		},
 		{
-			0.826378, 0.559426, 0.0642109, 0, 0.562775, -0.824385, -0.0604543, 0, 0.0191152, 0.086096, -0.996103, 0,
+			0.826378, 0.559426, 0.0642109, 0,
+			0.562775, -0.824385, -0.0604543, 0,
+			0.0191152, 0.086096, -0.996103, 0,
 			0.503131, 0.2928, 0.296891, 1
 		}
 	};
@@ -261,15 +279,21 @@ void impedance_admittance_tests_ermer_ba(franka_proxy::franka_remote_interface& 
 	// positions
 	std::list<std::array<double, 16>> poses_for_joint = {
 		{
-			0.321529, 0.8236, 0.467208, 0, 0.931889, -0.187754, -0.310343, 0, -0.167882, 0.53518, -0.827888, 0,
+			0.321529, 0.8236, 0.467208, 0,
+			0.931889, -0.187754, -0.310343, 0,
+			-0.167882, 0.53518, -0.827888, 0,
 			0.426976, 0.382873, 0.324984, 1
 		},
 		{
-			0.323711, 0.604326, 0.727999, 0, 0.698631, -0.671549, 0.246814, 0, 0.638056, 0.428714, -0.639601, 0,
+			0.323711, 0.604326, 0.727999, 0,
+			0.698631, -0.671549, 0.246814, 0,
+			0.638056, 0.428714, -0.639601, 0,
 			0.600692, 0.372768, 0.415227, 1
 		},
 		{
-			0.826378, 0.559426, 0.0642109, 0, 0.562775, -0.824385, -0.0604543, 0, 0.0191152, 0.086096, -0.996103, 0,
+			0.826378, 0.559426, 0.0642109, 0,
+			0.562775, -0.824385, -0.0604543, 0,
+			0.0191152, 0.086096, -0.996103, 0,
 			0.503131, 0.2928, 0.296891, 1
 		}
 	};
