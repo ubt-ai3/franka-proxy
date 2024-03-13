@@ -2,9 +2,10 @@
 
 #include <iostream>
 #include <fstream>
+
 #include <nlohmann/json.hpp>
 
-#include "franka_control/franka_util.hpp"
+#include <franka_control/franka_util.hpp>
 
 
 franka_control::force_torque_config_cartesian schunk_ft_sensor_to_franka_calibration::calibrate_bias(
@@ -37,13 +38,14 @@ franka_control::force_torque_config_cartesian schunk_ft_sensor_to_franka_calibra
 
 		franka_control::robot_config_7dof q{};
 		// get the closest config matching the pose
-		auto ik_solution = franka_control::franka_util::ik_fast_closest(poses[pose_idx], prev_joint_config);
+		auto ik_solution =
+			franka_control::franka_util::ik_fast_closest(poses[pose_idx], prev_joint_config);
 		Eigen::VectorXd::Map(&q[0], 7) = ik_solution;
 
 		bool move_finished = false;
 		while (!move_finished)
 		{
-			try 
+			try
 			{
 				franka.move(q);
 				move_finished = true;
@@ -119,11 +121,13 @@ Eigen::Vector3d schunk_ft_sensor_to_franka_calibration::calibrate_load(
 
 	for (int pose_idx = 0; pose_idx < force_world_avgs.size(); pose_idx++)
 	{
-		std::cout << "calibrate_load progress: " << pose_idx << " / " << force_world_avgs.size() << std::endl;
+		std::cout << "calibrate_load progress: " << pose_idx << " / "
+			<< force_world_avgs.size() << std::endl;
 
 		franka_control::robot_config_7dof q{};
 		// get the closest config matching the pose
-		auto ik_solution = franka_control::franka_util::ik_fast_closest(poses[pose_idx], prev_joint_config);
+		auto ik_solution =
+			franka_control::franka_util::ik_fast_closest(poses[pose_idx], prev_joint_config);
 		Eigen::VectorXd::Map(&q[0], 7) = ik_solution;
 
 
@@ -156,13 +160,16 @@ Eigen::Vector3d schunk_ft_sensor_to_franka_calibration::calibrate_load(
 		for (int record_idx = 0; record_idx < force_record.size(); record_idx++)
 		{
 			Eigen::Vector3d force_kms;
-			force_kms << force_record[record_idx][0], force_record[record_idx][1], force_record[record_idx][2];
+			force_kms << force_record[record_idx][0],
+				force_record[record_idx][1],
+				force_record[record_idx][2];
 			force_world_avgs[pose_idx] += world_rot_kms * force_kms;
 		}
 
 
 		for (int force_idx = 0; force_idx < force_world_avgs[0].size(); force_idx++)
-			force_world_avgs[pose_idx][force_idx] = force_world_avgs[pose_idx][force_idx] / force_record.size();
+			force_world_avgs[pose_idx][force_idx] =
+				force_world_avgs[pose_idx][force_idx] / force_record.size();
 
 		prev_joint_config = Eigen::Matrix<double, 7, 1>(joint_record.back().data());
 	}
@@ -170,9 +177,7 @@ Eigen::Vector3d schunk_ft_sensor_to_franka_calibration::calibrate_load(
 	Eigen::Vector3d load;
 	load << 0, 0, 0;
 	for (int pose_idx = 0; pose_idx < force_world_avgs.size(); pose_idx++)
-	{
 		load += force_world_avgs[pose_idx];
-	}
 
 	load = load / force_world_avgs.size();
 
@@ -195,7 +200,8 @@ std::array<Eigen::Affine3d, 24> schunk_ft_sensor_to_franka_calibration::calibrat
 		1.88336, 0.0335908, -1.86277, -1.26855, 0.0206543, 1.34875, 0.706602
 	};
 
-	// 8 poses per up-axis a to use all other axis-aligned directions as front: 4 with a up and 4 with a down
+	// 8 poses per up-axis a to use all other axis-aligned directions as front:
+	// 4 with a up and 4 with a down
 	std::array<Eigen::Affine3d, 24> poses;
 
 	//position of the endeffector
@@ -224,7 +230,8 @@ std::array<Eigen::Affine3d, 24> schunk_ft_sensor_to_franka_calibration::calibrat
 			auto tmp = poses.at(i - 1);
 			poses.at(i).linear() = tmp.rotate(Eigen::AngleAxis(0.5 * pi, up)).linear();
 		}
-		poses.at(idx_first_pose_axis + step).linear() = get_axis_aligned_orientation(-1 * up, front);
+		poses.at(idx_first_pose_axis + step).linear() =
+			get_axis_aligned_orientation(-1 * up, front);
 		for (int i = idx_first_pose_axis + step + 1; i < idx_first_pose_axis + 2 * step; i++)
 		{
 			auto tmp = poses.at(i - 1);
@@ -241,16 +248,18 @@ std::array<Eigen::Affine3d, 5> schunk_ft_sensor_to_franka_calibration::calibrati
 		-1.31589, 0.305587, 1.48077, -1.818, -0.309624, 1.87622, 0.835527
 	};
 
-	// 5 likely orientations of the robot for force/torque controlled movements (endeffector below the xy-plane)
+	// using 5 likely orientations of the robot for force/torque controlled motions
 	std::array<Eigen::Affine3d, 5> poses;
 
 	Eigen::Affine3d pos(franka_control::franka_util::fk(position).back());
 	std::fill_n(poses.begin(), 5, pos);
 
-	poses.at(0).linear() = get_axis_aligned_orientation(-1 * Eigen::Vector3d::UnitZ(), Eigen::Vector3d::UnitX());
+	poses.at(0).linear() =
+		get_axis_aligned_orientation(-1 * Eigen::Vector3d::UnitZ(), Eigen::Vector3d::UnitX());
 	poses.at(0) = poses.at(0).rotate(Eigen::AngleAxisd(0.25 * pi, Eigen::Vector3d::UnitZ()));
 
-	std::array<Eigen::Vector3d, 2> axis_vecs({Eigen::Vector3d::UnitX(), Eigen::Vector3d::UnitY()});
+	std::array<Eigen::Vector3d, 2> axis_vecs(
+		{Eigen::Vector3d::UnitX(), Eigen::Vector3d::UnitY()});
 
 	double angle = 0.3 * pi;
 	for (int i = 0; i < axis_vecs.size(); i++)
