@@ -3,6 +3,8 @@
 #include <iostream>
 #include <thread>
 
+#include <argparse/argparse.hpp>
+
 #include <franka_proxy_client/exception.hpp>
 #include <franka_proxy_client/franka_remote_interface.hpp>
 
@@ -36,12 +38,32 @@ void impedance_admittance_ermer_ba_tests(franka_proxy::franka_remote_interface& 
 void log(std::ofstream& csv_log, std::array<double, 7> j, std::array<double, 6> ft, double time);
 
 
-int main()
+int main(int argc, char* argv[])
 {
-	std::string ip("127.0.0.1");
-	//std::string ip("132.180.194.112"); // franka1-proxy@resy-lab
+	argparse::ArgumentParser program("franka_client_test");
 
+	program.add_argument("IP")
+		.help("specify IP for franka-proxy remote connection")
+		.default_value(std::string{ "127.0.0.1" });
+
+	try
+	{
+		program.parse_args(argc, argv);
+	}
+	catch (const std::exception& e)
+	{
+		std::cerr << e.what() << std::endl;
+		std::cerr << program;
+		return -1;
+	}
+
+	const auto ip = program.get<std::string>("IP");
+	std::cout <<
+		"--------------------------------------------------------------------------------\n"
+		"Executing franka client test with IP " << ip << ": " << std::endl;
+	//std::string ip("132.180.194.112"); // franka1-proxy@resy-lab
 	franka_proxy_client_test(ip);
+
 
 	std::cout << "Press Enter to end test exe." << std::endl;
 	std::cin.get();
@@ -51,7 +73,17 @@ int main()
 
 void franka_proxy_client_test(const std::string& ip)
 {
-	franka_proxy::franka_remote_interface robot(ip);
+	std::unique_ptr<franka_proxy::franka_remote_interface> robot;
+	try
+	{
+		robot =
+			std::make_unique<franka_proxy::franka_remote_interface>(ip);
+	}
+	catch (const std::exception&)
+	{
+		std::cerr << "Could not connect to franka-proxy with IP " << ip << "." << std::endl;
+		return;
+	}
 
 	// --- mandatory status thread with debug output ---
 	int print_every_ith_status = 30;
@@ -61,10 +93,10 @@ void franka_proxy_client_test(const std::string& ip)
 		int i = 0;
 		while (!stop)
 		{
-			robot.update();
+			robot->update();
 
 			if (print_every_ith_status && i++ % print_every_ith_status == 0)
-				print_status(robot);
+				print_status(*robot);
 
 			using namespace std::chrono_literals;
 			std::this_thread::sleep_for(0.016s);
@@ -77,7 +109,7 @@ void franka_proxy_client_test(const std::string& ip)
 	//force_test(robot); 
 	//impedance_admittance_ermer_ba_tests(robot);
 	//playback_test(robot);
-	ple_motion_record_test(robot);
+	ple_motion_record_test(*robot);
 
 	// --- cleanup status thread ---
 	stop = true;
@@ -87,7 +119,7 @@ void franka_proxy_client_test(const std::string& ip)
 
 void print_status(const franka_proxy::franka_remote_interface& robot)
 {
-	auto config = robot.current_config();
+	const auto config = robot.current_config();
 
 	std::cout << "Current robot joints: ";
 	for (int i = 0; i < 6; ++i)
@@ -128,10 +160,9 @@ template <class Function> void execute_retry(
 
 void ple_motion_record_test(franka_proxy::franka_remote_interface& robot)
 {
-	franka_proxy::robot_config_7dof sp{
-		{0.0346044, -0.0666144, -0.0398886, -2.04985, -0.0229875, 1.99782, 0.778461}
-	};
-	robot.move_to(sp);
+	constexpr franka_proxy::robot_config_7dof joints_start
+		{0.0346044, -0.0666144, -0.0398886, -2.04985, -0.0229875, 1.99782, 0.778461};
+	robot.move_to(joints_start);
 	std::this_thread::sleep_for(std::chrono::seconds(3));
 	robot.ple_motion(10.0, true);
 }
@@ -150,7 +181,7 @@ void playback_test(franka_proxy::franka_remote_interface& robot)
 	std::this_thread::sleep_for(std::chrono::seconds(10));
 
 	std::cout << ("--- stopped demonstration ---") << std::endl;
-	std::pair record(robot.stop_recording());
+	const std::pair record(robot.stop_recording());
 
 	std::cout << ("--- press to start reproduction in 3s ---") << std::endl;
 	std::cin.get();
@@ -207,10 +238,10 @@ void ptp_test(franka_proxy::franka_remote_interface& robot)
 {
 	std::cout << "Starting PTP-Movement Test." << std::endl;
 
-	franka_proxy::robot_config_7dof pos1
-		{{2.46732, -1.0536, -0.9351, -1.6704, 0.13675, 1.42062, 0.33471}};
-	franka_proxy::robot_config_7dof pos2
-		{{-0.00242, 1.236293, 2.465417, -1.26485, -0.00181, 1.914142, -1.06326}};
+	constexpr franka_proxy::robot_config_7dof pos1
+		{2.46732, -1.0536, -0.9351, -1.6704, 0.13675, 1.42062, 0.33471};
+	constexpr franka_proxy::robot_config_7dof pos2
+		{-0.00242, 1.236293, 2.465417, -1.26485, -0.00181, 1.914142, -1.06326};
 
 	robot.set_speed_factor(0.2);
 	execute_retry([&] { robot.move_to(pos1); }, robot);

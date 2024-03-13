@@ -10,6 +10,7 @@ if(BUILD_SERVER)
     find_package(Poco COMPONENTS Net Foundation REQUIRED)
 endif()
 
+find_package(argparse CONFIG REQUIRED)
 find_package(asio CONFIG REQUIRED)
 find_package(Eigen3 CONFIG REQUIRED)
 find_package(nlohmann_json REQUIRED)

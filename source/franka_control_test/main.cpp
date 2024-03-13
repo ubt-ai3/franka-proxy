@@ -2,30 +2,80 @@
 #include <iostream>
 #include <thread>
 
+#include <argparse/argparse.hpp>
+
 #include <franka_control/franka_controller_emulated.hpp>
 #include <franka_control/franka_controller_remote.hpp>
 #include <franka_control/franka_util.hpp>
 
+// todo: this sensor calibration should not be used from here
 #include "sensor_calibration/schunk_ft_to_franka_calibration.hpp"
 
 
 void franka_controller_remote_test(const std::string& ip);
 void franka_controller_emulated_test();
-void franka_fts_calibration_test(const std::string& ip);
+void franka_fts_calibration(const std::string& ip);
 
 void print_status(const franka_control::franka_controller& controller);
 
 
-int main()
+int main(int argc, char* argv[])
 {
-	std::string ip("127.0.0.1");
-	//std::string ip("132.180.194.112"); // franka1-proxy@resy-lab
+	argparse::ArgumentParser program("franka_control_test");
 
-	franka_controller_emulated_test();
-	//franka_controller_remote_test(ip);
-	//franka_fts_calibration_test(ip);
+	program.add_argument("-e", "--emulate")
+	       .help("execute the emulate controller test")
+	       .flag();
 
-	std::cout << "Press Enter to end test exe." << std::endl;
+	program.add_argument("-r", "--remote")
+	       .help("specify ip for franka-proxy remote connection")
+	       .default_value(std::string{"127.0.0.1"})
+	       .metavar("IP");
+
+	// todo: this sensor calibration should not be used from here
+	program.add_argument("-c", "--calibrate-fts")
+	       .help("specify ip for franka-proxy connection to calibrate fts")
+	       .default_value(std::string{"127.0.0.1"})
+	       .metavar("IP");
+
+	try
+	{
+		program.parse_args(argc, argv);
+	}
+	catch (const std::exception& e)
+	{
+		std::cerr << e.what() << std::endl;
+		std::cerr << program;
+		return -1;
+	}
+
+	if (program["-e"] == true)
+	{
+		std::cout <<
+			"--------------------------------------------------------------------------------\n"
+			"Executing franka controller emulated test: " << std::endl;
+		franka_controller_emulated_test();
+	}
+	if (program.is_used("-r"))
+	{
+		const auto ip = program.get<std::string>("-r");
+		std::cout <<
+			"--------------------------------------------------------------------------------\n"
+			"Executing franka controller remote test with IP " << ip << ": " << std::endl;
+		//std::string ip("132.180.194.112"); // franka1-proxy@resy-lab
+		franka_controller_remote_test(ip);
+	}
+	if (program.is_used("--calibrate-fts"))
+	{
+		const auto ip = program.get<std::string>("-r");
+		std::cout <<
+			"--------------------------------------------------------------------------------\n"
+			"Executing franka-schunk-fts calibration with IP " << ip << ": " << std::endl;
+		//std::string ip("132.180.194.112"); // franka1-proxy@resy-lab
+		franka_fts_calibration(ip);
+	}
+
+	std::cout << "\nPress Enter to end test exe." << std::endl;
 	std::cin.get();
 	return 0;
 }
@@ -33,12 +83,19 @@ int main()
 
 void franka_controller_remote_test(const std::string& ip)
 {
-	std::unique_ptr<franka_control::franka_controller> robot =
-		std::make_unique<franka_control::franka_controller_remote>(ip);
+	std::unique_ptr<franka_control::franka_controller> robot;
+	try
+	{
+		robot =
+			std::make_unique<franka_control::franka_controller_remote>(ip);
+	}
+	catch (const std::exception&)
+	{
+		std::cerr << "Could not connect to franka-proxy with IP " << ip << "." << std::endl;
+		return;
+	}
 	franka_control::franka_update_task update_task(*robot);
 
-	// todo: real robot should not be dependent on start position
-	const auto joints_start = robot->current_config();
 	// todo: this config (and IK pose) needs to be tested on real robot
 	const auto joints_test((franka_control::robot_config_7dof()
 		<< 1.08615, 0.044619, 0.227112, -2.26678, -0.059792, 2.27532, 0.605723).finished());
@@ -92,13 +149,13 @@ void franka_controller_emulated_test()
 	std::atomic_bool stop(false);
 	std::thread t
 	([&stop, &robot]()
+	{
+		while (!stop)
 		{
-			while (!stop)
-			{
-				print_status(*robot);
-				std::this_thread::sleep_for(std::chrono::duration<double>(1));
-			}
-		});
+			print_status(*robot);
+			std::this_thread::sleep_for(std::chrono::duration<double>(1));
+		}
+	});
 	robot->move(joints_test);
 	robot->move(joints_start);
 	stop = true;
@@ -118,7 +175,7 @@ void franka_controller_emulated_test()
 		pose, franka_control::robot_config_7dof(joints_test));
 	robot->move(ik_solution_joints);
 
-	bool target_reached = robot->move_until_contact(ik_solution_joints);
+	[[maybe_unused]] bool target_reached = robot->move_until_contact(ik_solution_joints);
 	std::cout << "result unknown." << std::endl; // todo: design a useful test function
 
 
@@ -126,14 +183,14 @@ void franka_controller_emulated_test()
 	robot->close_gripper();
 	robot->open_gripper();
 	robot->grasp_gripper();
-	bool gripper_grasped = robot->gripper_grasped();
+	[[maybe_unused]] bool gripper_grasped = robot->gripper_grasped();
 	robot->open_gripper();
-	std::cout << "result unknown." << std::endl;  // todo: design a useful test function
+	std::cout << "result unknown." << std::endl; // todo: design a useful test function
 
 
 	std::cout << "Speed tests: ... ";
 	robot->set_speed_factor(0.1);
-	double speed = robot->speed_factor();
+	[[maybe_unused]] double speed = robot->speed_factor();
 	std::cout << "result unknown." << std::endl; // todo: design a useful test function
 }
 
@@ -144,7 +201,7 @@ void print_status(const franka_control::franka_controller& controller)
 		<< controller.current_config().transpose().format(format) << std::endl;
 }
 
-void franka_fts_calibration_test(const std::string& ip)
+void franka_fts_calibration(const std::string& ip)
 {
 	franka_control::franka_controller_remote controller(ip);
 	schunk_ft_sensor_to_franka_calibration::calibrate_bias(controller);
