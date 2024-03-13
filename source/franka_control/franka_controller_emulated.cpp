@@ -7,7 +7,6 @@
  *
  ************************************************************************/
 
-
 #include "franka_controller_emulated.hpp"
 
 #include <iostream>

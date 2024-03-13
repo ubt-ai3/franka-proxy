@@ -7,9 +7,7 @@
  *
  ************************************************************************/
 
-
-#if !defined(INCLUDED__FRANKA_CONTROL__FRANKA_CONTROLLER_EMULATED_HPP)
-#define INCLUDED__FRANKA_CONTROL__FRANKA_CONTROLLER_EMULATED_HPP
+#pragma once
 
 
 #include <mutex>
@@ -101,6 +99,3 @@ private:
 	static constexpr double gripper_default_speed_mps_ = 0.025;
 };
 } /* namespace franka_control */
-
-
-#endif /* !defined(INCLUDED__FRANKA_CONTROL__FRANKA_CONTROLLER_EMULATED_HPP) */

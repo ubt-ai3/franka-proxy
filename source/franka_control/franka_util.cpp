@@ -7,19 +7,16 @@
  *
  ************************************************************************/
 
-
 #include "franka_util.hpp"
 
 #include <iostream>
 
-#include "ikfast.h"
 #include "exception.hpp"
+#include "ikfast.h"
 
 
 namespace franka_control
 {
-
-
 //////////////////////////////////////////////////////////////////////////
 //
 // joint_limit

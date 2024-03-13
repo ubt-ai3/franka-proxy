@@ -9,6 +9,7 @@
 
 #pragma once
 
+
 namespace franka_control
 {
 
@@ -21,4 +22,3 @@ class franka_controller_remote;
 
 
 } /* namespace franka_control */
-
