@@ -54,6 +54,10 @@ public:
 	                             const force_torque_config_cartesian& target_force_torques) = 0;
 	void move(const Eigen::Affine3d& target_world_T_tcp);
 
+	/**
+	 * Moves the robot to given target. If target is reached, returns true;
+	 * In case of contact, the movement is aborted and returns false.
+	 */
 	virtual bool move_until_contact(const robot_config_7dof& target) = 0;
 	bool move_until_contact(const Eigen::Affine3d& target_world_T_tcp);
 
@@ -96,53 +100,12 @@ public:
 		const std::vector<selection_position_force_vector>& selection_vector_sequence) = 0;
 
 
-	// Legacy functions
-	[[deprecated("Use new move() function.")]]
-	virtual void move_to(const robot_config_7dof& target)
-	{
-		move(target);
-	}
-
-	[[deprecated("Use new move() function with changed target.")]]
-	void move_to(const Eigen::Affine3d& target_world_T_nsa)
-	{
-		move(target_world_T_nsa * j7_T_tcp);
-	}
-
-	[[deprecated("Use new move() function.")]]
-	virtual bool move_to_until_contact(const robot_config_7dof& target) { return move_until_contact(target); }
-
-	[[deprecated("Use new move() function with changed target.")]]
-	bool move_to_until_contact(const Eigen::Affine3d& target_world_T_nsa)
-	{
-		return move_until_contact(target_world_T_nsa * j7_T_tcp);
-	}
-
-	[[deprecated("Use new version with inverse transform.")]]
-	Eigen::Affine3d current_nsa_T_world() const
-	{
-		return current_world_T_j7().inverse();
-	}
-
-	[[deprecated("Use new version with inverse transform.")]]
-	Eigen::Affine3d current_flange_T_world() const
-	{
-		return current_world_T_flange().inverse();
-	}
-
-	[[deprecated("Use new version with inverse transform.")]]
-	Eigen::Affine3d current_tcp_T_world() const
-	{
-		return current_world_T_tcp().inverse();
-	}
-
-
 	const Eigen::Affine3d j7_T_flange;
 	const Eigen::Affine3d flange_T_tcp;
 	const Eigen::Affine3d j7_T_tcp;
 	const Eigen::Affine3d tcp_T_j7;
 
-	//used to convert internal double gripper width in meters into an int
+	// used to convert internal double gripper width in meters into an int
 	static constexpr double gripper_unit_per_m_ = 1000.0;
 
 private:
