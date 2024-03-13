@@ -2,7 +2,6 @@
 #include <fstream>
 #include <iostream>
 #include <thread>
-#include <utility>
 
 #include <franka_proxy_client/exception.hpp>
 #include <franka_proxy_client/franka_remote_interface.hpp>
@@ -12,16 +11,26 @@ void franka_proxy_client_test(const std::string& ip);
 
 
 void print_status(const franka_proxy::franka_remote_interface& robot);
-
 template <class Function> void execute_retry(
 	Function&& f, franka_proxy::franka_remote_interface& robot);
 
+
+// todo: motion should stop gracefully
 void ple_motion_record_test(franka_proxy::franka_remote_interface& robot);
+// todo: not tested on robot
+[[deprecated("Revise test code before execution on real robot!")]]
 void playback_test(franka_proxy::franka_remote_interface& robot);
 void gripper_test(franka_proxy::franka_remote_interface& robot);
+// todo: used poses may be unsafe robot
+[[deprecated("Revise test code before execution on real robot!")]]
 void ptp_test(franka_proxy::franka_remote_interface& robot);
+// todo: used poses may be unsafe robot
+[[deprecated("Revise test code before execution on real robot!")]]
 void force_test(franka_proxy::franka_remote_interface& robot);
+// todo: untested since bachelor thesis d. ermer; handle with care.
+[[deprecated("Revise test code before execution on real robot!")]]
 void impedance_admittance_ermer_ba_tests(franka_proxy::franka_remote_interface& robot);
+
 
 // TODO we need a csv-motion-logger for franka-proxy and tests.
 void log(std::ofstream& csv_log, std::array<double, 7> j, std::array<double, 6> ft, double time);
@@ -64,9 +73,9 @@ void franka_proxy_client_test(const std::string& ip)
 
 	// --- franka motion tests ---
 	//gripper_test(robot);
-	//ptp_test(robot); // TODO new test positions needed
-	//force_test(robot); // TODO new test positions needed
-	//impedance_admittance_ermer_ba_tests(robot); // TODO untested Code since BA of Dominik Ermer
+	//ptp_test(robot);
+	//force_test(robot); 
+	//impedance_admittance_ermer_ba_tests(robot);
 	//playback_test(robot);
 	ple_motion_record_test(robot);
 
@@ -215,20 +224,19 @@ void force_test(franka_proxy::franka_remote_interface& robot)
 {
 	std::cout << "Starting Force Test." << std::endl;
 
+	//franka_proxy::robot_config_7dof pos_with_scale
+	//	{{1.09452, 0.475923, 0.206959, -2.33289, -0.289467, 2.7587, 0.830083}};
+	//franka_proxy::robot_config_7dof pos_above_table
+	//	{{1.09703, 0.505084, 0.216472, -2.29691, -0.302112, 2.72655, 0.817159}};
+	////{{1.10689, 0.660073, 0.240198, -2.03228, -0.33317, 2.63551, 0.784704}};
 
-	franka_proxy::robot_config_7dof pos_with_scale
-		{{1.09452, 0.475923, 0.206959, -2.33289, -0.289467, 2.7587, 0.830083}};
-	franka_proxy::robot_config_7dof pos_above_table
-		{{1.09703, 0.505084, 0.216472, -2.29691, -0.302112, 2.72655, 0.817159}};
-	//{{1.10689, 0.660073, 0.240198, -2.03228, -0.33317, 2.63551, 0.784704}};
+	//robot.set_speed_factor(0.2);
+	//robot.move_to(pos_with_scale);
+	//robot.move_to_until_contact(pos_above_table);
 
-	robot.set_speed_factor(0.2);
-	robot.move_to(pos_with_scale);
-	robot.move_to_until_contact(pos_above_table);
-
-	//robot.apply_z_force(0.0, 5.0);
-	//robot.apply_z_force(1.0, 5.0);
-
+	////robot.apply_z_force(0.0, 5.0);
+	////robot.apply_z_force(1.0, 5.0);
+	
 	std::cout << "Finished Force Test." << std::endl;
 }
 
@@ -244,8 +252,11 @@ void impedance_admittance_ermer_ba_tests(franka_proxy::franka_remote_interface& 
 	stiffness[48] = 50.;
 	robot.joint_impedance_hold_position(10, false, stiffness);
 
-	std::cout << "Finished Impedance - Hold Position Test." << std::endl;
+	//std::this_thread::sleep_for(std::chrono::seconds(3));
+	////TODO move to start pose
+	//robot.cartesian_impedance_poses(cart_test_positions, 15, false, false, 50., 300.);
 
+	//std::cout << "Finished Impedance - Follow Poses with Cartesian Impedance Test." << std::endl;
 
 	std::cout << "Starting Impedance - Follow Poses with Cartesian Impedance Test." << std::endl;
 	// positions
@@ -270,12 +281,13 @@ void impedance_admittance_ermer_ba_tests(franka_proxy::franka_remote_interface& 
 		}
 	};
 
-	robot.cartesian_impedance_poses(poses_for_cart, 10, false, false, 50., 300.);
-
-	std::cout << "Finished Impedance - Follow Poses with Cartesian Impedance Test." << std::endl;
+	std::cout << "Starting Joint Impedance Tests." << std::endl << "Holding position with Joint Impedance in 3s..";
 
 
-	std::cout << "Starting Impedance - Follow Poses with Joint Impedance Test." << std::endl;
+	std::this_thread::sleep_for(std::chrono::seconds(3));
+	robot.joint_impedance_hold_position(10, false, stiffness);
+
+	std::cout << " .. finished." << std::endl << "Following Poses with Joint Impedance in 3s..";
 	// positions
 	std::list<std::array<double, 16>> poses_for_joint = {
 		{

@@ -47,7 +47,10 @@ public:
 
 	static bool is_reachable(const robot_config_7dof& target);
 
-
+	/**
+	 * For coordinate frames see:
+	 * https://frankaemika.github.io/docs/control_parameters.html#denavithartenberg-parameters
+	 */
 	static std::vector<Eigen::Affine3d> fk(
 		const robot_config_7dof& configuration);
 
