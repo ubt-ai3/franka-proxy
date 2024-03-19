@@ -49,7 +49,7 @@ int main(int argc, char* argv[])
 		return -1;
 	}
 
-	if (program["-e"] == true)
+	if (program.is_used("-e"))
 	{
 		std::cout <<
 			"--------------------------------------------------------------------------------\n"

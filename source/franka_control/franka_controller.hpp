@@ -20,8 +20,8 @@
 namespace franka_control
 {
 using robot_config_7dof = Eigen::Matrix<double, 7, 1>;
-using force_torque_config_cartesian = Eigen::Matrix<double, 6, 1>;
-using selection_position_force_vector = Eigen::Matrix<double, 6, 1>;
+using wrench = Eigen::Matrix<double, 6, 1>;
+using selection_diagonal = Eigen::Matrix<double, 6, 1>;
 
 
 /**
@@ -49,9 +49,11 @@ public:
 
 	virtual ~franka_controller() noexcept;
 
+
 	virtual void move(const robot_config_7dof& target) = 0;
-	virtual void move_with_force(const robot_config_7dof& target,
-	                             const force_torque_config_cartesian& target_force_torques) = 0;
+	virtual void move_with_force(
+		const robot_config_7dof& target,
+		const wrench& target_force_torques) = 0;
 	void move(const Eigen::Affine3d& target_world_T_tcp);
 
 	/**
@@ -76,7 +78,7 @@ public:
 
 
 	virtual robot_config_7dof current_config() const = 0;
-	virtual force_torque_config_cartesian current_force_torque() const = 0;
+	virtual wrench current_force_torque() const = 0;
 	virtual int current_gripper_pos() const = 0;
 	virtual int max_gripper_pos() const = 0;
 
@@ -93,11 +95,11 @@ public:
 	virtual void update() = 0;
 
 	virtual void start_recording() = 0;
-	virtual std::pair<std::vector<robot_config_7dof>, std::vector<force_torque_config_cartesian>> stop_recording() = 0;
+	virtual std::pair<std::vector<robot_config_7dof>, std::vector<wrench>> stop_recording() = 0;
 	virtual void move_sequence(
 		const std::vector<robot_config_7dof>& q_sequence,
-		const std::vector<force_torque_config_cartesian>& f_sequence,
-		const std::vector<selection_position_force_vector>& selection_vector_sequence) = 0;
+		const std::vector<wrench>& f_sequence,
+		const std::vector<selection_diagonal>& selection_vector_sequence) = 0;
 
 
 	const Eigen::Affine3d j7_T_flange;
@@ -127,13 +129,8 @@ private:
 class franka_update_task
 {
 public:
-	franka_update_task(franka_controller& controller);
+	explicit franka_update_task(franka_controller& controller);
 	~franka_update_task() noexcept;
-
-	franka_update_task(const franka_update_task&) = delete;
-	franka_update_task& operator=(const franka_update_task&) = delete;
-	franka_update_task(franka_update_task&&) = delete;
-	franka_update_task& operator=(franka_update_task&&) = delete;
 
 private:
 	void task_main();

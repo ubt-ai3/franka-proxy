@@ -8,7 +8,7 @@
 #include <franka_control/franka_util.hpp>
 
 
-franka_control::force_torque_config_cartesian schunk_ft_sensor_to_franka_calibration::calibrate_bias(
+franka_control::wrench schunk_ft_sensor_to_franka_calibration::calibrate_bias(
 	franka_control::franka_controller_remote& franka,
 	double record_time_per_pose_seconds,
 	double wait_time_seconds)
@@ -75,7 +75,7 @@ franka_control::force_torque_config_cartesian schunk_ft_sensor_to_franka_calibra
 		prev_joint_config = Eigen::Matrix<double, 7, 1>(joint_record.back().data());
 	}
 
-	franka_control::force_torque_config_cartesian biases = {0, 0, 0, 0, 0, 0};
+	franka_control::wrench biases = {0, 0, 0, 0, 0, 0};
 	for (int pose_idx = 0; pose_idx < ft_avgs.size(); pose_idx++)
 	{
 		for (int ft_idx = 0; ft_idx < ft_avgs[pose_idx].size(); ft_idx++)
