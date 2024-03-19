@@ -7,7 +7,6 @@
  *
  ************************************************************************/
 
-
 #include "franka_hardware_controller.hpp"
 
 #include <iostream>
@@ -20,12 +19,12 @@
 #include <franka/model.h>
 
 #include "motion_generator_admittance.hpp"
-#include "motion_recorder.hpp"
 #include "motion_generator_force.hpp"
 #include "motion_generator_joint_impedance.hpp"
 #include "motion_generator_joint_max_accel.hpp"
 #include "motion_generator_seq_cart_vel_tau.hpp"
 #include "motion_generator_joint_imp_ple.hpp"
+#include "motion_recorder.hpp"
 
 #include "ft_sensor/schunk_ft.hpp"
 
@@ -38,22 +37,21 @@ namespace franka_proxy
 //
 //////////////////////////////////////////////////////////////////////////
 
-
-franka_hardware_controller::franka_hardware_controller
-(const std::string& controller_ip)
-	: robot_(controller_ip, franka::RealtimeConfig::kIgnore),
-	  parameters_initialized_(false),
-	  speed_factor_(0.05),
+franka_hardware_controller::franka_hardware_controller(
+	const std::string& controller_ip,
+	const bool enforce_realtime)
+	: robot_(
+		  controller_ip,
+		  enforce_realtime ? franka::RealtimeConfig::kEnforce : franka::RealtimeConfig::kIgnore),
 
 	  ft_sensor_(nullptr),
-
 	  motion_recorder_(nullptr),
-
-	  robot_state_(robot_.readOnce()),
 
 	  control_loop_running_(false),
 
+	  robot_state_(robot_.readOnce()),
 	  terminate_state_threads_(false),
+
 	  robot_state_thread_([this]() { robot_state_update_loop(); }),
 	  gripper_state_thread_([this]() { gripper_state_update_loop(); })
 
@@ -63,9 +61,10 @@ franka_hardware_controller::franka_hardware_controller
 		ft_sensor_ = std::make_unique<schunk_ft_sensor>(Eigen::Affine3f::Identity(), Eigen::Affine3f::Identity());
 		motion_recorder_ = std::make_unique<detail::motion_recorder>(robot_, robot_state_, *ft_sensor_);
 	}
-	catch(const ft_sensor_connection_exception&)
+	catch (const std::exception&)
 	{
-		std::cout << "connection to force/torque sensor could not be established" << std::endl;
+		std::cout << "franka_proxy::franka_hardware_controller(const std::string & controller_ip): "
+			"Connection to force/torque sensor could not be established." << std::endl;
 	}
 
 	try
@@ -74,11 +73,13 @@ franka_hardware_controller::franka_hardware_controller
 		max_width_ = gripper_->readOnce().max_width;
 		gripper_state_ = gripper_->readOnce();
 	}
-	catch (...)
+	catch (const std::exception&)
 	{
-		std::cout << "connection to gripper could not be established" << std::endl;
-		// todo
+		std::cout << "franka_proxy::franka_hardware_controller(const std::string & controller_ip): "
+			"Connection to gripper could not be established." << std::endl;
 	}
+
+	initialize_parameters();
 
 	// todo JHa add feature to set guiding mode
 	//robot_.setGuidingMode({ {true, true, true, false, false, true} }, false);
@@ -93,10 +94,15 @@ franka_hardware_controller::~franka_hardware_controller() noexcept
 }
 
 
+void franka_hardware_controller::automatic_error_recovery()
+{
+	robot_.automaticErrorRecovery();
+}
+
+
 void franka_hardware_controller::apply_z_force
 (const double mass, const double duration)
 {
-	initialize_parameters();
 	try
 	{
 		detail::force_motion_generator fmg(robot_, mass, duration);
@@ -124,7 +130,12 @@ void franka_hardware_controller::apply_z_force
 
 	set_control_loop_running(false);
 }
-void franka_hardware_controller::apply_admittance(const double duration, const bool log, const double adm_rotational_stiffness, const double adm_translational_stiffness, const double imp_rotational_stiffness, const double imp_translational_stiffness)
+
+void franka_hardware_controller::apply_admittance(const double duration, const bool log,
+                                                  const double adm_rotational_stiffness,
+                                                  const double adm_translational_stiffness,
+                                                  const double imp_rotational_stiffness,
+                                                  const double imp_translational_stiffness)
 {
 	detail::admittance_motion_generator motion_generator(robot_, robot_state_lock_, robot_state_, duration, log);
 
@@ -144,7 +155,7 @@ void franka_hardware_controller::apply_admittance(const double duration, const b
 
 		robot_.control(
 			[&](const franka::RobotState& robot_state,
-				franka::Duration period) -> franka::Torques
+			    franka::Duration period) -> franka::Torques
 			{
 				return motion_generator.callback(robot_state, period);
 			}, true, 10.0
@@ -158,7 +169,9 @@ void franka_hardware_controller::apply_admittance(const double duration, const b
 
 	set_control_loop_running(false);
 }
-void franka_hardware_controller::joint_impedance_hold_position(const double duration, const bool log, const std::array<double, 49> stiffness)
+
+void franka_hardware_controller::joint_impedance_hold_position(const double duration, const bool log,
+                                                               const std::array<double, 49> stiffness)
 {
 	detail::joint_impedance_motion_generator motion_generator(robot_, robot_state_lock_, robot_state_, duration, log);
 
@@ -174,14 +187,14 @@ void franka_hardware_controller::joint_impedance_hold_position(const double dura
 
 		robot_.control(
 			[&](const franka::RobotState& robot_state,
-				franka::Duration period) -> franka::Torques
+			    franka::Duration period) -> franka::Torques
 			{
 				return motion_generator.callback
 				(robot_state, period,
-					[&](const double time) -> Eigen::Matrix<double, 7, 1>
-					{
-						return motion_generator.calculate_joint_position_error(robot_state, time);
-					}
+				 [&](const double time) -> Eigen::Matrix<double, 7, 1>
+				 {
+					 return motion_generator.calculate_joint_position_error(robot_state, time);
+				 }
 				);
 			}, true, 10.0
 		);
@@ -194,9 +207,13 @@ void franka_hardware_controller::joint_impedance_hold_position(const double dura
 
 	set_control_loop_running(false);
 }
-void franka_hardware_controller::joint_impedance_positions(const std::list<std::array<double, 7>>& joint_positions, const double duration, const bool log, const std::array<double, 49> stiffness)
+
+void franka_hardware_controller::joint_impedance_positions(const std::list<std::array<double, 7>>& joint_positions,
+                                                           const double duration, const bool log,
+                                                           const std::array<double, 49> stiffness)
 {
-	detail::joint_impedance_motion_generator motion_generator(robot_, robot_state_lock_, robot_state_, joint_positions, duration, log);
+	detail::joint_impedance_motion_generator motion_generator(robot_, robot_state_lock_, robot_state_, joint_positions,
+	                                                          duration, log);
 
 	motion_generator.set_stiffness(stiffness);
 
@@ -210,14 +227,14 @@ void franka_hardware_controller::joint_impedance_positions(const std::list<std::
 
 		robot_.control(
 			[&](const franka::RobotState& robot_state,
-				franka::Duration period) -> franka::Torques
+			    franka::Duration period) -> franka::Torques
 			{
 				return motion_generator.callback
 				(robot_state, period,
-					[&](const double time) -> Eigen::Matrix<double, 7, 1>
-					{
-						return motion_generator.calculate_joint_position_error(robot_state, time);
-					}
+				 [&](const double time) -> Eigen::Matrix<double, 7, 1>
+				 {
+					 return motion_generator.calculate_joint_position_error(robot_state, time);
+				 }
 				);
 			}, true, 10.0
 		);
@@ -230,9 +247,14 @@ void franka_hardware_controller::joint_impedance_positions(const std::list<std::
 
 	set_control_loop_running(false);
 }
-void franka_hardware_controller::cartesian_impedance_hold_pose(const double duration, const bool log, const bool use_stiff_damp_online_calc, const double rotational_stiffness, const double translational_stiffness)
+
+void franka_hardware_controller::cartesian_impedance_hold_pose(const double duration, const bool log,
+                                                               const bool use_stiff_damp_online_calc,
+                                                               const double rotational_stiffness,
+                                                               const double translational_stiffness)
 {
-	detail::cartesian_impedance_motion_generator motion_generator(robot_, robot_state_lock_, robot_state_, duration, log, use_stiff_damp_online_calc);
+	detail::cartesian_impedance_motion_generator motion_generator(robot_, robot_state_lock_, robot_state_, duration,
+	                                                              log, use_stiff_damp_online_calc);
 
 	motion_generator.set_rotational_stiffness(rotational_stiffness);
 	motion_generator.set_translational_stiffness(translational_stiffness);
@@ -247,14 +269,14 @@ void franka_hardware_controller::cartesian_impedance_hold_pose(const double dura
 
 		robot_.control(
 			[&](const franka::RobotState& robot_state,
-				franka::Duration period) -> franka::Torques
+			    franka::Duration period) -> franka::Torques
 			{
 				return motion_generator.callback
 				(robot_state, period,
-					[&](const double time) -> Eigen::Matrix<double, 6, 1>
-					{
-						return motion_generator.calculate_position_error(robot_state, time);
-					}
+				 [&](const double time) -> Eigen::Matrix<double, 6, 1>
+				 {
+					 return motion_generator.calculate_position_error(robot_state, time);
+				 }
 				);
 			}, true, 10.0
 		);
@@ -267,9 +289,15 @@ void franka_hardware_controller::cartesian_impedance_hold_pose(const double dura
 
 	set_control_loop_running(false);
 }
-void franka_hardware_controller::cartesian_impedance_poses(const std::list<std::array<double, 16>>& poses, const double duration, const bool log, const bool use_stiff_damp_online_calc, const double rotational_stiffness, const double translational_stiffness)
+
+void franka_hardware_controller::cartesian_impedance_poses(const std::list<std::array<double, 16>>& poses,
+                                                           const double duration, const bool log,
+                                                           const bool use_stiff_damp_online_calc,
+                                                           const double rotational_stiffness,
+                                                           const double translational_stiffness)
 {
-	detail::cartesian_impedance_motion_generator motion_generator(robot_, robot_state_lock_, robot_state_, poses, duration, log, use_stiff_damp_online_calc);
+	detail::cartesian_impedance_motion_generator motion_generator(robot_, robot_state_lock_, robot_state_, poses,
+	                                                              duration, log, use_stiff_damp_online_calc);
 
 	motion_generator.set_rotational_stiffness(rotational_stiffness);
 	motion_generator.set_translational_stiffness(translational_stiffness);
@@ -284,14 +312,14 @@ void franka_hardware_controller::cartesian_impedance_poses(const std::list<std::
 
 		robot_.control(
 			[&](const franka::RobotState& robot_state,
-				franka::Duration period) -> franka::Torques
+			    franka::Duration period) -> franka::Torques
 			{
 				return motion_generator.callback
 				(robot_state, period,
-					[&](const double time) -> Eigen::Matrix<double, 6, 1>
-					{
-						return motion_generator.calculate_position_error(robot_state, time);
-					}
+				 [&](const double time) -> Eigen::Matrix<double, 6, 1>
+				 {
+					 return motion_generator.calculate_position_error(robot_state, time);
+				 }
 				);
 			}, true, 10.0
 		);
@@ -320,14 +348,14 @@ void franka_hardware_controller::run_payload_estimation(double duration, bool lo
 
 		robot_.control(
 			[&](const franka::RobotState& robot_state,
-				franka::Duration period) -> franka::Torques
+			    franka::Duration period) -> franka::Torques
 			{
 				return motion_generator.callback
 				(robot_state, period,
-					[&](const double time) -> Eigen::Matrix<double, 7, 1>
-					{
-						return motion_generator.calculate_ple_motion(robot_state, time);
-					}
+				 [&](const double time) -> Eigen::Matrix<double, 7, 1>
+				 {
+					 return motion_generator.calculate_ple_motion(robot_state, time);
+				 }
 				);
 			}, true, 10.0
 		);
@@ -344,8 +372,6 @@ void franka_hardware_controller::run_payload_estimation(double duration, bool lo
 
 void franka_hardware_controller::move_to(const robot_config_7dof& target)
 {
-	initialize_parameters();
-
 	detail::franka_joint_motion_generator motion_generator
 		(speed_factor_, target, robot_state_lock_, robot_state_, stop_motion_, false);
 
@@ -380,13 +406,11 @@ void franka_hardware_controller::move_to(const robot_config_7dof& target)
 bool franka_hardware_controller::move_to_until_contact
 (const robot_config_7dof& target)
 {
-	initialize_parameters();
-
 	detail::franka_joint_motion_generator motion_generator
 		(speed_factor_, target, robot_state_lock_, robot_state_, stop_motion_, true);
 
 	stop_motion_ = false;
-	set_contact_drive_collision_behaviour();
+	set_contact_move_collision_behaviour();
 
 	try
 	{
@@ -508,12 +532,6 @@ franka::GripperState franka_hardware_controller::gripper_state() const
 }
 
 
-void franka_hardware_controller::automatic_error_recovery()
-{
-	robot_.automaticErrorRecovery();
-}
-
-
 void franka_hardware_controller::start_recording()
 {
 	if (!ft_sensor_)
@@ -529,7 +547,8 @@ void franka_hardware_controller::start_recording()
 	motion_recorder_->start();
 }
 
-std::pair<std::vector<robot_config_7dof>, std::vector<robot_force_config>> franka_hardware_controller::start_recording(float seconds)
+std::pair<std::vector<robot_config_7dof>, std::vector<robot_force_config>>
+franka_hardware_controller::start_recording(float seconds)
 {
 	if (!ft_sensor_)
 	{
@@ -545,7 +564,7 @@ std::pair<std::vector<robot_config_7dof>, std::vector<robot_force_config>> frank
 	motion_recorder_->start(seconds);
 	set_control_loop_running(false);
 
-	return { motion_recorder_->latest_joints_record(), motion_recorder_->latest_fts_record() };
+	return {motion_recorder_->latest_joints_record(), motion_recorder_->latest_fts_record()};
 }
 
 
@@ -562,7 +581,6 @@ franka_hardware_controller::stop_recording()
 void franka_hardware_controller::move_sequence
 (const std::vector<std::array<double, 7>>& q_sequence)
 {
-	initialize_parameters();
 	set_default_collision_behaviour();
 
 	std::vector<std::array<double, 6>> f_sequence(q_sequence.size(), {0, 0, 0, 0, 0, 0});
@@ -608,7 +626,6 @@ void franka_hardware_controller::move_sequence
 void franka_hardware_controller::move_sequence
 (const std::vector<std::array<double, 7>>& q_sequence, double f_z)
 {
-	initialize_parameters();
 	set_default_collision_behaviour();
 
 	// wrong implementation
@@ -713,7 +730,6 @@ void franka_hardware_controller::move_sequence
  const std::vector<std::array<double, 6>>& f_sequence,
  const std::vector<std::array<double, 6>>& selection_vector)
 {
-	initialize_parameters();
 	set_default_collision_behaviour();
 
 	stop_motion_ = false;
@@ -797,15 +813,10 @@ void franka_hardware_controller::gripper_state_update_loop()
 
 void franka_hardware_controller::initialize_parameters()
 {
-	while (!parameters_initialized_)
-	{
-		set_default_collision_behaviour();
+	robot_.setJointImpedance({{3000, 3000, 3000, 2500, 2500, 2000, 2000}});
+	robot_.setCartesianImpedance({{3000, 3000, 3000, 300, 300, 300}});
 
-		robot_.setJointImpedance({{3000, 3000, 3000, 2500, 2500, 2000, 2000}});
-		robot_.setCartesianImpedance({{3000, 3000, 3000, 300, 300, 300}});
-
-		parameters_initialized_ = true;
-	}
+	set_default_collision_behaviour();
 }
 
 
@@ -819,7 +830,7 @@ void franka_hardware_controller::set_default_collision_behaviour()
 }
 
 
-void franka_hardware_controller::set_contact_drive_collision_behaviour()
+void franka_hardware_controller::set_contact_move_collision_behaviour()
 {
 	robot_.setCollisionBehavior(
 		{{5.0, 5.0, 4.5, 4.5, 4.0, 3.5, 3.0}}, {{5.0, 5.0, 4.5, 4.5, 4.0, 3.5, 3.0}},
@@ -832,7 +843,7 @@ void franka_hardware_controller::set_contact_drive_collision_behaviour()
 void franka_hardware_controller::set_control_loop_running(bool running)
 {
 	{
-		std::lock_guard<std::mutex> lk(control_loop_running_mutex_);
+		std::lock_guard lk(control_loop_running_mutex_);
 		control_loop_running_ = running;
 	}
 	control_loop_running_cv_.notify_all();
