@@ -82,6 +82,7 @@ target_include_directories(
 target_link_libraries(
     franka_proxy
     PUBLIC
+		argparse::argparse
         asio::asio
         Eigen3::Eigen
 		Poco::Foundation
@@ -175,6 +176,7 @@ target_include_directories(
 target_link_libraries(
     franka_proxy_client_test
     PUBLIC
+		argparse::argparse
         asio::asio
         Eigen3::Eigen
         Threads::Threads
@@ -204,6 +206,7 @@ target_include_directories(
 target_link_libraries(
     franka_control_test
     PUBLIC
+		argparse::argparse
         asio::asio
         Eigen3::Eigen
         Threads::Threads
@@ -262,6 +265,8 @@ install(
 )
 
 install(EXPORT franka-proxyConfig DESTINATION share FILE franka-proxyTargets.cmake)
+
+
 
 
 # assets
