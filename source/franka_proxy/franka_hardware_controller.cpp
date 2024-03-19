@@ -59,7 +59,7 @@ franka_hardware_controller::franka_hardware_controller(
 	try
 	{
 		ft_sensor_ = std::make_unique<schunk_ft_sensor>(Eigen::Affine3f::Identity(), Eigen::Affine3f::Identity());
-		motion_recorder_ = std::make_unique<detail::motion_recorder>(robot_, robot_state_, *ft_sensor_);
+		motion_recorder_ = std::make_unique<detail::motion_recorder>(robot_, robot_state_, ft_sensor_.get());
 	}
 	catch (const std::exception&)
 	{
@@ -110,7 +110,7 @@ void franka_hardware_controller::apply_z_force
 		set_control_loop_running(true);
 		{
 			// Lock the current_state_lock_ to wait for state_thread_ to finish.
-			std::lock_guard<std::mutex> state_guard(robot_state_lock_);
+			std::lock_guard state_guard(robot_state_lock_);
 		}
 
 		// start real-time control loop
@@ -150,7 +150,7 @@ void franka_hardware_controller::apply_admittance(const double duration, const b
 		set_control_loop_running(true);
 		{
 			// Lock the current_state_lock_ to wait for state_thread_ to finish.
-			std::lock_guard<std::mutex> state_guard(robot_state_lock_);
+			std::lock_guard state_guard(robot_state_lock_);
 		}
 
 		robot_.control(
@@ -182,7 +182,7 @@ void franka_hardware_controller::joint_impedance_hold_position(const double dura
 		set_control_loop_running(true);
 		{
 			// Lock the current_state_lock_ to wait for state_thread_ to finish.
-			std::lock_guard<std::mutex> state_guard(robot_state_lock_);
+			std::lock_guard state_guard(robot_state_lock_);
 		}
 
 		robot_.control(
@@ -222,7 +222,7 @@ void franka_hardware_controller::joint_impedance_positions(const std::list<std::
 		set_control_loop_running(true);
 		{
 			// Lock the current_state_lock_ to wait for state_thread_ to finish.
-			std::lock_guard<std::mutex> state_guard(robot_state_lock_);
+			std::lock_guard state_guard(robot_state_lock_);
 		}
 
 		robot_.control(
@@ -264,7 +264,7 @@ void franka_hardware_controller::cartesian_impedance_hold_pose(const double dura
 		set_control_loop_running(true);
 		{
 			// Lock the current_state_lock_ to wait for state_thread_ to finish.
-			std::lock_guard<std::mutex> state_guard(robot_state_lock_);
+			std::lock_guard state_guard(robot_state_lock_);
 		}
 
 		robot_.control(
@@ -307,7 +307,7 @@ void franka_hardware_controller::cartesian_impedance_poses(const std::list<std::
 		set_control_loop_running(true);
 		{
 			// Lock the current_state_lock_ to wait for state_thread_ to finish.
-			std::lock_guard<std::mutex> state_guard(robot_state_lock_);
+			std::lock_guard state_guard(robot_state_lock_);
 		}
 
 		robot_.control(
@@ -343,7 +343,7 @@ void franka_hardware_controller::run_payload_estimation(double duration, bool lo
 		set_control_loop_running(true);
 		{
 			// Lock the current_state_lock_ to wait for state_thread_ to finish.
-			std::lock_guard<std::mutex> state_guard(robot_state_lock_);
+			std::lock_guard state_guard(robot_state_lock_);
 		}
 
 		robot_.control(
@@ -382,7 +382,7 @@ void franka_hardware_controller::move_to(const robot_config_7dof& target)
 		set_control_loop_running(true);
 		{
 			// Lock the current_state_lock_ to wait for state_thread_ to finish.
-			std::lock_guard<std::mutex> state_guard(robot_state_lock_);
+			std::lock_guard state_guard(robot_state_lock_);
 		}
 
 		robot_.control
@@ -417,7 +417,7 @@ bool franka_hardware_controller::move_to_until_contact
 		set_control_loop_running(true);
 		{
 			// Lock the current_state_lock_ to wait for state_thread_ to finish.
-			std::lock_guard<std::mutex> state_guard(robot_state_lock_);
+			std::lock_guard state_guard(robot_state_lock_);
 		}
 
 		robot_.control
@@ -464,7 +464,7 @@ void franka_hardware_controller::stop_movement()
 
 void franka_hardware_controller::set_speed_factor(double speed_factor)
 {
-	std::lock_guard<std::mutex> state_guard(speed_factor_lock_);
+	std::lock_guard state_guard(speed_factor_lock_);
 	speed_factor_ = speed_factor;
 }
 
@@ -485,7 +485,7 @@ void franka_hardware_controller::set_load_mass(const std::array<double, 3>& load
 
 franka::RobotState franka_hardware_controller::robot_state() const
 {
-	std::lock_guard<std::mutex> state_guard(robot_state_lock_);
+	std::lock_guard state_guard(robot_state_lock_);
 	return robot_state_;
 }
 
@@ -527,7 +527,7 @@ bool franka_hardware_controller::grasp_gripper(double speed, double force)
 
 franka::GripperState franka_hardware_controller::gripper_state() const
 {
-	std::lock_guard<std::mutex> state_guard(gripper_state_lock_);
+	std::lock_guard state_guard(gripper_state_lock_);
 	return gripper_state_;
 }
 
@@ -541,40 +541,36 @@ void franka_hardware_controller::start_recording()
 	set_control_loop_running(true);
 	{
 		// Lock the current_state_lock_ to wait for state_thread_ to finish.
-		std::lock_guard<std::mutex> state_guard(robot_state_lock_);
+		std::lock_guard state_guard(robot_state_lock_);
 	}
 
 	motion_recorder_->start();
 }
 
-std::pair<std::vector<robot_config_7dof>, std::vector<robot_force_config>>
-franka_hardware_controller::start_recording(float seconds)
+
+std::pair<std::vector<robot_config_7dof>, std::vector<wrench>>
+franka_hardware_controller::stop_recording()
 {
-	if (!ft_sensor_)
-	{
-		throw ft_sensor_connection_exception();
-	}
-
-	set_control_loop_running(true);
-	{
-		// Lock the current_state_lock_ to wait for state_thread_ to finish.
-		std::lock_guard<std::mutex> state_guard(robot_state_lock_);
-	}
-
-	motion_recorder_->start(seconds);
+	auto record = motion_recorder_->stop();
 	set_control_loop_running(false);
 
-	return {motion_recorder_->latest_joints_record(), motion_recorder_->latest_fts_record()};
+	return record;
 }
 
 
-std::pair<std::vector<robot_config_7dof>, std::vector<robot_force_config>>
-franka_hardware_controller::stop_recording()
+std::pair<std::vector<robot_config_7dof>, std::vector<wrench>>
+franka_hardware_controller::start_recording(float seconds)
 {
-	motion_recorder_->stop();
+	set_control_loop_running(true);
+	{
+		// Lock the current_state_lock_ to wait for state_thread_ to finish.
+		std::lock_guard state_guard(robot_state_lock_);
+	}
+
+	auto record = motion_recorder_->start(seconds);
 	set_control_loop_running(false);
 
-	return {motion_recorder_->latest_joints_record(), motion_recorder_->latest_fts_record()};
+	return record;
 }
 
 
@@ -597,7 +593,7 @@ void franka_hardware_controller::move_sequence
 		set_control_loop_running(true);
 		{
 			// Lock the current_state_lock_ to wait for state_thread_ to finish.
-			std::lock_guard<std::mutex> state_guard(robot_state_lock_);
+			std::lock_guard state_guard(robot_state_lock_);
 		}
 
 		robot_.control(
@@ -652,7 +648,7 @@ void franka_hardware_controller::move_sequence
 		set_control_loop_running(true);
 		{
 			// Lock the current_state_lock_ to wait for state_thread_ to finish.
-			std::lock_guard<std::mutex> state_guard(robot_state_lock_);
+			std::lock_guard state_guard(robot_state_lock_);
 		}
 
 
@@ -741,7 +737,7 @@ void franka_hardware_controller::move_sequence
 		set_control_loop_running(true);
 		{
 			// Lock the current_state_lock_ to wait for state_thread_ to finish.
-			std::lock_guard<std::mutex> state_guard(robot_state_lock_);
+			std::lock_guard state_guard(robot_state_lock_);
 		}
 
 		robot_.control([&](
@@ -771,7 +767,7 @@ void franka_hardware_controller::robot_state_update_loop()
 	while (!terminate_state_threads_)
 	{
 		{
-			std::unique_lock<std::mutex> lk(control_loop_running_mutex_);
+			std::unique_lock lk(control_loop_running_mutex_);
 			if (control_loop_running_)
 			{
 				control_loop_running_cv_.wait(lk);
@@ -782,7 +778,7 @@ void franka_hardware_controller::robot_state_update_loop()
 
 		try
 		{
-			std::lock_guard<std::mutex> state_guard(robot_state_lock_);
+			std::lock_guard state_guard(robot_state_lock_);
 			robot_state_ = robot_.readOnce();
 		}
 		catch (...)
@@ -801,7 +797,7 @@ void franka_hardware_controller::gripper_state_update_loop()
 	{
 		if (gripper_)
 		{
-			std::lock_guard<std::mutex> state_guard(gripper_state_lock_);
+			std::lock_guard state_guard(gripper_state_lock_);
 			gripper_state_ = gripper_->readOnce();
 		}
 

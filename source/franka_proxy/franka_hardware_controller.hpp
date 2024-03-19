@@ -23,8 +23,8 @@
 namespace franka_proxy
 {
 using robot_config_7dof = std::array<double, 7>;
-using robot_force_config = std::array<double, 6>;
-using robot_force_selection = std::array<double, 6>;
+using wrench = std::array<double, 6>;
+using selection_diagonal = std::array<double, 6>;
 
 
 namespace detail
@@ -104,8 +104,8 @@ public:
 	 * Starts/Stops the recording callback.
 	 */
 	void start_recording();
-	std::pair<std::vector<robot_config_7dof>, std::vector<robot_force_config>> start_recording(float seconds);
-	std::pair<std::vector<robot_config_7dof>, std::vector<robot_force_config>> stop_recording();
+	std::pair<std::vector<robot_config_7dof>, std::vector<wrench>> stop_recording();
+	std::pair<std::vector<robot_config_7dof>, std::vector<wrench>> start_recording(float seconds);
 
 	/**
 	 * Moves the Panda robot along a given sequence.
@@ -117,8 +117,8 @@ public:
 		double f_z);
 	void move_sequence(
 		const std::vector<robot_config_7dof>& q_sequence,
-		const std::vector<robot_force_config>& f_sequence,
-		const std::vector<robot_force_selection>& selection_vector);
+		const std::vector<wrench>& f_sequence,
+		const std::vector<selection_diagonal>& selection_vector);
 
 	/**
 	 * Admittance controller using desired admittance and impedance
@@ -154,7 +154,7 @@ public:
 	 * to follow path of multiple joint positions using desired stiffness matrix parameter.
 	*/
 	void joint_impedance_positions(
-		const std::list<std::array<double, 7>>& joint_positions, double duration, 
+		const std::list<std::array<double, 7>>& joint_positions, double duration,
 		bool log, std::array<double, 49> stiffness);
 
 	/**

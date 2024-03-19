@@ -38,16 +38,14 @@ public:
 	motion_recorder(
 		franka::Robot& robot,
 		franka::RobotState& robot_state,
-		ft_sensor& fts);
+		ft_sensor* fts);
 
 	void start();
-	void stop();
+	std::pair<std::vector<std::array<double, 7>>, std::vector<std::array<double, 6>>> stop();
 
 	// this is blocking
-	void start(float seconds);
+	std::pair<std::vector<std::array<double, 7>>, std::vector<std::array<double, 6>>> start(float seconds);
 
-	std::vector<std::array<double, 7>> latest_joints_record();
-	std::vector<std::array<double, 6>> latest_fts_record();
 
 private:
 	std::vector<std::array<double, 7>> joints_record_;
@@ -55,7 +53,7 @@ private:
 
 	franka::Robot& robot_;
 	franka::RobotState& robot_state_;
-	ft_sensor& fts_;
+	ft_sensor* fts_;
 
 	std::thread t_{};
 	std::atomic_bool stop_{false};
