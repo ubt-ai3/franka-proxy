@@ -53,6 +53,7 @@ namespace franka_proxy
 				double duration,
 				bool logging);
 
+			// todo: add slow down phase at the end
 			franka::Torques callback
 			(const franka::RobotState& robot_state,
 				franka::Duration period,
