@@ -34,7 +34,7 @@ void force_test(franka_proxy::franka_remote_interface& robot);
 void impedance_admittance_ermer_ba_tests(franka_proxy::franka_remote_interface& robot);
 
 
-// TODO we need a csv-motion-logger for franka-proxy and tests.
+// todo: we need a csv-motion-logger for franka-proxy and tests.
 void log(std::ofstream& csv_log, std::array<double, 7> j, std::array<double, 6> ft, double time);
 
 
