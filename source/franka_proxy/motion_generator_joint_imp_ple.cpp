@@ -84,9 +84,17 @@ namespace franka_proxy
 			if (!initialized_) {
 				// first call of callback -> no more rotational / translational stiffness changes are allowed
 				initialized_ = true;
+				if (desired_speed_ < 0.4) {
+					speed_factor_ = desired_speed_;
+				}
+				else
+				{
+					speed_factor_ = 0.3;
+					accelerate_ = true;
+				}
 			}
 
-			if (time_ > duration_) {
+			if (done_) {
 				// motion finished
 				franka::Torques current_torques(state_.tau_J);
 				current_torques.motion_finished = true;
@@ -97,6 +105,21 @@ namespace franka_proxy
 				}
 
 				return current_torques;
+			}
+
+			if (time_ > duration_) {
+				speed_factor_ *= decel_factor_;
+				if (speed_factor_ > 0.05) {
+					done_ = true;
+				}
+			}
+			else if (accelerate_) {
+				speed_factor_ += acceleration_;
+				if (speed_factor_ > desired_speed_)
+				{
+					speed_factor_ = desired_speed_;
+					accelerate_ = false;
+				}
 			}
 
 			// save timestamp
