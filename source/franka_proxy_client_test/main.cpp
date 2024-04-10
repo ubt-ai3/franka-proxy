@@ -9,7 +9,9 @@
 #include <franka_proxy_client/franka_remote_interface.hpp>
 
 
-void franka_proxy_client_test(const std::string& ip);
+enum mode{none, ple, playback, gripper, ptp, force, ermer};
+
+void franka_proxy_client_test(const std::string& ip, mode test, std::vector<std::string>& params);
 
 
 void print_status(const franka_proxy::franka_remote_interface& robot);
@@ -18,7 +20,7 @@ template <class Function> void execute_retry(
 
 
 // todo: motion should stop gracefully
-void ple_motion_record_test(franka_proxy::franka_remote_interface& robot);
+void ple_motion_record_test(franka_proxy::franka_remote_interface& robot, double speed, double duration, bool log, std::string file);
 // todo: not tested on robot
 [[deprecated("Revise test code before execution on real robot!")]]
 void playback_test(franka_proxy::franka_remote_interface& robot);
@@ -42,9 +44,36 @@ int main(int argc, char* argv[])
 {
 	argparse::ArgumentParser program("franka_client_test");
 
-	program.add_argument("IP")
+	program.add_argument("-ip")
 		.help("specify IP for franka-proxy remote connection")
 		.default_value(std::string{ "127.0.0.1" });
+
+
+	argparse::ArgumentParser base("fct_base", "1.0", argparse::default_arguments::none);
+	
+	base.add_argument("-l", "-log")
+		.help("enable logging")
+		.flag();
+
+	base.add_argument("-f", "-file")
+		.help("specify file to write log into")
+		.default_value("franka_client_test_log.csv");
+
+
+	argparse::ArgumentParser ple_test("ple");
+
+	ple_test.add_argument("-s", "-speed")
+		.help("specify speed for ple motion")
+		.default_value(0.3);
+
+	ple_test.add_argument("-d", "-duration")
+		.help("specify duration for ple motion")
+		.default_value(10.0);
+
+	ple_test.add_parents(base);
+
+
+	program.add_subparser(ple_test);
 
 	try
 	{
@@ -57,13 +86,35 @@ int main(int argc, char* argv[])
 		return -1;
 	}
 
-	const auto ip = program.get<std::string>("IP");
+	const auto ip = program.get<std::string>("-ip");
 	std::cout <<
 		"--------------------------------------------------------------------------------\n"
 		"Executing franka client test with IP " << ip << ": " << std::endl;
 	//std::string ip("132.180.194.112"); // franka1-proxy@resy-lab
-	franka_proxy_client_test(ip);
 
+	mode test = mode::none;
+	std::vector<std::string> params;
+
+	if (ple_test) {
+		std::cout << "Running PLE motion record test..." << std::endl;
+
+		std::string speed = ple_test.get<std::string>("-s");
+		std::string duration = ple_test.get<std::string>("-d");
+		std::string log = ple_test.get<std::string>("-l");
+		std::string file = ple_test.get<std::string>("-f");
+
+		params.push_back(speed);
+		params.push_back(duration);
+		params.push_back(log);
+		params.push_back(file);
+
+		test = mode::ple;
+	}
+
+
+
+
+	franka_proxy_client_test(ip, test, params);
 
 	std::cout << "Press Enter to end test exe." << std::endl;
 	std::cin.get();
@@ -71,7 +122,7 @@ int main(int argc, char* argv[])
 }
 
 
-void franka_proxy_client_test(const std::string& ip)
+void franka_proxy_client_test(const std::string& ip, mode test, std::vector<std::string>& params)
 {
 	std::unique_ptr<franka_proxy::franka_remote_interface> robot;
 	try
@@ -109,8 +160,15 @@ void franka_proxy_client_test(const std::string& ip)
 	//force_test(robot); 
 	//impedance_admittance_ermer_ba_tests(robot);
 	//playback_test(robot);
-	ple_motion_record_test(*robot);
 
+	if (test == ple) {
+		double speed = stod(params[0]);
+		double duration = stod(params[1]);
+		bool log = (params[2] == "true");
+		std::string file = params[3];
+		ple_motion_record_test(*robot, speed, duration, log, file);
+	}
+	
 	// --- cleanup status thread ---
 	stop = true;
 	t.join();
@@ -158,13 +216,13 @@ template <class Function> void execute_retry(
 }
 
 
-void ple_motion_record_test(franka_proxy::franka_remote_interface& robot)
+void ple_motion_record_test(franka_proxy::franka_remote_interface& robot, double speed, double duration, bool log, std::string file)
 {
 	constexpr franka_proxy::robot_config_7dof joints_start
 		{0.0346044, -0.0666144, -0.0398886, -2.04985, -0.0229875, 1.99782, 0.778461};
 	robot.move_to(joints_start);
 	std::this_thread::sleep_for(std::chrono::seconds(3));
-	robot.ple_motion(10.0, true);
+	robot.ple_motion(speed, duration, log, file);
 }
 
 

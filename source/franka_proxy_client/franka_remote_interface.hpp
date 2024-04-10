@@ -113,7 +113,7 @@ public:
 	/**
 	 * Joint space impedance controller for executing a pre-defined motion for payload estimation
 	*/
-	void ple_motion(double duration, bool log);
+	void ple_motion(double speed, double duration, bool log, std::string file);
 
 	/**
 	 * todo docu

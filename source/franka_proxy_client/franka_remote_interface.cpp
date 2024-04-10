@@ -132,9 +132,9 @@ void franka_remote_interface::joint_impedance_positions(
 		joint_positions, duration, log, stiffness);
 }
 
-void franka_remote_interface::ple_motion(double duration, bool log)
+void franka_remote_interface::ple_motion(double speed, double duration, bool log, std::string file)
 {
-	send_command<command_ple_motion>(duration, log);
+	send_command<command_ple_motion>(speed, duration, log, file);
 }
 
 

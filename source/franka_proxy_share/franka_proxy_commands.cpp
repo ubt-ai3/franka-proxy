@@ -228,15 +228,19 @@ void from_json(const nlohmann::json& json, command_joint_impedance_positions_des
 void to_json(nlohmann::json& json, const command_ple_motion& object)
 {
 	json["type"] = command_ple_motion::type;
+	json["speed"] = object.speed;
 	json["duration"] = object.duration;
 	json["log"] = object.log;
+	json["file"] = object.file;
 }
 
 
 void from_json(const nlohmann::json& json, command_ple_motion& object)
 {
+	json.at("speed").get_to(object.speed);
 	json.at("duration").get_to(object.duration);
 	json.at("log").get_to(object.log);
+	json.at("file").get_to(object.file);
 }
 
 

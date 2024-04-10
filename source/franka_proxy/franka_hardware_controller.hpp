@@ -160,7 +160,7 @@ public:
 	/**
 	 *  Runs the pre-defined motion for payload estimation
 	*/
-	void run_payload_estimation(double duration, bool log);
+	void run_payload_estimation(double speed;  double duration, bool log, std::string file);
 
 private:
 	/**

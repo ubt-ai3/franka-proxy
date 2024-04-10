@@ -30,12 +30,15 @@ namespace franka_proxy
 		(franka::Robot& robot,
 			std::mutex& state_lock,
 			franka::RobotState& robot_state,
+			double speed,
 			double duration,
-			bool logging)
+			bool logging,
+			std::string& file)
 			:
 			model_(robot.loadModel()),
 			state_lock_(state_lock),
 			state_(robot_state),
+			desired_speed_(speed),
 			duration_(duration),
 			logging_(logging),
 			sensor_(placeholder_, placeholder_)
@@ -46,7 +49,7 @@ namespace franka_proxy
 
 			if (logging_) {
 				// start logging to csv file
-				csv_log_.open("ple_log.csv");
+				csv_log_.open(file);
 				csv_log_ << csv_header_ << "\n";
 			}
 		};

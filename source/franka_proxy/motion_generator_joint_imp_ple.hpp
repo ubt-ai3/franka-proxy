@@ -50,8 +50,10 @@ namespace franka_proxy
 			(franka::Robot& robot,
 				std::mutex& state_lock,
 				franka::RobotState& robot_state,
+				double speed,
 				double duration,
-				bool logging);
+				bool logging,
+				std::string& file);
 
 			// todo: add slow down phase at the end
 			franka::Torques callback
@@ -88,10 +90,10 @@ namespace franka_proxy
 			double time_ = 0.0;
 			std::list<double> timestamps_;
 
-			const double desired_speed_ = 0.33; // how fast the motion should be executed, 0.33 is a safe choice
+			double desired_speed_ = 0.33; // how fast the motion should be executed, 0.33 is a safe choice
 			double speed_factor_ = 0.0; // adaptable speed factor, allows for gradual acceleration up to speeds beyond 0.4
 			bool accelerate_ = false; // whether to accelerate or start at the desired speed
-			const double acceleration_ = 0.1; // by how much the robot will accelerate every step until reaching desired speed
+			const double acceleration_ = 0.01; // by how much the robot will accelerate every step until reaching desired speed
 			const double decel_factor_ = 0.995; // how hard the robot will hit the brakes once duration is up (smaller = harder)
 			bool done_ = false; // whether the motion is done up to a point where the robot can safely come to a complete stop immediately
 

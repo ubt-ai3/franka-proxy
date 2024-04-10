@@ -254,8 +254,10 @@ struct command_ple_motion
 	using response_type = command_generic_response;
 	static constexpr char type[] = "ple_motion";
 
+	double speed;
 	double duration;
 	bool log;
+	std::string file;
 };
 
 void to_json(nlohmann::json&, const command_ple_motion& object);
