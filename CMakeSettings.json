@@ -10,7 +10,7 @@
       "cmakeCommandArgs": "",
       "buildCommandArgs": "",
       "ctestCommandArgs": "",
-      "cmakeToolchain": "D:/Work/vcpkg/scripts/buildsystems/vcpkg.cmake"
+      "cmakeToolchain": "C:/Users/lienhardt/source/repos/franka_proxy/tools/vcpkg/scripts/buildsystems/vcpkg.cmake"
     },
     {
       "name": "x64-Release",
@@ -21,7 +21,7 @@
       "cmakeCommandArgs": "",
       "buildCommandArgs": "",
       "ctestCommandArgs": "",
-      "cmakeToolchain": "D:/Work/vcpkg/scripts/buildsystems/vcpkg.cmake",
+      "cmakeToolchain": "C:/Users/lienhardt/source/repos/franka_proxy/tools/vcpkg/scripts/buildsystems/vcpkg.cmake",
       "inheritEnvironments": [ "msvc_x64_x64" ]
     }
   ]

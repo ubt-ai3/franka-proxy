@@ -41,7 +41,7 @@ int main(int argc, char* argv[])
 	argparse::ArgumentParser program("franka_proxy");
 	program.add_argument("--ip")
 	       .help("specify ip for franka-proxy to fci "
-		       "(otherwise uses default 192.168.0.1)");
+		       "(otherwise uses default 192.168.1.1)");
 
 	program.add_argument("--enforce-realtime")
 	       .help("activates fci realtime mode for control-loops")
@@ -58,7 +58,7 @@ int main(int argc, char* argv[])
 		return -1;
 	}
 
-	std::string ip("192.168.0.1");
+	std::string ip("192.168.1.1");
 	if (program.is_used("--ip"))
 		ip = program.get<std::string>("--ip");
 

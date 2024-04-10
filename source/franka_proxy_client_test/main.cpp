@@ -19,7 +19,7 @@ template <class Function> void execute_retry(
 	Function&& f, franka_proxy::franka_remote_interface& robot);
 
 
-// todo: motion should stop gracefully
+// todo: motion should stop gracefully --- should do now. lienhardt
 void ple_motion_record_test(franka_proxy::franka_remote_interface& robot, double speed, double duration, bool log, std::string file);
 // todo: not tested on robot
 [[deprecated("Revise test code before execution on real robot!")]]
@@ -62,7 +62,7 @@ int main(int argc, char* argv[])
 
 	argparse::ArgumentParser ple_test("ple");
 
-	ple_test.add_argument("-s", "-speed")
+	ple_test.add_argument("speed")
 		.help("specify speed for ple motion")
 		.default_value(0.3);
 
@@ -98,7 +98,7 @@ int main(int argc, char* argv[])
 	if (ple_test) {
 		std::cout << "Running PLE motion record test..." << std::endl;
 
-		std::string speed = ple_test.get<std::string>("-s");
+		std::string speed = ple_test.get<std::string>("speed");
 		std::string duration = ple_test.get<std::string>("-d");
 		std::string log = ple_test.get<std::string>("-l");
 		std::string file = ple_test.get<std::string>("-f");
@@ -110,8 +110,9 @@ int main(int argc, char* argv[])
 
 		test = mode::ple;
 	}
+	
 
-
+	//todo: add cases for other tests
 
 
 	franka_proxy_client_test(ip, test, params);
@@ -167,6 +168,8 @@ void franka_proxy_client_test(const std::string& ip, mode test, std::vector<std:
 		bool log = (params[2] == "true");
 		std::string file = params[3];
 		ple_motion_record_test(*robot, speed, duration, log, file);
+
+		std::cout << "PLE motion record test finished." << std::endl;
 	}
 	
 	// --- cleanup status thread ---
