@@ -92,9 +92,10 @@ namespace franka_proxy
 
 			double desired_speed_ = 0.33; // how fast the motion should be executed, 0.33 is a safe choice
 			double speed_factor_ = 0.0; // adaptable speed factor, allows for gradual acceleration up to speeds beyond 0.4
+			double x_ = 0.0;
 			bool accelerate_ = false; // whether to accelerate or start at the desired speed
 			const double acceleration_ = 0.01; // by how much the robot will accelerate every step until reaching desired speed
-			const double decel_factor_ = 0.995; // how hard the robot will hit the brakes once duration is up (smaller = harder)
+			const double decel_factor_ = 0.99; // how hard the robot will hit the brakes once duration is up (smaller = harder)
 			bool done_ = false; // whether the motion is done up to a point where the robot can safely come to a complete stop immediately
 
 			std::list<std::array<double, 7>> measured_joint_velocities_;

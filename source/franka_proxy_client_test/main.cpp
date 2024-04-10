@@ -53,7 +53,8 @@ int main(int argc, char* argv[])
 	
 	base.add_argument("-l", "-log")
 		.help("enable logging")
-		.flag();
+		.default_value("false")
+		.implicit_value("true");
 
 	base.add_argument("-f", "-file")
 		.help("specify file to write log into")
@@ -64,11 +65,11 @@ int main(int argc, char* argv[])
 
 	ple_test.add_argument("speed")
 		.help("specify speed for ple motion")
-		.default_value(0.3);
+		.default_value("0.3");
 
 	ple_test.add_argument("-d", "-duration")
 		.help("specify duration for ple motion")
-		.default_value(10.0);
+		.default_value("10.0");
 
 	ple_test.add_parents(base);
 
@@ -94,7 +95,7 @@ int main(int argc, char* argv[])
 
 	mode test = mode::none;
 	std::vector<std::string> params;
-
+	
 	if (ple_test) {
 		std::cout << "Running PLE motion record test..." << std::endl;
 
@@ -185,7 +186,7 @@ void print_status(const franka_proxy::franka_remote_interface& robot)
 	std::cout << "Current robot joints: ";
 	for (int i = 0; i < 6; ++i)
 		std::cout << config[i] << ", ";
-	std::cout << config[7] << std::endl;
+	std::cout << config[6] << std::endl;
 }
 
 

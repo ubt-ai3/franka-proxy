@@ -87,6 +87,7 @@ namespace franka_proxy
 			if (!initialized_) {
 				// first call of callback -> no more rotational / translational stiffness changes are allowed
 				initialized_ = true;
+
 				if (desired_speed_ < 0.4) {
 					speed_factor_ = desired_speed_;
 				}
@@ -110,13 +111,7 @@ namespace franka_proxy
 				return current_torques;
 			}
 
-			if (time_ > duration_) {
-				speed_factor_ *= decel_factor_;
-				if (speed_factor_ > 0.05) {
-					done_ = true;
-				}
-			}
-			else if (accelerate_) {
+			if (accelerate_) {
 				speed_factor_ += acceleration_;
 				if (speed_factor_ > desired_speed_)
 				{
@@ -180,6 +175,16 @@ namespace franka_proxy
 				timestamps_.pop_front();
 			}
 
+			if (time_ < duration_)
+				x_ += speed_factor_ * period.toSec();
+			else
+			{
+				speed_factor_ *= decel_factor_;
+				if (speed_factor_ < 0.01) 
+					done_ = true;
+				x_ += speed_factor_ * period.toSec();
+			}
+
 			Eigen::Matrix<double, 7, 1> joint_position_error(get_joint_position_error(time_));
 
 			// calculate torque - without gravity as the robot handles it itself
@@ -238,8 +243,7 @@ namespace franka_proxy
 
 			Eigen::Map<const Eigen::Matrix<double, 7, 1>> q(j.data());
 
-			// speed tuning factor
-			double x = speed_factor_ * time;
+			const double x = x_;
 			
 			// calculate next motion step (i.e., this is where the pre-defined motion is implemented)
 			Eigen::Matrix<double, 7, 1> q_d{0.0346044, -0.0666144, -0.0398886, -2.04985, -0.0229875, 1.99782, 0.778461};

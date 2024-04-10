@@ -39,6 +39,7 @@ franka_proxy::franka_proxy(
 int main(int argc, char* argv[])
 {
 	argparse::ArgumentParser program("franka_proxy");
+	//todo: crashes quietly when ip doesn't match
 	program.add_argument("--ip")
 	       .help("specify ip for franka-proxy to fci "
 		       "(otherwise uses default 192.168.1.1)");
@@ -72,6 +73,9 @@ int main(int argc, char* argv[])
 	try
 	{
 		franka_proxy::franka_proxy proxy(ip, enforce_realtime);
+
+		std::cout << "\nPress Enter to stop proxy." << std::endl;
+		return std::cin.get();
 	}
 	catch (const std::exception& e)
 	{
@@ -79,7 +83,4 @@ int main(int argc, char* argv[])
 		std::cout << "Use franka_proxy --help for more program options." << std::endl;
 		return -1;
 	}
-
-	std::cout << "\nPress Enter to stop proxy." << std::endl;
-	return std::cin.get();
 }
