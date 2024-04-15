@@ -22,12 +22,12 @@ template <class Function> void execute_retry(
 
 
 void ple_motion_record_test(franka_proxy::franka_remote_interface& robot, double speed, double duration, bool log, std::string file);
+void gripper_test(franka_proxy::franka_remote_interface& robot);
 
 // todo: not tested on robot
 [[deprecated("Revise test code before execution on real robot!")]]
 void playback_test(franka_proxy::franka_remote_interface& robot);
-void gripper_test(franka_proxy::franka_remote_interface& robot);
-// todo: used poses may be unsafe robot
+// todo: used poses may be unsafe robot - poses are semi-safe, but both above the back right corner of the table. gripper gets close to back wall, so might want to change. lienhardt
 [[deprecated("Revise test code before execution on real robot!")]]
 void ptp_test(franka_proxy::franka_remote_interface& robot);
 // todo: used poses may be unsafe robot
@@ -75,8 +75,20 @@ int main(int argc, char* argv[])
 
 	ple_test.add_parents(base);
 
+	
+	argparse::ArgumentParser gripper_test("gripper");
+	//has no further arguments
+	gripper_test.add_parents(base);
+
+
+	argparse::ArgumentParser ptp_test("ptp");
+	//has no further arguments
+	ptp_test.add_parents(base);
+
 	//todo: add parsers for other tests
 
+	program.add_subparser(ptp_test);
+	program.add_subparser(gripper_test);
 	program.add_subparser(ple_test);
 
 	try
@@ -118,6 +130,13 @@ int main(int argc, char* argv[])
 		params.push_back(file);
 
 		test = mode::ple;
+	}
+	else if (program.is_subcommand_used(gripper_test)) {
+		test = mode::gripper;
+	}
+	else if (program.is_subcommand_used(ptp_test)) {
+		test = mode::ptp;
+		//todo: add logging
 	}
 	
 
@@ -173,7 +192,7 @@ void franka_proxy_client_test(const std::string& ip, mode test, std::vector<std:
 
 	// case distinction for individual tests (add new tests with an "else if" block)
 	// parameters for test methods arrive here as a vector of strings, so convert accordingly
-	if (test == ple) {
+	if (test == mode::ple) {
 		double speed = stod(params[0]);
 		double duration = stod(params[1]);
 		bool log = (params[2] == "true");
@@ -181,6 +200,12 @@ void franka_proxy_client_test(const std::string& ip, mode test, std::vector<std:
 		ple_motion_record_test(*robot, speed, duration, log, file);
 
 		std::cout << "PLE motion record test finished." << std::endl;
+	}
+	else if (test == mode::gripper) {
+		gripper_test(*robot);
+	}
+	else if (test == mode::ptp) {
+		ptp_test(*robot);
 	}
 
 	//todo: add cases for other tests
@@ -308,7 +333,7 @@ void gripper_test(franka_proxy::franka_remote_interface& robot)
 	std::cout << "Finished Gripper Test." << std::endl;
 }
 
-
+// todo: review poses and add actual testing (e.g. measure of error)
 void ptp_test(franka_proxy::franka_remote_interface& robot)
 {
 	std::cout << "Starting PTP-Movement Test." << std::endl;
@@ -342,6 +367,8 @@ void force_test(franka_proxy::franka_remote_interface& robot)
 
 	////robot.apply_z_force(0.0, 5.0);
 	////robot.apply_z_force(1.0, 5.0);
+
+	//move up again
 	
 	std::cout << "Finished Force Test." << std::endl;
 }
