@@ -8,7 +8,8 @@
 #include <franka_proxy_client/exception.hpp>
 #include <franka_proxy_client/franka_remote_interface.hpp>
 
-
+// use this to specify which test to run within the franka_proxy_client_test method
+// for new tests, add a new, distinct entry here, and a new subparser to the main method
 enum mode{none, ple, playback, gripper, ptp, force, ermer};
 
 void franka_proxy_client_test(const std::string& ip, mode test, std::vector<std::string>& params);
@@ -19,8 +20,9 @@ template <class Function> void execute_retry(
 	Function&& f, franka_proxy::franka_remote_interface& robot);
 
 
-// todo: motion should stop gracefully --- should do now. lienhardt
+
 void ple_motion_record_test(franka_proxy::franka_remote_interface& robot, double speed, double duration, bool log, std::string file);
+
 // todo: not tested on robot
 [[deprecated("Revise test code before execution on real robot!")]]
 void playback_test(franka_proxy::franka_remote_interface& robot);
@@ -36,31 +38,31 @@ void force_test(franka_proxy::franka_remote_interface& robot);
 void impedance_admittance_ermer_ba_tests(franka_proxy::franka_remote_interface& robot);
 
 
-// todo: we need a csv-motion-logger for franka-proxy and tests.
+// todo: we need a csv-motion-logger for franka-proxy and tests. - working on implementation for use in motion generators. lienhardt
 void log(std::ofstream& csv_log, std::array<double, 7> j, std::array<double, 6> ft, double time);
 
 
 int main(int argc, char* argv[])
 {
+	// this is the main parser, which will only handle specifying an IP and calling individual subparsers
 	argparse::ArgumentParser program("franka_client_test");
 
 	program.add_argument("-ip")
 		.help("specify IP for franka-proxy remote connection")
 		.default_value(std::string{ "127.0.0.1" });
 
-
+	// this is the base parser, including optional arguments for logging; use as parent for all subparsers
 	argparse::ArgumentParser base("fct_base", "1.0", argparse::default_arguments::none);
 	
 	base.add_argument("-l", "-log")
 		.help("enable logging")
-		.default_value("false")
-		.implicit_value("true");
+		.flag();
 
 	base.add_argument("-f", "-file")
 		.help("specify file to write log into")
 		.default_value("franka_client_test_log.csv");
 
-
+	// subparsers for individual tests
 	argparse::ArgumentParser ple_test("ple");
 
 	ple_test.add_argument("speed")
@@ -73,6 +75,7 @@ int main(int argc, char* argv[])
 
 	ple_test.add_parents(base);
 
+	//todo: add parsers for other tests
 
 	program.add_subparser(ple_test);
 
@@ -96,12 +99,17 @@ int main(int argc, char* argv[])
 	mode test = mode::none;
 	std::vector<std::string> params;
 	
-	if (ple_test) {
+	// case distinction for individual tests / subparsers, remember to set "test" to the corresponding mode
+	// this is where input arguments are handled, which will be passed to franka_proxy_client_test as a vector of strings
+	// note that only one test can be run at the same time, so add new tests with an "else if" block
+	if (program.is_subcommand_used(ple_test)) {
 		std::cout << "Running PLE motion record test..." << std::endl;
 
 		std::string speed = ple_test.get<std::string>("speed");
 		std::string duration = ple_test.get<std::string>("-d");
-		std::string log = ple_test.get<std::string>("-l");
+		bool log_flag = ple_test.get<bool>("-l");
+		std::string log("false");
+		if (log_flag) log = "true";
 		std::string file = ple_test.get<std::string>("-f");
 
 		params.push_back(speed);
@@ -163,6 +171,8 @@ void franka_proxy_client_test(const std::string& ip, mode test, std::vector<std:
 	//impedance_admittance_ermer_ba_tests(robot);
 	//playback_test(robot);
 
+	// case distinction for individual tests (add new tests with an "else if" block)
+	// parameters for test methods arrive here as a vector of strings, so convert accordingly
 	if (test == ple) {
 		double speed = stod(params[0]);
 		double duration = stod(params[1]);
@@ -172,6 +182,8 @@ void franka_proxy_client_test(const std::string& ip, mode test, std::vector<std:
 
 		std::cout << "PLE motion record test finished." << std::endl;
 	}
+
+	//todo: add cases for other tests
 	
 	// --- cleanup status thread ---
 	stop = true;
@@ -257,6 +269,7 @@ void playback_test(franka_proxy::franka_remote_interface& robot)
 
 	std::cout << ("Finished Playback Test.");
 
+	//todo: add logging function to motion_recorder
 	std::ofstream csv_log;
 	csv_log.open("hand_guided_log.csv");
 	const std::string csv_header_ =

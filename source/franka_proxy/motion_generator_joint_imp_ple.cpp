@@ -175,6 +175,7 @@ namespace franka_proxy
 				timestamps_.pop_front();
 			}
 
+			// keep going normally for specified duration, then gradually slow down to a stop
 			if (time_ < duration_)
 				x_ += speed_factor_ * period.toSec();
 			else
