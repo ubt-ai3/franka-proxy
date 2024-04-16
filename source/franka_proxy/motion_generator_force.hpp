@@ -7,9 +7,7 @@
  *
  ************************************************************************/
 
-
-#if !defined(INCLUDED__FRANKA_PROXY__FRANKA_MOTION_GENERATOR_HPP)
-#define INCLUDED__FRANKA_PROXY__FRANKA_MOTION_GENERATOR_HPP
+#pragma once
 
 
 #include <vector>
@@ -186,6 +184,3 @@ private:
 
 } /* namespace detail */
 } /* namespace franka_proxy */
-
-
-#endif /* !defined(INCLUDED__FRANKA_PROXY__FRANKA_MOTION_GENERATOR_HPP) */

@@ -7,9 +7,7 @@
  *
  ************************************************************************/
 
-
-#if !defined(INCLUDED__FRANKA_CONTROL__FRANKA_CONTROLLER_EMULATED_HPP)
-#define INCLUDED__FRANKA_CONTROL__FRANKA_CONTROLLER_EMULATED_HPP
+#pragma once
 
 
 #include <mutex>
@@ -19,8 +17,6 @@
 
 namespace franka_control
 {
-
-
 /**
  *************************************************************************
  *
@@ -33,17 +29,16 @@ namespace franka_control
  *		and uses an implementation-specific maximum speed.
  *
  ************************************************************************/
-class franka_controller_emulated :
-	public franka_controller
+class franka_controller_emulated : public franka_controller
 {
 public:
-
 	franka_controller_emulated();
 	~franka_controller_emulated() noexcept override;
 
 
-	void move(const robot_config_7dof& target);
-	void move_with_force(const robot_config_7dof& target, const force_torque_config_cartesian& target_force_torques) override;
+	void move(const robot_config_7dof& target) override;
+	void move_with_force(const robot_config_7dof& target,
+	                     const wrench& target_force_torques) override;
 	bool move_until_contact(const robot_config_7dof& target) override;
 
 	void open_gripper() override;
@@ -57,7 +52,7 @@ public:
 	void automatic_error_recovery() override;
 
 	robot_config_7dof current_config() const override;
-	force_torque_config_cartesian current_force_torque() const override;
+	wrench current_force_torque() const override;
 	int current_gripper_pos() const override;
 	int max_gripper_pos() const override;
 
@@ -71,17 +66,17 @@ public:
 	* This returns a motion sampled at 1kHz, but the robot always remains in the position
 	* it was in when stop_playback() was called.
 	**/
-	std::pair<std::vector<robot_config_7dof>, std::vector<force_torque_config_cartesian>>
-		stop_recording() override;
+	std::pair<std::vector<robot_config_7dof>, std::vector<wrench>>
+	stop_recording() override;
 
 	/**
 	* Simulates a playback movement, but ignores force and selection values.
 	**/
 	void move_sequence(
 		const std::vector<robot_config_7dof>& q_sequence,
-		const std::vector<force_torque_config_cartesian>& f_sequence,
-		const std::vector<selection_position_force_vector>& selection_vector_sequence) override;
-	
+		const std::vector<wrench>& f_sequence,
+		const std::vector<selection_diagonal>& selection_vector_sequence) override;
+
 private:
 	std::chrono::time_point<std::chrono::steady_clock> recording_start_;
 
@@ -96,18 +91,11 @@ private:
 	bool gripper_open_;
 
 	robot_config_7dof state_joint_values_;
-	force_torque_config_cartesian state_force_torque_values_;
+	wrench state_force_torque_values_;
 	int state_gripper_pos_;
 	int state_position_in_sequence_;
 
 	static constexpr int max_gripper_pos_ = 50;
 	static constexpr double gripper_default_speed_mps_ = 0.025;
 };
-
-
-
-
 } /* namespace franka_control */
-
-
-#endif /* !defined(INCLUDED__FRANKA_CONTROL__FRANKA_CONTROLLER_EMULATED_HPP) */

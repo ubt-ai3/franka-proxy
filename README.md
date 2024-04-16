@@ -16,7 +16,7 @@ Server and client are only compatible if you use the same port, so make sure to 
 ```sh
 ./bootstrap-vcpkg.bat
 
-vcpkg install asio:x64-windows franka:x64-windows nlohmann-json:x64-windows
+vcpkg install --triplet=x64-windows asio argparse franka nlohmann-json
 
 mkdir build
 cd build

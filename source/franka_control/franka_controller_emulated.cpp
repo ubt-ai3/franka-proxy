@@ -7,12 +7,9 @@
  *
  ************************************************************************/
 
-
 #include "franka_controller_emulated.hpp"
 
 #include <iostream>
-
-#include "exception.hpp"
 
 
 namespace franka_control
@@ -25,7 +22,7 @@ namespace franka_control
 
 
 franka_controller_emulated::franka_controller_emulated()
-	: speed_factor_(0.f),
+	: speed_factor_(0.1f),
 	  gripper_open_(false),
 
 	  state_joint_values_
@@ -150,10 +147,10 @@ void franka_controller_emulated::move(const robot_config_7dof& target)
 }
 
 void franka_controller_emulated::move_with_force(const robot_config_7dof& target,
-                                                 const force_torque_config_cartesian& target_force_torques)
+                                                 const wrench& target_force_torques)
 {
 	robot_config_7dof current_joint_values = current_config();
-	force_torque_config_cartesian current_force_torque_values = current_force_torque();
+	wrench current_force_torque_values = current_force_torque();
 
 	auto last_time = std::chrono::steady_clock::now();
 
@@ -267,7 +264,7 @@ robot_config_7dof franka_controller_emulated::current_config() const
 	return state_joint_values_;
 }
 
-force_torque_config_cartesian franka_controller_emulated::current_force_torque() const
+wrench franka_controller_emulated::current_force_torque() const
 {
 	return state_force_torque_values_;
 }
@@ -298,7 +295,7 @@ void franka_controller_emulated::start_recording()
 }
 
 
-std::pair<std::vector<robot_config_7dof>, std::vector<force_torque_config_cartesian>>
+std::pair<std::vector<robot_config_7dof>, std::vector<wrench>>
 franka_controller_emulated::stop_recording()
 {
 	std::unique_lock<std::mutex> lk(controller_mutex_);
@@ -309,10 +306,10 @@ franka_controller_emulated::stop_recording()
 	const auto duration = std::chrono::steady_clock::now() - recording_start;
 	const auto dur_ms = static_cast<size_t>(std::chrono::duration_cast<std::chrono::milliseconds>(duration).count());
 
-	std::pair<std::vector<robot_config_7dof>, std::vector<force_torque_config_cartesian>> result;
+	std::pair<std::vector<robot_config_7dof>, std::vector<wrench>> result;
 
 	result.first = std::vector<robot_config_7dof>(dur_ms, {jc[0], jc[1], jc[2], jc[3], jc[4], jc[5], jc[6]});
-	result.second = std::vector<force_torque_config_cartesian>(dur_ms, {0, 0, 0, 0, 0, 0});
+	result.second = std::vector<wrench>(dur_ms, {0, 0, 0, 0, 0, 0});
 
 	return result;
 }
@@ -320,13 +317,12 @@ franka_controller_emulated::stop_recording()
 
 void franka_controller_emulated::move_sequence(
 	const std::vector<robot_config_7dof>& q_sequence,
-	const std::vector<force_torque_config_cartesian>& f_sequence,
-	const std::vector<selection_position_force_vector>& selection_vector_sequence)
+	const std::vector<wrench>& f_sequence,
+	const std::vector<selection_diagonal>& selection_vector_sequence)
 {
 	const auto start_time = std::chrono::steady_clock::now();
 
 	//passed milliseconds since call of function
-	unsigned long long ticks_passed = 0;
 
 	for (;;)
 	{
@@ -335,7 +331,8 @@ void franka_controller_emulated::move_sequence(
 		const auto next_timepoint = now +
 			std::chrono::duration_cast<std::chrono::milliseconds>
 			(std::chrono::duration<double>(move_update_rate_));
-		ticks_passed = std::max(std::chrono::duration_cast<std::chrono::milliseconds>(now - start_time).count(), 0ll);
+		unsigned long long ticks_passed = std::max(
+			std::chrono::duration_cast<std::chrono::milliseconds>(now - start_time).count(), 0ll);
 
 
 		//stop after sequence is finished

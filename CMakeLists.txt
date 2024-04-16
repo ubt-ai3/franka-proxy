@@ -10,6 +10,7 @@ if(BUILD_SERVER)
     find_package(Poco COMPONENTS Net Foundation REQUIRED)
 endif()
 
+find_package(argparse CONFIG REQUIRED)
 find_package(asio CONFIG REQUIRED)
 find_package(Eigen3 CONFIG REQUIRED)
 find_package(nlohmann_json REQUIRED)
@@ -59,10 +60,16 @@ add_executable(
         ${CMAKE_CURRENT_SOURCE_DIR}/source/franka_proxy/franka_network_control_server.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/source/franka_proxy/franka_network_state_server.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/source/franka_proxy/franka_proxy.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/source/franka_proxy/motion_generator_admittance.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/source/franka_proxy/motion_generator_cartesian_impedance.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/source/franka_proxy/motion_generator_force.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/source/franka_proxy/motion_generator_joint_impedance.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/source/franka_proxy/motion_generator_joint_imp_ple.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/source/franka_proxy/motion_generator_joint_max_accel.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/source/franka_proxy/motion_generator_seq_cart_vel_tau.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/source/franka_proxy/motion_recorder.cpp
+
+        ${CMAKE_CURRENT_SOURCE_DIR}/source/franka_proxy/motion_logger.cpp
 
         ${CMAKE_CURRENT_SOURCE_DIR}/source/ft_sensor/schunk_ft.cpp
 
@@ -77,6 +84,7 @@ target_include_directories(
 target_link_libraries(
     franka_proxy
     PUBLIC
+		argparse::argparse
         asio::asio
         Eigen3::Eigen
 		Poco::Foundation
@@ -170,11 +178,14 @@ target_include_directories(
 target_link_libraries(
     franka_proxy_client_test
     PUBLIC
+		argparse::argparse
         asio::asio
         Eigen3::Eigen
         Threads::Threads
 		franka_proxy_share
 		franka_proxy_client
+
+        franka_control ##only for testing, remove before flight
 )
 
 target_compile_definitions(
@@ -186,7 +197,7 @@ target_compile_definitions(
 ## franka_control_test
 add_executable(
     franka_control_test
-        ${CMAKE_CURRENT_SOURCE_DIR}/source/franka_control/franka_control_test.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/source/franka_control_test/main.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/source/sensor_calibration/schunk_ft_to_franka_calibration.cpp
 )
 
@@ -199,6 +210,7 @@ target_include_directories(
 target_link_libraries(
     franka_control_test
     PUBLIC
+		argparse::argparse
         asio::asio
         Eigen3::Eigen
         Threads::Threads
@@ -257,6 +269,8 @@ install(
 )
 
 install(EXPORT franka-proxyConfig DESTINATION share FILE franka-proxyTargets.cmake)
+
+
 
 
 # assets

@@ -7,9 +7,7 @@
  *
  ************************************************************************/
 
-
-#if !defined(INCLUDED__FRANKA_CONTROL__EXCEPTION_HPP)
-#define INCLUDED__FRANKA_CONTROL__EXCEPTION_HPP
+#pragma once
 
 
 #include <exception>
@@ -17,8 +15,6 @@
 
 namespace franka_control
 {
-
-
 /**
  *************************************************************************
  *
@@ -29,23 +25,20 @@ namespace franka_control
  * code.
  *
  ************************************************************************/
-class exception: public std::exception
+class exception : public std::exception
 {
-	public:
+public:
+	exception() noexcept = default;
 
-		exception() noexcept = default;
-		~exception() noexcept override = default;
-
-
-		/**
-		 * Retrieve (static, constant) description string via
-		 * the standard C++ exception interface.
-		 */
-		const char* what() const noexcept override
-			{ return "General hardware exception"; }
+	/**
+	 * Retrieve (static, constant) description string via
+	 * the standard C++ exception interface.
+	 */
+	[[nodiscard]] const char* what() const noexcept override
+	{
+		return "General franka control exception occurred.";
+	}
 };
-
-
 
 
 /**
@@ -54,11 +47,13 @@ class exception: public std::exception
  * Thrown if no solution was found for an inverse kinematic problem.
  *
  ************************************************************************/
-class ik_failed : public exception
+class ik_failed final : public exception
 {
-	public:
-		const char* what() const noexcept override
-			{ return "No solution was found for inverse kinematics."; }
+public:
+	[[nodiscard]] const char* what() const noexcept override
+	{
+		return "No solution was found for inverse kinematics.";
+	}
 };
 
 
@@ -68,25 +63,29 @@ class ik_failed : public exception
  * Thrown if a requested operation is not yet implemented.
  * 
  ************************************************************************/
-class not_implemented : public exception
+class not_implemented final : public exception
 {
-	public:
-		const char* what() const noexcept override
-			{ return "Invalid operation requested."; }
+public:
+	[[nodiscard]] const char* what() const noexcept override
+	{
+		return "Not yet implemented operation requested.";
+	}
 };
 
 
 /**
  *************************************************************************
  *
- * Thrown if an error occured during robot interpolation.
+ * Thrown if an error occurred during robot interpolation.
  * 
  ************************************************************************/
-class interpolation_error : public exception
+class interpolation_error final : public exception
 {
-	public:
-		const char* what() const noexcept override
-			{ return "Interpolation failed."; }
+public:
+	[[nodiscard]] const char* what() const noexcept override
+	{
+		return "Interpolation failed.";
+	}
 };
 
 
@@ -96,17 +95,12 @@ class interpolation_error : public exception
  * Thrown if some general API method fails.
  * 
  ************************************************************************/
-class api_call_failed : public exception
+class api_call_failed final : public exception
 {
-	public:
-		const char* what() const noexcept override
-			{ return "API call failed."; }
+public:
+	[[nodiscard]] const char* what() const noexcept override
+	{
+		return "API call failed.";
+	}
 };
-
-
-
-
 } /* namespace franka_control */
-
-
-#endif /* !defined(INCLUDED__FRANKA_CONTROL__EXCEPTION_HPP) */

@@ -7,7 +7,6 @@
  *
  ************************************************************************/
 
-
 #include "franka_controller_remote.hpp"
 
 #include <franka_proxy_client/franka_remote_interface.hpp>
@@ -46,7 +45,7 @@ void franka_controller_remote::move(const robot_config_7dof& target)
 			 target[3], target[4], target[5], target[6]});
 }
 
-void franka_controller_remote::move_with_force(const robot_config_7dof& target, const force_torque_config_cartesian& target_force_torques)
+void franka_controller_remote::move_with_force(const robot_config_7dof& target, const wrench& target_force_torques)
 {
 	move(target);
 }
@@ -104,9 +103,9 @@ robot_config_7dof franka_controller_remote::current_config() const
 	return ret;
 }
 
-force_torque_config_cartesian franka_controller_remote::current_force_torque() const
+wrench franka_controller_remote::current_force_torque() const
 {
-	return force_torque_config_cartesian();
+	return wrench();
 }
 
 int franka_controller_remote::current_gripper_pos() const
@@ -123,10 +122,10 @@ void franka_controller_remote::start_recording()
 }
 
 
-std::pair<std::vector<robot_config_7dof>, std::vector<force_torque_config_cartesian>> franka_controller_remote::stop_recording()
+std::pair<std::vector<robot_config_7dof>, std::vector<wrench>> franka_controller_remote::stop_recording()
 {
 	std::vector<robot_config_7dof> joints;
-	std::vector<force_torque_config_cartesian> forces;
+	std::vector<wrench> forces;
 
 	auto [recorded_joints, recorded_forces] = controller_->stop_recording();
 
@@ -144,8 +143,8 @@ std::pair<std::vector<robot_config_7dof>, std::vector<force_torque_config_cartes
 
 void franka_controller_remote::move_sequence(
 	const std::vector<robot_config_7dof>& q_sequence,
-	const std::vector<force_torque_config_cartesian>& f_sequence,
-	const std::vector<selection_position_force_vector>& selection_vector_sequence)
+	const std::vector<wrench>& f_sequence,
+	const std::vector<selection_diagonal>& selection_vector_sequence)
 {
 	// todo do this efficient
 	std::vector<std::array<double, 7>> joints;
@@ -169,7 +168,7 @@ void franka_controller_remote::move_sequence(
 	controller_->move_to(joints.back());
 }
 
-void franka_controller_remote::set_fts_bias(const force_torque_config_cartesian& bias)
+void franka_controller_remote::set_fts_bias(const wrench& bias)
 {
 	controller_->set_fts_bias({ bias[0], bias[1], bias[2], bias[3], bias[4], bias[5] });
 }

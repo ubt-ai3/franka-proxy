@@ -7,9 +7,7 @@
  *
  ************************************************************************/
 
-
-#if !defined(INCLUDED__FRANKA_PROXY__FRANKA_NETWORK_STATE_SERVER_HPP)
-#define INCLUDED__FRANKA_PROXY__FRANKA_NETWORK_STATE_SERVER_HPP
+#pragma once
 
 
 #include <asio/ip/tcp.hpp>
@@ -63,9 +61,4 @@ private:
 };
 
 
-
-
 } /* namespace franka_proxy */
-
-
-#endif /* !defined(INCLUDED__FRANKA_PROXY__FRANKA_NETWORK_STATE_SERVER_HPP) */

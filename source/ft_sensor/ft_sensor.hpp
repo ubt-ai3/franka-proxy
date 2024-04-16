@@ -1,5 +1,4 @@
-#if !defined(INCLUDED__FT_SENSOR__FT_SENSOR_HPP)
-#define INCLUDED__FT_SENSOR__FT_SENSOR_HPP
+#pragma once
 
 #include <functional>
 #include <exception>
@@ -56,6 +55,7 @@ public:
 	{
 		bias_ = bias;
 	}
+
 	void set_load_mass(const Eigen::Vector3d& load_mass)
 	{
 		load_mass_ = load_mass;
@@ -85,10 +85,9 @@ protected:
 class ft_sensor_connection_exception : public std::exception
 {
 public:
-	char* what() {
+	char* what()
+	{
 		return "no force/torque sensor available";
 	}
 };
-} //franka_proxy
-
-#endif /* !defined(INCLUDED__FT_SENSOR__FT_SENSOR_HPP) */
+} /* namespace franka_proxy */

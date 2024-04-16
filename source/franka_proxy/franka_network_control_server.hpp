@@ -7,9 +7,7 @@
  *
  ************************************************************************/
 
-
-#if !defined(INCLUDED__FRANKA_PROXY__FRANKA_NETWORK_CONTROL_SERVER_HPP)
-#define INCLUDED__FRANKA_PROXY__FRANKA_NETWORK_CONTROL_SERVER_HPP
+#pragma once
 
 
 #include <map>
@@ -78,6 +76,12 @@ private:
 	command_generic_response process_command(const command_move_to_config&);
 	command_generic_response process_command(const command_move_hybrid_sequence&);
 	command_generic_response process_command(const command_move_until_contact&);
+	command_generic_response process_command(const command_apply_admittance_adm_imp_desired_stiffness&);
+	command_generic_response process_command(const command_cartesian_impedance_hold_pose_desired_stiffness&);
+	command_generic_response process_command(const command_cartesian_impedance_poses_desired_stiffness&);
+	command_generic_response process_command(const command_joint_impedance_hold_position_desired_stiffness&);
+	command_generic_response process_command(const command_joint_impedance_positions_desired_stiffness&);
+	command_generic_response process_command(const command_ple_motion&);
 	command_generic_response process_command(const command_force_z&);
 	command_generic_response process_command(const command_open_gripper&);
 	command_generic_response process_command(const command_close_gripper&);
@@ -113,5 +117,3 @@ private:
 
 } /* namespace franka_proxy */
 
-
-#endif /* !defined(INCLUDED__FRANKA_PROXY__FRANKA_NETWORK_CONTROL_SERVER_HPP) */
