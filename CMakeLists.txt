@@ -184,6 +184,8 @@ target_link_libraries(
         Threads::Threads
 		franka_proxy_share
 		franka_proxy_client
+
+        franka_control ##only for testing, remove before flight
 )
 
 target_compile_definitions(

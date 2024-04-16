@@ -93,7 +93,7 @@ public:
 
 
 	/**
-	 * The robot applies force of the given mass (m*g) downwards.
+	 * The robot applies force [mass * g] of the given @param mass [kg] downwards.
 	 */
 	void apply_z_force(
 		double mass,
