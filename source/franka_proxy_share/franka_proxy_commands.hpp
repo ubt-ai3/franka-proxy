@@ -317,6 +317,27 @@ void from_json(const nlohmann::json& json, command_set_fts_load_mass& object);
 /**
  *************************************************************************
  *
+ * @class command_set_guiding_params
+ *
+ * Sets the guiding vector selected in the application by the user.
+ *
+ ************************************************************************/
+struct command_set_guiding_params
+{
+	using response_type = command_generic_response;
+	static constexpr char type[] = "set.guiding";
+
+	std::array<bool, 6> guiding_config;
+	bool elbow;
+};
+
+void to_json(nlohmann::json& json, const command_set_guiding_params& objekt);
+void from_json(const nlohmann::json& json, command_set_guiding_params& object);
+
+
+/**
+ *************************************************************************
+ *
  * @class command_recover_from_errors
  *
  * Commands the server to try to recover from errors.
@@ -442,7 +463,6 @@ struct command_get_config_response
 
 void to_json(nlohmann::json& json, const command_get_config_response& object);
 void from_json(const nlohmann::json& json, command_get_config_response& object);
-
 
 
 

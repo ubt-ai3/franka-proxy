@@ -76,6 +76,8 @@ public:
 
 	void set_fts_bias(const force_torque_config_cartesian& bias);
 	void set_fts_load_mass(const Eigen::Vector3d& load_mass);
+
+	//todo set guiding_mode ()
 	
 private:
 

@@ -78,7 +78,7 @@ franka_hardware_controller::franka_hardware_controller
 	}
 
 	// todo JHa add feature to set guiding mode
-	//robot_.setGuidingMode({ {true, true, true, false, false, true} }, false);
+	robot_.setGuidingMode({ {true, true, true, false, false, true} }, false);
 }
 
 
@@ -237,6 +237,11 @@ void franka_hardware_controller::set_load_mass(const std::array<double, 3>& load
 	if (ft_sensor_)
 		ft_sensor_->set_load_mass(Eigen::Vector3d(load_mass.data()));
 	else throw ft_sensor_connection_exception();
+}
+
+void franka_hardware_controller::set_guiding_mode(const std::array<bool, 6>& guiding_mode, const bool elbow)
+{
+	robot_.setGuidingMode(guiding_mode, elbow);
 }
 
 

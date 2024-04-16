@@ -15,8 +15,8 @@ template <class Function> void execute_retry(Function&& f, franka_proxy::franka_
 
 int main()
 {
-	franka_proxy_client_test("132.180.194.112");
-	//franka_proxy_client_test("127.0.0.1");
+	//franka_proxy_client_test("132.180.194.112");
+	franka_proxy_client_test("127.0.0.1");
 	return 0;
 }
 

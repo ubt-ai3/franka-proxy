@@ -94,11 +94,15 @@ void franka_remote_interface::set_fts_bias(const std::array<double, 6>& bias)
 
 
 void franka_remote_interface::set_fts_load_mass(const std::array<double, 3>& load_mass)
-	{	send_command<command_set_fts_load_mass>(load_mass);}
+	{ send_command<command_set_fts_load_mass>(load_mass); }
 
 
 void franka_remote_interface::automatic_error_recovery()
 	{ send_command<command_recover_from_errors>(); }
+
+
+void franka_remote_interface::set_guiding_params(bool x, bool y, bool z, bool rx, bool ry, bool rz, bool elbow)
+	{ send_command<command_set_guiding_params>(std::array<bool, 6>{ x, y, z, rx, ry, rz }, elbow); }
 
 
 robot_config_7dof franka_remote_interface::current_config() const

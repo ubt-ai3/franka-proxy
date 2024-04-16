@@ -87,6 +87,7 @@ private:
 	command_generic_response process_command(const command_set_speed&);
 	command_generic_response process_command(const command_set_fts_bias&);
 	command_generic_response process_command(const command_set_fts_load_mass&);
+	command_generic_response process_command(const command_set_guiding_params&);
 	command_generic_response process_command(const command_recover_from_errors&);
 
 	franka_hardware_controller& controller_;
