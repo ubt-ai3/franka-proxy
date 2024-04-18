@@ -182,10 +182,8 @@ private:
 	/**
 	 * Initialize parameters such as joint impedance and collision behavior.
 	 */
-	void initialize_parameters();
-
-	void set_default_collision_behaviour();
-	void set_contact_move_collision_behaviour();
+	void set_default_impedance_and_collision_parameters();
+	void set_contact_move_impedance_and_collision_parameters();
 
 
 	// robot
