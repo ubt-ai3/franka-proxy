@@ -8,6 +8,8 @@
 #include <franka_proxy_client/exception.hpp>
 #include <franka_proxy_client/franka_remote_interface.hpp>
 
+#include <logging/motion_logger.hpp>
+
 #include <franka_control/franka_util.hpp> //for testing stuff only
 
 // use this to specify which test to run within the franka_proxy_client_test method
@@ -25,7 +27,7 @@ double calculate_pose_error( franka_proxy::robot_config_7dof pose_d, franka_prox
 
 
 void ple_motion_record_test(franka_proxy::franka_remote_interface& robot, double speed, double duration, bool log, std::string file);
-void ptp_test(franka_proxy::franka_remote_interface& robot);
+void ptp_test(franka_proxy::franka_remote_interface& robot, bool log, std::string& file);
 void gripper_test(franka_proxy::franka_remote_interface& robot);
 
 
@@ -141,7 +143,13 @@ int main(int argc, char* argv[])
 	}
 	else if (program.is_subcommand_used(ptp_test)) {
 		test = mode::ptp;
-		//todo: add logging
+		bool log_flag = ple_test.get<bool>("-l");
+		std::string log("false");
+		if (log_flag) log = "true";
+		std::string file = ple_test.get<std::string>("-f");
+		
+		params.push_back(log);
+		params.push_back(file);
 	}
 	else if (program.is_subcommand_used(force_test)) {
 		test = mode::force;
@@ -211,7 +219,9 @@ void franka_proxy_client_test(const std::string& ip, mode test, std::vector<std:
 		gripper_test(*robot);
 	}
 	else if (test == mode::ptp) {
-		ptp_test(*robot);
+		bool log = (params[0] == "true");
+		std::string file = params[1];
+		ptp_test(*robot, log, file);
 	}
 	else if (test == mode::force) {
 		force_test(*robot);
@@ -368,11 +378,24 @@ void gripper_test(franka_proxy::franka_remote_interface& robot)
 }
 
 
-void ptp_test(franka_proxy::franka_remote_interface& robot)
+void ptp_test(franka_proxy::franka_remote_interface& robot, bool log, std::string& file)
 {
 	std::cout << "Starting PTP-Movement Test." << std::endl;
 
 	double margin = 0.1;
+	logging::motion_logger logger(file, 2, 0, 0, 1, 1);
+	std::string succ = "";
+	if (log) {
+		std::vector<std::array<std::string, 7>> j;
+		std::array<std::string, 7> q = { "q0", "q1", "q2", "q3", "q4", "q5", "q6" };
+		j.push_back(q);
+		std::array<std::string, 7> q_d = { "q0_d", "q1_d", "q2_d", "q3_d", "q4_d", "q5_d", "q6_d" };
+		j.push_back(q_d);
+		std::vector<std::string> e = {"error"};
+		std::vector<std::string> s = { "success" };
+		
+		logger.start_logging(&j, nullptr, nullptr, &e, &s);
+	}
 
 	constexpr franka_proxy::robot_config_7dof pos0
 		{0.0346044, -0.0666144, -0.0398886, -2.04985, -0.0229875, 1.99782, 0.778461};
@@ -393,9 +416,20 @@ void ptp_test(franka_proxy::franka_remote_interface& robot)
 	double error = calculate_pose_error(pos1, posc);
 	if (error < margin) {
 		std::cout << "Pose 1 of 4 reached successfully (relative error: " << error << ")." << std::endl;
+		succ = "yes";
 	}
 	else {
 		std::cout << "Pose 1 of 4 missed with a relative error of: " << error << std::endl;
+		succ = "no";
+	}
+	if (log) {
+		std::vector<std::array<double, 7>> j;
+		j.push_back(posc);
+		j.push_back(pos1);
+		std::vector<double> e = { error };
+		std::vector<std::string> s = { succ };
+
+		logger.log(&j, nullptr, nullptr, &e, &s);
 	}
 
 	execute_retry([&] { robot.move_to(pos2); }, robot);
@@ -403,9 +437,20 @@ void ptp_test(franka_proxy::franka_remote_interface& robot)
 	error = calculate_pose_error(pos2, posc);
 	if (error < margin) {
 		std::cout << "Pose 2 of 4 reached successfully (relative error: " << error << ")." << std::endl;
+		succ = "yes";
 	}
 	else {
 		std::cout << "Pose 2 of 4 missed with a relative error of: " << error << std::endl;
+		succ = "no";
+	}
+	if (log) {
+		std::vector<std::array<double, 7>> j;
+		j.push_back(posc);
+		j.push_back(pos2);
+		std::vector<double> e = { error };
+		std::vector<std::string> s = { succ };
+
+		logger.log(&j, nullptr, nullptr, &e, &s);
 	}
 
 	execute_retry([&] { robot.move_to(pos0); }, robot);
@@ -413,9 +458,20 @@ void ptp_test(franka_proxy::franka_remote_interface& robot)
 	error = calculate_pose_error(pos0, posc);
 	if (error < margin) {
 		std::cout << "Pose 3 of 4 reached successfully (relative error: " << error << ")." << std::endl;
+		succ = "yes";
 	}
 	else {
 		std::cout << "Pose 3 of 4 missed with a relative error of: " << error << std::endl;
+		succ = "no";
+	}
+	if (log) {
+		std::vector<std::array<double, 7>> j;
+		j.push_back(posc);
+		j.push_back(pos0);
+		std::vector<double> e = { error };
+		std::vector<std::string> s = { succ };
+
+		logger.log(&j, nullptr, nullptr, &e, &s);
 	}
 
 	/**
@@ -439,6 +495,7 @@ void ptp_test(franka_proxy::franka_remote_interface& robot)
 	}
 	**/
 
+	if (log) logger.stop_logging();
 
 	std::cout << "Finished PTP-Movement Test." << std::endl;
 }

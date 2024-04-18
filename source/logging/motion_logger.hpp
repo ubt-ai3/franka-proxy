@@ -13,18 +13,19 @@
 #include <array>
 #include <fstream>
 
-namespace franka_proxy
+namespace logging
 {
 	/************************************************
 	* 
 	* @class motion_logger
 	* 
-	* Provides logging functionality for joint data,
-	* various velocities and accelerations (or any
-	* 3D vectors, really), forces and torques,
-	* timestamps and additional, arbitrary data
-	* (which must be provided as strings in order to
-	* allow for really anything).
+	* Provides logging functionality with pre-defined
+	* data formats for joint data, various velocities
+	* and accelerations (or any 3D positional data,
+	* really), forces and torques, timestamps (or
+	* other single valued data) and additional,
+	* arbitrary data (which must be provided as
+	* strings in order to allow for really anything).
 	* 
 	************************************************/
 	class motion_logger
@@ -66,11 +67,11 @@ namespace franka_proxy
 		* @param arbitrary_header: header for arbitrary data (single entries)
 		**/
 		void start_logging
-		(std::vector<std::array<std::string, 7>> joint_data_header,
-			std::vector<std::array<std::string, 3>> vel_acc_data_header,
-			std::vector<std::array<std::string, 6>> ft_data_header,
-			std::vector<std::string> timestamp_header,
-			std::vector<std::string> arbitrary_header);
+		(std::vector<std::array<std::string, 7>>* joint_data_header,
+			std::vector<std::array<std::string, 3>>* vel_acc_data_header,
+			std::vector<std::array<std::string, 6>>* ft_data_header,
+			std::vector<std::string>* timestamp_header,
+			std::vector<std::string>* arbitrary_header);
 
 
 		/**
@@ -90,11 +91,11 @@ namespace franka_proxy
 		* @param timestamps: vector of timestamps (single entries)
 		* @param arbitrary_data: vector of arbitrary data (single entries)
 		**/
-		void log(std::vector<std::array<double, 7>> joint_data,
-			std::vector<std::array<double, 3>> vel_acc_data,
-			std::vector<std::array<double, 6>> ft_data,
-			std::vector<double> timestamps,
-			std::vector<std::string> arbitrary_data);
+		void log(std::vector<std::array<double, 7>>* joint_data,
+			std::vector<std::array<double, 3>>* vel_acc_data,
+			std::vector<std::array<double, 6>>* ft_data,
+			std::vector<double>* timestamps,
+			std::vector<std::string>* arbitrary_data);
 
 
 	private:
