@@ -3,6 +3,7 @@
 #include <iostream>
 #include <thread>
 
+
 #include <argparse/argparse.hpp>
 
 #include <franka_proxy_client/exception.hpp>
@@ -91,12 +92,15 @@ int main(int argc, char* argv[])
 	//has no further arguments
 	force_test.add_parents(base);
 
+	
+
 	//todo: add parsers for other tests
 
 	program.add_subparser(force_test);
 	program.add_subparser(ptp_test);
 	program.add_subparser(gripper_test);
 	program.add_subparser(ple_test);
+	
 
 	try
 	{
@@ -442,6 +446,7 @@ void ptp_test(franka_proxy::franka_remote_interface& robot)
 
 	std::cout << "Finished PTP-Movement Test." << std::endl;
 }
+
 
 
 void force_test(franka_proxy::franka_remote_interface& robot)

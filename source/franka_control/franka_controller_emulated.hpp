@@ -49,6 +49,8 @@ public:
 	double speed_factor() const override;
 	void set_speed_factor(double speed_factor) override;
 
+	void set_guiding_mode(bool x, bool y, bool z, bool rx, bool ry, bool rz,bool elbow) const override;
+
 	void automatic_error_recovery() override;
 
 	robot_config_7dof current_config() const override;

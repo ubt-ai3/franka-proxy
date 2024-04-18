@@ -253,6 +253,10 @@ void franka_controller_emulated::set_speed_factor(double speed_factor)
 	speed_factor_ = speed_factor;
 }
 
+void franka_controller_emulated::set_guiding_mode(bool x, bool y, bool z, bool rx, bool ry, bool rz, bool elbow) const
+{
+}
+
 
 void franka_controller_emulated::automatic_error_recovery()
 {

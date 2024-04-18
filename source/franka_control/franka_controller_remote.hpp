@@ -73,7 +73,7 @@ public:
 	void set_fts_bias(const wrench& bias);
 	void set_fts_load_mass(const Eigen::Vector3d& load_mass);
 
-	//todo set guiding_mode ()
+	void set_guiding_mode(bool x, bool y, bool z, bool rx, bool ry, bool rz, bool elbow) const override;
 	
 private:
 	std::unique_ptr<franka_proxy::franka_remote_interface> controller_;

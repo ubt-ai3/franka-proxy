@@ -1,6 +1,7 @@
 #include <atomic>
 #include <iostream>
 #include <thread>
+#include <chrono>
 
 #include <argparse/argparse.hpp>
 
@@ -15,6 +16,7 @@
 void franka_controller_remote_test(const std::string& ip);
 void franka_controller_emulated_test();
 void franka_fts_calibration(const std::string& ip);
+void guiding_mode_test(const std::string& ip);
 
 void print_status(const franka_control::franka_controller& controller);
 
@@ -38,6 +40,12 @@ int main(int argc, char* argv[])
 	       .default_value(std::string{"127.0.0.1"})
 	       .metavar("IP");
 
+	program.add_argument("-g", "--guiding-mode")
+		   .help("guiding mode test")
+		   .default_value(std::string("127.0.0.1"))
+		   .metavar("IP");
+
+
 	try
 	{
 		program.parse_args(argc, argv);
@@ -48,6 +56,8 @@ int main(int argc, char* argv[])
 		std::cerr << program;
 		return -1;
 	}
+	
+
 
 	if (program.is_used("-e"))
 	{
@@ -74,7 +84,14 @@ int main(int argc, char* argv[])
 		//std::string ip("132.180.194.112"); // franka1-proxy@resy-lab
 		franka_fts_calibration(ip);
 	}
-
+	if (program.is_used("-g"))
+	{
+		const auto ip = program.get<std::string>("-g");
+		std::cout <<
+			"--------------------------------------------------------------------------------\n"
+			"Executing guiding mode test: " << std::endl;
+		guiding_mode_test(ip);
+	}
 	std::cout << "\nPress Enter to end test exe." << std::endl;
 	std::cin.get();
 	return 0;
@@ -206,4 +223,40 @@ void franka_fts_calibration(const std::string& ip)
 	franka_control::franka_controller_remote controller(ip);
 	schunk_ft_sensor_to_franka_calibration::calibrate_bias(controller);
 	schunk_ft_sensor_to_franka_calibration::calibrate_load(controller);
+}
+
+void guiding_mode_test(const std::string& ip)
+{
+	std::unique_ptr<franka_control::franka_controller> robot;
+	try
+	{
+		robot =
+			std::make_unique<franka_control::franka_controller_remote>(ip);
+	}
+	catch (const std::exception&)
+	{
+		std::cerr << "Could not connect to franka-proxy with IP " << ip << "." << std::endl;
+		return;
+	}
+	franka_control::franka_update_task update_task(*robot);
+
+	std::chrono::seconds duration(20);
+	//set to default before test
+	robot->set_guiding_mode(true, true, true, true, true, true, false);
+
+	std::cout << "Robot is now for 20 secs in guiding mode with guidable DOF (1,1,1,0,0,0) and elbow is false" << std::endl;
+	robot->set_guiding_mode(true, true, true, false, false, false, false);
+	std::this_thread::sleep_for(duration);
+
+	std::cout << "Robot is now for 20 secs in default guiding mode" << std::endl;
+	robot->set_guiding_mode(true, true, true, true, true, true, false);
+	std::this_thread::sleep_for(duration);
+
+	std::cout << "´Robot is now for 20 secs in guiding mode with guidable DOF (1,1,0,1,1,0) and elbow is false" << std::endl;
+	robot->set_guiding_mode(true, true, false, true, true, false, false);
+	std::this_thread::sleep_for(duration);
+
+	//set back to default after test
+	robot->set_guiding_mode(true, true, true, true, true, true, false);
+	std::cout << "Finished guiding mode test" << std::endl;
 }

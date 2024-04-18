@@ -814,10 +814,10 @@ void franka_hardware_controller::gripper_state_update_loop()
 
 void franka_hardware_controller::initialize_parameters()
 {
-	robot_.setJointImpedance({{3000, 3000, 3000, 2500, 2500, 2000, 2000}});
-	robot_.setCartesianImpedance({{3000, 3000, 3000, 300, 300, 300}});
+	/*robot_.setjointimpedance({{3000, 3000, 3000, 2500, 2500, 2000, 2000}});
+	robot_.setcartesianimpedance({{3000, 3000, 3000, 300, 300, 300}});
 
-	set_default_collision_behaviour();
+	set_default_collision_behaviour();*/
 }
 
 

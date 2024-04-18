@@ -178,6 +178,11 @@ void franka_controller_remote::set_fts_load_mass(const Eigen::Vector3d& load_mas
 	controller_->set_fts_load_mass({ load_mass[0], load_mass[1], load_mass[2] });
 }
 
+void franka_controller_remote::set_guiding_mode(bool x, bool y, bool z, bool rx, bool ry, bool rz, bool elbow) const
+{
+	controller_->set_guiding_params(x,y,z,rx,ry,rz,elbow);
+}
+
 
 
 } /* namespace franka_control */
