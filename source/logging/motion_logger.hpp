@@ -1,7 +1,7 @@
 /**
  *************************************************************************
  *
- * @file motion_logger.hpp
+ * @file franka_proxy_logger.hpp
  *
  * Generalized logger for use with motion generators and recorder.
  *
@@ -15,20 +15,19 @@
 
 namespace logging
 {
-	/************************************************
+	/***************************************************
 	* 
-	* @class motion_logger
+	* @class logger
 	* 
 	* Provides logging functionality with pre-defined
-	* data formats for joint data, various velocities
-	* and accelerations (or any 3D positional data,
-	* really), forces and torques, timestamps (or
-	* other single valued data) and additional,
-	* arbitrary data (which must be provided as
-	* strings in order to allow for really anything).
+	* data formats for joint data, various 3D cartesian
+	* data (e.g. velocity), forces and torques,
+	* timestamps (or other single valued data) and
+	* additional, arbitrary data (which must be provided
+	* as strings in order to allow for really anything).
 	* 
-	************************************************/
-	class motion_logger
+	***************************************************/
+	class logger
 	{
 	
 	public:
@@ -42,15 +41,15 @@ namespace logging
 		* 
 		* @param filename: file for the logger to write into
 		* @param num_joint_data: number of joint data sets (1 set = 7 entries)
-		* @param num_vel_acc_data: number of velocity/acceleration data sets (1 set = 3 entries)
+		* @param num_cart_data: number of cartesian data sets (1 set = 3 entries)
 		* @param num_ft_data: number of force-torque data sets (1 set = 6 entries);
 		* @param num_timestamps: number of timestamps (single entries)
 		* @param size_arbitrary: length of additional arbitrary data (= number of entries)
 		**/
-		motion_logger
+		logger
 		(std::string& filename,
 			int num_joint_data,
-			int num_vel_acc_data,
+			int num_cart_data,
 			int num_ft_data,
 			int num_timestamps,
 			int size_arbitrary);
@@ -61,14 +60,14 @@ namespace logging
 		* at construction, an exception will be thrown if any mismatches are detected.
 		* 
 		* @param joint_data_header: headers for each of the joint data sets (1 set = 7 entries)
-		* @param vel_acc_data_header: headers for each of the velocity/acceleration data sets (1 set = 3 entries)
+		* @param cart_data_header: headers for each of the cartesian data sets (1 set = 3 entries)
 		* @param ft_data_header: headers for each of the force-torque data sets (1 set = 6 entries);
 		* @param timestamp_header: headers for each of the timestamps (single entries)
 		* @param arbitrary_header: header for arbitrary data (single entries)
 		**/
 		void start_logging
 		(std::vector<std::array<std::string, 7>>* joint_data_header,
-			std::vector<std::array<std::string, 3>>* vel_acc_data_header,
+			std::vector<std::array<std::string, 3>>* cart_data_header,
 			std::vector<std::array<std::string, 6>>* ft_data_header,
 			std::vector<std::string>* timestamp_header,
 			std::vector<std::string>* arbitrary_header);
@@ -86,13 +85,13 @@ namespace logging
 		* are provided. Will print warnings for excess or missing data sets, but not throw an exception.
 		* 
 		* @param joint_data: vector of joint data sets (1 set = 7 entries)
-		* @param vel_acc_data: vector of velocity/acceleration data sets (1 set = 3 entries)
+		* @param cart_data: vector of cartesian data sets (1 set = 3 entries)
 		* @param ft_data: vector of force-torque data sets (1 set = 6 entries);
 		* @param timestamps: vector of timestamps (single entries)
 		* @param arbitrary_data: vector of arbitrary data (single entries)
 		**/
 		void log(std::vector<std::array<double, 7>>* joint_data,
-			std::vector<std::array<double, 3>>* vel_acc_data,
+			std::vector<std::array<double, 3>>* cart_data,
 			std::vector<std::array<double, 6>>* ft_data,
 			std::vector<double>* timestamps,
 			std::vector<std::string>* arbitrary_data);
@@ -100,7 +99,7 @@ namespace logging
 
 	private:
 		int num_joint_data_;
-		int num_vel_acc_data_;
+		int num_cart_data_;
 		int num_ft_data_;
 		int num_timestamps_;
 		int size_arbitrary_;

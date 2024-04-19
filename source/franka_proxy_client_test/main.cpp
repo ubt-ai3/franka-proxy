@@ -27,8 +27,8 @@ double calculate_pose_error( franka_proxy::robot_config_7dof pose_d, franka_prox
 
 
 void ple_motion_record_test(franka_proxy::franka_remote_interface& robot, double speed, double duration, bool log, std::string file);
-void ptp_test(franka_proxy::franka_remote_interface& robot, bool log, std::string& file);
-void gripper_test(franka_proxy::franka_remote_interface& robot);
+void ptp_test(franka_proxy::franka_remote_interface& robot, double margin, bool log, std::string& file);
+void gripper_test(franka_proxy::franka_remote_interface& robot, double margin);
 
 
 // todo: not tested on robot
@@ -81,12 +81,16 @@ int main(int argc, char* argv[])
 
 	
 	argparse::ArgumentParser gripper_test("gripper");
-	//has no further arguments
+	gripper_test.add_argument("margin")
+		.help("specify margin below which gripper is considered closed/grasped (useful for different gripper configs)")
+		.default_value("0.01");
 	gripper_test.add_parents(base);
 
 
 	argparse::ArgumentParser ptp_test("ptp");
-	//has no further arguments
+	ptp_test.add_argument("margin")
+		.help("specify margin below which relative pose error is ignored and pose is considered reached")
+		.default_value("0.1");
 	ptp_test.add_parents(base);
 
 	argparse::ArgumentParser force_test("force");
@@ -140,14 +144,18 @@ int main(int argc, char* argv[])
 	}
 	else if (program.is_subcommand_used(gripper_test)) {
 		test = mode::gripper;
+		std::string margin = gripper_test.get<std::string>("margin");
+		params.push_back(margin);
 	}
 	else if (program.is_subcommand_used(ptp_test)) {
 		test = mode::ptp;
-		bool log_flag = ple_test.get<bool>("-l");
+		std::string margin = ptp_test.get<std::string>("margin");
+		bool log_flag = ptp_test.get<bool>("-l");
 		std::string log("false");
 		if (log_flag) log = "true";
-		std::string file = ple_test.get<std::string>("-f");
+		std::string file = ptp_test.get<std::string>("-f");
 		
+		params.push_back(margin);
 		params.push_back(log);
 		params.push_back(file);
 	}
@@ -216,12 +224,14 @@ void franka_proxy_client_test(const std::string& ip, mode test, std::vector<std:
 		ple_motion_record_test(*robot, speed, duration, log, file);
 	}
 	else if (test == mode::gripper) {
-		gripper_test(*robot);
+		double margin = stod(params[0]);
+		gripper_test(*robot, margin);
 	}
 	else if (test == mode::ptp) {
-		bool log = (params[0] == "true");
-		std::string file = params[1];
-		ptp_test(*robot, log, file);
+		double margin = stod(params[0]);
+		bool log = (params[1] == "true");
+		std::string file = params[2];
+		ptp_test(*robot, margin, log, file);
 	}
 	else if (test == mode::force) {
 		force_test(*robot);
@@ -346,44 +356,47 @@ void log(std::ofstream& csv_log, std::array<double, 7> j, std::array<double, 6> 
 }
 
 
-void gripper_test(franka_proxy::franka_remote_interface& robot)
+void gripper_test(franka_proxy::franka_remote_interface& robot, double margin)
 {
 	std::cout << "Starting Gripper Test." << std::endl;
 
 	robot.grasp_gripper(0.1);
 	double gripper_pos = robot.current_gripper_pos(); //testing against gripper pos is more reliable than calling gripper_grasped()
-	if (gripper_pos >= 0.01) {
+	if (gripper_pos >= margin) {
 		std::cout << "Failed to grasp gripper, aborting gripper test." << std::endl;
+		return;
 	}
 
 	robot.open_gripper(0.1);
 	gripper_pos = robot.current_gripper_pos();
-	if (gripper_pos < 0.01) {
+	if (gripper_pos < margin) {
 		std::cout << "Failed to open gripper, aborting gripper test." << std::endl;
+		return;
 	}
 
 	robot.close_gripper(1);
 	gripper_pos = robot.current_gripper_pos();
-	if (gripper_pos >= 0.01) {
+	if (gripper_pos >= margin) {
 		std::cout << "Failed to close gripper, aborting gripper test." << std::endl;
+		return;
 	}
 
 	robot.open_gripper(1);
 	gripper_pos = robot.current_gripper_pos();
-	if (gripper_pos < 0.01) {
+	if (gripper_pos < margin) {
 		std::cout << "Failed to open gripper, aborting gripper test." << std::endl;
+		return;
 	}
 
 	std::cout << "Finished Gripper Test." << std::endl;
 }
 
 
-void ptp_test(franka_proxy::franka_remote_interface& robot, bool log, std::string& file)
+void ptp_test(franka_proxy::franka_remote_interface& robot, double margin, bool log, std::string& file)
 {
 	std::cout << "Starting PTP-Movement Test." << std::endl;
 
-	double margin = 0.1;
-	logging::motion_logger logger(file, 2, 0, 0, 1, 1);
+	logging::logger logger(file, 2, 0, 0, 1, 1);
 	std::string succ = "";
 	if (log) {
 		std::vector<std::array<std::string, 7>> j;
@@ -404,9 +417,13 @@ void ptp_test(franka_proxy::franka_remote_interface& robot, bool log, std::strin
 	constexpr franka_proxy::robot_config_7dof pos2
 		{-0.713442, 0.744363, 0.543357, -1.40935, -2.06861, 1.6925, -2.46015};
 
-	// unreachable config for pose 4 - this one is "inside" joint 1, robot will move into contact with itself
+	// unreachable configs for pose 4 - this one is "inside" joint 1, robot will move into contact with itself
 	constexpr franka_proxy::robot_config_7dof unreachable_pos
 		{-0.179922, -0.105088, -0.07525, -3.1, -0.139691, 1.29409, 0.571423};
+	// this one is on the other side of the back wall, robot will move into contact with wall
+	constexpr franka_proxy::robot_config_7dof unreachable_pos2
+	{ 3.0346044, -0.0666144, -0.0398886, -2.04985, -0.0229875, 1.99782, 0.778461 };
+
 
 	robot.set_speed_factor(0.2);
 	execute_retry([&] { robot.move_to(pos0); }, robot);
@@ -508,6 +525,12 @@ void force_test(franka_proxy::franka_remote_interface& robot)
 	constexpr franka_proxy::robot_config_7dof starting_pos
 	{ 0.0346044, -0.0666144, -0.0398886, -2.04985, -0.0229875, 1.99782, 0.778461 };
 
+	//this one is down from starting_pos by (0.0, 0.0, 0.5)
+	constexpr franka_proxy::robot_config_7dof tgt_pos
+	{ 0.0226325, 0.980913, - 0.0348997, - 1.99411, 0.069761, 2.98885, 0.708856 };
+
+
+	//   old positions
 	//franka_proxy::robot_config_7dof pos_with_scale
 	//	{{1.09452, 0.475923, 0.206959, -2.33289, -0.289467, 2.7587, 0.830083}};
 	//franka_proxy::robot_config_7dof pos_above_table
@@ -516,12 +539,28 @@ void force_test(franka_proxy::franka_remote_interface& robot)
 
 	robot.set_speed_factor(0.2);
 	execute_retry([&] { robot.move_to(starting_pos); }, robot);
-	//robot.move_to_until_contact(pos_above_table);
+	robot.close_gripper();
+	robot.set_speed_factor(0.05);
+	try {
+		robot.move_to_until_contact(tgt_pos);
+	}
+	catch (franka_proxy::remote_exception e) {
+		//this is triggered all the time - motion aborted by reflex
+		std::cout << e.what() << std::endl;
+	}
 
-	////robot.apply_z_force(0.0, 5.0);
-	////robot.apply_z_force(1.0, 5.0);
 
-	//move up again
+	try {
+		robot.apply_z_force(0.0, 5.0);
+		robot.apply_z_force(0.2, 5.0);
+	}
+	catch (franka_proxy::remote_exception e) {
+		//this is triggered all the time - command rejected due to being in "reflex mode"
+		std::cout << e.what() << std::endl;
+	}
+
+	robot.set_speed_factor(0.2);
+	execute_retry([&] { robot.move_to(starting_pos); }, robot);
 	
 	std::cout << "Finished Force Test." << std::endl;
 }
