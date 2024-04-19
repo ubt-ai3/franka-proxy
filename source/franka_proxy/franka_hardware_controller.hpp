@@ -103,9 +103,9 @@ public:
 	/**
 	 * Starts/Stops the recording callback.
 	 */
-	void start_recording();
+	void start_recording(bool log, std::string& file);
 	std::pair<std::vector<robot_config_7dof>, std::vector<wrench>> stop_recording();
-	std::pair<std::vector<robot_config_7dof>, std::vector<wrench>> start_recording(float seconds);
+	std::pair<std::vector<robot_config_7dof>, std::vector<wrench>> start_recording(float seconds, bool log, std::string& file);
 
 	/**
 	 * Moves the Panda robot along a given sequence.

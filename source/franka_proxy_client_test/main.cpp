@@ -8,7 +8,7 @@
 #include <franka_proxy_client/exception.hpp>
 #include <franka_proxy_client/franka_remote_interface.hpp>
 
-#include <logging/motion_logger.hpp>
+#include <logging/logger.hpp>
 
 #include <franka_control/franka_util.hpp> //for testing stuff only
 
@@ -33,7 +33,7 @@ void gripper_test(franka_proxy::franka_remote_interface& robot, double margin);
 
 // todo: not tested on robot
 [[deprecated("Revise test code before execution on real robot!")]]
-void playback_test(franka_proxy::franka_remote_interface& robot);
+void playback_test(franka_proxy::franka_remote_interface& robot, bool log, std::string& file);
 // todo: used poses may be unsafe robot
 [[deprecated("Revise test code before execution on real robot!")]]
 void force_test(franka_proxy::franka_remote_interface& robot);
@@ -300,16 +300,16 @@ void ple_motion_record_test(franka_proxy::franka_remote_interface& robot, double
 }
 
 // this has been transformed into a makeshift joint angle recorder for the moment
-void playback_test(franka_proxy::franka_remote_interface& robot)
+void playback_test(franka_proxy::franka_remote_interface& robot, bool log, std::string& file)
 {
 	std::cout << ("Starting Playback Test.") << std::endl;
-	/**
+	
 	std::cout << ("--- press to start in 3s ---") << std::endl;
 	std::cin.get();
 	std::this_thread::sleep_for(std::chrono::seconds(3));
 
 	std::cout << ("--- starting demonstration ---") << std::endl;
-	robot.start_recording();
+	robot.start_recording(log, file);
 	std::this_thread::sleep_for(std::chrono::seconds(10));
 
 	std::cout << ("--- stopped demonstration ---") << std::endl;
@@ -317,7 +317,7 @@ void playback_test(franka_proxy::franka_remote_interface& robot)
 
 	std::cout << ("--- press to start reproduction in 3s ---") << std::endl;
 	std::cin.get();
-	**/
+	
 	std::this_thread::sleep_for(std::chrono::seconds(30));
 
 	/**

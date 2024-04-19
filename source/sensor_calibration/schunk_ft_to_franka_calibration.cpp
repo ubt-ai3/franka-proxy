@@ -28,7 +28,7 @@ franka_control::wrench schunk_ft_sensor_to_franka_calibration::calibrate_bias(
 		ft_avgs[pose_idx] = {0, 0, 0, 0, 0, 0};
 	}
 
-	franka.start_recording();
+	franka.start_recording(false, std::string(""));
 	std::this_thread::sleep_for(std::chrono::duration<double>(wait_time_seconds));
 	auto prev_joint_config = franka.stop_recording().first.back();
 
@@ -58,7 +58,7 @@ franka_control::wrench schunk_ft_sensor_to_franka_calibration::calibrate_bias(
 		}
 
 		std::this_thread::sleep_for(std::chrono::duration<double>(wait_time_seconds));
-		franka.start_recording();
+		franka.start_recording(false, std::string(""));
 
 		std::this_thread::sleep_for(std::chrono::duration<double>(record_time_per_pose_seconds));
 		auto [joint_record, force_record] = franka.stop_recording();
@@ -115,7 +115,7 @@ Eigen::Vector3d schunk_ft_sensor_to_franka_calibration::calibrate_load(
 		force_world_avgs[pose_idx] = {0, 0, 0};
 	}
 
-	franka.start_recording();
+	franka.start_recording(false, std::string(""));
 	std::this_thread::sleep_for(std::chrono::duration<double>(wait_time_seconds));
 	auto prev_joint_config = franka.stop_recording().first.back();
 
@@ -148,7 +148,7 @@ Eigen::Vector3d schunk_ft_sensor_to_franka_calibration::calibrate_load(
 
 
 		std::this_thread::sleep_for(std::chrono::duration<double>(wait_time_seconds));
-		franka.start_recording();
+		franka.start_recording(false, std::string(""));
 
 		std::this_thread::sleep_for(std::chrono::duration<double>(record_time_per_pose_seconds));
 		auto [joint_record, force_record] = franka.stop_recording();

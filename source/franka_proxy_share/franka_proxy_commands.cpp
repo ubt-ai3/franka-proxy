@@ -338,11 +338,15 @@ void from_json(const nlohmann::json& json, command_grasp_gripper& object)
 void to_json(nlohmann::json& json, const command_start_recording& object)
 {
 	json["type"] = command_start_recording::type;
+	json["log"] = object.log;
+	json["file"] = object.file;
 }
 
 
 void from_json(const nlohmann::json& json, command_start_recording& object)
 {
+	json.at("log").get_to(object.log);
+	json.at("file").get_to(object.file);
 }
 
 

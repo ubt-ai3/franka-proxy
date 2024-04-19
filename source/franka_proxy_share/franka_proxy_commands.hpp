@@ -370,6 +370,9 @@ struct command_start_recording
 {
 	using response_type = command_generic_response;
 	static constexpr char type[] = "recording.start";
+
+	bool log;
+	std::string file;
 };
 
 void to_json(nlohmann::json& json, const command_start_recording& object);

@@ -41,16 +41,15 @@ namespace franka_proxy
 			desired_speed_(speed),
 			duration_(duration),
 			logging_(logging),
-			sensor_(placeholder_, placeholder_)
+			sensor_(placeholder_, placeholder_),
+			logger_(file, 0, 3, 1, 1, 0)
 		{
 			sensor_.set_load_mass(no_mass_);
 
 			init_ple_motion_generator(robot, state_lock, robot_state);
 
 			if (logging_) {
-				// start logging to csv file
-				csv_log_.open(file);
-				csv_log_ << csv_header_ << "\n";
+				logger_.start_logging(nullptr, &cart_, &ft_, &t_, nullptr);
 			}
 		};
 
@@ -105,7 +104,7 @@ namespace franka_proxy
 
 				if (logging_) {
 					// close log file
-					csv_log_.close();
+					logger_.stop_logging();
 				}
 
 				return current_torques;
@@ -223,8 +222,6 @@ namespace franka_proxy
 			//v = trafo.rotation() * v;
 			//w = trafo.rotation() * w;
 
-			Eigen::Matrix<double, 6, 1> sensor_velocities;
-			sensor_velocities << v, w;
 
 			std::array<double, 16> ee_p = model_.pose(franka::Frame::kEndEffector, state_);
 			Eigen::Map<const Eigen::Matrix<double, 4, 4>> ee_pose(ee_p.data());
@@ -239,7 +236,13 @@ namespace franka_proxy
 			//	std::cout << g.transpose() << "\n";
 
 			if (logging_) {
-				log(j, ft, time, sensor_velocities, g);
+				std::vector<std::array<double, 6>> f = { ft };
+				std::array<double, 3> lin = { v(0), v(1), v(2) };
+				std::array<double, 3> ang = { w(0), w(1), w(2) };
+				std::array<double, 3> grav = { g(0), g(1), g(2) };
+				std::vector<std::array<double, 3>> cart = { lin, ang, grav};
+				std::vector<double> t = { time };
+				logger_.log(nullptr, &cart, &f, &t, nullptr);
 			}
 
 			Eigen::Map<const Eigen::Matrix<double, 7, 1>> q(j.data());
@@ -319,22 +322,6 @@ namespace franka_proxy
 			}
 
 			return damping_matrix_ar;
-		}
-
-		void ple_motion_generator::log(std::array<double,7> j, std::array<double,6> ft, double time, Eigen::Matrix<double, 6, 1> sensor_velocities, Eigen::Vector3d grav) {
-			std::ostringstream j_log;
-			j_log << j[0] << "," << j[1] << "," << j[2] << "," << j[3] << "," << j[4] << "," << j[5] << "," << j[6];
-			std::ostringstream ft_log;
-			ft_log << ft[0] << "," << ft[1] << "," << ft[2] << "," << ft[3] << "," << ft[4] << "," << ft[5];
-
-			std::ostringstream v_log;
-			v_log << sensor_velocities(0) << "," << sensor_velocities(1) << "," << sensor_velocities(2) << "," << sensor_velocities(3) << "," << sensor_velocities(4) << "," << sensor_velocities(5) << "," << grav(0) << "," << grav(1) << "," << grav(2);
-			
-			//double sum = ft[0] * ft[0] + ft[1] * ft[1] + ft[2] * ft[2];
-			std::ostringstream current_values;
-			current_values << j_log.str() << "," << ft_log.str() << "," << time << "," << v_log.str();
-
-			csv_log_ << current_values.str() << "\n";
 		}
 
 	} /* namespace detail */

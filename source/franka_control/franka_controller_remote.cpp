@@ -116,9 +116,9 @@ void franka_controller_remote::update()
 	{ controller_->update(); }
 
 
-void franka_controller_remote::start_recording()
+void franka_controller_remote::start_recording(bool log, std::string& file)
 {
-	controller_->start_recording();
+	controller_->start_recording(log, file);
 }
 
 

@@ -58,7 +58,7 @@ public:
 
 	void update() override;
 
-	void start_recording() override;
+	void start_recording(bool log, std::string& file) override;
 
 	/**
 	* Stop recording playback data, assumes that start_recording() has been called bevore.

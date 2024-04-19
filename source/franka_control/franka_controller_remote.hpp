@@ -63,7 +63,7 @@ public:
 	void update() override;
 
 
-	void start_recording() override;
+	void start_recording(bool log, std::string& file) override;
 	std::pair<std::vector<robot_config_7dof>, std::vector<wrench>> stop_recording() override;
 	void move_sequence(
 		const std::vector<robot_config_7dof>& q_sequence,

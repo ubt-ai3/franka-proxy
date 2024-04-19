@@ -94,7 +94,7 @@ public:
 	 */
 	virtual void update() = 0;
 
-	virtual void start_recording() = 0;
+	virtual void start_recording(bool log, std::string& file) = 0;
 	virtual std::pair<std::vector<robot_config_7dof>, std::vector<wrench>> stop_recording() = 0;
 	virtual void move_sequence(
 		const std::vector<robot_config_7dof>& q_sequence,

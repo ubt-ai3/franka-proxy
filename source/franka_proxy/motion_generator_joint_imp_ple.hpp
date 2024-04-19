@@ -26,6 +26,8 @@
 
 #include "ft_sensor/schunk_ft.hpp"
 
+#include "logging/logger.hpp"
+
 
 
 namespace franka_proxy
@@ -107,9 +109,15 @@ namespace franka_proxy
 			const std::array<double, 7> K_P_ = { 300.0, 300.0, 300.0, 300.0, 50.0, 50.0, 50.0 };
 
 			// csv logging
+			logging::logger logger_;
 			bool logging_;
-			std::ofstream csv_log_;
-			std::string csv_header_ = "joint_1,joint_2,joint_3,joint_4,joint_5,joint_6,joint_7,force_x,force_y,force_z,torque_x,torque_y,torque_z,time,v_x,v_y,v_z,w_x,w_y,w_z,g_x,g_y,g_z";
+			std::array<std::string, 3> lin = { "lin_v_x", "lin_v_y", "lin_v_z" };
+			std::array<std::string, 3> ang = { "ang_v_x", "ang_v_y", "ang_v_z" };
+			std::array<std::string, 3 > grav = { "g_x", "g_y", "g_z" };
+			std::vector<std::array<std::string, 3>> cart_ = { lin, ang, grav };
+			std::array<std::string, 6> ft_header_ = { "force_x", "force_y","force_z","torque_x","torque_y","torque_z" };
+			std::vector<std::array<std::string, 6>> ft_ = { ft_header_ };
+			std::vector<std::string> t_{ "time" };
 		};
 	} /* namespace detail */
 } /* namespace franka_proxy */

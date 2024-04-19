@@ -31,14 +31,24 @@ motion_recorder::motion_recorder(franka::Robot& robot,
 }
 
 
-void motion_recorder::start()
+void motion_recorder::start(bool log, std::string& file)
 {
 	stop_ = false;
 	joints_record_.clear();
 	fts_record_.clear();
 
-	t_ = std::thread([this]()
+	logging::logger logger_(file, 1, 0, 1, 1, 0);
+
+	t_ = std::thread([this, &log, &logger_]()
 	{
+		if (log) {
+			if (fts_) {
+				logger_.start_logging(&j_, nullptr, &f_, nullptr, nullptr);
+			}
+			else {
+				logger_.start_logging(&j_, nullptr, nullptr, nullptr, nullptr);
+			}
+		}
 		while (!stop_)
 		{
 			franka::RobotState current_state(robot_.readOnce()); // sync call with approx. 1kHz
@@ -48,10 +58,22 @@ void motion_recorder::start()
 			{
 				ft_sensor_response current_ft(fts_->read());
 				fts_record_.emplace_back(current_ft.data);
+
+				if (log) {
+					std::vector<std::array<double, 7>> j = { current_state.q };
+					std::vector<std::array<double, 6>> ft = { current_ft.data };
+					logger_.log(&j, nullptr, &ft, nullptr, nullptr);
+				}
+			}
+			else if (log) {
+				std::vector<std::array<double, 7>> j = { current_state.q };
+				logger_.log(&j, nullptr, nullptr, nullptr, nullptr);
 			}
 
 			robot_state_ = current_state;
 		}
+
+		logger_.stop_logging();
 	});
 }
 
@@ -64,9 +86,9 @@ std::pair<std::vector<std::array<double, 7>>, std::vector<std::array<double, 6>>
 }
 
 
-std::pair<std::vector<std::array<double, 7>>, std::vector<std::array<double, 6>>> motion_recorder::start(float seconds)
+std::pair<std::vector<std::array<double, 7>>, std::vector<std::array<double, 6>>> motion_recorder::start(float seconds, bool log, std::string& file)
 {
-	start();
+	start(log, file);
 	std::this_thread::sleep_for(std::chrono::duration<float>(seconds));
 	return stop();
 }

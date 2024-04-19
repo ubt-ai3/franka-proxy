@@ -69,7 +69,7 @@ add_executable(
         ${CMAKE_CURRENT_SOURCE_DIR}/source/franka_proxy/motion_generator_seq_cart_vel_tau.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/source/franka_proxy/motion_recorder.cpp
 
-        ${CMAKE_CURRENT_SOURCE_DIR}/source/logging/motion_logger.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/source/logging/logger.cpp
 
         ${CMAKE_CURRENT_SOURCE_DIR}/source/ft_sensor/schunk_ft.cpp
 
@@ -168,7 +168,7 @@ add_executable(
     franka_proxy_client_test
         ${CMAKE_CURRENT_SOURCE_DIR}/source/franka_proxy_client_test/main.cpp
         
-        ${CMAKE_CURRENT_SOURCE_DIR}/source/logging/motion_logger.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/source/logging/logger.cpp
 )
 
 target_include_directories(

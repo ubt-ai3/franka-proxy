@@ -532,7 +532,7 @@ franka::GripperState franka_hardware_controller::gripper_state() const
 }
 
 
-void franka_hardware_controller::start_recording()
+void franka_hardware_controller::start_recording(bool log, std::string& file)
 {
 	if (!ft_sensor_)
 	{
@@ -544,7 +544,7 @@ void franka_hardware_controller::start_recording()
 		std::lock_guard state_guard(robot_state_lock_);
 	}
 
-	motion_recorder_->start();
+	motion_recorder_->start(log, file);
 }
 
 
@@ -559,7 +559,7 @@ franka_hardware_controller::stop_recording()
 
 
 std::pair<std::vector<robot_config_7dof>, std::vector<wrench>>
-franka_hardware_controller::start_recording(float seconds)
+franka_hardware_controller::start_recording(float seconds, bool log, std::string& file)
 {
 	set_control_loop_running(true);
 	{
@@ -567,7 +567,7 @@ franka_hardware_controller::start_recording(float seconds)
 		std::lock_guard state_guard(robot_state_lock_);
 	}
 
-	auto record = motion_recorder_->start(seconds);
+	auto record = motion_recorder_->start(seconds, log, file);
 	set_control_loop_running(false);
 
 	return record;

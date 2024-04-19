@@ -212,9 +212,9 @@ bool franka_remote_interface::gripper_grasped() const
 }
 
 
-void franka_remote_interface::start_recording()
+void franka_remote_interface::start_recording(bool log, std::string& file)
 {
-	send_command<command_start_recording>();
+	send_command<command_start_recording>(log, file);
 }
 
 

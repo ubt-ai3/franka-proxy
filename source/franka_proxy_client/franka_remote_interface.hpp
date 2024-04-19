@@ -161,7 +161,7 @@ public:
 	/**
 	 * todo docu
 	 */
-	void start_recording();
+	void start_recording(bool log, std::string& file);
 
 	/**
 	 * todo docu

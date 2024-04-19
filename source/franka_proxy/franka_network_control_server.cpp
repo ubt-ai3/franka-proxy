@@ -360,11 +360,13 @@ command_generic_response franka_control_server::process_command
 
 
 command_generic_response franka_control_server::process_command
-(const command_start_recording&)
+(const command_start_recording& cmd)
 {
 	try
 	{
-		controller_.start_recording();
+		bool log = cmd.log;
+		std::string file = cmd.file;
+		controller_.start_recording(log, file);
 		return command_result::success;
 	}
 	catch (ft_sensor_connection_exception&)
