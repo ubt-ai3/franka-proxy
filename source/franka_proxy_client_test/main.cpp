@@ -399,11 +399,7 @@ void ptp_test(franka_proxy::franka_remote_interface& robot, double margin, bool 
 	logging::logger logger(file, 2, 0, 0, 1, 1);
 	std::string succ = "";
 	if (log) {
-		std::vector<std::array<std::string, 7>> j;
-		std::array<std::string, 7> q = { "q0", "q1", "q2", "q3", "q4", "q5", "q6" };
-		j.push_back(q);
-		std::array<std::string, 7> q_d = { "q0_d", "q1_d", "q2_d", "q3_d", "q4_d", "q5_d", "q6_d" };
-		j.push_back(q_d);
+		std::vector<std::string> j = { "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q0_d", "q1_d", "q2_d", "q3_d", "q4_d", "q5_d", "q6_d" };
 		std::vector<std::string> e = {"error"};
 		std::vector<std::string> s = { "success" };
 		
@@ -440,13 +436,12 @@ void ptp_test(franka_proxy::franka_remote_interface& robot, double margin, bool 
 		succ = "no";
 	}
 	if (log) {
-		std::vector<std::array<double, 7>> j;
-		j.push_back(posc);
-		j.push_back(pos1);
-		std::vector<double> e = { error };
-		std::vector<std::string> s = { succ };
+		logger.add_joint_data(posc);
+		logger.add_joint_data(pos1);
+		logger.add_single_data(error);
+		logger.add_arbitrary_data(succ);
 
-		logger.log(&j, nullptr, nullptr, &e, &s);
+		logger.log();
 	}
 
 	execute_retry([&] { robot.move_to(pos2); }, robot);
@@ -461,13 +456,12 @@ void ptp_test(franka_proxy::franka_remote_interface& robot, double margin, bool 
 		succ = "no";
 	}
 	if (log) {
-		std::vector<std::array<double, 7>> j;
-		j.push_back(posc);
-		j.push_back(pos2);
-		std::vector<double> e = { error };
-		std::vector<std::string> s = { succ };
+		logger.add_joint_data(posc);
+		logger.add_joint_data(pos2);
+		logger.add_single_data(error);
+		logger.add_arbitrary_data(succ);
 
-		logger.log(&j, nullptr, nullptr, &e, &s);
+		logger.log();
 	}
 
 	execute_retry([&] { robot.move_to(pos0); }, robot);
@@ -482,13 +476,12 @@ void ptp_test(franka_proxy::franka_remote_interface& robot, double margin, bool 
 		succ = "no";
 	}
 	if (log) {
-		std::vector<std::array<double, 7>> j;
-		j.push_back(posc);
-		j.push_back(pos0);
-		std::vector<double> e = { error };
-		std::vector<std::string> s = { succ };
+		logger.add_joint_data(posc);
+		logger.add_joint_data(pos0);
+		logger.add_single_data(error);
+		logger.add_arbitrary_data(succ);
 
-		logger.log(&j, nullptr, nullptr, &e, &s);
+		logger.log();
 	}
 
 	/**

@@ -43,10 +43,10 @@ void motion_recorder::start(bool log, std::string& file)
 	{
 		if (log) {
 			if (fts_) {
-				logger_.start_logging(&j_, nullptr, &f_, nullptr, nullptr);
+				logger_.start_logging(&joints_, nullptr, &ft_, nullptr, nullptr);
 			}
 			else {
-				logger_.start_logging(&j_, nullptr, nullptr, nullptr, nullptr);
+				logger_.start_logging(&joints_, nullptr, nullptr, nullptr, nullptr);
 			}
 		}
 		while (!stop_)
@@ -60,14 +60,14 @@ void motion_recorder::start(bool log, std::string& file)
 				fts_record_.emplace_back(current_ft.data);
 
 				if (log) {
-					std::vector<std::array<double, 7>> j = { current_state.q };
-					std::vector<std::array<double, 6>> ft = { current_ft.data };
-					logger_.log(&j, nullptr, &ft, nullptr, nullptr);
+					logger_.add_joint_data(current_state.q);
+					logger_.add_ft_data(current_ft.data);
+					logger_.log();
 				}
 			}
 			else if (log) {
-				std::vector<std::array<double, 7>> j = { current_state.q };
-				logger_.log(&j, nullptr, nullptr, nullptr, nullptr);
+				logger_.add_joint_data(current_state.q);
+				logger_.log();
 			}
 
 			robot_state_ = current_state;

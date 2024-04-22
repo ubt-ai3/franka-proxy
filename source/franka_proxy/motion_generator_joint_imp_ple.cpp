@@ -236,13 +236,13 @@ namespace franka_proxy
 			//	std::cout << g.transpose() << "\n";
 
 			if (logging_) {
-				std::vector<std::array<double, 6>> f = { ft };
-				std::array<double, 3> lin = { v(0), v(1), v(2) };
-				std::array<double, 3> ang = { w(0), w(1), w(2) };
-				std::array<double, 3> grav = { g(0), g(1), g(2) };
-				std::vector<std::array<double, 3>> cart = { lin, ang, grav};
-				std::vector<double> t = { time };
-				logger_.log(nullptr, &cart, &f, &t, nullptr);
+				logger_.add_ft_data(ft);
+				logger_.add_cart_data(v);
+				logger_.add_cart_data(w);
+				logger_.add_cart_data(g);
+				logger_.add_single_data(time);
+
+				logger_.log();
 			}
 
 			Eigen::Map<const Eigen::Matrix<double, 7, 1>> q(j.data());

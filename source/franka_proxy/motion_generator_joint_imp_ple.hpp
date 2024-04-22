@@ -74,8 +74,7 @@ namespace franka_proxy
 			void calculate_default_stiffness_and_damping();
 			void init_ple_motion_generator(franka::Robot& robot, std::mutex& state_lock, franka::RobotState& robot_state);
 			double calculate_damping_from_stiffness(double ki);
-			void log(std::array<double, 7> j, std::array<double, 6> ft, double time, Eigen::Matrix<double, 6, 1> sensor_velocities, Eigen::Vector3d grav);
-
+			
 			franka::Model model_;
 
 			franka_proxy::schunk_ft_sensor sensor_;
@@ -111,12 +110,8 @@ namespace franka_proxy
 			// csv logging
 			logging::logger logger_;
 			bool logging_;
-			std::array<std::string, 3> lin = { "lin_v_x", "lin_v_y", "lin_v_z" };
-			std::array<std::string, 3> ang = { "ang_v_x", "ang_v_y", "ang_v_z" };
-			std::array<std::string, 3 > grav = { "g_x", "g_y", "g_z" };
-			std::vector<std::array<std::string, 3>> cart_ = { lin, ang, grav };
-			std::array<std::string, 6> ft_header_ = { "force_x", "force_y","force_z","torque_x","torque_y","torque_z" };
-			std::vector<std::array<std::string, 6>> ft_ = { ft_header_ };
+			std::vector<std::string> cart_ = { "lin_v_x", "lin_v_y", "lin_v_z", "ang_v_x", "ang_v_y", "ang_v_z", "g_x", "g_y", "g_z" };
+			std::vector<std::string> ft_ = { "force_x", "force_y","force_z","torque_x","torque_y","torque_z" };
 			std::vector<std::string> t_{ "time" };
 		};
 	} /* namespace detail */
