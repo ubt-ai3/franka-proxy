@@ -65,9 +65,9 @@ namespace logging
 		std::string header("");
 
 		if (num_joint_data_){
-			for (int i = 0; i < num_joint_data_; i++) {
+			for (int i = 0; i < joint_data_header->size(); i++) {
 				header.append(joint_data_header->at(i));
-				if ((num_joint_data_ - i) > 1) {
+				if ((joint_data_header->size() - i) > 1) {
 					header.append(",");
 				}
 			}
@@ -77,9 +77,9 @@ namespace logging
 			if (num_joint_data_) {
 				header.append(",");
 			}
-			for (int i = 0; i < num_cart_data_; i++) {
+			for (int i = 0; i < cart_data_header->size(); i++) {
 				header.append(cart_data_header->at(i));
-				if ((num_cart_data_ - i) > 1) {
+				if ((cart_data_header->size() - i) > 1) {
 					header.append(",");
 				}
 			}
@@ -89,9 +89,9 @@ namespace logging
 			if (num_joint_data_ || num_cart_data_) {
 				header.append(",");
 			}
-			for (int i = 0; i < num_ft_data_; i++) {
+			for (int i = 0; i < ft_data_header->size(); i++) {
 				header.append(ft_data_header->at(i));
-				if ((num_ft_data_ - i) > 1) {
+				if ((ft_data_header->size() - i) > 1) {
 					header.append(",");
 				}
 			}
@@ -104,7 +104,7 @@ namespace logging
 		}
 		header.append(single_header->at(0));
 		if (num_single_ > 1) {
-			for (int i = 1; i < num_single_; i++) {
+			for (int i = 1; i < single_header->size(); i++) {
 				header.append("," + single_header->at(i));
 			}
 		}
@@ -116,7 +116,7 @@ namespace logging
 			header.append(arbitrary_header->at(0));
 		}
 		if (size_arbitrary_ > 1) {
-			for (int i = 1; i < size_arbitrary_; i++) {
+			for (int i = 1; i < arbitrary_header->size(); i++) {
 				header.append("," + arbitrary_header->at(i));
 			}
 		}
@@ -148,15 +148,15 @@ namespace logging
 		std::string excess("");
 
 
-		if (num_joint_data_ && joint_data_.size() > (num_joint_data_ * 7)) {
+		if (num_joint_data_ && joint_data_.size() > num_joint_data_) {
 			over = true;
 			excess.append(" joints");
 		}
-		if (num_cart_data_ && cart_data_.size() > (num_cart_data_ * 3)) {
+		if (num_cart_data_ && cart_data_.size() > num_cart_data_) {
 			over = true;
 			excess.append(" cartesian");
 		}
-		if (num_ft_data_ && ft_data_.size() > (num_ft_data_ * 6)) {
+		if (num_ft_data_ && ft_data_.size() > num_ft_data_) {
 			over = true;
 			excess.append(" forces_torques");
 		}
@@ -174,18 +174,18 @@ namespace logging
 		}
 
 
-		if (num_joint_data_ && joint_data_.size() < (num_joint_data_ * 7)) {
-			j_pad = (num_joint_data_ * 7) - joint_data_.size();
+		if (num_joint_data_ && joint_data_.size() < num_joint_data_) {
+			j_pad = num_joint_data_ - joint_data_.size();
 			miss = true;
 			misses.append(" joints");
 		}
-		if (num_cart_data_ && cart_data_.size() < (num_cart_data_ * 3)) {
-			c_pad = (num_cart_data_ * 3) - cart_data_.size();
+		if (num_cart_data_ && cart_data_.size() < num_cart_data_) {
+			c_pad = num_cart_data_ - cart_data_.size();
 			miss = true;
 			misses.append(" cartesian");
 		}
-		if (num_ft_data_ && ft_data_.size() < (num_ft_data_ * 6)) {
-			f_pad = (num_ft_data_ * 6) - ft_data_.size();
+		if (num_ft_data_ && ft_data_.size() < num_ft_data_) {
+			f_pad = num_ft_data_ - ft_data_.size();
 			miss = true;
 			misses.append(" forces_torques");
 		}

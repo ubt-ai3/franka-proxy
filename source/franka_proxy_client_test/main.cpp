@@ -10,8 +10,6 @@
 
 #include <logging/logger.hpp>
 
-#include <franka_control/franka_util.hpp> //for testing stuff only
-
 // use this to specify which test to run within the franka_proxy_client_test method
 // for new tests, add a new, distinct and sensible entry here, and a new subparser to the main method
 enum mode{none, ple, playback, gripper, ptp, force, ermer};
@@ -221,7 +219,12 @@ void franka_proxy_client_test(const std::string& ip, mode test, std::vector<std:
 		double duration = stod(params[1]);
 		bool log = (params[2] == "true");
 		std::string file = params[3];
-		ple_motion_record_test(*robot, speed, duration, log, file);
+		try {
+			ple_motion_record_test(*robot, speed, duration, log, file);
+		}
+		catch (const franka_proxy::command_exception& e) {
+			std::cout << "Exception: " << e.what() << std::endl;
+		}
 	}
 	else if (test == mode::gripper) {
 		double margin = stod(params[0]);
@@ -413,13 +416,9 @@ void ptp_test(franka_proxy::franka_remote_interface& robot, double margin, bool 
 	constexpr franka_proxy::robot_config_7dof pos2
 		{-0.713442, 0.744363, 0.543357, -1.40935, -2.06861, 1.6925, -2.46015};
 
-	// unreachable configs for pose 4 - this one is "inside" joint 1, robot will move into contact with itself
+	// unreachable config for pose 4 - sems like util::is_reachable is NOT checked
 	constexpr franka_proxy::robot_config_7dof unreachable_pos
-		{-0.179922, -0.105088, -0.07525, -3.1, -0.139691, 1.29409, 0.571423};
-	// this one is on the other side of the back wall, robot will move into contact with wall
-	constexpr franka_proxy::robot_config_7dof unreachable_pos2
-	{ 3.0346044, -0.0666144, -0.0398886, -2.04985, -0.0229875, 1.99782, 0.778461 };
-
+		{0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0};
 
 	robot.set_speed_factor(0.2);
 	execute_retry([&] { robot.move_to(pos0); }, robot);
@@ -484,7 +483,6 @@ void ptp_test(franka_proxy::franka_remote_interface& robot, double margin, bool 
 		logger.log();
 	}
 
-	/**
 	try {
 		robot.move_to(unreachable_pos);
 	}
@@ -503,7 +501,6 @@ void ptp_test(franka_proxy::franka_remote_interface& robot, double margin, bool 
 		std::cout << e.what() << std::endl;
 		std::cout << typeid(e).name() << std::endl;
 	}
-	**/
 
 	if (log) logger.stop_logging();
 
@@ -523,13 +520,6 @@ void force_test(franka_proxy::franka_remote_interface& robot)
 	{ 0.0226325, 0.980913, - 0.0348997, - 1.99411, 0.069761, 2.98885, 0.708856 };
 
 
-	//   old positions
-	//franka_proxy::robot_config_7dof pos_with_scale
-	//	{{1.09452, 0.475923, 0.206959, -2.33289, -0.289467, 2.7587, 0.830083}};
-	//franka_proxy::robot_config_7dof pos_above_table
-	//	{{1.09703, 0.505084, 0.216472, -2.29691, -0.302112, 2.72655, 0.817159}};
-	////{{1.10689, 0.660073, 0.240198, -2.03228, -0.33317, 2.63551, 0.784704}};
-
 	robot.set_speed_factor(0.2);
 	execute_retry([&] { robot.move_to(starting_pos); }, robot);
 	robot.close_gripper();
@@ -538,17 +528,15 @@ void force_test(franka_proxy::franka_remote_interface& robot)
 		robot.move_to_until_contact(tgt_pos);
 	}
 	catch (franka_proxy::remote_exception e) {
-		//this is triggered all the time - motion aborted by reflex
 		std::cout << e.what() << std::endl;
 	}
 
-
+	// robot jerks left or right and slowly moves upward
 	try {
 		robot.apply_z_force(0.0, 5.0);
 		robot.apply_z_force(0.2, 5.0);
 	}
 	catch (franka_proxy::remote_exception e) {
-		//this is triggered all the time - command rejected due to being in "reflex mode"
 		std::cout << e.what() << std::endl;
 	}
 

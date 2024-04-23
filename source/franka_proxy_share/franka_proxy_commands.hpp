@@ -46,7 +46,7 @@ struct command_move_to_config
 	using response_type = command_generic_response;
 	static constexpr char type[] = "move.config";
 
-	std::array<double, 7>	target_joint_config;
+	std::array<double, 7> target_joint_config;
 };
 
 void to_json(nlohmann::json& json, const command_move_to_config& object);
@@ -67,9 +67,9 @@ void from_json(const nlohmann::json& json, command_move_to_config& object);
 struct command_move_until_contact
 {
 	using response_type = command_generic_response;
-	static constexpr char	type[] = "move.contact";
+	static constexpr char type[] = "move.contact";
 
-	std::array<double, 7>	target_joint_config;
+	std::array<double, 7> target_joint_config;
 };
 
 void to_json(nlohmann::json& json, const command_move_until_contact& object);

@@ -427,11 +427,16 @@ bool franka_hardware_controller::move_to_until_contact
 	}
 	catch (const detail::franka_joint_motion_generator::stop_motion_trigger&)
 	{
+		
 	}
 	catch (const detail::franka_joint_motion_generator::contact_stop_trigger&)
 	{
 		set_control_loop_running(false);
 		set_default_collision_behaviour();
+
+		std::this_thread::sleep_for(std::chrono::milliseconds(100));
+		automatic_error_recovery();
+
 		return false;
 	}
 	catch (const franka::Exception&)
