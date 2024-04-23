@@ -2,8 +2,6 @@
 #include "motion_generator_joint_imp_ple.hpp"
 
 #include <utility>
-#include <iostream>
-#include <fstream>
 #include <cmath>
 
 #include <Eigen/Core>
@@ -49,7 +47,7 @@ namespace franka_proxy
 			init_ple_motion_generator(robot, state_lock, robot_state);
 
 			if (logging_) {
-				logger_.start_logging(nullptr, &cart_, &ft_, &t_, nullptr);
+				logger_.start_logging(nullptr, &cart_, &ft_, &t_, &g_);
 			}
 		};
 
@@ -103,7 +101,7 @@ namespace franka_proxy
 				current_torques.motion_finished = true;
 
 				if (logging_) {
-					// close log file
+					// write log file
 					logger_.stop_logging();
 				}
 
@@ -222,6 +220,9 @@ namespace franka_proxy
 			//v = trafo.rotation() * v;
 			//w = trafo.rotation() * w;
 
+			Eigen::Matrix<double, 6, 1> sensor_velos;
+			sensor_velos << v, w;
+
 
 			std::array<double, 16> ee_p = model_.pose(franka::Frame::kEndEffector, state_);
 			Eigen::Map<const Eigen::Matrix<double, 4, 4>> ee_pose(ee_p.data());
@@ -237,10 +238,10 @@ namespace franka_proxy
 
 			if (logging_) {
 				logger_.add_ft_data(ft);
-				logger_.add_cart_data(v);
-				logger_.add_cart_data(w);
-				logger_.add_cart_data(g);
+				logger_.add_cart_data(sensor_velos);
 				logger_.add_single_data(time);
+				std::vector<std::string> grav = { std::to_string(g(0)), std::to_string(g(1)), std::to_string(g(2)) };
+				logger_.add_arbitrary_data(grav);
 
 				logger_.log();
 			}

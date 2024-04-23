@@ -3,7 +3,7 @@
  *
  * @file franka_proxy_logger.hpp
  *
- * Generalized logger for use with motion generators and recorder.
+ * Generalized logger for use with motion generators, recorder and tests.
  *
  ************************************************************************/
 
@@ -56,11 +56,11 @@ namespace logging
 			int size_arbitrary);
 
 
-		// TODO: IMPLEMET DESTRUCTOR FOR LOGGER CLASS
+		~logger();
 
 
 		/**
-		* Starts logging and writes the header into the target file provided at construction.
+		* Starts logging and writes the header into the internal buffer (NOT the target log file).
 		* Vectors for data categories will be checked against the numbers of data sets specified
 		* at construction, an exception will be thrown if any mismatches are detected.
 		* 
@@ -79,35 +79,40 @@ namespace logging
 
 
 		/**
-		* Stops logging and closes the file
-		* 
-		* TODO: MAKE THIS ONE WRITE TO LOG FILE, ALSO IN ERROR CASE (I.E. WHENEVER RUNNING DESTRUCTOR)
+		* Stops logging and writes buffer contents into the target log file.
 		**/
 		void stop_logging();
 
 
 		/**
-		* Writes a single line into the log, using the data provided through the various add-methods, and
+		* Writes a single line into the buffer, using the data provided through the various add-methods, and
 		* clears all internal data storage. Will add padding values of "0.0" ("none" for arbitrary data)
-		* if less data sets than the initially  specified number are provided.
+		* if less data sets than the initially specified number are provided.
 		* Will print warnings for excess or missing data sets, but not throw an exception.
 		* 
-		* TODO: MAKE THIS ONE WRITE TO BUFFER INSTEAD OF DIRECTLY INTO LOG FILE
+		* IMPORTANT: This will not write into the target log file, only into the internal buffer.
 		**/
 		void log();
+
 
 		/**
 		* Clears all internal storage for joint, cartesian, force-torque, single-valued and arbitrary data
 		**/
 		void clear_all();
 
+
+		/**
+		* Clears the internal buffer without writing its contents into the target log file.
+		**/
+		void discard_log();
+
 		void add_joint_data(const std::array<double, 7>& data);
 		void add_joint_data(const Eigen::Matrix<double, 7, 1>& data);
 		void add_joint_data(const double j0, const double j1, const double j2, const double j3, const double j4, const double j5, const double j6);
 
-		void add_cart_data(const std::array<double, 3>& data);
-		void add_cart_data(const Eigen::Vector3d& data);
-		void add_cart_data(const double x, const double y, const double z);
+		void add_cart_data(const std::array<double, 6>& data);
+		void add_cart_data(const Eigen::Matrix< double, 6, 1>& data);
+		void add_cart_data(const double x0, const double x1, const double x2, const double x3, const double x4, const double x5);
 
 		void add_ft_data(const std::array<double, 6>& data);
 		void add_ft_data(const Eigen::Matrix< double, 6, 1>& data);
@@ -116,6 +121,7 @@ namespace logging
 		void add_single_data(const double data);
 
 		void add_arbitrary_data(const std::string& data);
+		void add_arbitrary_data(const std::vector<std::string>& data);
 
 
 	private:
@@ -127,11 +133,12 @@ namespace logging
 		std::string filename_;
 
 		std::vector<std::array<double, 7>> joint_data_;
-		std::vector<std::array<double, 3>> cart_data_; //make this 6D or merge with ft
+		std::vector<std::array<double, 6>> cart_data_;
 		std::vector<std::array<double, 6>> ft_data_;
 		std::vector<double> single_data_;
 		std::vector<std::string> arbitrary_data_;
 
+		std::ostringstream log_;
 		std::ofstream logger_;
 	};
 }

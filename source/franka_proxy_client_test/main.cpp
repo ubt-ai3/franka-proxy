@@ -11,7 +11,8 @@
 #include <logging/logger.hpp>
 
 // use this to specify which test to run within the franka_proxy_client_test method
-// for new tests, add a new, distinct and sensible entry here, and a new subparser to the main method
+// for new tests, add a new, distinct and sensible entry here, a new subparser to the main method,
+// and a new case to franka_proxy_client_test
 enum mode{none, ple, playback, gripper, ptp, force, ermer};
 
 void franka_proxy_client_test(const std::string& ip, mode test, std::vector<std::string>& params);
@@ -26,7 +27,7 @@ double calculate_pose_error( franka_proxy::robot_config_7dof pose_d, franka_prox
 
 void ple_motion_record_test(franka_proxy::franka_remote_interface& robot, double speed, double duration, bool log, std::string file);
 void ptp_test(franka_proxy::franka_remote_interface& robot, double margin, bool log, std::string& file);
-void gripper_test(franka_proxy::franka_remote_interface& robot, double margin);
+void gripper_test(franka_proxy::franka_remote_interface& robot, double margin, bool grasp);
 
 
 // todo: not tested on robot
@@ -82,6 +83,9 @@ int main(int argc, char* argv[])
 	gripper_test.add_argument("margin")
 		.help("specify margin below which gripper is considered closed/grasped (useful for different gripper configs)")
 		.default_value("0.01");
+	gripper_test.add_argument("-g")
+		.help("enable grasping of a provided object (gripper will close normally otherwise)")
+		.flag();
 	gripper_test.add_parents(base);
 
 
@@ -143,7 +147,12 @@ int main(int argc, char* argv[])
 	else if (program.is_subcommand_used(gripper_test)) {
 		test = mode::gripper;
 		std::string margin = gripper_test.get<std::string>("margin");
+		bool grasp_flag = gripper_test.get<bool>("-g");
+		std::string grasp("false");
+		if (grasp_flag) grasp = "true";
+
 		params.push_back(margin);
+		params.push_back(grasp);
 	}
 	else if (program.is_subcommand_used(ptp_test)) {
 		test = mode::ptp;
@@ -206,9 +215,6 @@ void franka_proxy_client_test(const std::string& ip, mode test, std::vector<std:
 	});
 
 	// --- franka motion tests ---
-	//gripper_test(robot);
-	//ptp_test(robot);
-	//force_test(robot); 
 	//impedance_admittance_ermer_ba_tests(robot);
 	//playback_test(robot);
 
@@ -223,7 +229,8 @@ void franka_proxy_client_test(const std::string& ip, mode test, std::vector<std:
 	}
 	else if (test == mode::gripper) {
 		double margin = stod(params[0]);
-		gripper_test(*robot, margin);
+		bool grasp = (params[1] == "true");
+		gripper_test(*robot, margin, grasp);
 	}
 	else if (test == mode::ptp) {
 		double margin = stod(params[0]);
@@ -354,13 +361,13 @@ void log(std::ofstream& csv_log, std::array<double, 7> j, std::array<double, 6> 
 }
 
 
-void gripper_test(franka_proxy::franka_remote_interface& robot, double margin)
+void gripper_test(franka_proxy::franka_remote_interface& robot, double margin, bool grasp)
 {
 	std::cout << "Starting Gripper Test." << std::endl;
 
 	robot.grasp_gripper(0.1);
-	double gripper_pos = robot.current_gripper_pos(); //testing against gripper pos is more reliable than calling gripper_grasped() - NOPE, this one MUST test against gripper_grasped() - should receive sth to grasp or optional param for treating like close()
-	if (gripper_pos >= margin) {
+	double gripper_pos = robot.current_gripper_pos(); //if there's nothing to grasp, grasp will be treated like close
+	if (!((!grasp && gripper_pos < margin) || robot.gripper_grasped())) {
 		std::cout << "Failed to grasp gripper, aborting gripper test." << std::endl;
 		return;
 	}
@@ -411,7 +418,9 @@ void ptp_test(franka_proxy::franka_remote_interface& robot, double margin, bool 
 	constexpr franka_proxy::robot_config_7dof pos2
 		{-0.713442, 0.744363, 0.543357, -1.40935, -2.06861, 1.6925, -2.46015};
 
-	// TODO: unreachable config for pose 4 - sems like util::is_reachable is NOT checked - INVESTIGATE
+	// TODO: unreachable config for pose 4 - sems like util::is_reachable is NOT checked
+	// STATUS: no check found on route from here to hardware_controller, where cmd is passed into fct from robot.h
+	// (which throws for angles that are NaN or INF, and regular control exceptions) 
 	constexpr franka_proxy::robot_config_7dof unreachable_pos
 		{0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0};
 
@@ -528,6 +537,7 @@ void force_test(franka_proxy::franka_remote_interface& robot)
 	}
 
 	// TODO: robot jerks left or right and slowly moves upward - INVESTIGATE
+	// STATUS: ongoing, perhaps an error in mo_gen_force callback
 	try {
 		robot.apply_z_force(0.0, 5.0);
 		robot.apply_z_force(0.2, 5.0);

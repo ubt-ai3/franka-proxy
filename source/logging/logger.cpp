@@ -22,6 +22,19 @@ namespace logging
 	{}
 
 
+	logger::~logger() {
+		bool ok = false;
+		while (!ok) {
+			try {
+				stop_logging();
+				ok = true;
+			}
+			catch(...)
+			{ }
+		}
+	}
+
+
 	void logger::start_logging(std::vector<std::string>* joint_data_header,
 		std::vector<std::string>* cart_data_header,
 		std::vector<std::string>* ft_data_header,
@@ -38,7 +51,7 @@ namespace logging
 			bad = true;
 			baddies.append(" joints");
 		}
-		if (num_cart_data_ && (cart_data_header->size() / 3) != num_cart_data_ && (cart_data_header->size() % 3) != 0) {
+		if (num_cart_data_ && (cart_data_header->size() / 6) != num_cart_data_ && (cart_data_header->size() % 6) != 0) {
 			bad = true;
 			baddies.append(" velocities_accelerations");
 		}
@@ -123,13 +136,15 @@ namespace logging
 
 
 		//finally, we can get to logging
-		logger_.open(filename_);
-		logger_ << header << "\n";
+		log_ << header << "\n";
 	}
 
 
 	void logger::stop_logging() {
+		logger_.open(filename_);
+		logger_ << log_.str();
 		logger_.close();
+		log_.clear();
 	}
 
 
@@ -228,7 +243,7 @@ namespace logging
 				line << ",";
 			}
 			for (int i = 0; i < cart_data_.size(); i++) {
-				std::array<double, 3> vd(cart_data_.at(i));
+				std::array<double, 6> vd(cart_data_.at(i));
 				line << vd[0] << "," << vd[1] << "," << vd[2];
 				if ((cart_data_.size() - i) > 1) {
 					line<< ",";
@@ -236,7 +251,7 @@ namespace logging
 			}
 			if (c_pad) {
 				for (int i = 0; i < c_pad; i++) {
-					line << ",0.0,0.0,0.0";
+					line << ",0.0,0.0,0.0,0.0,0.0,0.0";
 				}
 			}
 		}
@@ -293,7 +308,7 @@ namespace logging
 			}
 		}
 
-		logger_ << line.str() << "\n";
+		log_ << line.str() << "\n";
 
 		clear_all();
 	}
@@ -307,6 +322,10 @@ namespace logging
 		arbitrary_data_.clear();
 	}
 
+
+	void logger::discard_log() {
+		log_.clear();
+	}
 
 
 	void logger::add_joint_data(const std::array<double, 7>& data) {
@@ -324,17 +343,17 @@ namespace logging
 	}
 
 
-	void logger::add_cart_data(const std::array<double, 3>& data) {
+	void logger::add_cart_data(const std::array<double, 6>& data) {
 		cart_data_.push_back(data);
 	}
 
-	void logger::add_cart_data(const Eigen::Vector3d& data) {
-		std::array<double, 3> d = { data(0), data(1), data(2) };
+	void logger::add_cart_data(const Eigen::Matrix<double, 6, 1>& data) {
+		std::array<double, 6> d = { data(0), data(1), data(2), data(3), data(4), data(5)};
 		add_cart_data(d);
 	}
 
-	void logger::add_cart_data(const double x, const double y, const double z) {
-		std::array<double, 3> d = { x, y, z };
+	void logger::add_cart_data(const double x0, const double x1, const double x2, const double x3, const double x4, const double x5) {
+		std::array<double, 6> d = { x0, x1, x2, x3, x4, x5 };
 		add_cart_data(d);
 	}
 
@@ -361,6 +380,12 @@ namespace logging
 
 	void logger::add_arbitrary_data(const std::string& data) {
 		arbitrary_data_.push_back(data);
+	}
+
+	void logger::add_arbitrary_data(const std::vector<std::string>& data) {
+		for (int i = 0; i < data.size(); i++) {
+			add_arbitrary_data(data[i]);
+		}
 	}
 }
 
