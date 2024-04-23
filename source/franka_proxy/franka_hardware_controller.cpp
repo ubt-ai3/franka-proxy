@@ -436,15 +436,11 @@ bool franka_hardware_controller::move_to_until_contact
 	catch (const detail::franka_joint_motion_generator::contact_stop_trigger&)
 	{
 		set_control_loop_running(false);
-<<<<<<< HEAD
-		set_default_collision_behaviour();
+		set_default_impedance_and_collision_parameters();
 
 		std::this_thread::sleep_for(std::chrono::milliseconds(100));
 		automatic_error_recovery();
 
-=======
-		set_default_impedance_and_collision_parameters();
->>>>>>> origin/ba_maltschick
 		return false;
 	}
 	catch (const franka::Exception&)

@@ -55,6 +55,10 @@ namespace logging
 			int num_single,
 			int size_arbitrary);
 
+
+		// TODO: IMPLEMET DESTRUCTOR FOR LOGGER CLASS
+
+
 		/**
 		* Starts logging and writes the header into the target file provided at construction.
 		* Vectors for data categories will be checked against the numbers of data sets specified
@@ -76,6 +80,8 @@ namespace logging
 
 		/**
 		* Stops logging and closes the file
+		* 
+		* TODO: MAKE THIS ONE WRITE TO LOG FILE, ALSO IN ERROR CASE (I.E. WHENEVER RUNNING DESTRUCTOR)
 		**/
 		void stop_logging();
 
@@ -85,6 +91,8 @@ namespace logging
 		* clears all internal data storage. Will add padding values of "0.0" ("none" for arbitrary data)
 		* if less data sets than the initially  specified number are provided.
 		* Will print warnings for excess or missing data sets, but not throw an exception.
+		* 
+		* TODO: MAKE THIS ONE WRITE TO BUFFER INSTEAD OF DIRECTLY INTO LOG FILE
 		**/
 		void log();
 
@@ -119,7 +127,7 @@ namespace logging
 		std::string filename_;
 
 		std::vector<std::array<double, 7>> joint_data_;
-		std::vector<std::array<double, 3>> cart_data_;
+		std::vector<std::array<double, 3>> cart_data_; //make this 6D or merge with ft
 		std::vector<std::array<double, 6>> ft_data_;
 		std::vector<double> single_data_;
 		std::vector<std::string> arbitrary_data_;

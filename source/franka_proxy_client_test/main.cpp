@@ -219,12 +219,7 @@ void franka_proxy_client_test(const std::string& ip, mode test, std::vector<std:
 		double duration = stod(params[1]);
 		bool log = (params[2] == "true");
 		std::string file = params[3];
-		try {
-			ple_motion_record_test(*robot, speed, duration, log, file);
-		}
-		catch (const franka_proxy::command_exception& e) {
-			std::cout << "Exception: " << e.what() << std::endl;
-		}
+		ple_motion_record_test(*robot, speed, duration, log, file);
 	}
 	else if (test == mode::gripper) {
 		double margin = stod(params[0]);
@@ -364,7 +359,7 @@ void gripper_test(franka_proxy::franka_remote_interface& robot, double margin)
 	std::cout << "Starting Gripper Test." << std::endl;
 
 	robot.grasp_gripper(0.1);
-	double gripper_pos = robot.current_gripper_pos(); //testing against gripper pos is more reliable than calling gripper_grasped()
+	double gripper_pos = robot.current_gripper_pos(); //testing against gripper pos is more reliable than calling gripper_grasped() - NOPE, this one MUST test against gripper_grasped() - should receive sth to grasp or optional param for treating like close()
 	if (gripper_pos >= margin) {
 		std::cout << "Failed to grasp gripper, aborting gripper test." << std::endl;
 		return;
@@ -416,12 +411,13 @@ void ptp_test(franka_proxy::franka_remote_interface& robot, double margin, bool 
 	constexpr franka_proxy::robot_config_7dof pos2
 		{-0.713442, 0.744363, 0.543357, -1.40935, -2.06861, 1.6925, -2.46015};
 
-	// unreachable config for pose 4 - sems like util::is_reachable is NOT checked
+	// TODO: unreachable config for pose 4 - sems like util::is_reachable is NOT checked - INVESTIGATE
 	constexpr franka_proxy::robot_config_7dof unreachable_pos
 		{0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0};
 
 	robot.set_speed_factor(0.2);
 	execute_retry([&] { robot.move_to(pos0); }, robot);
+
 
 	execute_retry([&] { robot.move_to(pos1); }, robot);
 	franka_proxy::robot_config_7dof posc = robot.current_config();
@@ -531,7 +527,7 @@ void force_test(franka_proxy::franka_remote_interface& robot)
 		std::cout << e.what() << std::endl;
 	}
 
-	// robot jerks left or right and slowly moves upward
+	// TODO: robot jerks left or right and slowly moves upward - INVESTIGATE
 	try {
 		robot.apply_z_force(0.0, 5.0);
 		robot.apply_z_force(0.2, 5.0);
