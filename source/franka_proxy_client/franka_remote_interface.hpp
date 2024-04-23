@@ -216,6 +216,13 @@ public:
 	 */
 	void automatic_error_recovery();
 
+	/**
+	* Send which cartesian DOF are mobile robot
+	* 
+	* @param[in] vector with bool values for every DOF; true equals mobile and false equals immobile
+	* 
+	*/
+	void set_guiding_params(bool x, bool y, bool z, bool rx, bool ry, bool rz, bool elbow);
 
 	robot_config_7dof current_config() const;
 	double current_gripper_pos() const;

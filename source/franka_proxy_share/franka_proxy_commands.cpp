@@ -457,6 +457,24 @@ void from_json(const nlohmann::json& json, command_set_fts_load_mass& object)
 		object.load_mass[i] = json.at("load_mass").at(i);
 }
 
+//////////////////////////////////////////////////////////////////////////
+//
+// command_set_guiding_params
+//
+//////////////////////////////////////////////////////////////////////////
+
+void to_json(nlohmann::json& json, const command_set_guiding_params& object)
+{
+	json["type"] = command_set_guiding_params::type;
+	json["guiding_config"] = object.guiding_config;
+	json["elbow"] = object.elbow;
+}
+void from_json(const nlohmann::json& json, command_set_guiding_params& object)
+{
+	json.at("guiding_config").get_to(object.guiding_config);
+	json.at("elbow").get_to(object.elbow);
+}
+
 
 //////////////////////////////////////////////////////////////////////////
 //

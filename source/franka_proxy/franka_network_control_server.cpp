@@ -113,6 +113,7 @@ franka_control_server::franka_control_server
 	register_command_handler<command_set_speed>();
 	register_command_handler<command_set_fts_bias>();
 	register_command_handler<command_set_fts_load_mass>();
+	register_command_handler<command_set_guiding_params>();
 	register_command_handler<command_recover_from_errors>();
 
 	internal_thread_ = std::thread([this] { task_main(); });
@@ -424,4 +425,15 @@ command_generic_response franka_control_server::process_command
 	controller_.automatic_error_recovery();
 	return command_result::success;
 }
+
+command_generic_response franka_control_server::process_command(const command_set_guiding_params& cmd)
+{
+	controller_.set_guiding_mode(cmd.guiding_config, cmd.elbow);
+
+	return command_result::success;
+}
+
+
+
+
 } /* namespace franka_proxy */

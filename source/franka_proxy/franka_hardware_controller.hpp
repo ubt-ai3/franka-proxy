@@ -76,6 +76,8 @@ public:
 	// @throws ft_sensor_connection_exception
 	void set_load_mass(const std::array<double, 3>& load_mass);
 
+	void set_guiding_mode(const std::array<bool,6>& guiding_mode,const bool elbow);
+
 
 	franka::RobotState robot_state() const;
 
@@ -180,10 +182,8 @@ private:
 	/**
 	 * Initialize parameters such as joint impedance and collision behavior.
 	 */
-	void initialize_parameters();
-
-	void set_default_collision_behaviour();
-	void set_contact_move_collision_behaviour();
+	void set_default_impedance_and_collision_parameters();
+	void set_contact_move_impedance_and_collision_parameters();
 
 
 	// robot

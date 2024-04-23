@@ -184,6 +184,10 @@ void franka_remote_interface::automatic_error_recovery()
 }
 
 
+void franka_remote_interface::set_guiding_params(bool x, bool y, bool z, bool rx, bool ry, bool rz, bool elbow)
+	{ send_command<command_set_guiding_params>(std::array<bool, 6>{ x, y, z, rx, ry, rz }, elbow); }
+
+
 robot_config_7dof franka_remote_interface::current_config() const
 {
 	std::lock_guard<std::mutex> state_guard(state_lock_);
