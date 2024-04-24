@@ -24,7 +24,6 @@ template <class Function> void execute_retry(
 double calculate_pose_error( franka_proxy::robot_config_7dof pose_d, franka_proxy::robot_config_7dof pose_c);
 
 
-
 void ple_motion_record_test(franka_proxy::franka_remote_interface& robot, double speed, double duration, bool log, std::string file);
 void ptp_test(franka_proxy::franka_remote_interface& robot, double margin, bool log, std::string& file);
 void gripper_test(franka_proxy::franka_remote_interface& robot, double margin, bool grasp);
@@ -49,33 +48,29 @@ int main(int argc, char* argv[])
 {
 	// this is the main parser, which will only handle specifying an IP and calling individual subparsers
 	argparse::ArgumentParser program("franka_client_test");
-
 	program.add_argument("-ip")
 		.help("specify IP for franka-proxy remote connection")
 		.default_value(std::string{ "127.0.0.1" });
 
-	// this is the base parser, including optional arguments for logging; use as parent for all subparsers
+
+	// this is the base parser, including optional arguments for logging; use as parent for all subparsers that need it
 	argparse::ArgumentParser base("fct_base", "1.0", argparse::default_arguments::none);
-	
 	base.add_argument("-l", "-log")
 		.help("enable logging")
 		.flag();
-
 	base.add_argument("-f", "-file")
 		.help("specify file to write log into")
 		.default_value("franka_client_test_log.csv");
 
+
 	// subparsers for individual tests
 	argparse::ArgumentParser ple_test("ple");
-
 	ple_test.add_argument("speed")
 		.help("specify speed for ple motion")
 		.default_value("0.3");
-
 	ple_test.add_argument("-d", "-duration")
 		.help("specify duration for ple motion")
 		.default_value("10.0");
-
 	ple_test.add_parents(base);
 
 	
@@ -95,16 +90,23 @@ int main(int argc, char* argv[])
 		.default_value("0.1");
 	ptp_test.add_parents(base);
 
+
 	argparse::ArgumentParser force_test("force");
+	//has no further arguments and logs nothing
+
+
+	argparse::ArgumentParser playback_test("playback");
 	//has no further arguments
-	force_test.add_parents(base);
+	playback_test.add_parents(base);
 
 	//todo: add parsers for other tests
 
+	program.add_subparser(playback_test);
 	program.add_subparser(force_test);
 	program.add_subparser(ptp_test);
 	program.add_subparser(gripper_test);
 	program.add_subparser(ple_test);
+
 
 	try
 	{
@@ -117,11 +119,13 @@ int main(int argc, char* argv[])
 		return -1;
 	}
 
+
 	const auto ip = program.get<std::string>("-ip");
 	std::cout <<
 		"--------------------------------------------------------------------------------\n"
 		"Executing franka client test with IP " << ip << ": " << std::endl;
 	//std::string ip("132.180.194.112"); // franka1-proxy@resy-lab
+
 
 	mode test = mode::none;
 	std::vector<std::string> params;
@@ -130,6 +134,7 @@ int main(int argc, char* argv[])
 	// this is where input arguments are handled, which will be passed to franka_proxy_client_test as a vector of strings
 	// note that only one test can be run at the same time, so add new tests with an "else if" block
 	if (program.is_subcommand_used(ple_test)) {
+		test = mode::ple;
 		std::string speed = ple_test.get<std::string>("speed");
 		std::string duration = ple_test.get<std::string>("-d");
 		bool log_flag = ple_test.get<bool>("-l");
@@ -141,8 +146,6 @@ int main(int argc, char* argv[])
 		params.push_back(duration);
 		params.push_back(log);
 		params.push_back(file);
-
-		test = mode::ple;
 	}
 	else if (program.is_subcommand_used(gripper_test)) {
 		test = mode::gripper;
@@ -169,8 +172,16 @@ int main(int argc, char* argv[])
 	else if (program.is_subcommand_used(force_test)) {
 		test = mode::force;
 	}
-	
+	else if (program.is_subcommand_used(playback_test)) {
+		test = mode::playback;
+		bool log_flag = playback_test.get<bool>("-l");
+		std::string log("false");
+		if (log_flag) log = "true";
+		std::string file = playback_test.get<std::string>("-f");
 
+		params.push_back(log);
+		params.push_back(file);
+	}
 	//todo: add cases for other tests
 
 
@@ -216,7 +227,6 @@ void franka_proxy_client_test(const std::string& ip, mode test, std::vector<std:
 
 	// --- franka motion tests ---
 	//impedance_admittance_ermer_ba_tests(robot);
-	//playback_test(robot);
 
 	// case distinction for individual tests (add new tests with an "else if" block)
 	// parameters for test methods arrive here as a vector of strings, so convert accordingly
@@ -241,7 +251,11 @@ void franka_proxy_client_test(const std::string& ip, mode test, std::vector<std:
 	else if (test == mode::force) {
 		force_test(*robot);
 	}
-
+	else if (test == mode::playback) {
+		bool log = (params[0] == "true");
+		std::string file = params[1];
+		playback_test(*robot, log, file);
+	}
 	//todo: add cases for other tests
 	
 	// --- cleanup status thread ---
@@ -304,7 +318,7 @@ void ple_motion_record_test(franka_proxy::franka_remote_interface& robot, double
 	std::cout << "Finished PLE motion record test." << std::endl;
 }
 
-// this has been transformed into a makeshift joint angle recorder for the moment
+
 void playback_test(franka_proxy::franka_remote_interface& robot, bool log, std::string& file)
 {
 	std::cout << ("Starting Playback Test.") << std::endl;
@@ -323,17 +337,18 @@ void playback_test(franka_proxy::franka_remote_interface& robot, bool log, std::
 	std::cout << ("--- press to start reproduction in 3s ---") << std::endl;
 	std::cin.get();
 	
-	std::this_thread::sleep_for(std::chrono::seconds(30));
+	std::this_thread::sleep_for(std::chrono::seconds(3));
 
-	/**
+	
 	robot.move_to(record.first.front());
 	const std::vector selection_vectors(
 		record.second.size(), std::array<double, 6>{1, 1, 1, 1, 1, 1});
 	robot.move_sequence(record.first, record.second, selection_vectors);
-	*/
+	
 	std::cout << ("Finished Playback Test.");
+	
 	/**
-	//todo: add logging function to motion_recorder
+	//todo: test logging function added to motion_recorder, then remove this
 	std::ofstream csv_log;
 	csv_log.open("hand_guided_log.csv");
 	const std::string csv_header_ =
@@ -419,8 +434,9 @@ void ptp_test(franka_proxy::franka_remote_interface& robot, double margin, bool 
 		{-0.713442, 0.744363, 0.543357, -1.40935, -2.06861, 1.6925, -2.46015};
 
 	// TODO: unreachable config for pose 4 - sems like util::is_reachable is NOT checked
-	// STATUS: no check found on route from here to hardware_controller, where cmd is passed into fct from robot.h
-	// (which throws for angles that are NaN or INF, and regular control exceptions) 
+	// STATUS: no check found on route from here to hardware_controller, to mo_gen_max_accel
+	// (where check should be performed in either constructor or at time step 0.0),
+	// robot apparently also does not check against joint angle limits
 	constexpr franka_proxy::robot_config_7dof unreachable_pos
 		{0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0};
 
@@ -448,6 +464,7 @@ void ptp_test(franka_proxy::franka_remote_interface& robot, double margin, bool 
 		logger.log();
 	}
 
+
 	execute_retry([&] { robot.move_to(pos2); }, robot);
 	posc = robot.current_config();
 	error = calculate_pose_error(pos2, posc);
@@ -467,6 +484,7 @@ void ptp_test(franka_proxy::franka_remote_interface& robot, double margin, bool 
 
 		logger.log();
 	}
+
 
 	execute_retry([&] { robot.move_to(pos0); }, robot);
 	posc = robot.current_config();
@@ -488,6 +506,7 @@ void ptp_test(franka_proxy::franka_remote_interface& robot, double margin, bool 
 		logger.log();
 	}
 
+
 	try {
 		robot.move_to(unreachable_pos);
 	}
@@ -506,6 +525,7 @@ void ptp_test(franka_proxy::franka_remote_interface& robot, double margin, bool 
 		std::cout << e.what() << std::endl;
 		std::cout << typeid(e).name() << std::endl;
 	}
+
 
 	if (log) logger.stop_logging();
 
