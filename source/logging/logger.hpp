@@ -79,7 +79,8 @@ namespace logging
 
 
 		/**
-		* Stops logging and writes buffer contents into the target log file.
+		* On first call, stops logging and writes buffer contents into the target log file.
+		* Subsequent calls will be ignored. Will also be called at destruction, if not called prior.
 		**/
 		void stop_logging();
 
@@ -138,6 +139,7 @@ namespace logging
 		std::vector<double> single_data_;
 		std::vector<std::string> arbitrary_data_;
 
+		bool logged_ = false;
 		std::ostringstream log_;
 		std::ofstream logger_;
 	};

@@ -11,6 +11,7 @@
 
 #include "motion_recorder.hpp"
 
+#include <iostream>
 
 namespace franka_proxy
 {
@@ -37,18 +38,14 @@ void motion_recorder::start(bool log, std::string& file)
 	joints_record_.clear();
 	fts_record_.clear();
 
-	logging::logger logger_(file, 1, 0, 1, 1, 0);
+	if (log) {
+		log_ = true;
+		file_ = file;
+	}
 
-	t_ = std::thread([this, &log, &logger_]()
+
+	t_ = std::thread([this]()
 	{
-		if (log) {
-			if (fts_) {
-				logger_.start_logging(&joints_, nullptr, &ft_, nullptr, nullptr);
-			}
-			else {
-				logger_.start_logging(&joints_, nullptr, nullptr, nullptr, nullptr);
-			}
-		}
 		while (!stop_)
 		{
 			franka::RobotState current_state(robot_.readOnce()); // sync call with approx. 1kHz
@@ -58,22 +55,10 @@ void motion_recorder::start(bool log, std::string& file)
 			{
 				ft_sensor_response current_ft(fts_->read());
 				fts_record_.emplace_back(current_ft.data);
-
-				if (log) {
-					logger_.add_joint_data(current_state.q);
-					logger_.add_ft_data(current_ft.data);
-					logger_.log();
-				}
-			}
-			else if (log) {
-				logger_.add_joint_data(current_state.q);
-				logger_.log();
 			}
 
 			robot_state_ = current_state;
 		}
-
-		logger_.stop_logging();
 	});
 }
 
@@ -82,6 +67,28 @@ std::pair<std::vector<std::array<double, 7>>, std::vector<std::array<double, 6>>
 {
 	stop_ = true;
 	t_.join();
+
+	if (log_) {
+		logging::logger logger_(file_, 1, 0, 1, 0, 0);
+		
+		if (fts_) {
+			logger_.start_logging(&joints_, nullptr, &ft_, nullptr, nullptr);
+		}
+		else {
+			logger_.start_logging(&joints_, nullptr, nullptr, nullptr, nullptr);
+		}
+
+		for (int i = 0; i < joints_record_.size(); i++) {
+			logger_.add_joint_data(joints_record_.at(i));
+			if (fts_) {
+				logger_.add_ft_data(fts_record_.at(i));
+			}
+			logger_.log();
+		}
+
+		logger_.stop_logging();
+	}
+
 	return {joints_record_, fts_record_};
 }
 

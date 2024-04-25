@@ -109,7 +109,7 @@ namespace franka_proxy
 			logging::logger logger_;
 			bool logging_;
 			std::vector<std::string> cart_ = { "lin_v_x", "lin_v_y", "lin_v_z", "ang_v_x", "ang_v_y", "ang_v_z" };
-			std::vector<std::string> g_{ "g_x", "g_y", "g_z" };
+			std::vector<std::string> grav_{ "g_x", "g_y", "g_z" };
 			std::vector<std::string> ft_ = { "force_x", "force_y","force_z","torque_x","torque_y","torque_z" };
 			std::vector<std::string> t_{ "time" };
 		};

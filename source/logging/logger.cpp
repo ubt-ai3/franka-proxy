@@ -23,11 +23,9 @@ namespace logging
 
 
 	logger::~logger() {
-		bool ok = false;
-		while (!ok) {
+		while (!logged_) {
 			try {
 				stop_logging();
-				ok = true;
 			}
 			catch(...)
 			{ }
@@ -114,8 +112,8 @@ namespace logging
 			if (num_joint_data_ || num_cart_data_ || num_ft_data_) {
 				header.append(",");
 			}
+			header.append(single_header->at(0));
 		}
-		header.append(single_header->at(0));
 		if (num_single_ > 1) {
 			for (int i = 1; i < single_header->size(); i++) {
 				header.append("," + single_header->at(i));
@@ -141,10 +139,13 @@ namespace logging
 
 
 	void logger::stop_logging() {
-		logger_.open(filename_);
-		logger_ << log_.str();
-		logger_.close();
-		log_.clear();
+		if (!logged_) {
+			logger_.open(filename_);
+			logger_ << log_.str();
+			logger_.close();
+			log_.clear();
+			logged_ = true;
+		}
 	}
 
 
@@ -244,7 +245,7 @@ namespace logging
 			}
 			for (int i = 0; i < cart_data_.size(); i++) {
 				std::array<double, 6> vd(cart_data_.at(i));
-				line << vd[0] << "," << vd[1] << "," << vd[2];
+				line << vd[0] << "," << vd[1] << "," << vd[2] << "," << vd[3] << "," << vd[4] << "," << vd[5];
 				if ((cart_data_.size() - i) > 1) {
 					line<< ",";
 				}

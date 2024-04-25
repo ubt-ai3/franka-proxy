@@ -27,21 +27,17 @@ double calculate_pose_error( franka_proxy::robot_config_7dof pose_d, franka_prox
 void ple_motion_record_test(franka_proxy::franka_remote_interface& robot, double speed, double duration, bool log, std::string file);
 void ptp_test(franka_proxy::franka_remote_interface& robot, double margin, bool log, std::string& file);
 void gripper_test(franka_proxy::franka_remote_interface& robot, double margin, bool grasp);
-
-
-// todo: not tested on robot
-[[deprecated("Revise test code before execution on real robot!")]]
 void playback_test(franka_proxy::franka_remote_interface& robot, bool log, std::string& file);
-// todo: used poses may be unsafe robot
+
+
+
+// todo: fix jerking while applying force
 [[deprecated("Revise test code before execution on real robot!")]]
 void force_test(franka_proxy::franka_remote_interface& robot);
 // todo: untested since bachelor thesis d. ermer; handle with care.
 [[deprecated("Revise test code before execution on real robot!")]]
 void impedance_admittance_ermer_ba_tests(franka_proxy::franka_remote_interface& robot);
 
-
-// todo: we need a csv-motion-logger for franka-proxy and tests. - working on implementation for use in motion generators. PLi
-void log(std::ofstream& csv_log, std::array<double, 7> j, std::array<double, 6> ft, double time);
 
 
 int main(int argc, char* argv[])
@@ -81,7 +77,7 @@ int main(int argc, char* argv[])
 	gripper_test.add_argument("-g")
 		.help("enable grasping of a provided object (gripper will close normally otherwise)")
 		.flag();
-	gripper_test.add_parents(base);
+	//logs nothing
 
 
 	argparse::ArgumentParser ptp_test("ptp");
@@ -99,8 +95,13 @@ int main(int argc, char* argv[])
 	//has no further arguments
 	playback_test.add_parents(base);
 
-	//todo: add parsers for other tests
+	
+	argparse::ArgumentParser ermer_test("ermer");
+	//has no further arguments
+	ermer_test.add_parents(base);
 
+
+	program.add_subparser(ermer_test);
 	program.add_subparser(playback_test);
 	program.add_subparser(force_test);
 	program.add_subparser(ptp_test);
@@ -170,7 +171,7 @@ int main(int argc, char* argv[])
 		params.push_back(file);
 	}
 	else if (program.is_subcommand_used(force_test)) {
-		test = mode::force;
+		//test = mode::force;
 	}
 	else if (program.is_subcommand_used(playback_test)) {
 		test = mode::playback;
@@ -182,7 +183,9 @@ int main(int argc, char* argv[])
 		params.push_back(log);
 		params.push_back(file);
 	}
-	//todo: add cases for other tests
+	else if (program.is_subcommand_used(ermer_test)) {
+		//test = mode::ermer;
+	}
 
 
 	franka_proxy_client_test(ip, test, params);
@@ -207,6 +210,7 @@ void franka_proxy_client_test(const std::string& ip, mode test, std::vector<std:
 		return;
 	}
 
+
 	// --- mandatory status thread with debug output ---
 	int print_every_ith_status = 30;
 	std::atomic_bool stop(false);
@@ -225,8 +229,8 @@ void franka_proxy_client_test(const std::string& ip, mode test, std::vector<std:
 		}
 	});
 
+
 	// --- franka motion tests ---
-	//impedance_admittance_ermer_ba_tests(robot);
 
 	// case distinction for individual tests (add new tests with an "else if" block)
 	// parameters for test methods arrive here as a vector of strings, so convert accordingly
@@ -256,8 +260,11 @@ void franka_proxy_client_test(const std::string& ip, mode test, std::vector<std:
 		std::string file = params[1];
 		playback_test(*robot, log, file);
 	}
-	//todo: add cases for other tests
+	else if (test == mode::ermer) {
+		impedance_admittance_ermer_ba_tests(*robot);
+	}
 	
+
 	// --- cleanup status thread ---
 	stop = true;
 	t.join();
@@ -323,7 +330,7 @@ void playback_test(franka_proxy::franka_remote_interface& robot, bool log, std::
 {
 	std::cout << ("Starting Playback Test.") << std::endl;
 	
-	std::cout << ("--- press to start in 3s ---") << std::endl;
+	std::cout << ("--- press to start in 3s (lights white) ---") << std::endl;
 	std::cin.get();
 	std::this_thread::sleep_for(std::chrono::seconds(3));
 
@@ -334,45 +341,18 @@ void playback_test(franka_proxy::franka_remote_interface& robot, bool log, std::
 	std::cout << ("--- stopped demonstration ---") << std::endl;
 	const std::pair record(robot.stop_recording());
 
-	std::cout << ("--- press to start reproduction in 3s ---") << std::endl;
+	//TODO: add some kind of actual test (e.g. measure of error) here
+	std::cout << ("--- press to start reproduction in 3s (lights blue) ---") << std::endl;
 	std::cin.get();
 	
 	std::this_thread::sleep_for(std::chrono::seconds(3));
 
-	
 	robot.move_to(record.first.front());
 	const std::vector selection_vectors(
 		record.second.size(), std::array<double, 6>{1, 1, 1, 1, 1, 1});
 	robot.move_sequence(record.first, record.second, selection_vectors);
 	
 	std::cout << ("Finished Playback Test.");
-	
-	/**
-	//todo: test logging function added to motion_recorder, then remove this
-	std::ofstream csv_log;
-	csv_log.open("hand_guided_log.csv");
-	const std::string csv_header_ =
-		"joint_1,joint_2,joint_3,joint_4,joint_5,joint_6,joint_7,"
-		"force_x,force_y,force_z,torque_x,torque_y,torque_z,time";
-	csv_log << csv_header_ << "\n";
-	for (size_t i = 0; i < record.first.size(); i++)
-		log(csv_log, record.first.at(i), record.second.at(i), 0.001 * static_cast<double>(i));
-		**/
-}
-
-void log(std::ofstream& csv_log, std::array<double, 7> j, std::array<double, 6> ft, double time)
-{
-	std::ostringstream j_log;
-	j_log << j[0] << "," << j[1] << "," << j[2] << "," << j[3]
-		<< "," << j[4] << "," << j[5] << "," << j[6];
-	std::ostringstream ft_log;
-	ft_log << ft[0] << "," << ft[1] << "," << ft[2] << "," << ft[3] << "," << ft[4] << "," << ft[5];
-
-	double sum = ft[0] * ft[0] + ft[1] * ft[1] + ft[2] * ft[2];
-	std::ostringstream current_values;
-	current_values << j_log.str() << "," << ft_log.str() << "," << time << "," << sum;
-
-	csv_log << current_values.str() << "\n";
 }
 
 
@@ -436,9 +416,9 @@ void ptp_test(franka_proxy::franka_remote_interface& robot, double margin, bool 
 	// TODO: unreachable config for pose 4 - sems like util::is_reachable is NOT checked
 	// STATUS: no check found on route from here to hardware_controller, to mo_gen_max_accel
 	// (where check should be performed in either constructor or at time step 0.0),
-	// robot apparently also does not check against joint angle limits
+	// robot itself apparently also does not check against joint angle limits, only NaN and INF. PLi
 	constexpr franka_proxy::robot_config_7dof unreachable_pos
-		{0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0};
+		{1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0};
 
 	robot.set_speed_factor(0.2);
 	execute_retry([&] { robot.move_to(pos0); }, robot);
@@ -508,7 +488,7 @@ void ptp_test(franka_proxy::franka_remote_interface& robot, double margin, bool 
 
 
 	try {
-		robot.move_to(unreachable_pos);
+		//robot.move_to(unreachable_pos);
 	}
 	catch (franka_proxy::command_exception e) {
 		std::cout << "Command exception" << std::endl;
@@ -584,13 +564,13 @@ void impedance_admittance_ermer_ba_tests(franka_proxy::franka_remote_interface& 
 	stiffness[48] = 50.;
 	robot.joint_impedance_hold_position(10, false, stiffness);
 
-	//std::this_thread::sleep_for(std::chrono::seconds(3));
-	////TODO move to start pose
-	//robot.cartesian_impedance_poses(cart_test_positions, 15, false, false, 50., 300.);
+	std::cout << "Finished Impedance - Hold Position Test." << std::endl;
 
-	//std::cout << "Finished Impedance - Follow Poses with Cartesian Impedance Test." << std::endl;
+	std::this_thread::sleep_for(std::chrono::seconds(3));
 
 	std::cout << "Starting Impedance - Follow Poses with Cartesian Impedance Test." << std::endl;
+	//TODO move to start pose or ensure gentle start otherwise - right now, robot tries to "snap" into position
+
 	// positions
 	std::list<std::array<double, 16>> poses_for_cart = {
 		{
@@ -613,8 +593,12 @@ void impedance_admittance_ermer_ba_tests(franka_proxy::franka_remote_interface& 
 		}
 	};
 
-	std::cout << "Starting Joint Impedance Tests." << std::endl << "Holding position with Joint Impedance in 3s..";
+	robot.cartesian_impedance_poses(poses_for_cart, 15, false, false, 50., 300.);
 
+	std::cout << "Finished Impedance - Follow Poses with Cartesian Impedance Test." << std::endl;
+
+
+	std::cout << "Starting Joint Impedance Tests." << std::endl << "Holding position with Joint Impedance in 3s..";
 
 	std::this_thread::sleep_for(std::chrono::seconds(3));
 	robot.joint_impedance_hold_position(10, false, stiffness);
@@ -649,7 +633,7 @@ void impedance_admittance_ermer_ba_tests(franka_proxy::franka_remote_interface& 
 
 	std::cout << "Starting Admittance - Apply Force Test." << std::endl;
 
-	robot.apply_admittance(10, true, 10., 150., 10., 150.);
+	robot.apply_admittance(10, false, 10., 150., 10., 150.);
 
 	std::cout << "Finished Admittance - Apply Force Test." << std::endl;
 }

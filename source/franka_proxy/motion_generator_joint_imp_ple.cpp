@@ -40,14 +40,14 @@ namespace franka_proxy
 			duration_(duration),
 			logging_(logging),
 			sensor_(placeholder_, placeholder_),
-			logger_(file, 0, 3, 1, 1, 0)
+			logger_(file, 0, 1, 1, 1, 3)
 		{
 			sensor_.set_load_mass(no_mass_);
 
 			init_ple_motion_generator(robot, state_lock, robot_state);
 
 			if (logging_) {
-				logger_.start_logging(nullptr, &cart_, &ft_, &t_, &g_);
+				logger_.start_logging(nullptr, &cart_, &ft_, &t_, &grav_);
 			}
 		};
 
