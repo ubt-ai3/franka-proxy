@@ -39,13 +39,15 @@ namespace franka_proxy
 			std::mutex& state_lock,
 			franka::RobotState& robot_state,
 			double duration,
-			bool logging)
+			bool logging,
+			std::string& file)
 			:
 			model_(robot.loadModel()),
 			state_lock_(state_lock),
 			state_(robot_state),
 			duration_(duration),
-			logging_(logging)
+			logging_(logging),
+			logger_(file,3,0,2,1,0)
 		{
 			init_impedance_motion_generator(robot, state_lock, robot_state);
 
@@ -53,10 +55,7 @@ namespace franka_proxy
 
 			if (logging_) {
 				// start logging to csv file
-				csv_log_1_.open("joint_impedance_log_1.csv");
-				csv_log_1_ << csv_header1_ << "\n";
-				csv_log_2_.open("joint_impedance_log_2.csv");
-				csv_log_2_ << csv_header2_ << "\n";
+				logger_.start_logging(&j_head, nullptr, &f_head, &s_head, nullptr);
 			}
 		};
 
@@ -66,14 +65,16 @@ namespace franka_proxy
 			franka::RobotState& robot_state,
 			std::list<std::array<double, 7>> joint_positions,
 			double duration,
-			bool logging)
+			bool logging,
+			std::string& file)
 			:
 			model_(robot.loadModel()),
 			state_lock_(state_lock),
 			state_(robot_state),
 			duration_(duration),
 			joint_positions_(joint_positions),
-			logging_(logging)
+			logging_(logging),
+			logger_(file, 3, 0, 2, 1, 0)
 		{
 			init_impedance_motion_generator(robot, state_lock, robot_state);
 
@@ -86,10 +87,7 @@ namespace franka_proxy
 
 			if (logging_) {
 				// start logging to csv file
-				csv_log_1_.open("joint_impedance_log_1.csv");
-				csv_log_1_ << csv_header1_ << "\n";
-				csv_log_2_.open("joint_impedance_log_2.csv");
-				csv_log_2_ << csv_header2_ << "\n";
+				logger_.start_logging(&j_head, nullptr, &f_head, &s_head, nullptr);
 			}
 		}
 
@@ -138,8 +136,7 @@ namespace franka_proxy
 
 				if (logging_) {
 					// close log file
-					csv_log_1_.close();
-					csv_log_2_.close();
+					logger_.stop_logging();
 				}
 
 				return current_torques;
@@ -210,7 +207,11 @@ namespace franka_proxy
 
 			if (logging_) {
 				// log to csv
-				log(tau_d);
+				logger_.add_joint_data(tau_d);
+				logger_.add_ft_data(stiffness_matrix_(0, 0), stiffness_matrix_(1, 1), stiffness_matrix_(2, 2), stiffness_matrix_(3, 3), stiffness_matrix_(4, 4), stiffness_matrix_(5, 5));
+				logger_.add_ft_data(damping_matrix_(0, 0), damping_matrix_(1, 1), damping_matrix_(2, 2), damping_matrix_(3, 3), damping_matrix_(4, 4), damping_matrix_(5, 5));
+				logger_.add_single_data(time_);
+				logger_.log();
 			}
 
 			return tau_d_ar;
@@ -239,7 +240,8 @@ namespace franka_proxy
 			Eigen::Matrix<double, 7, 1> joint_position_error = q - q_d;
 
 			if (logging_) {
-				log_pos_error(q_d, q);
+				logger_.add_joint_data(q_d);
+				logger_.add_joint_data(q);
 			}
 
 			return joint_position_error;
@@ -298,34 +300,6 @@ namespace franka_proxy
 
 			return damping_matrix_ar;
 		}
-
-		void joint_impedance_motion_generator::log(Eigen::Matrix<double, 7, 1> tau_d) {
-			std::ostringstream tau_d_log;
-			tau_d_log << tau_d(0) << "; " << tau_d(1) << "; " << tau_d(2) << "; " << tau_d(3) << "; " << tau_d(4) << "; " << tau_d(5) << "; " << tau_d(6);
-			std::ostringstream stiffness_matrix_log;
-			stiffness_matrix_log << stiffness_matrix_(0, 0) << "; " << stiffness_matrix_(1, 1) << "; " << stiffness_matrix_(2, 2) << "; " << stiffness_matrix_(3, 3) << "; " << stiffness_matrix_(4, 4) << "; " << stiffness_matrix_(5, 5);
-			std::ostringstream damping_matrix_log;
-			damping_matrix_log << damping_matrix_(0, 0) << "; " << damping_matrix_(1, 1) << "; " << damping_matrix_(2, 2) << "; " << damping_matrix_(3, 3) << "; " << damping_matrix_(4, 4) << "; " << damping_matrix_(5, 5);
-
-			std::ostringstream current_values;
-			current_values << time_ << "; " << tau_d_log.str() << "; " << stiffness_matrix_log.str() << "; " << damping_matrix_log.str();
-
-			csv_log_1_ << current_values.str() << "\n";
-		}
-
-		void joint_impedance_motion_generator::log_pos_error(Eigen::Matrix<double, 7, 1> q_d, Eigen::Matrix<double, 7, 1> q) {
-			std::ostringstream joint_position_d_log;
-			std::ostringstream joint_position_log;
-
-			joint_position_d_log << q_d(0) << "; " << q_d(1) << "; " << q_d(2) << "; " << q_d(3) << "; " << q_d(4) << "; " << q_d(5) << "; " << q_d(6);
-			joint_position_log << q(0) << "; " << q(1) << "; " << q(2) << "; " << q(3) << "; " << q(4) << "; " << q(5) << "; " << q(6);
-
-			std::ostringstream current_values;
-			current_values << time_ << "; " << joint_position_d_log.str() << "; " << joint_position_log.str();
-
-			csv_log_2_ << current_values.str() << "\n";
-		}
-
 
 	} /* namespace detail */
 } /* namespace franka_proxy */

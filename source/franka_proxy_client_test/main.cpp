@@ -39,7 +39,6 @@ void force_test(franka_proxy::franka_remote_interface& robot);
 void impedance_admittance_ermer_ba_tests(franka_proxy::franka_remote_interface& robot);
 
 
-
 int main(int argc, char* argv[])
 {
 	// this is the main parser, which will only handle specifying an IP and calling individual subparsers
@@ -97,7 +96,7 @@ int main(int argc, char* argv[])
 
 	
 	argparse::ArgumentParser ermer_test("ermer");
-	//has no further arguments
+	//has no further arguments and logs into multiple files (ignores "-f" argument)
 	ermer_test.add_parents(base);
 
 
@@ -416,7 +415,8 @@ void ptp_test(franka_proxy::franka_remote_interface& robot, double margin, bool 
 	// TODO: unreachable config for pose 4 - sems like util::is_reachable is NOT checked
 	// STATUS: no check found on route from here to hardware_controller, to mo_gen_max_accel
 	// (where check should be performed in either constructor or at time step 0.0),
-	// robot itself apparently also does not check against joint angle limits, only NaN and INF. PLi
+	// robot itself apparently also does not check against joint angle limits, only NaN and INF.
+	// UPDATE: Should now throw invalid op with appropriate msg. Untested. PLi
 	constexpr franka_proxy::robot_config_7dof unreachable_pos
 		{1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0};
 
@@ -488,22 +488,17 @@ void ptp_test(franka_proxy::franka_remote_interface& robot, double margin, bool 
 
 
 	try {
-		//robot.move_to(unreachable_pos);
-	}
-	catch (franka_proxy::command_exception e) {
-		std::cout << "Command exception" << std::endl;
-		std::cout << e.what() << std::endl;
-		std::cout << typeid(e).name() << std::endl;
+		robot.move_to(unreachable_pos);
 	}
 	catch (franka_proxy::invalid_operation_exception e) {
-		std::cout << "Invalid op exception" << std::endl;
 		std::cout << e.what() << std::endl;
-		std::cout << typeid(e).name() << std::endl;
+		std::cout << "Pose 4 of 4 successfully identified as unreachable." << std::endl;
 	}
 	catch (franka_proxy::exception e) {
-		std::cout << "General exception" << std::endl;
+		std::cout << "An exception occured while attempting to reach and unreachable pose." << std::endl;
 		std::cout << e.what() << std::endl;
 		std::cout << typeid(e).name() << std::endl;
+		std::cout << "Pose 4 not identified as unreachable. Test failed." << std::endl;
 	}
 
 
@@ -556,19 +551,21 @@ void force_test(franka_proxy::franka_remote_interface& robot)
 void impedance_admittance_ermer_ba_tests(franka_proxy::franka_remote_interface& robot)
 {
 	std::cout << "Starting Impedance - Hold Position Test." << std::endl;
+	std::string file = "ermer_joint_impedance_hold.csv";
 
 	std::array<double, 49> stiffness{0.};
 	stiffness[0] = stiffness[8] = stiffness[16] = stiffness[24] = 600.; // first four joints
 	stiffness[32] = 250.;
 	stiffness[40] = 150.;
 	stiffness[48] = 50.;
-	robot.joint_impedance_hold_position(10, false, stiffness);
+	robot.joint_impedance_hold_position(10, false, file, stiffness);
 
 	std::cout << "Finished Impedance - Hold Position Test." << std::endl;
 
 	std::this_thread::sleep_for(std::chrono::seconds(3));
 
 	std::cout << "Starting Impedance - Follow Poses with Cartesian Impedance Test." << std::endl;
+	file = "ermer_cart_impedance_follow.csv";
 	//TODO move to start pose or ensure gentle start otherwise - right now, robot tries to "snap" into position
 
 	// positions
@@ -593,17 +590,19 @@ void impedance_admittance_ermer_ba_tests(franka_proxy::franka_remote_interface& 
 		}
 	};
 
-	robot.cartesian_impedance_poses(poses_for_cart, 15, false, false, 50., 300.);
+	robot.cartesian_impedance_poses(poses_for_cart, 15, false, file, false, 50., 300.);
 
 	std::cout << "Finished Impedance - Follow Poses with Cartesian Impedance Test." << std::endl;
 
 
 	std::cout << "Starting Joint Impedance Tests." << std::endl << "Holding position with Joint Impedance in 3s..";
+	file = "ermer_joint_impedance_hold2.csv";
 
 	std::this_thread::sleep_for(std::chrono::seconds(3));
-	robot.joint_impedance_hold_position(10, false, stiffness);
+	robot.joint_impedance_hold_position(10, false, file, stiffness);
 
 	std::cout << " .. finished." << std::endl << "Following Poses with Joint Impedance in 3s..";
+	file = "ermer_joint_impedance_follow.csv";
 	// positions
 	std::list<std::array<double, 16>> poses_for_joint = {
 		{
@@ -626,14 +625,15 @@ void impedance_admittance_ermer_ba_tests(franka_proxy::franka_remote_interface& 
 		}
 	};
 
-	robot.cartesian_impedance_poses(poses_for_joint, 10, false, false, 50., 300.);
+	robot.cartesian_impedance_poses(poses_for_joint, 10, false, file, false, 50., 300.);
 
 	std::cout << "Finished Impedance - Follow Poses with Joint Impedance Test." << std::endl;
 
 
 	std::cout << "Starting Admittance - Apply Force Test." << std::endl;
+	file = "ermer_apply_admittance.csv";
 
-	robot.apply_admittance(10, false, 10., 150., 10., 150.);
+	robot.apply_admittance(10, false, file, 10., 150., 10., 150.);
 
 	std::cout << "Finished Admittance - Apply Force Test." << std::endl;
 }

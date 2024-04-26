@@ -37,14 +37,16 @@ namespace franka_proxy
 			std::mutex& state_lock,
 			franka::RobotState& robot_state,
 			double duration,
-			bool logging)
+			bool logging,
+			std::string& file)
 			:
 			model_(robot.loadModel()),
 			state_lock_(state_lock),
 			state_(robot_state),
 			duration_(duration),
-			impedance_controller_(robot, state_lock, robot_state, duration, logging, false),
-			logging_(logging)
+			impedance_controller_(robot, state_lock, robot_state, duration, logging, file_, false),
+			logging_(logging),
+			logger_(file, 1, 3, 3, 1, 42)
 		{
 			{
 				std::lock_guard<std::mutex> state_guard(state_lock_);
@@ -68,9 +70,7 @@ namespace franka_proxy
 
 			if (logging_) {
 				// start logging to csv file
-				csv_log_.open("admittance.csv");
-				joint_log_.open("joints.csv");
-				jacobian_log_.open("jacobian.csv");
+				logger_.start_logging(&j_head, &c_head, &f_head, &s_head, &a_head);
 			}
 		}
 
@@ -91,9 +91,7 @@ namespace franka_proxy
 				current_torques.motion_finished = true;
 
 				if (logging_) {
-					csv_log_.close();
-					joint_log_.close();
-					jacobian_log_.close();
+					logger_.stop_logging();
 				}
 
 				return current_torques;
@@ -237,7 +235,19 @@ namespace franka_proxy
 
 			if (logging_) {
 				// log to csv
-				log(f_ext_, x_i, position_eq, x_i_prod2, current_force, f_ext_middle, jacobian);
+				logger_.add_joint_data(state_.q);
+				logger_.add_cart_data(x_i);
+				logger_.add_cart_data(position_eq);
+				logger_.add_cart_data(x_i_prod2);
+				logger_.add_ft_data(f_ext_);
+				logger_.add_ft_data(current_force);
+				logger_.add_ft_data(f_ext_middle);
+				logger_.add_single_data(time_);
+				for (int i = 0; i < 6; i++) {
+					for (int j = 0; j < 7; j++) {
+						logger_.add_arbitrary_data(std::to_string(jacobian(i, j)));
+					}
+				}
 			}
 
 			return impedance_controller_.callback
@@ -315,59 +325,6 @@ namespace franka_proxy
 		double admittance_motion_generator::get_impedance_translational_stiffness() {
 			return impedance_controller_.get_translational_stiffness();
 		}
-
-		void admittance_motion_generator::log(
-			Eigen::Matrix<double,6,1> f_ext,
-			Eigen::Matrix<double, 6, 1> x_i,
-			Eigen::Matrix<double, 6, 1> position_eq,
-			Eigen::Matrix<double, 6, 1> x_i_prod2,
-			Eigen::Matrix<double, 6, 1> current_force,
-			const std::array<double, 6>& f_ext_middle,
-			Eigen::Matrix<double, 6, 7> jacobian
-		) {
-			std::ostringstream f_ext_log;
-			f_ext_log << f_ext(0) << "; " << f_ext(1) << "; " << f_ext(2) << "; " << f_ext(3) << "; " << f_ext(4) << "; " << f_ext(5);
-			std::ostringstream x_i_log;
-			x_i_log << x_i(0) << "; " << x_i(1) << "; " << x_i(2) << "; " << x_i(3) << "; " << x_i(4) << "; " << x_i(5);
-			std::ostringstream x_e_log;
-			x_e_log << position_eq(0) << "; " << position_eq(1) << "; " << position_eq(2) << "; " << position_eq(3) << "; " << position_eq(4) << "; " << position_eq(5);
-			std::ostringstream x_i_prod2_log;
-			x_i_prod2_log << x_i_prod2(0) << "; " << x_i_prod2(1) << "; " << x_i_prod2(2) << "; " << x_i_prod2(3) << "; " << x_i_prod2(4) << "; " << x_i_prod2(5);
-			std::ostringstream current_force_log;
-			current_force_log << current_force(0) << "; " << current_force(1) << "; " << current_force(2) << "; " << current_force(3) << "; " << current_force(4) << "; " << current_force(5);
-			std::ostringstream f_ext_middle_log;
-			f_ext_middle_log << f_ext_middle[0] << "; " << f_ext_middle[1] << "; " << f_ext_middle[2] << "; " << f_ext_middle[3] << "; " << f_ext_middle[4] << "; " << f_ext_middle[5];
-
-			std::ostringstream current_values;
-			current_values << time_ << "; " << "; " << f_ext_middle_log.str() << "; " << "; " << x_i_log.str() << "; " << "; " << x_e_log.str(); // << "; " << "; " << current_force_log.str();
-
-			csv_log_ << current_values.str() << "\n";
-
-			// get current joint position
-			Eigen::Map<const Eigen::Matrix<double, 7, 1>> q(state_.q.data());
-
-			std::ostringstream current_joint_values;
-			current_joint_values << time_ << ";" << ";" << q(0) << ";" << q(1) << ";" << q(2) << ";" << q(3) << ";" << q(4) << ";" << q(5) << ";" << q(6);
-
-			joint_log_ << current_joint_values.str() << "\n";
-
-			std::ostringstream jac_log;
-
-			jac_log << time_ << "\n" << ";" << "\n";
-
-			for (int i = 0; i < 6; i++) {
-				for (int j = 0; j < 7; j++) {
-					jac_log << jacobian(i, j) << ";";
-				}
-
-				jac_log << "\n";
-			}
-
-			jac_log << "\n" << ";" << "\n";
-
-			jacobian_log_ << jac_log.str();
-		}
-
 
 	} /* namespace detail */
 } /* namespace franka_proxy */

@@ -12,13 +12,14 @@
 
 #include <vector>
 #include <iostream>
-#include <fstream>
 
 #include <Eigen/Core>
 #include <Eigen/Dense>
 
 #include <franka/robot.h>
 #include <franka/model.h>
+
+#include "logging/logger.hpp"
 
 
 
@@ -51,7 +52,8 @@ namespace franka_proxy
 				std::mutex& state_lock,
 				franka::RobotState& robot_state,
 				double duration,
-				bool logging);
+				bool logging,
+				std::string& file);
 
 			joint_impedance_motion_generator
 			(franka::Robot& robot,
@@ -59,7 +61,8 @@ namespace franka_proxy
 				franka::RobotState& robot_state,
 				std::list<std::array<double, 7>> joint_positions,
 				double duration,
-				bool logging);
+				bool logging,
+				std::string& file);
 
 			franka::Torques callback
 			(const franka::RobotState& robot_state,
@@ -78,8 +81,6 @@ namespace franka_proxy
 			void calculate_default_stiffness_and_damping();
 			void init_impedance_motion_generator(franka::Robot& robot, std::mutex& state_lock, franka::RobotState& robot_state);
 			double calculate_damping_from_stiffness(double ki);
-			void log_pos_error(Eigen::Matrix<double, 7, 1> q_d, Eigen::Matrix<double, 7, 1> q);
-			void log(Eigen::Matrix<double, 7, 1> tau_d);
 
 			franka::Model model_;
 
@@ -110,10 +111,12 @@ namespace franka_proxy
 
 			// csv logging
 			bool logging_;
-			std::ofstream csv_log_1_;
-			std::string csv_header1_ = "time; tau j1; tau j2; tau j3; tau j4; tau j5; tau j6; tau j7; s1; s2; s3; s4; s5; s6; s7; d1; d2; d3; d4; d5; d6; d7";
-			std::ofstream csv_log_2_;
-			std::string csv_header2_ = "time; d_joint 1; d_joint 2; d_joint 3; d_joint 4; d_joint 5; d_joint 6; d_joint 7; joint 1; joint 2; joint 3; joint 4; joint 5; joint 6; joint 7";
+			logging::logger logger_;
+			std::vector<std::string> j_head = { "d_joint_1", "d_joint_2", "d_joint_3", "d_joint_4", "d_joint_5", "d_joint_6", "d_joint_7",
+						"joint_1", "joint_2", "joint_3", "joint_4", "joint_5", "joint_6", "joint_7",
+						"tau_j1", "tau_j2", "tau_j3", "tau_j4", "tau_j5", "tau_j6", "tau_j7" };
+			std::vector<std::string> f_head = { "s1", "s2", "s3", "s4", "s5", "s6", "s7", "d1", "d2", "d3", "d4", "d5", "d6", "d7" };
+			std::vector<std::string> s_head = { "time" };
 		};
 	} /* namespace detail */
 } /* namespace franka_proxy */

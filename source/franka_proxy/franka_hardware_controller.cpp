@@ -29,6 +29,8 @@
 
 #include "ft_sensor/schunk_ft.hpp"
 
+#include "franka_control/franka_util.hpp"
+
 
 namespace franka_proxy
 {
@@ -130,12 +132,13 @@ void franka_hardware_controller::apply_z_force
 }
 
 void franka_hardware_controller::apply_admittance(const double duration, const bool log,
+												  std::string file,
                                                   const double adm_rotational_stiffness,
                                                   const double adm_translational_stiffness,
                                                   const double imp_rotational_stiffness,
                                                   const double imp_translational_stiffness)
 {
-	detail::admittance_motion_generator motion_generator(robot_, robot_state_lock_, robot_state_, duration, log);
+	detail::admittance_motion_generator motion_generator(robot_, robot_state_lock_, robot_state_, duration, log, file);
 
 	motion_generator.set_admittance_rotational_stiffness(adm_rotational_stiffness);
 	motion_generator.set_admittance_translational_stiffness(adm_translational_stiffness);
@@ -168,10 +171,10 @@ void franka_hardware_controller::apply_admittance(const double duration, const b
 	set_control_loop_running(false);
 }
 
-void franka_hardware_controller::joint_impedance_hold_position(const double duration, const bool log,
+void franka_hardware_controller::joint_impedance_hold_position(const double duration, const bool log, std::string file,
                                                                const std::array<double, 49> stiffness)
 {
-	detail::joint_impedance_motion_generator motion_generator(robot_, robot_state_lock_, robot_state_, duration, log);
+	detail::joint_impedance_motion_generator motion_generator(robot_, robot_state_lock_, robot_state_, duration, log, file);
 
 	motion_generator.set_stiffness(stiffness); // always true;
 
@@ -207,12 +210,12 @@ void franka_hardware_controller::joint_impedance_hold_position(const double dura
 }
 
 void franka_hardware_controller::joint_impedance_positions(const std::list<std::array<double, 7>>& joint_positions,
-                                                           const double duration, const bool log,
+                                                           const double duration, const bool log, std::string file,
                                                            const std::array<double, 49> stiffness)
 {
 	detail::joint_impedance_motion_generator motion_generator(
 		robot_, robot_state_lock_, robot_state_, 
-		joint_positions, duration, log);
+		joint_positions, duration, log, file);
 
 	motion_generator.set_stiffness(stiffness);
 
@@ -248,14 +251,15 @@ void franka_hardware_controller::joint_impedance_positions(const std::list<std::
 }
 
 void franka_hardware_controller::cartesian_impedance_hold_pose(const double duration, const bool log,
+															   std::string file,
                                                                const bool use_stiff_damp_online_calc,
                                                                const double rotational_stiffness,
                                                                const double translational_stiffness)
 {
 	detail::cartesian_impedance_motion_generator motion_generator(
 		robot_, robot_state_lock_, robot_state_, duration,
-		log, use_stiff_damp_online_calc);
-
+		log, file, use_stiff_damp_online_calc);
+	
 	motion_generator.set_rotational_stiffness(rotational_stiffness);
 	motion_generator.set_translational_stiffness(translational_stiffness);
 
@@ -292,13 +296,14 @@ void franka_hardware_controller::cartesian_impedance_hold_pose(const double dura
 
 void franka_hardware_controller::cartesian_impedance_poses(const std::list<std::array<double, 16>>& poses,
                                                            const double duration, const bool log,
+	                                                       std::string file,
                                                            const bool use_stiff_damp_online_calc,
                                                            const double rotational_stiffness,
                                                            const double translational_stiffness)
 {
 	detail::cartesian_impedance_motion_generator motion_generator(
 		robot_, robot_state_lock_, robot_state_, poses, 
-		duration, log, use_stiff_damp_online_calc);
+		duration, log, file, use_stiff_damp_online_calc);
 
 	motion_generator.set_rotational_stiffness(rotational_stiffness);
 	motion_generator.set_translational_stiffness(translational_stiffness);
@@ -373,6 +378,9 @@ void franka_hardware_controller::run_payload_estimation(double speed, double dur
 
 void franka_hardware_controller::move_to(const robot_config_7dof& target)
 {
+	if (!franka_control::franka_util::is_reachable(franka_control::robot_config_7dof(target.data()))) {
+		throw franka::InvalidOperationException("Target is not reachable.");
+	}
 	set_default_impedance_and_collision_parameters();
 
 	detail::franka_joint_motion_generator motion_generator

@@ -12,13 +12,14 @@
 
 #include <vector>
 #include <iostream>
-#include <fstream>
 
 #include <Eigen/Core>
 #include <Eigen/Dense>
 
 #include <franka/robot.h>
 #include <franka/model.h>
+
+#include "logging/logger.hpp"
 
 
 
@@ -51,6 +52,7 @@ namespace franka_proxy
 				franka::RobotState& robot_state,
 				double duration,
 				bool logging,
+				std::string& file,
 				bool use_online_parameter_calc);
 
 			cartesian_impedance_motion_generator
@@ -60,6 +62,7 @@ namespace franka_proxy
 				std::list<std::array<double, 16>> poses,
 				double duration,
 				bool logging,
+				std::string& file,
 				bool use_online_parameter_calc);
 
 			franka::Torques callback
@@ -81,9 +84,7 @@ namespace franka_proxy
 			void init_impedance_motion_generator(franka::Robot& robot, std::mutex& state_lock, franka::RobotState& robot_state);
 			double optimizeDamping(double l_di, double u_di, double mi, double bi, double x0i_max, double derived_x0i_max);
 			double calculate_stiffness_from_damping(double di, double mi);
-			void log(Eigen::Matrix<double, 6, 1> f_ext, Eigen::Matrix<double, 6, 1> acceleration, Eigen::Matrix<double, 6, 1> velocity);
-			void log_pos_error(Eigen::Vector3d position_d, Eigen::Quaterniond orientation_d, Eigen::Vector3d position, Eigen::Quaterniond orientation);
-
+			
 			franka::Model model_;
 
 			std::mutex& state_lock_;
@@ -128,11 +129,13 @@ namespace franka_proxy
 
 			// csv logging
 			bool logging_;
-			std::ofstream csv_log_1_;
-			std::string csv_header1_ = "time; f_ext x; f_ext y; f_ext z; f_ext r_x; f_ext r_y; f_ext r_z; s1; s2; s3; s4; s5; s6; d1; d2; d3; d4; d5; d6";
-			std::ofstream csv_log_2_;
-			std::string csv_header2_ = "time; position_d x; position_d y; position_d z; rotation_d x; rotation_d y; rotation_d z; position x; position y; position z; rotation x; rotation y; rotation z ";
-			std::ofstream acc_vel_log_;
+			logging::logger logger_;
+			std::vector<std::string> f_head = { "f_ext_x", "f_ext_y", "f_ext_z", "f_ext_r_x", "f_ext_r_y", "f_ext_r_z",
+					"s1", "s2", "s3", "s4", "s5", "s6", "d1", "d2", "d3", "d4", "d5", "d6" };
+			std::vector<std::string> s_head = { "time" };
+			std::vector<std::string> c_head = { "position_d_x", "position_d_y", "position_d_z", "rotation_d_x", "rotation_d_y", "rotation_d_z",
+					"position_x", "position_y", "position_z", "rotation_x", "rotation_y", "rotation_z",
+					"acc_1", "acc_2", "acc_3", "acc_4", "acc_5", "acc_6", "vel_1", "vel_2", "vel_3", "vel_4", "vel_5", "vel_6"};
 		};
 	} /* namespace detail */
 } /* namespace franka_proxy */

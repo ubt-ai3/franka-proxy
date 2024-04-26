@@ -40,6 +40,7 @@ namespace franka_proxy
 			franka::RobotState& robot_state,
 			double duration,
 			bool logging,
+			std::string& file,
 			bool use_online_parameter_calc)
 			:
 			model_(robot.loadModel()),
@@ -47,7 +48,8 @@ namespace franka_proxy
 			state_(robot_state),
 			duration_(duration),
 			online_parameter_calc_(use_online_parameter_calc),
-			logging_(logging)
+			logging_(logging),
+			logger_(file,0,4,3,1,0)
 		{
 			init_impedance_motion_generator(robot, state_lock, robot_state);
 
@@ -55,11 +57,7 @@ namespace franka_proxy
 
 			if (logging_) {
 				// start logging to csv file
-				csv_log_1_.open("cartesian_impedance_log_1.csv");
-				csv_log_1_ << csv_header1_ << "\n";
-				csv_log_2_.open("cartesian_impedance_log_2.csv");
-				csv_log_2_ << csv_header2_ << "\n";
-				acc_vel_log_.open("imp_acc_vel.csv");
+				logger_.start_logging(nullptr, &c_head, &f_head, &s_head, nullptr);
 			}
 		};
 
@@ -70,6 +68,7 @@ namespace franka_proxy
 			std::list<std::array<double, 16>> poses,
 			double duration,
 			bool logging,
+			std::string& file,
 			bool use_online_parameter_calc)
 			:
 			model_(robot.loadModel()),
@@ -78,7 +77,8 @@ namespace franka_proxy
 			duration_(duration),
 			poses_(poses),
 			online_parameter_calc_(use_online_parameter_calc),
-			logging_(logging)
+			logging_(logging),
+			logger_(file, 0, 4, 3, 1, 0)
 		{
 			init_impedance_motion_generator(robot, state_lock, robot_state);
 
@@ -91,11 +91,7 @@ namespace franka_proxy
 
 			if (logging_) {
 				// start logging to csv file
-				csv_log_1_.open("cartesian_impedance_log_1.csv");
-				csv_log_1_ << csv_header1_ << "\n";
-				csv_log_2_.open("cartesian_impedance_log_2.csv");
-				csv_log_2_ << csv_header2_ << "\n";
-				acc_vel_log_.open("imp_acc_vel.csv");
+				logger_.start_logging(nullptr, &c_head, &f_head, &s_head, nullptr);
 			}
 		}
 
@@ -144,9 +140,7 @@ namespace franka_proxy
 
 				if (logging_) {
 					// close log file
-					csv_log_1_.close();
-					csv_log_2_.close();
-					acc_vel_log_.close();
+					logger_.stop_logging();
 				}
 
 				return current_torques;
@@ -287,7 +281,12 @@ namespace franka_proxy
 
 			if (logging_) {
 				// log to csv
-				log(f_ext, acceleration, velocity);
+				logger_.add_ft_data(f_ext);
+				logger_.add_ft_data(stiffness_matrix_(0, 0), stiffness_matrix_(1, 1), stiffness_matrix_(2, 2), stiffness_matrix_(3, 3), stiffness_matrix_(4, 4), stiffness_matrix_(5, 5));
+				logger_.add_ft_data(damping_matrix_(0, 0), damping_matrix_(1, 1), damping_matrix_(2, 2), damping_matrix_(3, 3), damping_matrix_(4, 4), damping_matrix_(5, 5));
+				logger_.add_cart_data(acceleration);
+				logger_.add_cart_data(velocity);
+				logger_.log();
 			}
 
 			return tau_d_ar;
@@ -335,7 +334,11 @@ namespace franka_proxy
 			position_error.tail(3) << -po_transform.linear() * position_error.tail(3);
 
 			if (logging_) {
-				log_pos_error(position_d, orientation_d, position, orientation);
+				Eigen::VectorXd d, c;
+				d << position_d, orientation_d;
+				c << position, orientation;
+				logger_.add_cart_data(d);
+				logger_.add_cart_data(c);
 			}
 
 			return position_error;
@@ -405,39 +408,6 @@ namespace franka_proxy
 		double cartesian_impedance_motion_generator::get_translational_stiffness() {
 			return translational_stiffness_;
 		}
-
-		void cartesian_impedance_motion_generator::log(Eigen::Matrix<double, 6, 1> f_ext, Eigen::Matrix<double, 6, 1> acceleration, Eigen::Matrix<double, 6, 1> velocity) {
-			std::ostringstream f_ext_log;
-			f_ext_log << f_ext(0) << "; " << f_ext(1) << "; " << f_ext(2) << "; " << f_ext(3) << "; " << f_ext(4) << "; " << f_ext(5);
-			std::ostringstream stiffness_matrix_log;
-			stiffness_matrix_log << stiffness_matrix_(0, 0) << "; " << stiffness_matrix_(1, 1) << "; " << stiffness_matrix_(2, 2) << "; " << stiffness_matrix_(3, 3) << "; " << stiffness_matrix_(4, 4) << "; " << stiffness_matrix_(5, 5);
-			std::ostringstream damping_matrix_log;
-			damping_matrix_log << damping_matrix_(0, 0) << "; " << damping_matrix_(1, 1) << "; " << damping_matrix_(2, 2) << "; " << damping_matrix_(3, 3) << "; " << damping_matrix_(4, 4) << "; " << damping_matrix_(5, 5);
-
-			std::ostringstream current_values;
-			current_values << time_ << "; " << f_ext_log.str() << "; " << stiffness_matrix_log.str() << "; " << damping_matrix_log.str();
-
-			csv_log_1_ << current_values.str() << "\n";
-
-			std::ostringstream acc_vel_values;
-			acc_vel_values << acceleration(1) << "; " << acceleration(2) << "; " << acceleration(3) << "; " << acceleration(4) << "; " << acceleration(5) << "; " << acceleration(6) << "; " << "; " << velocity(1) << "; " << velocity(2) << "; " << velocity(3) << "; " << velocity(4) << "; " << velocity(5) << "; " << velocity(6);
-
-			acc_vel_log_ << time_ << "; " << "; " << acc_vel_values.str() << "\n";
-		}
-
-		void cartesian_impedance_motion_generator::log_pos_error(Eigen::Vector3d position_d, Eigen::Quaterniond orientation_d, Eigen::Vector3d position, Eigen::Quaterniond orientation) {
-			std::ostringstream position_d_log;
-			std::ostringstream position_log;
-
-			position_d_log << position_d.x() << "; " << position_d.y() << "; " << position_d.z() << "; " << orientation_d.x() << "; " << orientation_d.y() << "; " << orientation_d.z();
-			position_log << position.x() << "; " << position.y() << "; " << position.z() << "; " << orientation.x() << "; " << orientation.y() << "; " << orientation.z();
-
-			std::ostringstream current_values;
-			current_values << time_ << "; " << position_d_log.str() << "; " << position_log.str();
-
-			csv_log_2_ << current_values.str() << "\n";
-		}
-
 
 	} /* namespace detail */
 } /* namespace franka_proxy */

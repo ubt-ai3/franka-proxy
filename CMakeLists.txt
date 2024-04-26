@@ -92,6 +92,7 @@ target_link_libraries(
         Threads::Threads
 		Franka::Franka
 		franka_proxy_share
+        franka_control
 )
 
 target_compile_definitions(

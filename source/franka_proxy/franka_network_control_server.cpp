@@ -280,7 +280,7 @@ command_generic_response franka_control_server::process_command
 command_generic_response franka_control_server::process_command
 (const command_apply_admittance_adm_imp_desired_stiffness& cmd)
 {
-	controller_.apply_admittance(cmd.duration, cmd.log, cmd.adm_rotational_stiffness, cmd.adm_translational_stiffness,
+	controller_.apply_admittance(cmd.duration, cmd.log, cmd.file, cmd.adm_rotational_stiffness, cmd.adm_translational_stiffness,
 	                             cmd.imp_rotational_stiffness, cmd.imp_translational_stiffness);
 	return command_result::success;
 }
@@ -289,7 +289,7 @@ command_generic_response franka_control_server::process_command
 command_generic_response franka_control_server::process_command
 (const command_cartesian_impedance_hold_pose_desired_stiffness& cmd)
 {
-	controller_.cartesian_impedance_hold_pose(cmd.duration, cmd.log, cmd.use_stiff_damp_online_calc,
+	controller_.cartesian_impedance_hold_pose(cmd.duration, cmd.log, cmd.file, cmd.use_stiff_damp_online_calc,
 	                                          cmd.rotational_stiffness, cmd.translational_stiffness);
 	return command_result::success;
 }
@@ -298,7 +298,7 @@ command_generic_response franka_control_server::process_command
 command_generic_response franka_control_server::process_command
 (const command_cartesian_impedance_poses_desired_stiffness& cmd)
 {
-	controller_.cartesian_impedance_poses(cmd.poses, cmd.duration, cmd.log, cmd.use_stiff_damp_online_calc,
+	controller_.cartesian_impedance_poses(cmd.poses, cmd.duration, cmd.log, cmd.file, cmd.use_stiff_damp_online_calc,
 	                                      cmd.rotational_stiffness, cmd.translational_stiffness);
 	return command_result::success;
 }
@@ -307,14 +307,14 @@ command_generic_response franka_control_server::process_command
 command_generic_response franka_control_server::process_command
 (const command_joint_impedance_hold_position_desired_stiffness& cmd)
 {
-	controller_.joint_impedance_hold_position(cmd.duration, cmd.log, cmd.stiffness);
+	controller_.joint_impedance_hold_position(cmd.duration, cmd.log, cmd.file, cmd.stiffness);
 	return command_result::success;
 }
 
 command_generic_response franka_control_server::process_command
 (const command_joint_impedance_positions_desired_stiffness& cmd)
 {
-	controller_.joint_impedance_positions(cmd.joint_positions, cmd.duration, cmd.log, cmd.stiffness);
+	controller_.joint_impedance_positions(cmd.joint_positions, cmd.duration, cmd.log, cmd.file, cmd.stiffness);
 	return command_result::success;
 }
 

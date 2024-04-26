@@ -69,12 +69,12 @@ void franka_remote_interface::move_sequence(
 
 
 void franka_remote_interface::apply_admittance(
-	double duration, bool log, double adm_rotational_stiffness,
+	double duration, bool log, std::string& file, double adm_rotational_stiffness,
 	double adm_translational_stiffness, double imp_rotational_stiffness,
 	double imp_translational_stiffness)
 {
 	send_command<command_apply_admittance_adm_imp_desired_stiffness>(
-		duration, log, adm_rotational_stiffness,
+		duration, log, file, adm_rotational_stiffness,
 		adm_translational_stiffness,
 		imp_rotational_stiffness,
 		imp_translational_stiffness);
@@ -83,6 +83,7 @@ void franka_remote_interface::apply_admittance(
 void franka_remote_interface::cartesian_impedance_hold_pose(
 	double duration,
 	bool log,
+	std::string& file,
 	bool use_stiff_damp_online_calc,
 	double rotational_stiffness,
 	double translational_stiffness)
@@ -90,6 +91,7 @@ void franka_remote_interface::cartesian_impedance_hold_pose(
 	send_command<command_cartesian_impedance_hold_pose_desired_stiffness>(
 		duration,
 		log,
+		file,
 		use_stiff_damp_online_calc,
 		rotational_stiffness,
 		translational_stiffness);
@@ -100,6 +102,7 @@ void franka_remote_interface::cartesian_impedance_poses(
 	std::list<std::array<double, 16>>& poses,
 	double duration,
 	bool log,
+	std::string& file,
 	bool use_stiff_damp_online_calc,
 	double rotational_stiffness,
 	double translational_stiffness)
@@ -108,6 +111,7 @@ void franka_remote_interface::cartesian_impedance_poses(
 		poses,
 		duration,
 		log,
+		file,
 		use_stiff_damp_online_calc,
 		rotational_stiffness,
 		translational_stiffness);
@@ -116,20 +120,22 @@ void franka_remote_interface::cartesian_impedance_poses(
 void franka_remote_interface::joint_impedance_hold_position(
 	double duration,
 	bool log,
+	std::string file,
 	std::array<double, 49> stiffness)
 {
 	send_command<command_joint_impedance_hold_position_desired_stiffness>(
-		duration, log, stiffness);
+		duration, log, file, stiffness);
 }
 
 void franka_remote_interface::joint_impedance_positions(
 	std::list<std::array<double, 7>>& joint_positions,
 	double duration,
 	bool log,
+	std::string file,
 	std::array<double, 49> stiffness)
 {
 	send_command<command_joint_impedance_positions_desired_stiffness>(
-		joint_positions, duration, log, stiffness);
+		joint_positions, duration, log, file, stiffness);
 }
 
 void franka_remote_interface::ple_motion(double speed, double duration, bool log, std::string file)

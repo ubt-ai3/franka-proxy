@@ -97,7 +97,7 @@ namespace logging
 
 
 		/**
-		* Clears all internal storage for joint, cartesian, force-torque, single-valued and arbitrary data
+		* Clears all internal storage for joint, cartesian, force-torque, single-valued and arbitrary data.
 		**/
 		void clear_all();
 

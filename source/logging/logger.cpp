@@ -51,7 +51,7 @@ namespace logging
 		}
 		if (num_cart_data_ && (cart_data_header->size() / 6) != num_cart_data_ && (cart_data_header->size() % 6) != 0) {
 			bad = true;
-			baddies.append(" velocities_accelerations");
+			baddies.append(" cartesian");
 		}
 		if (num_ft_data_ && (ft_data_header->size() / 6) != num_ft_data_ && (ft_data_header->size() % 6) != 0) {
 			bad = true;
@@ -59,7 +59,7 @@ namespace logging
 		}
 		if (num_single_ && single_header->size() != num_single_) {
 			bad = true;
-			baddies.append(" timestamps");
+			baddies.append(" single_values");
 		}
 		if (size_arbitrary_ && arbitrary_header->size() != size_arbitrary_) {
 			bad = true;
@@ -178,7 +178,7 @@ namespace logging
 		}
 		if (num_single_ && single_data_.size() > num_single_) {
 			over = true;
-			excess.append(" timestamps");
+			excess.append(" single_values");
 		}
 		if (size_arbitrary_ && arbitrary_data_.size() > size_arbitrary_) {
 			over = true;
@@ -208,7 +208,7 @@ namespace logging
 		if (num_single_ && single_data_.size() < num_single_) {
 			t_pad = num_single_ - single_data_.size();
 			miss = true;
-			misses.append(" timestamps");
+			misses.append(" single_values");
 		}
 		if (size_arbitrary_ && arbitrary_data_.size() < size_arbitrary_) {
 			a_pad = size_arbitrary_ - arbitrary_data_.size();

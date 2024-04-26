@@ -119,6 +119,7 @@ struct command_apply_admittance_adm_imp_desired_stiffness
 
 	double duration;
 	bool log;
+	std::string file;
 	double adm_rotational_stiffness;
 	double adm_translational_stiffness;
 	double imp_rotational_stiffness;
@@ -146,6 +147,7 @@ struct command_cartesian_impedance_hold_pose_desired_stiffness
 
 	double duration;
 	bool log;
+	std::string file;
 	bool use_stiff_damp_online_calc;
 	double rotational_stiffness;
 	double translational_stiffness;
@@ -176,6 +178,7 @@ struct command_cartesian_impedance_poses_desired_stiffness
 	std::list<std::array<double, 16>> poses;
 	double duration;
 	bool log;
+	std::string file;
 	bool use_stiff_damp_online_calc;
 	double rotational_stiffness;
 	double translational_stiffness;
@@ -204,6 +207,7 @@ struct command_joint_impedance_hold_position_desired_stiffness
 
 	double duration;
 	bool log;
+	std::string file;
 	std::array<double,  49> stiffness;
 };
 
@@ -231,6 +235,7 @@ struct command_joint_impedance_positions_desired_stiffness
 	std::list<std::array<double, 7>> joint_positions;
 	double duration;
 	bool log;
+	std::string file;
 	std::array<double, 49> stiffness;
 };
 

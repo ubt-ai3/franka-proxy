@@ -127,7 +127,7 @@ public:
 	 * rotational and translational stiffness parameters.
 	 */
 	void apply_admittance(
-		double duration, bool log, double adm_rotational_stiffness,
+		double duration, bool log, std::string file, double adm_rotational_stiffness,
 		double adm_translational_stiffness, double imp_rotational_stiffness,
 		double imp_translational_stiffness);
 	/**
@@ -135,14 +135,14 @@ public:
 	 * using desired rotational and translational stiffness parameter.
 	 */
 	void cartesian_impedance_hold_pose(
-		double duration, bool log, bool use_stiff_damp_online_calc,
+		double duration, bool log, std::string file, bool use_stiff_damp_online_calc,
 		double rotational_stiffness, double translational_stiffness);
 	/**
 	 * Cartesian impedacne controller to hold multiple poses resp. to follow path of multiple poses
 	 * using desired rotational and translational stiffness parameter.
 	*/
 	void cartesian_impedance_poses(
-		const std::list<std::array<double, 16>>& poses, double duration, bool log,
+		const std::list<std::array<double, 16>>& poses, double duration, bool log, std::string file,
 		bool use_stiff_damp_online_calc, double rotational_stiffness,
 		double translational_stiffness);
 	/**
@@ -150,14 +150,14 @@ public:
 	 * using desired stiffness matrix parameter.
 	 */
 	void joint_impedance_hold_position(
-		double duration, bool log, std::array<double, 49> stiffness);
+		double duration, bool log, std::string file, std::array<double, 49> stiffness);
 	/**
 	 * Joint space impedacne controller to hold multiple joint positions resp.
 	 * to follow path of multiple joint positions using desired stiffness matrix parameter.
 	*/
 	void joint_impedance_positions(
 		const std::list<std::array<double, 7>>& joint_positions, double duration,
-		bool log, std::array<double, 49> stiffness);
+		bool log, std::string file, std::array<double, 49> stiffness);
 
 	/**
 	 *  Runs the pre-defined motion for payload estimation
