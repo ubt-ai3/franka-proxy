@@ -10,6 +10,10 @@
 
 #include <logging/logger.hpp>
 
+#include <franka/exception.h>
+
+#include "franka_control/franka_util.hpp" //for testing stuff only
+
 // use this to specify which test to run within the franka_proxy_client_test method
 // for new tests, add a new, distinct and sensible entry here, a new subparser to the main method,
 // and a new case to franka_proxy_client_test
@@ -30,6 +34,48 @@ void gripper_test(franka_proxy::franka_remote_interface& robot, double margin, b
 void playback_test(franka_proxy::franka_remote_interface& robot, bool log, std::string& file);
 
 
+//for testing stuff only
+void quick() {
+	constexpr franka_proxy::robot_config_7dof pos0
+	{ 0.0346044, -0.0666144, -0.0398886, -2.04985, -0.0229875, 1.99782, 0.778461 };
+
+	std::array<double, 16> pose = {
+			0.321529, 0.8236, 0.467208, 0,
+			0.931889, -0.187754, -0.310343, 0,
+			-0.167882, 0.53518, -0.827888, 0,
+			0.426976, 0.382873, 0.324984, 1
+	};
+
+	franka_control::robot_config_7dof in(pos0.data());
+
+	Eigen::Affine3d tgt;
+	tgt(0, 0) = 0.321529;
+	tgt(0, 1) = 0.8236;
+	tgt(0, 2) = 0.467208;
+	tgt(0, 3) = 0.0;
+	tgt(1, 0) = 0.931889;
+	tgt(1, 1) = -0.187754;
+	tgt(1, 2) = -0.310343;
+	tgt(1, 3) = 0.0;
+	tgt(2, 0) = -0.167882;
+	tgt(2, 1) = 0.53518;
+	tgt(2, 2) = -0.827888;
+	tgt(2, 3) = 0.0;
+	tgt(3, 0) = 0.426976;
+	tgt(3, 1) = 0.382873;
+	tgt(3, 2) = 0.324984;
+	tgt(3, 3) = 1.0;
+
+	auto start = franka_control::franka_util::ik_fast_closest(tgt, in);
+
+	std::string file = "pose.csv";
+	logging::logger log(file, 1, 0, 0, 0, 0);
+	std::vector<std::string> head = { "j0", "j1", "j2", "j3", "j4", "j5", "j6" };
+	log.start_logging(&head, nullptr, nullptr, nullptr, nullptr);
+	log.add_joint_data(start);
+	log.log();
+	log.stop_logging();
+}
 
 // todo: fix jerking while applying force
 [[deprecated("Revise test code before execution on real robot!")]]
@@ -183,7 +229,7 @@ int main(int argc, char* argv[])
 		params.push_back(file);
 	}
 	else if (program.is_subcommand_used(ermer_test)) {
-		//test = mode::ermer;
+		test = mode::ermer;
 	}
 
 
@@ -490,14 +536,20 @@ void ptp_test(franka_proxy::franka_remote_interface& robot, double margin, bool 
 	try {
 		robot.move_to(unreachable_pos);
 	}
-	catch (franka_proxy::invalid_operation_exception e) {
+	catch (franka::InvalidOperationException e) { //this is thrown by hardware controller
 		std::cout << e.what() << std::endl;
 		std::cout << "Pose 4 of 4 successfully identified as unreachable." << std::endl;
 	}
-	catch (franka_proxy::exception e) {
-		std::cout << "An exception occured while attempting to reach and unreachable pose." << std::endl;
-		std::cout << e.what() << std::endl;
-		std::cout << typeid(e).name() << std::endl;
+	catch (franka_proxy::exception f) { //this is caught
+		std::cout << "A franka exception ocurred (not related to pose 4 of 4 being unreachable)." << std::endl;
+		std::cout << f.what() << std::endl;
+		std::cout << typeid(f).name() << std::endl;
+		std::cout << "Pose 4 not identified as unreachable. Test failed." << std::endl;
+	}
+	catch (std::exception g) {
+		std::cout << "A general exception occured (not related to pose 4 of 4 being unreachable)." << std::endl;
+		std::cout << g.what() << std::endl;
+		std::cout << typeid(g).name() << std::endl;
 		std::cout << "Pose 4 not identified as unreachable. Test failed." << std::endl;
 	}
 
@@ -550,6 +602,17 @@ void force_test(franka_proxy::franka_remote_interface& robot)
 
 void impedance_admittance_ermer_ba_tests(franka_proxy::franka_remote_interface& robot)
 {
+
+	//for testing, a starting config generated using ik_fast_closest, with the first pose from below list and the starting config for ple (c.f. quick() for implemetation)
+	//seems like we might need new poses for this
+	std::cout << "heading to start pos" << std::endl;
+
+	franka_proxy::robot_config_7dof pos = { 0.257578,1.28263,-0.0258896,-2.75407,-2.72277,1.80384,1.9178 };
+	robot.set_speed_factor(0.1);
+	robot.move_to(pos);
+
+	return;
+
 	std::cout << "Starting Impedance - Hold Position Test." << std::endl;
 	std::string file = "ermer_joint_impedance_hold.csv";
 

@@ -187,6 +187,8 @@ target_link_libraries(
         Threads::Threads
 		franka_proxy_share
 		franka_proxy_client
+
+        franka_control # for testing stuff only
 )
 
 target_compile_definitions(
