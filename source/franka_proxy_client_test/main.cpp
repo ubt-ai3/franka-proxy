@@ -10,8 +10,8 @@
 
 #include <logging/logger.hpp>
 
-#include <franka/exception.h>
 
+#include <franka/exception.h> //this can be removed when changin exception handling in ptp test
 #include "franka_control/franka_util.hpp" //for testing stuff only
 
 // use this to specify which test to run within the franka_proxy_client_test method
@@ -216,7 +216,7 @@ int main(int argc, char* argv[])
 		params.push_back(file);
 	}
 	else if (program.is_subcommand_used(force_test)) {
-		//test = mode::force;
+		test = mode::force;
 	}
 	else if (program.is_subcommand_used(playback_test)) {
 		test = mode::playback;
@@ -463,6 +463,8 @@ void ptp_test(franka_proxy::franka_remote_interface& robot, double margin, bool 
 	// (where check should be performed in either constructor or at time step 0.0),
 	// robot itself apparently also does not check against joint angle limits, only NaN and INF.
 	// UPDATE: Should now throw invalid op with appropriate msg. Untested. PLi
+
+	//move test for reachability into mo gen, move joint limits and stuff from franka util into proxy share (as "geometry util" or sth) and then ref in util (to make eigen mat)
 	constexpr franka_proxy::robot_config_7dof unreachable_pos
 		{1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0};
 
@@ -532,21 +534,21 @@ void ptp_test(franka_proxy::franka_remote_interface& robot, double margin, bool 
 		logger.log();
 	}
 
-
+	//all exceptions go through net_con_server first, "conversion" happens there
 	try {
 		robot.move_to(unreachable_pos);
 	}
-	catch (franka::InvalidOperationException e) { //this is thrown by hardware controller
+	catch (franka::InvalidOperationException& e) { //this is thrown by hardware controller
 		std::cout << e.what() << std::endl;
 		std::cout << "Pose 4 of 4 successfully identified as unreachable." << std::endl;
 	}
-	catch (franka_proxy::exception f) { //this is caught
+	catch (franka_proxy::exception& f) { //this is caught
 		std::cout << "A franka exception ocurred (not related to pose 4 of 4 being unreachable)." << std::endl;
 		std::cout << f.what() << std::endl;
 		std::cout << typeid(f).name() << std::endl;
 		std::cout << "Pose 4 not identified as unreachable. Test failed." << std::endl;
 	}
-	catch (std::exception g) {
+	catch (std::exception& g) {
 		std::cout << "A general exception occured (not related to pose 4 of 4 being unreachable)." << std::endl;
 		std::cout << g.what() << std::endl;
 		std::cout << typeid(g).name() << std::endl;
@@ -583,13 +585,16 @@ void force_test(franka_proxy::franka_remote_interface& robot)
 		std::cout << e.what() << std::endl;
 	}
 
+	std::this_thread::sleep_for(std::chrono::seconds(5));
+
 	// TODO: robot jerks left or right and slowly moves upward - INVESTIGATE
-	// STATUS: ongoing, perhaps an error in mo_gen_force callback
+	// STATUS: seems to be related to moving into contact, applying force when not in contact works
+	// either reduce threshold for contact or move up a bit before pressing down (can be done by slightly rotating joints 4 and 6 - the "grey ones")
 	try {
-		robot.apply_z_force(0.0, 5.0);
-		robot.apply_z_force(0.2, 5.0);
+		robot.apply_z_force(0.5, 15.0);
+		//robot.apply_z_force(0.2, 5.0);
 	}
-	catch (franka_proxy::remote_exception e) {
+	catch (franka_proxy::remote_exception& e) {
 		std::cout << e.what() << std::endl;
 	}
 

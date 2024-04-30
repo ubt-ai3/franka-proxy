@@ -378,6 +378,7 @@ void franka_hardware_controller::run_payload_estimation(double speed, double dur
 
 void franka_hardware_controller::move_to(const robot_config_7dof& target)
 {
+	//move this into mo gen
 	if (!franka_control::franka_util::is_reachable(franka_control::robot_config_7dof(target.data()))) {
 		throw franka::InvalidOperationException("Target is not reachable.");
 	}
