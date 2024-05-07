@@ -32,6 +32,7 @@ void ple_motion_record_test(franka_proxy::franka_remote_interface& robot, double
 void ptp_test(franka_proxy::franka_remote_interface& robot, double margin, bool log, std::string& file);
 void gripper_test(franka_proxy::franka_remote_interface& robot, double margin, bool grasp);
 void playback_test(franka_proxy::franka_remote_interface& robot, bool log, std::string& file);
+void force_test(franka_proxy::franka_remote_interface& robot);
 
 
 //for testing stuff only
@@ -77,9 +78,7 @@ void quick() {
 	log.stop_logging();
 }
 
-// todo: fix jerking while applying force
-[[deprecated("Revise test code before execution on real robot!")]]
-void force_test(franka_proxy::franka_remote_interface& robot);
+
 // todo: untested since bachelor thesis d. ermer; handle with care.
 [[deprecated("Revise test code before execution on real robot!")]]
 void impedance_admittance_ermer_ba_tests(franka_proxy::franka_remote_interface& robot);
@@ -585,14 +584,15 @@ void force_test(franka_proxy::franka_remote_interface& robot)
 		std::cout << e.what() << std::endl;
 	}
 
+	//move out of contact again to prevent robot from jerking left/right
+	franka_proxy::robot_config_7dof contact = robot.current_config();
+	franka_proxy::robot_config_7dof relax{ contact[0], (contact[1] - 0.01), contact[2], contact[3], contact[4], (contact[5] - 0.01), contact[6] };
+	execute_retry([&] { robot.move_to(relax); }, robot);
+
 	std::this_thread::sleep_for(std::chrono::seconds(5));
 
-	// TODO: robot jerks left or right and slowly moves upward - INVESTIGATE
-	// STATUS: seems to be related to moving into contact, applying force when not in contact works
-	// either reduce threshold for contact or move up a bit before pressing down (can be done by slightly rotating joints 4 and 6 - the "grey ones")
 	try {
-		robot.apply_z_force(0.5, 15.0);
-		//robot.apply_z_force(0.2, 5.0);
+		robot.apply_z_force(0.5, 10.0);
 	}
 	catch (franka_proxy::remote_exception& e) {
 		std::cout << e.what() << std::endl;
