@@ -68,6 +68,12 @@ template <typename TFunctor, typename... TArgs> nlohmann::json execute_safe(TFun
 			std::endl;
 		return command_generic_response{command_result::incompatible_version, exc.what()};
 	}
+	catch (const franka::InvalidOperationException& exc)
+	{
+		std::cout << "franka_control_server::receive_requests(): " << "Encountered invalid oparation exception." <<
+			std::endl;
+		return command_generic_response{ command_result::invalid_operation, exc.what() };
+	}
 	catch (const franka::Exception& exc)
 	{
 		std::cout << "franka_control_server::receive_requests(): " << "Encountered generic franka exception." <<

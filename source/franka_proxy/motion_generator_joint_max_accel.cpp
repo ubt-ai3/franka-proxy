@@ -15,6 +15,10 @@
 
 #include <franka/model.h>
 
+#include <franka/exception.h>
+
+#include "franka_proxy_share/franka_proxy_util.hpp"
+
 
 namespace franka_proxy
 {
@@ -203,6 +207,10 @@ franka::JointPositions franka_joint_motion_generator::operator()
 
 	if (time_ == 0.0) //the first invocation of the callback function
 	{
+		if (!franka_proxy_util::is_reachable(q_goal_)) {
+			throw franka::InvalidOperationException("Target is not reachable");
+		}
+
 		q_start_ = Vector7d(robot_state.q_d.data());
 		delta_q_ = q_goal_ - q_start_;
 		calculateSynchronizedValues();

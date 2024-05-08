@@ -16,17 +16,14 @@
 
 #include "franka_controller.hpp"
 
+#include "franka_proxy_share/franka_proxy_util.hpp"
+
 
 namespace franka_control
 {
-struct joint_limit
-{
-	joint_limit(double min, double max);
 
-	double min;
-	double max;
-};
-
+	using joint_limit = franka_proxy::joint_limit;
+	using robot_config_7dof = Eigen::Matrix<double, 7, 1>;
 
 /**
  *************************************************************************
@@ -38,6 +35,7 @@ struct joint_limit
  ************************************************************************/
 class franka_util
 {
+
 public:
 	static std::vector<joint_limit> joint_limits();
 	static robot_config_7dof max_speed_per_joint();

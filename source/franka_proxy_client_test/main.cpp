@@ -32,7 +32,7 @@ void ple_motion_record_test(franka_proxy::franka_remote_interface& robot, double
 void ptp_test(franka_proxy::franka_remote_interface& robot, double margin, bool log, std::string& file);
 void gripper_test(franka_proxy::franka_remote_interface& robot, double margin, bool grasp);
 void playback_test(franka_proxy::franka_remote_interface& robot, bool log, std::string& file);
-void force_test(franka_proxy::franka_remote_interface& robot);
+void force_test(franka_proxy::franka_remote_interface& robot, double mass, double duration);
 
 
 //for testing stuff only
@@ -106,10 +106,10 @@ int main(int argc, char* argv[])
 	// subparsers for individual tests
 	argparse::ArgumentParser ple_test("ple");
 	ple_test.add_argument("speed")
-		.help("specify speed for ple motion")
+		.help("specify speed factor for ple motion")
 		.default_value("0.3");
 	ple_test.add_argument("-d", "-duration")
-		.help("specify duration for ple motion")
+		.help("specify duration (sec) for ple motion")
 		.default_value("10.0");
 	ple_test.add_parents(base);
 
@@ -132,7 +132,13 @@ int main(int argc, char* argv[])
 
 
 	argparse::ArgumentParser force_test("force");
-	//has no further arguments and logs nothing
+	force_test.add_argument("-m")
+		.help("specify mass (kg) with which to press downward")
+		.default_value("0.5");
+	force_test.add_argument("-d")
+		.help("specify duration (sec) for which to press downward")
+		.default_value("10.0");
+	//logs nothing
 
 
 	argparse::ArgumentParser playback_test("playback");
@@ -216,6 +222,8 @@ int main(int argc, char* argv[])
 	}
 	else if (program.is_subcommand_used(force_test)) {
 		test = mode::force;
+		std::string mass = force_test.get<std::string>("-m");
+		std::string duration = force_test.get<std::string>("-d");
 	}
 	else if (program.is_subcommand_used(playback_test)) {
 		test = mode::playback;
@@ -297,7 +305,9 @@ void franka_proxy_client_test(const std::string& ip, mode test, std::vector<std:
 		ptp_test(*robot, margin, log, file);
 	}
 	else if (test == mode::force) {
-		force_test(*robot);
+		double mass = stod(params[0]);
+		double duration = stod(params[1]);
+		force_test(*robot, mass, duration);
 	}
 	else if (test == mode::playback) {
 		bool log = (params[0] == "true");
@@ -464,6 +474,7 @@ void ptp_test(franka_proxy::franka_remote_interface& robot, double margin, bool 
 	// UPDATE: Should now throw invalid op with appropriate msg. Untested. PLi
 
 	//move test for reachability into mo gen, move joint limits and stuff from franka util into proxy share (as "geometry util" or sth) and then ref in util (to make eigen mat)
+	//should all be moved and done now. PLi
 	constexpr franka_proxy::robot_config_7dof unreachable_pos
 		{1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0};
 
@@ -533,15 +544,15 @@ void ptp_test(franka_proxy::franka_remote_interface& robot, double margin, bool 
 		logger.log();
 	}
 
-	//all exceptions go through net_con_server first, "conversion" happens there
+	//all exceptions go through net_con_server first, "conversion" happens there - should be good now. PLi
 	try {
 		robot.move_to(unreachable_pos);
 	}
-	catch (franka::InvalidOperationException& e) { //this is thrown by hardware controller
+	catch (franka_proxy::invalid_operation_exception& e) {
 		std::cout << e.what() << std::endl;
 		std::cout << "Pose 4 of 4 successfully identified as unreachable." << std::endl;
 	}
-	catch (franka_proxy::exception& f) { //this is caught
+	catch (franka_proxy::exception& f) {
 		std::cout << "A franka exception ocurred (not related to pose 4 of 4 being unreachable)." << std::endl;
 		std::cout << f.what() << std::endl;
 		std::cout << typeid(f).name() << std::endl;
@@ -561,7 +572,7 @@ void ptp_test(franka_proxy::franka_remote_interface& robot, double margin, bool 
 }
 
 
-void force_test(franka_proxy::franka_remote_interface& robot)
+void force_test(franka_proxy::franka_remote_interface& robot, double mass, double duration)
 {
 	std::cout << "Starting Force Test." << std::endl;
 
@@ -592,7 +603,7 @@ void force_test(franka_proxy::franka_remote_interface& robot)
 	std::this_thread::sleep_for(std::chrono::seconds(5));
 
 	try {
-		robot.apply_z_force(0.5, 10.0);
+		robot.apply_z_force(mass, duration);
 	}
 	catch (franka_proxy::remote_exception& e) {
 		std::cout << e.what() << std::endl;

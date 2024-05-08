@@ -37,6 +37,7 @@ target_sources(
 	franka_proxy_share
 	PRIVATE
 		${CMAKE_CURRENT_SOURCE_DIR}/source/franka_proxy_share/franka_proxy_commands.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/source/franka_proxy_share/franka_proxy_util.cpp
 )
 
 target_include_directories(
@@ -92,7 +93,6 @@ target_link_libraries(
         Threads::Threads
 		Franka::Franka
 		franka_proxy_share
-        franka_control
 )
 
 target_compile_definitions(
