@@ -39,6 +39,10 @@ namespace logging
 		std::vector<std::string>* single_header,
 		std::vector<std::string>* arbitrary_header)
 	{
+		//initial cleanup of leftover data (useful if restarting logging with the same logger object)
+		clear_all();
+		log_.clear();
+
 
 		//first, we check for inconsistencies with the header (bc these will mess up our log pretty badly and render it useless)
 		bool bad = false;
@@ -135,6 +139,7 @@ namespace logging
 
 		//finally, we can get to logging
 		log_ << header << "\n";
+		logged_ = false;
 	}
 
 
@@ -326,6 +331,7 @@ namespace logging
 
 	void logger::discard_log() {
 		log_.clear();
+		logged_ = true;
 	}
 
 

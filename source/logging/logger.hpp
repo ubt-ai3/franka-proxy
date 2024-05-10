@@ -60,7 +60,8 @@ namespace logging
 
 
 		/**
-		* Starts logging and writes the header into the internal buffer (NOT the target log file).
+		* Clears all internal storage, (re)starts logging and writes the header
+		* into the internal buffer (NOT the target log file).
 		* Vectors for data categories will be checked against the numbers of data sets specified
 		* at construction, an exception will be thrown if any mismatches are detected.
 		* 
@@ -79,7 +80,8 @@ namespace logging
 
 
 		/**
-		* On first call, stops logging and writes buffer contents into the target log file.
+		* On first call after calling start_logging, stops logging and writes buffer contents
+		* into the target log file (overwriting any previous contents). Also clears all internal storage.
 		* Subsequent calls will be ignored. Will also be called at destruction, if not called prior.
 		**/
 		void stop_logging();
@@ -139,7 +141,7 @@ namespace logging
 		std::vector<double> single_data_;
 		std::vector<std::string> arbitrary_data_;
 
-		bool logged_ = false;
+		bool logged_ = true;
 		std::ostringstream log_;
 		std::ofstream logger_;
 	};

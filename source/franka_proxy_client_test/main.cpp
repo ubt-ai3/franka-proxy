@@ -11,7 +11,6 @@
 #include <logging/logger.hpp>
 
 
-#include <franka/exception.h> //this can be removed when changin exception handling in ptp test
 #include "franka_control/franka_util.hpp" //for testing stuff only
 
 // use this to specify which test to run within the franka_proxy_client_test method
@@ -35,10 +34,14 @@ void playback_test(franka_proxy::franka_remote_interface& robot, bool log, std::
 void force_test(franka_proxy::franka_remote_interface& robot, double mass, double duration);
 
 
-//for testing stuff only
+//for testing stuff only - requires franka_util::fk with last two steps enabled
 void quick() {
 	constexpr franka_proxy::robot_config_7dof pos0
 	{ 0.0346044, -0.0666144, -0.0398886, -2.04985, -0.0229875, 1.99782, 0.778461 };
+	constexpr franka_proxy::robot_config_7dof pos1
+	{ 0.47604, 0.650999, 1.14681, -0.747477, 0.166399, 3.03934, -0.619102 };
+	constexpr franka_proxy::robot_config_7dof pos2
+	{ -0.713442, 0.744363, 0.543357, -1.40935, -2.06861, 1.6925, -2.46015 };
 
 	std::array<double, 16> pose = {
 			0.321529, 0.8236, 0.467208, 0,
@@ -47,33 +50,35 @@ void quick() {
 			0.426976, 0.382873, 0.324984, 1
 	};
 
-	franka_control::robot_config_7dof in(pos0.data());
+	franka_control::robot_config_7dof in0(pos0.data());
+	franka_control::robot_config_7dof in1(pos1.data());
+	franka_control::robot_config_7dof in2(pos2.data());
 
-	Eigen::Affine3d tgt;
-	tgt(0, 0) = 0.321529;
-	tgt(0, 1) = 0.8236;
-	tgt(0, 2) = 0.467208;
-	tgt(0, 3) = 0.0;
-	tgt(1, 0) = 0.931889;
-	tgt(1, 1) = -0.187754;
-	tgt(1, 2) = -0.310343;
-	tgt(1, 3) = 0.0;
-	tgt(2, 0) = -0.167882;
-	tgt(2, 1) = 0.53518;
-	tgt(2, 2) = -0.827888;
-	tgt(2, 3) = 0.0;
-	tgt(3, 0) = 0.426976;
-	tgt(3, 1) = 0.382873;
-	tgt(3, 2) = 0.324984;
-	tgt(3, 3) = 1.0;
+	Eigen::Affine3d tgt0 = franka_control::franka_util::fk(in0).back();
+	Eigen::Affine3d tgt1 = franka_control::franka_util::fk(in1).back();
+	Eigen::Affine3d tgt2 = franka_control::franka_util::fk(in2).back();
 
-	auto start = franka_control::franka_util::ik_fast_closest(tgt, in);
-
-	std::string file = "pose.csv";
-	logging::logger log(file, 1, 0, 0, 0, 0);
-	std::vector<std::string> head = { "j0", "j1", "j2", "j3", "j4", "j5", "j6" };
-	log.start_logging(&head, nullptr, nullptr, nullptr, nullptr);
-	log.add_joint_data(start);
+	std::string file = "poses.csv";
+	logging::logger log(file, 0, 0, 0, 0, 16);
+	std::vector<std::string> head = { "00", "01", "02", "03", "10", "11", "12", "13", "20", "21", "22", "23", "30", "31", "32", "33" };
+	log.start_logging(nullptr, nullptr, nullptr, nullptr, &head);
+	for (int i = 0; i < 4; i++) {
+		for (int j = 0; j < 4; j++) {
+			log.add_arbitrary_data(std::to_string(tgt0(j, i)));
+		}
+	}
+	log.log();
+	for (int i = 0; i < 4; i++) {
+		for (int j = 0; j < 4; j++) {
+			log.add_arbitrary_data(std::to_string(tgt1(j, i)));
+		}
+	}
+	log.log();
+	for (int i = 0; i < 4; i++) {
+		for (int j = 0; j < 4; j++) {
+			log.add_arbitrary_data(std::to_string(tgt2(j, i)));
+		}
+	}
 	log.log();
 	log.stop_logging();
 }
@@ -81,7 +86,7 @@ void quick() {
 
 // todo: untested since bachelor thesis d. ermer; handle with care.
 [[deprecated("Revise test code before execution on real robot!")]]
-void impedance_admittance_ermer_ba_tests(franka_proxy::franka_remote_interface& robot);
+void impedance_admittance_ermer_ba_tests(franka_proxy::franka_remote_interface& robot, bool log);
 
 
 int main(int argc, char* argv[])
@@ -93,7 +98,7 @@ int main(int argc, char* argv[])
 		.default_value(std::string{ "127.0.0.1" });
 
 
-	// this is the base parser, including optional arguments for logging; use as parent for all subparsers that need it
+	// this is a base parser, including optional arguments for logging; use as parent for all subparsers that need it
 	argparse::ArgumentParser base("fct_base", "1.0", argparse::default_arguments::none);
 	base.add_argument("-l", "-log")
 		.help("enable logging")
@@ -237,11 +242,13 @@ int main(int argc, char* argv[])
 	}
 	else if (program.is_subcommand_used(ermer_test)) {
 		test = mode::ermer;
+		bool log_flag = ermer_test.get<bool>("-l");
+		std::string log = "false";
+		if (log_flag) log = "true";
 	}
 
 
 	franka_proxy_client_test(ip, test, params);
-
 	std::cout << "Press Enter to end test exe." << std::endl;
 	std::cin.get();
 	return 0;
@@ -315,7 +322,8 @@ void franka_proxy_client_test(const std::string& ip, mode test, std::vector<std:
 		playback_test(*robot, log, file);
 	}
 	else if (test == mode::ermer) {
-		impedance_admittance_ermer_ba_tests(*robot);
+		bool log = (params[0] == "true");
+		impedance_admittance_ermer_ba_tests(*robot, log);
 	}
 	
 
@@ -595,7 +603,7 @@ void force_test(franka_proxy::franka_remote_interface& robot, double mass, doubl
 		std::cout << e.what() << std::endl;
 	}
 
-	//move out of contact again to prevent robot from jerking left/right
+	//move out of contact again to prevent robot from jerking left/right - slight stutter might still occur
 	franka_proxy::robot_config_7dof contact = robot.current_config();
 	franka_proxy::robot_config_7dof relax{ contact[0], (contact[1] - 0.01), contact[2], contact[3], contact[4], (contact[5] - 0.01), contact[6] };
 	execute_retry([&] { robot.move_to(relax); }, robot);
@@ -616,10 +624,11 @@ void force_test(franka_proxy::franka_remote_interface& robot, double mass, doubl
 }
 
 
-void impedance_admittance_ermer_ba_tests(franka_proxy::franka_remote_interface& robot)
+void impedance_admittance_ermer_ba_tests(franka_proxy::franka_remote_interface& robot, bool log)
 {
-
-	//for testing, a starting config generated using ik_fast_closest, with the first pose from below list and the starting config for ple (c.f. quick() for implemetation)
+	/*
+	//for testing, a starting config generated using ik_fast_closest,
+	//with the first pose from below list and the starting config for ple
 	//seems like we might need new poses for this
 	std::cout << "heading to start pos" << std::endl;
 
@@ -628,6 +637,58 @@ void impedance_admittance_ermer_ba_tests(franka_proxy::franka_remote_interface& 
 	robot.move_to(pos);
 
 	return;
+	*/
+
+	//original poses for the cartesian and joint impedance follow tests
+	//not sure if safe - without proper start, robot tries to "snap" into position 
+	std::list<std::array<double, 16>> original_poses = {
+		{
+			0.321529, 0.8236, 0.467208, 0,
+			0.931889, -0.187754, -0.310343, 0,
+			-0.167882, 0.53518, -0.827888, 0,
+			0.426976, 0.382873, 0.324984, 1
+		},
+		{
+			0.323711, 0.604326, 0.727999, 0,
+			0.698631, -0.671549, 0.246814, 0,
+			0.638056, 0.428714, -0.639601, 0,
+			0.600692, 0.372768, 0.415227, 1
+		},
+		{
+			0.826378, 0.559426, 0.0642109, 0,
+			0.562775, -0.824385, -0.0604543, 0,
+			0.0191152, 0.086096, -0.996103, 0,
+			0.503131, 0.2928, 0.296891, 1
+		}
+	};
+
+
+	//new poses mirroring those of the ptp test
+	std::list<std::array<double, 16>> new_poses = {
+		{0.999834,0.011222,0.014328,0.000000,
+		0.010956,-0.999769,0.018504,0.000000,
+		0.014532,-0.018343,-0.999726,0.000000,
+		0.537203,-0.006444,0.366354,1.000000},
+
+		{-0.632624,-0.121834,0.764816,0.000000,
+		0.734050,-0.409155,0.541999,0.000000,
+		0.246894,0.904295,0.348273,0.000000,
+		0.422637,0.606252,0.913909,1.000000},
+
+		{-0.834496,-0.024363,0.550476,0.000000,
+		-0.548973,-0.049154,-0.834393,0.000000,
+		0.047386,-0.998494,0.027644,0.000000,
+		0.688281,-0.420545,0.376022,1.000000}
+	};
+
+	constexpr franka_proxy::robot_config_7dof starting_pos
+	{ 0.0346044, -0.0666144, -0.0398886, -2.04985, -0.0229875, 1.99782, 0.778461 };
+
+	std::cout << "Moving into starting position...";
+	robot.set_speed_factor(0.2);
+	robot.move_to(starting_pos);
+	std::cout << "Done." << std::endl;
+
 
 	std::cout << "Starting Impedance - Hold Position Test." << std::endl;
 	std::string file = "ermer_joint_impedance_hold.csv";
@@ -637,7 +698,7 @@ void impedance_admittance_ermer_ba_tests(franka_proxy::franka_remote_interface& 
 	stiffness[32] = 250.;
 	stiffness[40] = 150.;
 	stiffness[48] = 50.;
-	robot.joint_impedance_hold_position(10, false, file, stiffness);
+	robot.joint_impedance_hold_position(10, log, file, stiffness);
 
 	std::cout << "Finished Impedance - Hold Position Test." << std::endl;
 
@@ -646,73 +707,38 @@ void impedance_admittance_ermer_ba_tests(franka_proxy::franka_remote_interface& 
 	std::cout << "Starting Impedance - Follow Poses with Cartesian Impedance Test." << std::endl;
 	file = "ermer_cart_impedance_follow.csv";
 	//TODO move to start pose or ensure gentle start otherwise - right now, robot tries to "snap" into position
+	//Need to test if this is fine now - PLi
 
-	// positions
-	std::list<std::array<double, 16>> poses_for_cart = {
-		{
-			0.321529, 0.8236, 0.467208, 0,
-			0.931889, -0.187754, -0.310343, 0,
-			-0.167882, 0.53518, -0.827888, 0,
-			0.426976, 0.382873, 0.324984, 1
-		},
-		{
-			0.323711, 0.604326, 0.727999, 0,
-			0.698631, -0.671549, 0.246814, 0,
-			0.638056, 0.428714, -0.639601, 0,
-			0.600692, 0.372768, 0.415227, 1
-		},
-		{
-			0.826378, 0.559426, 0.0642109, 0,
-			0.562775, -0.824385, -0.0604543, 0,
-			0.0191152, 0.086096, -0.996103, 0,
-			0.503131, 0.2928, 0.296891, 1
-		}
-	};
-
-	robot.cartesian_impedance_poses(poses_for_cart, 15, false, file, false, 50., 300.);
+	robot.cartesian_impedance_poses(new_poses, 15, log, file, false, 50., 300.);
 
 	std::cout << "Finished Impedance - Follow Poses with Cartesian Impedance Test." << std::endl;
+
+
+	std::cout << "Moving back to starting position...";
+	robot.set_speed_factor(0.2);
+	robot.move_to(starting_pos);
+	std::cout << "Done." << std::endl;
 
 
 	std::cout << "Starting Joint Impedance Tests." << std::endl << "Holding position with Joint Impedance in 3s..";
 	file = "ermer_joint_impedance_hold2.csv";
 
 	std::this_thread::sleep_for(std::chrono::seconds(3));
-	robot.joint_impedance_hold_position(10, false, file, stiffness);
+	robot.joint_impedance_hold_position(10, log, file, stiffness);
 
-	std::cout << " .. finished." << std::endl << "Following Poses with Joint Impedance in 3s..";
+	std::cout << "..finished." << std::endl << "Following Poses with Joint Impedance in 3s..";
 	file = "ermer_joint_impedance_follow.csv";
-	// positions
-	std::list<std::array<double, 16>> poses_for_joint = {
-		{
-			0.321529, 0.8236, 0.467208, 0,
-			0.931889, -0.187754, -0.310343, 0,
-			-0.167882, 0.53518, -0.827888, 0,
-			0.426976, 0.382873, 0.324984, 1
-		},
-		{
-			0.323711, 0.604326, 0.727999, 0,
-			0.698631, -0.671549, 0.246814, 0,
-			0.638056, 0.428714, -0.639601, 0,
-			0.600692, 0.372768, 0.415227, 1
-		},
-		{
-			0.826378, 0.559426, 0.0642109, 0,
-			0.562775, -0.824385, -0.0604543, 0,
-			0.0191152, 0.086096, -0.996103, 0,
-			0.503131, 0.2928, 0.296891, 1
-		}
-	};
 
-	robot.cartesian_impedance_poses(poses_for_joint, 10, false, file, false, 50., 300.);
+	std::this_thread::sleep_for(std::chrono::seconds(3));
+	robot.cartesian_impedance_poses(new_poses, 10, log, file, false, 50., 300.);
 
-	std::cout << "Finished Impedance - Follow Poses with Joint Impedance Test." << std::endl;
+	std::cout << "..finished." << std::endl << "Finished Impedance - Follow Poses with Joint Impedance Test." << std::endl;
 
 
 	std::cout << "Starting Admittance - Apply Force Test." << std::endl;
 	file = "ermer_apply_admittance.csv";
 
-	robot.apply_admittance(10, false, file, 10., 150., 10., 150.);
+	robot.apply_admittance(10, log, file, 10., 150., 10., 150.);
 
 	std::cout << "Finished Admittance - Apply Force Test." << std::endl;
 }
