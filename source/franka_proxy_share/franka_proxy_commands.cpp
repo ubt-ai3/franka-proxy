@@ -92,6 +92,7 @@ void to_json(nlohmann::json& json, const command_apply_admittance_adm_imp_desire
 	json["type"] = command_apply_admittance_adm_imp_desired_stiffness::type;
 	json["duration"] = object.duration;
 	json["log"] = object.log;
+	json["file"] = object.file;
 	json["adm_rotational_stiffness"] = object.adm_rotational_stiffness;
 	json["adm_translational_stiffness"] = object.adm_translational_stiffness;
 	json["imp_rotational_stiffness"] = object.imp_rotational_stiffness;
@@ -103,6 +104,7 @@ void from_json(const nlohmann::json& json, command_apply_admittance_adm_imp_desi
 {
 	json.at("duration").get_to(object.duration);
 	json.at("log").get_to(object.log);
+	json.at("file").get_to(object.file);
 	json.at("adm_rotational_stiffness").get_to(object.adm_rotational_stiffness);
 	json.at("adm_translational_stiffness").get_to(object.adm_translational_stiffness);
 	json.at("imp_rotational_stiffness").get_to(object.imp_rotational_stiffness);
@@ -122,6 +124,7 @@ void to_json(nlohmann::json& json, const command_cartesian_impedance_hold_pose_d
 	json["type"] = command_cartesian_impedance_hold_pose_desired_stiffness::type;
 	json["duration"] = object.duration;
 	json["log"] = object.log;
+	json["file"] = object.file;
 	json["use_stiff_damp_online_calc"] = object.use_stiff_damp_online_calc;
 	json["rotational_stiffness"] = object.rotational_stiffness;
 	json["translational_stiffness"] = object.translational_stiffness;
@@ -132,6 +135,7 @@ void from_json(const nlohmann::json& json, command_cartesian_impedance_hold_pose
 {
 	json.at("duration").get_to(object.duration);
 	json.at("log").get_to(object.log);
+	json.at("file").get_to(object.file);
 	json.at("use_stiff_damp_online_calc").get_to(object.use_stiff_damp_online_calc);
 	json.at("rotational_stiffness").get_to(object.rotational_stiffness);
 	json.at("translational_stiffness").get_to(object.translational_stiffness);
@@ -151,6 +155,7 @@ void to_json(nlohmann::json& json, const command_cartesian_impedance_poses_desir
 	json["poses"] = object.poses;
 	json["duration"] = object.duration;
 	json["log"] = object.log;
+	json["file"] = object.file;
 	json["use_stiff_damp_online_calc"] = object.use_stiff_damp_online_calc;
 	json["rotational_stiffness"] = object.rotational_stiffness;
 	json["translational_stiffness"] = object.translational_stiffness;
@@ -162,6 +167,7 @@ void from_json(const nlohmann::json& json, command_cartesian_impedance_poses_des
 	json.at("poses").get_to(object.poses);
 	json.at("duration").get_to(object.duration);
 	json.at("log").get_to(object.log);
+	json.at("file").get_to(object.file);
 	json.at("use_stiff_damp_online_calc").get_to(object.use_stiff_damp_online_calc);
 	json.at("rotational_stiffness").get_to(object.rotational_stiffness);
 	json.at("translational_stiffness").get_to(object.translational_stiffness);
@@ -180,6 +186,7 @@ void to_json(nlohmann::json& json, const command_joint_impedance_hold_position_d
 	json["type"] = command_joint_impedance_hold_position_desired_stiffness::type;
 	json["duration"] = object.duration;
 	json["log"] = object.log;
+	json["file"] = object.file;
 	json["stiffness"] = object.stiffness;
 }
 
@@ -188,6 +195,7 @@ void from_json(const nlohmann::json& json, command_joint_impedance_hold_position
 {
 	json.at("duration").get_to(object.duration);
 	json.at("log").get_to(object.log);
+	json.at("file").get_to(object.file);
 	json.at("stiffness").get_to(object.stiffness);
 }
 
@@ -205,6 +213,7 @@ void to_json(nlohmann::json& json, const command_joint_impedance_positions_desir
 	json["joint_positions"] = object.joint_positions;
 	json["duration"] = object.duration;
 	json["log"] = object.log;
+	json["file"] = object.file;
 	json["stiffness"] = object.stiffness;
 }
 
@@ -214,6 +223,7 @@ void from_json(const nlohmann::json& json, command_joint_impedance_positions_des
 	json.at("joint_positions").get_to(object.joint_positions);
 	json.at("duration").get_to(object.duration);
 	json.at("log").get_to(object.log);
+	json.at("file").get_to(object.file);
 	json.at("stiffness").get_to(object.stiffness);
 }
 
