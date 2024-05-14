@@ -10,8 +10,6 @@
 
 #include <logging/logger.hpp>
 
-#include "franka_control/franka_util.hpp" //for testing stuff only
-
 
 
 // use this to specify which test to run within the franka_proxy_client_test method
@@ -40,56 +38,6 @@ void ptp_test(franka_proxy::franka_remote_interface& robot, double margin, bool 
 void gripper_test(franka_proxy::franka_remote_interface& robot, double margin, bool grasp);
 void playback_test(franka_proxy::franka_remote_interface& robot, bool log, std::string& file);
 void force_test(franka_proxy::franka_remote_interface& robot, double mass, double duration);
-
-
-//for testing stuff only - requires franka_util::fk with last two steps enabled
-void quick() {
-	constexpr franka_proxy::robot_config_7dof pos0
-	{ 0.0346044, -0.0666144, -0.0398886, -2.04985, -0.0229875, 1.99782, 0.778461 };
-	constexpr franka_proxy::robot_config_7dof pos1
-	{ 0.47604, 0.650999, 1.14681, -0.747477, 0.166399, 3.03934, -0.619102 };
-	constexpr franka_proxy::robot_config_7dof pos2
-	{ -0.713442, 0.744363, 0.543357, -1.40935, -2.06861, 1.6925, -2.46015 };
-
-	std::array<double, 16> pose = {
-			0.321529, 0.8236, 0.467208, 0,
-			0.931889, -0.187754, -0.310343, 0,
-			-0.167882, 0.53518, -0.827888, 0,
-			0.426976, 0.382873, 0.324984, 1
-	};
-
-	franka_control::robot_config_7dof in0(pos0.data());
-	franka_control::robot_config_7dof in1(pos1.data());
-	franka_control::robot_config_7dof in2(pos2.data());
-
-	Eigen::Affine3d tgt0 = franka_control::franka_util::fk(in0).back();
-	Eigen::Affine3d tgt1 = franka_control::franka_util::fk(in1).back();
-	Eigen::Affine3d tgt2 = franka_control::franka_util::fk(in2).back();
-
-	std::string file = "poses.csv";
-	logging::logger log(file, 0, 0, 0, 0, 16);
-	std::vector<std::string> head = { "00", "01", "02", "03", "10", "11", "12", "13", "20", "21", "22", "23", "30", "31", "32", "33" };
-	log.start_logging(nullptr, nullptr, nullptr, nullptr, &head);
-	for (int i = 0; i < 4; i++) {
-		for (int j = 0; j < 4; j++) {
-			log.add_arbitrary_data(std::to_string(tgt0(j, i)));
-		}
-	}
-	log.log();
-	for (int i = 0; i < 4; i++) {
-		for (int j = 0; j < 4; j++) {
-			log.add_arbitrary_data(std::to_string(tgt1(j, i)));
-		}
-	}
-	log.log();
-	for (int i = 0; i < 4; i++) {
-		for (int j = 0; j < 4; j++) {
-			log.add_arbitrary_data(std::to_string(tgt2(j, i)));
-		}
-	}
-	log.log();
-	log.stop_logging();
-}
 
 
 // todo: untested since bachelor thesis d. ermer; handle with care.
@@ -159,12 +107,12 @@ int main(int argc, char* argv[])
 	playback_test.add_parents(base);
 
 	
-	argparse::ArgumentParser ermer_test("ermer");
-	// has no further arguments and logs into multiple files (ignores "-f" argument)
-	ermer_test.add_parents(base);
+	//argparse::ArgumentParser ermer_test("ermer");
+	//// has no further arguments and logs into multiple files (ignores "-f" argument)
+	//ermer_test.add_parents(base);
 
 
-	program.add_subparser(ermer_test);
+	//program.add_subparser(ermer_test);
 	program.add_subparser(playback_test);
 	program.add_subparser(force_test);
 	program.add_subparser(ptp_test);
@@ -256,7 +204,7 @@ int main(int argc, char* argv[])
 		params.push_back(log);
 		params.push_back(file);
 	}
-	else if (program.is_subcommand_used(ermer_test)) {
+	/*else if (program.is_subcommand_used(ermer_test)) {
 		test = mode::ermer;
 
 		bool log_flag = ermer_test.get<bool>("-l");
@@ -264,7 +212,7 @@ int main(int argc, char* argv[])
 		if (log_flag) log = "true";
 
 		params.push_back(log);
-	}
+	}*/
 
 
 	franka_proxy_client_test(ip, test, params);
@@ -345,11 +293,11 @@ void franka_proxy_client_test(const std::string& ip, mode test, std::vector<std:
 
 		playback_test(*robot, log, file);
 	}
-	else if (test == mode::ermer) {
+	/*else if (test == mode::ermer) {
 		bool log = (params[0] == "true");
 
 		impedance_admittance_ermer_ba_tests(*robot, log);
-	}
+	}*/
 	
 
 	// --- cleanup status thread ---
@@ -427,18 +375,30 @@ void playback_test(franka_proxy::franka_remote_interface& robot, bool log, std::
 	std::cout << ("--- stopped demonstration ---") << std::endl;
 	const std::pair record(robot.stop_recording());
 
-	//TODO: add some kind of actual test (e.g. measure of error) here
+
 	std::cout << ("--- press to start reproduction in 3s (lights blue) ---") << std::endl;
 	std::cin.get();
 	
 	std::this_thread::sleep_for(std::chrono::seconds(3));
 
-	robot.move_to(record.first.front());
+	franka_proxy::robot_config_7dof start_pos = record.first.front();
+	franka_proxy::robot_config_7dof stop_pos = record.first.back();
+
+	robot.move_to(start_pos);
+
+	franka_proxy::robot_config_7dof curr_pos = robot.current_config();
+	double error = calculate_pose_error(start_pos, curr_pos);
+	std::cout << "Starting position reached with a relative error of: " << error << std::endl;
+
 	const std::vector selection_vectors(
 		record.second.size(), std::array<double, 6>{1, 1, 1, 1, 1, 1});
 	robot.move_sequence(record.first, record.second, selection_vectors);
+
+	curr_pos = robot.current_config();
+	error = calculate_pose_error(stop_pos, curr_pos);
+	std::cout << "Final position reached with a relative error of: " << error << std::endl;
 	
-	std::cout << ("Finished Playback Test.");
+	std::cout << ("Finished Playback Test.") << std::endl;
 }
 
 
@@ -657,19 +617,6 @@ void force_test(franka_proxy::franka_remote_interface& robot, double mass, doubl
 
 void impedance_admittance_ermer_ba_tests(franka_proxy::franka_remote_interface& robot, bool log)
 {
-	/*
-	//for testing, a starting config generated using ik_fast_closest,
-	//with the first pose from below list and the starting config for ple
-	//seems like we might need new poses for this
-	std::cout << "heading to start pos" << std::endl;
-
-	franka_proxy::robot_config_7dof pos = { 0.257578,1.28263,-0.0258896,-2.75407,-2.72277,1.80384,1.9178 };
-	robot.set_speed_factor(0.1);
-	robot.move_to(pos);
-
-	return;
-	*/
-
 	// original poses for the cartesian impedance follow test - not sure if safe
 	std::list<std::array<double, 16>> original_poses = {
 		{

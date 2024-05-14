@@ -69,24 +69,29 @@ std::pair<std::vector<std::array<double, 7>>, std::vector<std::array<double, 6>>
 	t_.join();
 
 	if (log_) {
-		logging::logger logger_(file_, 1, 0, 1, 0, 0);
-		
 		if (fts_) {
+			logging::logger logger_(file_, 1, 0, 1, 0, 0);
 			logger_.start_logging(&joints_, nullptr, &ft_, nullptr, nullptr);
+
+			for (int i = 0; i < joints_record_.size(); i++) {
+				logger_.add_joint_data(joints_record_.at(i));
+				logger_.add_ft_data(fts_record_.at(i));
+				logger_.log();
+			}
+
+			logger_.stop_logging();
 		}
 		else {
+			logging::logger logger_(file_, 1, 0, 0, 0, 0);
 			logger_.start_logging(&joints_, nullptr, nullptr, nullptr, nullptr);
-		}
 
-		for (int i = 0; i < joints_record_.size(); i++) {
-			logger_.add_joint_data(joints_record_.at(i));
-			if (fts_) {
-				logger_.add_ft_data(fts_record_.at(i));
+			for (int i = 0; i < joints_record_.size(); i++) {
+				logger_.add_joint_data(joints_record_.at(i));
+				logger_.log();
 			}
-			logger_.log();
-		}
 
-		logger_.stop_logging();
+			logger_.stop_logging();
+		}
 	}
 
 	return {joints_record_, fts_record_};
