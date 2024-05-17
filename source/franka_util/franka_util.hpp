@@ -16,11 +16,9 @@
 
 #include <Eigen/Geometry>
 
-#include "franka_controller.hpp"
-
-
 namespace franka_control
 {
+typedef Eigen::Matrix<double, 7, 1> robot_config_7dof;
 
 
 struct joint_limit

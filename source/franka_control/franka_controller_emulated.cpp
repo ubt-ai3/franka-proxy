@@ -12,7 +12,7 @@
 
 #include <iostream>
 
-#include "exception.hpp"
+#include <franka_util/exception.hpp>
 
 
 namespace franka_control

@@ -19,14 +19,11 @@
 
 #include <Eigen/Geometry>
 
+#include <franka_util/franka_util.hpp>
+
 
 namespace franka_control
 {
-
-
-typedef Eigen::Matrix<double, 7, 1> robot_config_7dof;
-
-
 /**
  *************************************************************************
  *

@@ -11,21 +11,19 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\source\franka_control\franka_controller.cpp" />
-    <ClCompile Include="..\..\..\source\franka_control\franka_controller_emulated.cpp" />
-    <ClCompile Include="..\..\..\source\franka_control\franka_controller_remote.cpp" />
+    <ClCompile Include="..\..\..\source\franka_util\franka_util.cpp" />
+    <ClCompile Include="..\..\..\source\franka_util\ikfast.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\..\source\franka_control\forward.hpp" />
-    <ClInclude Include="..\..\..\source\franka_control\franka_controller.hpp" />
-    <ClInclude Include="..\..\..\source\franka_control\franka_controller_emulated.hpp" />
-    <ClInclude Include="..\..\..\source\franka_control\franka_controller_remote.hpp" />
+    <ClInclude Include="..\..\..\source\franka_util\exception.hpp" />
+    <ClInclude Include="..\..\..\source\franka_util\franka_util.hpp" />
+    <ClInclude Include="..\..\..\source\franka_util\ikfast.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{3125ED9C-58B1-4EA5-9214-9178EF9C8EB7}</ProjectGuid>
+    <ProjectGuid>{0DB9C3AD-A6CE-47D2-963A-483FEF5779C5}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
-    <RootNamespace>franka_control</RootNamespace>
-    <ProjectName>franka_control</ProjectName>
+    <RootNamespace>franka_util</RootNamespace>
+    <ProjectName>franka_util</ProjectName>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />

@@ -5,7 +5,7 @@
 
 #include <franka_proxy_client/exception.hpp>
 #include <franka_proxy_client/franka_remote_controller.hpp>
-#include "franka_control/franka_util.hpp"
+#include <franka_util/franka_util.hpp>
 
 
 void print_status(const franka_proxy::franka_remote_controller& controller)

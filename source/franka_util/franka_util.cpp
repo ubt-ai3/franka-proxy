@@ -182,7 +182,7 @@ std::vector<robot_config_7dof> franka_util::ik_fast
 	free[0] = joint_4_value;
 		
 	ikfast::IkSolutionList<double> solutions;
-	if (ComputeIk(translation, rotation, &free[0], solutions))
+	if (ComputeIk(translation, rotation, free.data(), solutions))
 	{
 		for (int solution_index = 0; 
 			 solution_index < solutions.GetNumSolutions(); 
