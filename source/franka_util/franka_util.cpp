@@ -103,49 +103,49 @@ std::vector<Eigen::Affine3d> franka_util::fk
 	frames.push_back(trafo);
 
 	// link 1 (translation to parent frame)
-	trafo *= Eigen::Translation3d(0, 0, 0.333f);
+	trafo *= Eigen::Translation3d(0, 0, 0.333);
 	// joint angle
-	trafo *= Eigen::AngleAxisd(configuration[0], Eigen::Vector3d(0.0f, 0.0f, 1.0f));
+	trafo *= Eigen::AngleAxisd(configuration[0], Eigen::Vector3d(0., 0., 1.));
 	frames.push_back(trafo);
 
 	// link 2 (rotation to parent frame)
-	trafo *= Eigen::AngleAxisd(-pi / 2., Eigen::Vector3d(1.0f, 0.0f, 0.0f));
+	trafo *= Eigen::AngleAxisd(-pi / 2., Eigen::Vector3d(1., 0., 0.));
 	// link rotation
-	trafo *= Eigen::AngleAxisd(configuration[1], Eigen::Vector3d(0.0f, 0.0f, 1.0f));
+	trafo *= Eigen::AngleAxisd(configuration[1], Eigen::Vector3d(0., 0., 1.));
 	frames.push_back(trafo);
 
 	// link 3 (translation and rotation to parent frame)
-	trafo *= Eigen::Translation3d(0, -0.316f, 0.0f);
-	trafo *= Eigen::AngleAxisd(pi / 2., Eigen::Vector3d(1.0f, 0.0f, 0.0f));
+	trafo *= Eigen::Translation3d(0, -0.316, 0.);
+	trafo *= Eigen::AngleAxisd(pi / 2., Eigen::Vector3d(1., 0., 0.));
 	// link rotation
-	trafo *= Eigen::AngleAxisd(configuration[2], Eigen::Vector3d(0.0f, 0.0f, 1.0f));
+	trafo *= Eigen::AngleAxisd(configuration[2], Eigen::Vector3d(0., 0., 1.));
 	frames.push_back(trafo);
 
 	// link 4 (translation and rotation to parent frame)
-	trafo *= Eigen::Translation3d(0.0825f, 0.0f, 0.0f);
-	trafo *= Eigen::AngleAxisd(pi / 2., Eigen::Vector3d(1.0f, 0.0f, 0.0f));
+	trafo *= Eigen::Translation3d(0.0825, 0., 0.);
+	trafo *= Eigen::AngleAxisd(pi / 2., Eigen::Vector3d(1., 0., 0.));
 	// link rotation
-	trafo *= Eigen::AngleAxisd(configuration[3], Eigen::Vector3d(0.0f, 0.0f, 1.0f));
+	trafo *= Eigen::AngleAxisd(configuration[3], Eigen::Vector3d(0., 0., 1.));
 	frames.push_back(trafo);
 
 	// link 5 (translation and rotation to parent frame)
-	trafo *= Eigen::Translation3d(-0.0825f, 0.384f, 0.0f);
-	trafo *= Eigen::AngleAxisd(-pi / 2., Eigen::Vector3d(1.0f, 0.0f, 0.0f));
+	trafo *= Eigen::Translation3d(-0.0825, 0.384, 0.);
+	trafo *= Eigen::AngleAxisd(-pi / 2., Eigen::Vector3d(1., 0., 0.));
 	// link rotation
-	trafo *= Eigen::AngleAxisd(configuration[4], Eigen::Vector3d(0.0f, 0.0f, 1.0f));
+	trafo *= Eigen::AngleAxisd(configuration[4], Eigen::Vector3d(0., 0., 1.));
 	frames.push_back(trafo);
 
 	// link 6 (rotation to parent frame)
-	trafo *= Eigen::AngleAxisd(pi / 2., Eigen::Vector3d(1.0f, 0.0f, 0.0f));
+	trafo *= Eigen::AngleAxisd(pi / 2., Eigen::Vector3d(1., 0., 0.));
 	// link rotation
-	trafo *= Eigen::AngleAxisd(configuration[5], Eigen::Vector3d(0.0f, 0.0f, 1.0f));
+	trafo *= Eigen::AngleAxisd(configuration[5], Eigen::Vector3d(0., 0., 1.));
 	frames.push_back(trafo);
 
 	// link 7 (rotation to parent frame)
-	trafo *= Eigen::Translation3d(0.088f, 0.0f, 0.0f);
-	trafo *= Eigen::AngleAxisd(pi / 2., Eigen::Vector3d(1.0f, 0.0f, 0.0f));
+	trafo *= Eigen::Translation3d(0.088, 0., 0.);
+	trafo *= Eigen::AngleAxisd(pi / 2., Eigen::Vector3d(1., 0., 0.));
 	// link rotation
-	trafo *= Eigen::AngleAxisd(configuration[6], Eigen::Vector3d(0.0f, 0.0f, 1.0f));
+	trafo *= Eigen::AngleAxisd(configuration[6], Eigen::Vector3d(0., 0., 1.));
 	frames.push_back(trafo);
 
 	return frames;
@@ -156,7 +156,7 @@ std::vector<robot_config_7dof> franka_util::ik_fast
 	(const Eigen::Affine3d& world_T_j6, double joint_4_value)
 {
 	const Eigen::Affine3d last_segment_T_tcp
-		(Eigen::Translation3d(0.f, 0.f, 0.107f));
+		(Eigen::Translation3d(0., 0., 0.107));
 
 	Eigen::Affine3d target
 		(world_T_j6 * last_segment_T_tcp);
