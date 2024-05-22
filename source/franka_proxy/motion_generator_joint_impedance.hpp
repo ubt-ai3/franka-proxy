@@ -111,7 +111,7 @@ namespace franka_proxy
 
 			// csv logging
 			bool logging_;
-			logging::logger logger_;
+			logger logger_;
 			std::vector<std::string> j_head = { "d_joint_1", "d_joint_2", "d_joint_3", "d_joint_4", "d_joint_5", "d_joint_6", "d_joint_7",
 						"joint_1", "joint_2", "joint_3", "joint_4", "joint_5", "joint_6", "joint_7",
 						"tau_j1", "tau_j2", "tau_j3", "tau_j4", "tau_j5", "tau_j6", "tau_j7" };

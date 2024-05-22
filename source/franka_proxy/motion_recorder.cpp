@@ -70,7 +70,7 @@ std::pair<std::vector<std::array<double, 7>>, std::vector<std::array<double, 6>>
 
 	if (log_) {
 		if (fts_) {
-			logging::logger logger_(file_, 1, 0, 1, 0, 0);
+			logger logger_(file_, 1, 0, 1, 0, 0);
 			logger_.start_logging(&joints_, nullptr, &ft_, nullptr, nullptr);
 
 			for (int i = 0; i < joints_record_.size(); i++) {
@@ -82,7 +82,7 @@ std::pair<std::vector<std::array<double, 7>>, std::vector<std::array<double, 6>>
 			logger_.stop_logging();
 		}
 		else {
-			logging::logger logger_(file_, 1, 0, 0, 0, 0);
+			logger logger_(file_, 1, 0, 0, 0, 0);
 			logger_.start_logging(&joints_, nullptr, nullptr, nullptr, nullptr);
 
 			for (int i = 0; i < joints_record_.size(); i++) {

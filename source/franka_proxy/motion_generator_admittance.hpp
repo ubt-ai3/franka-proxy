@@ -111,7 +111,7 @@ namespace franka_proxy
 			// csv logging
 			bool logging_;
 			std::string file_ = "admittance_addtional_log.csv";
-			logging::logger logger_;
+			logger logger_;
 			std::vector<std::string> j_head = {"q0", "q1", "q2", "q3", "q4", "q5"};
 			std::vector<std::string> c_head = { "x_i_0", "x_i_1", "x_i_2", "x_i_3", "x_i_4", "x_i_5",
 				"pos_eq_0", "pos_eq_1", "pos_eq_2", "pos_eq_3", "pos_eq_4", "pos_eq_5",
