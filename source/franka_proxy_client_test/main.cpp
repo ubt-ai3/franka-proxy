@@ -8,7 +8,7 @@
 #include <franka_proxy_client/exception.hpp>
 #include <franka_proxy_client/franka_remote_interface.hpp>
 
-#include <logging/logger.hpp>
+#include <franka_proxy_share/franka_proxy_logger.hpp>
 
 
 

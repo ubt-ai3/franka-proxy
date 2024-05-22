@@ -11,16 +11,15 @@
 
 
 #include <vector>
-#include <iostream>
 
 #include <Eigen/Core>
-#include <Eigen/Dense>
 
 #include <franka/robot.h>
 #include <franka/model.h>
 
+#include <franka_proxy_share/franka_proxy_logger.hpp>
+
 #include "motion_generator_cartesian_impedance.hpp"
-#include "logging/logger.hpp"
 
 
 namespace franka_proxy

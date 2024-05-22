@@ -11,7 +11,8 @@
 
 #include "motion_recorder.hpp"
 
-#include <iostream>
+#include <franka_proxy_share/franka_proxy_logger.hpp>
+
 
 namespace franka_proxy
 {

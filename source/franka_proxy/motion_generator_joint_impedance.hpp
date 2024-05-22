@@ -11,15 +11,13 @@
 
 
 #include <vector>
-#include <iostream>
 
 #include <Eigen/Core>
-#include <Eigen/Dense>
 
 #include <franka/robot.h>
 #include <franka/model.h>
 
-#include "logging/logger.hpp"
+#include <franka_proxy_share/franka_proxy_logger.hpp>
 
 
 

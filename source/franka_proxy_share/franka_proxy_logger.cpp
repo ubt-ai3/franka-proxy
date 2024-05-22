@@ -1,4 +1,4 @@
-#include "logger.hpp"
+#include "franka_proxy_logger.hpp"
 
 #include <iostream>
 #include <sstream>
@@ -42,7 +42,7 @@ void logger::start_logging(
 	const std::vector<std::string>* joint_data_header,
 	const std::vector<std::string>* cart_data_header,
 	const std::vector<std::string>* ft_data_header,
-	const std::vector<std::string>* timestamp_header,
+	const std::vector<std::string>* single_header,
 	const std::vector<std::string>* arbitrary_header)
 {
 	// initial cleanup of leftover data
@@ -71,7 +71,7 @@ void logger::start_logging(
 		bad = true;
 		baddies.append(" forces_torques");
 	}
-	if (num_single_ && static_cast<int>(timestamp_header->size()) != num_single_)
+	if (num_single_ && static_cast<int>(single_header->size()) != num_single_)
 	{
 		bad = true;
 		baddies.append(" single_values");
@@ -142,13 +142,13 @@ void logger::start_logging(
 		{
 			header.append(",");
 		}
-		header.append(timestamp_header->at(0));
+		header.append(single_header->at(0));
 	}
 	if (num_single_ > 1)
 	{
-		for (int i = 1; i < static_cast<int>(timestamp_header->size()); i++)
+		for (int i = 1; i < static_cast<int>(single_header->size()); i++)
 		{
-			header.append("," + timestamp_header->at(i));
+			header.append("," + single_header->at(i));
 		}
 	}
 

@@ -17,8 +17,6 @@
 
 #include <franka/robot.h>
 
-#include "logging/logger.hpp"
-
 
 namespace franka_proxy
 {
@@ -46,8 +44,8 @@ public:
 	std::pair<std::vector<std::array<double, 7>>, std::vector<std::array<double, 6>>> stop();
 
 	// this is blocking
-	std::pair<std::vector<std::array<double, 7>>, std::vector<std::array<double, 6>>> start(float seconds, bool log, std::string& file);
-
+	std::pair<std::vector<std::array<double, 7>>, std::vector<std::array<double, 6>>> start(
+		float seconds, bool log, std::string& file);
 
 private:
 	std::vector<std::array<double, 7>> joints_record_;
@@ -63,8 +61,10 @@ private:
 	// for logging
 	bool log_ = false;
 	std::string file_;
-	std::vector<std::string> joints_ = { "joint_1", "joint_2", "joint_3", "joint_4", "joint_5", "joint_6", "joint_7" };
-	std::vector<std::string> ft_ = { "force_x", "force_y", "force_z", "torque_x", "torque_y", "torque_z" };
+	std::vector<std::string> joints_ =
+		{"joint_1", "joint_2", "joint_3", "joint_4", "joint_5", "joint_6", "joint_7"};
+	std::vector<std::string> ft_ =
+		{"force_x", "force_y", "force_z", "torque_x", "torque_y", "torque_z"};
 };
 } /* namespace detail */
 } /* namespace franka_proxy */

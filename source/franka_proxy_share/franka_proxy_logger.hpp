@@ -1,7 +1,7 @@
 /**
  *************************************************************************
  *
- * @file logger.hpp
+ * @file franka_proxy_logger.hpp
  *
  * Generalized logger for use with motion generators, recorder and tests.
  *
@@ -71,14 +71,14 @@ public:
 	* @param joint_data_header: header for the joint data sets (7 entries per data set)
 	* @param cart_data_header: header for the cartesian data sets (3 entries per data set)
 	* @param ft_data_header: header for the force-torque data sets (6 entries per data set)
-	* @param timestamp_header: header for single-valued data
+	* @param single_header: header for single-valued data
 	* @param arbitrary_header: header for arbitrary data (single entries)
 	**/
 	void start_logging(
 		const std::vector<std::string>* joint_data_header,
 		const std::vector<std::string>* cart_data_header,
 		const std::vector<std::string>* ft_data_header,
-		const std::vector<std::string>* timestamp_header,
+		const std::vector<std::string>* single_header,
 		const std::vector<std::string>* arbitrary_header);
 
 

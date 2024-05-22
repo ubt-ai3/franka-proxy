@@ -38,6 +38,7 @@ target_sources(
 	PRIVATE
 		${CMAKE_CURRENT_SOURCE_DIR}/source/franka_proxy_share/franka_proxy_commands.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/source/franka_proxy_share/franka_proxy_util.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/source/franka_proxy_share/franka_proxy_logger.cpp
 )
 
 target_include_directories(
@@ -49,6 +50,7 @@ target_include_directories(
 target_link_libraries(
 	franka_proxy_share
 	PUBLIC
+        Eigen3::Eigen
 		nlohmann_json::nlohmann_json
 )
 
@@ -69,8 +71,6 @@ add_executable(
         ${CMAKE_CURRENT_SOURCE_DIR}/source/franka_proxy/motion_generator_joint_max_accel.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/source/franka_proxy/motion_generator_seq_cart_vel_tau.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/source/franka_proxy/motion_recorder.cpp
-
-        ${CMAKE_CURRENT_SOURCE_DIR}/source/logging/logger.cpp
 
         ${CMAKE_CURRENT_SOURCE_DIR}/source/ft_sensor/schunk_ft.cpp
 
@@ -168,8 +168,6 @@ target_compile_definitions(
 add_executable(
     franka_proxy_client_test
         ${CMAKE_CURRENT_SOURCE_DIR}/source/franka_proxy_client_test/main.cpp
-        
-        ${CMAKE_CURRENT_SOURCE_DIR}/source/logging/logger.cpp
 )
 
 target_include_directories(
@@ -187,8 +185,6 @@ target_link_libraries(
         Threads::Threads
 		franka_proxy_share
 		franka_proxy_client
-
-        franka_control # for testing stuff only
 )
 
 target_compile_definitions(
@@ -272,8 +268,6 @@ install(
 )
 
 install(EXPORT franka-proxyConfig DESTINATION share FILE franka-proxyTargets.cmake)
-
-
 
 
 # assets
