@@ -210,26 +210,26 @@ namespace franka_proxy
 
 			Eigen::Matrix<double, 6, 1> flange_velocities = jacobian_flange * joint_velocity;
 
-			//Eigen::Affine3d trafo = Eigen::Translation3d(0.0, 0.0, 0.055) * Eigen::AngleAxisd(EIGEN_PI, Eigen::Vector3d(0.0, 0.0, 1.0));
-
 			Eigen::Matrix<double, 3, 1> v;
 			v << flange_velocities(0), flange_velocities(1), flange_velocities(2);
 			Eigen::Matrix<double, 3, 1> w;
 			w << flange_velocities(3), flange_velocities(4), flange_velocities(5);
 
-			//v = trafo.rotation() * v;
-			//w = trafo.rotation() * w;
-
-			Eigen::Matrix<double, 6, 1> sensor_velos;
-			sensor_velos << v, w;
-
+			Eigen::Matrix<double, 3, 1> g;
+			g << 0, 0, -1;
+			
 
 			std::array<double, 16> ee_p = model_.pose(franka::Frame::kEndEffector, state_);
 			Eigen::Map<const Eigen::Matrix<double, 4, 4>> ee_pose(ee_p.data());
 
-			Eigen::Matrix<double, 3, 1> g;
-			g << 0,0,-1;
-			g = (ee_pose * Eigen::Affine3d::Identity()).rotation() * g;
+			auto trafo = (ee_pose * Eigen::Affine3d::Identity()).rotation();
+
+			g = trafo * g;
+			v = trafo * v;
+			w = trafo * w;
+
+			Eigen::Matrix<double, 6, 1> sensor_velos;
+			sensor_velos << v, w;
 
 			//static int i = 900;
 			//i++;
