@@ -56,6 +56,9 @@ public:
 	static std::vector<Eigen::Affine3d> fk
 		(const robot_config_7dof& configuration);
 
+	static std::vector<Eigen::Affine3d> fk
+		(const std::array<double, 7>& configuration);
+
 
 	static std::vector<robot_config_7dof> ik_fast
 		(const Eigen::Affine3d& world_T_nsa, double joint_4_value = 0.);
