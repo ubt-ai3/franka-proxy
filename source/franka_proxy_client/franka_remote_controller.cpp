@@ -186,23 +186,23 @@ command_result franka_remote_controller::check_response(command_generic_response
 	case command_result::success_command_failed:
 		return response.result;
 	case command_result::model_exception:
-		throw model_exception{ std::move(response.reason) };
+		throw model_exception{response.reason};
 	case command_result::network_exception:
-		throw network_exception{ std::move(response.reason) };
+		throw network_exception{response.reason};
 	case command_result::protocol_exception:
-		throw protocol_exception{ std::move(response.reason) };
+		throw protocol_exception{response.reason};
 	case command_result::incompatible_version:
-		throw incompatible_version_exception{ std::move(response.reason) };
+		throw incompatible_version_exception{response.reason};
 	case command_result::control_exception:
-		throw control_exception{ std::move(response.reason) };
+		throw control_exception{response.reason};
 	case command_result::command_exception:
-		throw command_exception{ std::move(response.reason) };
+		throw command_exception{response.reason};
 	case command_result::realtime_exception:
-		throw realtime_exception{ std::move(response.reason) };
+		throw realtime_exception{response.reason};
 	case command_result::invalid_operation:
-		throw invalid_operation_exception{ std::move(response.reason) };
+		throw invalid_operation_exception{response.reason};
 	case command_result::unknown_command:
-		throw unknown_command_exception{ std::move(response.reason) };
+		throw unknown_command_exception{response.reason};
 	default:
 		throw bad_response_exception{};
 	}
