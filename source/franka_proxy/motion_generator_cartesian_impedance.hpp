@@ -11,7 +11,6 @@
 
 
 #include <vector>
-#include <iostream>
 
 #include <Eigen/Core>
 #include <Eigen/Dense>
@@ -19,7 +18,7 @@
 #include <franka/robot.h>
 #include <franka/model.h>
 
-#include "logging/logger.hpp"
+#include <franka_proxy_share/franka_proxy_logger.hpp>
 
 
 
@@ -129,7 +128,7 @@ namespace franka_proxy
 
 			// csv logging
 			bool logging_;
-			logging::logger logger_;
+			logger logger_;
 			std::vector<std::string> f_head = { "f_ext_x", "f_ext_y", "f_ext_z", "f_ext_r_x", "f_ext_r_y", "f_ext_r_z",
 					"s1", "s2", "s3", "s4", "s5", "s6", "d1", "d2", "d3", "d4", "d5", "d6" };
 			std::vector<std::string> s_head = { "time" };

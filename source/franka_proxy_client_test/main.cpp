@@ -8,7 +8,7 @@
 #include <franka_proxy_client/exception.hpp>
 #include <franka_proxy_client/franka_remote_interface.hpp>
 
-#include <logging/logger.hpp>
+#include <franka_proxy_share/franka_proxy_logger.hpp>
 
 
 
@@ -455,8 +455,8 @@ void ptp_test(franka_proxy::franka_remote_interface& robot, double margin, bool 
 {
 	std::cout << "Starting PTP-Movement Test." << std::endl;
 
-	logging::logger logger(file, 2, 0, 0, 1, 1);
-	std::string succ = "";
+	franka_proxy::logger logger(file, 2, 0, 0, 1, 1);
+	std::string succ;
 	if (log) {
 		std::vector<std::string> j = { "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q0_d", "q1_d", "q2_d", "q3_d", "q4_d", "q5_d", "q6_d" };
 		std::vector<std::string> e = {"error"};

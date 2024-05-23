@@ -17,15 +17,13 @@
 #include <vector>
 
 #include <Eigen/Core>
-#include <Eigen/Dense>
 
 #include <franka/robot.h>
 #include <franka/model.h>
 
+#include <franka_proxy_share/franka_proxy_logger.hpp>
+
 #include "ft_sensor/schunk_ft.hpp"
-
-#include "logging/logger.hpp"
-
 
 
 namespace franka_proxy
@@ -106,7 +104,7 @@ namespace franka_proxy
 			const std::array<double, 7> K_P_ = { 300.0, 300.0, 300.0, 300.0, 50.0, 50.0, 50.0 };
 
 			// csv logging
-			logging::logger logger_;
+			logger logger_;
 			bool logging_;
 			std::vector<std::string> cart_ = { "lin_v_x", "lin_v_y", "lin_v_z", "ang_v_x", "ang_v_y", "ang_v_z" };
 			std::vector<std::string> grav_{ "g_x", "g_y", "g_z" };
