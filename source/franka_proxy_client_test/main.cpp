@@ -588,7 +588,7 @@ void force_test(franka_proxy::franka_remote_interface& robot, double mass, doubl
 	try {
 		robot.move_to_until_contact(tgt_pos);
 	}
-	catch (franka_proxy::remote_exception e) {
+	catch (franka_proxy::remote_exception& e) {
 		std::cout << e.what() << std::endl;
 		std::cout << "Aborting Force Test, please try again." << std::endl;
 		return;

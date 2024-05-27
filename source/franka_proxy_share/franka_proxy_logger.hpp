@@ -24,12 +24,13 @@ namespace franka_proxy
 * 
 * @class logger
 * 
-* Provides franka_proxy_logging functionality with pre-defined
-* data formats for joint data, various 3D cartesian
-* data (e.g. velocity), forces and torques,
-* single-valued data (e.g. timestamps or errors) and
-* additional, arbitrary data (which must be provided
-* as strings in order to allow for really anything).
+* Provides franka_proxy_logging functionality with
+* pre-defined data formats for joint data, various
+* 3D cartesian data (e.g. velocity), forces and
+* torques, single-valued data (e.g. timestamps or
+* errors) and additional, arbitrary data (which
+* must be provided as strings in order to allow
+* for really anything).
 * 
 ***************************************************/
 class logger
@@ -39,16 +40,16 @@ public:
 	* Motion logger for writing various data into a .csv file. Expects double for fixed
 	* data formats and strings for arbitrary data.
 	* IMPORTANT: Exceptions will only be thrown when header parts mismatch the given number
-	* of data sets in each category. During franka_proxy_logging,
+	* of data sets in each category during a call of start_logging(). Whenever log() is called,
 	* data provided in excess of the specified number of entries will be ignored,
 	* while providing too few entries will lead to padding with "0.0" or "none" entries.
 	* 
 	* @param filename: file for the logger to write into
-	* @param num_joint_data: number of joint data sets (1 set = 7 entries)
-	* @param num_cart_data: number of cartesian data sets (1 set = 3 entries)
-	* @param num_ft_data: number of force-torque data sets (1 set = 6 entries);
+	* @param num_joint_data: number of joint data sets (7 entries per data set)
+	* @param num_cart_data: number of cartesian data sets (3 entries per data set)
+	* @param num_ft_data: number of force-torque data sets (6 entries per data set);
 	* @param num_single: number of single-valued entries
-	* @param size_arbitrary: length of additional arbitrary data (= number of entries)
+	* @param size_arbitrary: length of additional arbitrary data (single entries)
 	**/
 	logger(
 		std::string filename,
@@ -83,9 +84,10 @@ public:
 
 
 	/**
-	* On first call after calling start_logging, stops franka_proxy_logging and writes buffer contents
+	* On first call after calling start_logging(), stops franka_proxy_logging and writes buffer contents
 	* into the target log file (overwriting any previous contents). Also clears all internal storage.
-	* Subsequent calls will be ignored. Will also be called at destruction, if not called prior.
+	* Subsequent calls will be ignored until start_logging() is called again.
+	* Will also be called at destruction, if not called prior.
 	**/
 	void stop_logging();
 
@@ -147,6 +149,14 @@ private:
 	bool logged_ = true;
 	std::ostringstream log_;
 	std::ofstream logger_;
+
+
+	//writes a single line (provided as vector of individual entries) into the internal buffer, adding all needed commas 
+	void write_line(std::vector<std::string>& data);
+
+	//checks internal data storage against number of elements specified at construction
+	//adds padding if necessary and prints warnings for too many / too few entries
+	void check_data();
 };
 
 }
