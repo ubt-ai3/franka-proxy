@@ -87,11 +87,16 @@ void logger::start_logging(
 	// build header and write it into the buffer
 	std::vector<std::string> header;
 
-	for (int i = 0; i < (num_joint_data_ * 7); i++) header.push_back(joint_data_header->at(i));
-	for (int i = 0; i < (num_cart_data_ * 6); i++) header.push_back(cart_data_header->at(i));
-	for (int i = 0; i < (num_ft_data_ * 6); i++) header.push_back(ft_data_header->at(i));
-	for (int i = 0; i < num_single_; i++) header.push_back(single_header->at(i));
-	for (int i = 0; i < size_arbitrary_; i++) header.push_back(arbitrary_header->at(i));
+	for (int i = 0; i < (num_joint_data_ * 7); i++)
+		header.push_back(joint_data_header->at(i));
+	for (int i = 0; i < (num_cart_data_ * 6); i++)
+		header.push_back(cart_data_header->at(i));
+	for (int i = 0; i < (num_ft_data_ * 6); i++)
+		header.push_back(ft_data_header->at(i));
+	for (int i = 0; i < num_single_; i++)
+		header.push_back(single_header->at(i));
+	for (int i = 0; i < size_arbitrary_; i++)
+		header.push_back(arbitrary_header->at(i));
 
 	write_line(header);
 	logged_ = false;
@@ -118,11 +123,16 @@ void logger::log()
 	// build line to be logged
 	std::vector<std::string> line;
 
-	for (int i = 0; i < num_joint_data_; i++) for (int j = 0; j < 7; j++) line.push_back(std::to_string(joint_data_[i][j]));
-	for (int i = 0; i < num_cart_data_; i++) for (int j = 0; j < 6; j++) line.push_back(std::to_string(cart_data_[i][j]));
-	for (int i = 0; i < num_ft_data_; i++) for (int j = 0; j < 6; j++) line.push_back(std::to_string(ft_data_[i][j]));
-	for (int i = 0; i < num_single_; i++) line.push_back(std::to_string(single_data_[i]));
-	for (int i = 0; i < size_arbitrary_; i++) line.push_back(arbitrary_data_[i]);
+	for (int i = 0; i < num_joint_data_; i++) for (int j = 0; j < 7; j++)
+		line.push_back(std::to_string(joint_data_[i][j]));
+	for (int i = 0; i < num_cart_data_; i++) for (int j = 0; j < 6; j++)
+		line.push_back(std::to_string(cart_data_[i][j]));
+	for (int i = 0; i < num_ft_data_; i++) for (int j = 0; j < 6; j++)
+		line.push_back(std::to_string(ft_data_[i][j]));
+	for (int i = 0; i < num_single_; i++)
+		line.push_back(std::to_string(single_data_[i]));
+	for (int i = 0; i < size_arbitrary_; i++)
+		line.push_back(arbitrary_data_[i]);
 
 	// write into buffer and clear everything for next line
 	write_line(line);
