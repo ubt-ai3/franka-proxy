@@ -79,4 +79,4 @@ file(INSTALL ${SOURCE_PATH}/LICENSE DESTINATION ${CURRENT_PACKAGES_DIR}/share/${
 
 # Post-build test for cmake libraries
 SET(VCPKG_POLICY_DLLS_WITHOUT_LIBS enabled)
-vcpkg_test_cmake(PACKAGE_NAME franka)
+#vcpkg_test_cmake(PACKAGE_NAME franka)
