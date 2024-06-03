@@ -11,6 +11,7 @@
 
 
 #include <vector>
+#include <optional>
 
 #include <Eigen/Core>
 
@@ -50,8 +51,7 @@ namespace franka_proxy
 				std::mutex& state_lock,
 				franka::RobotState& robot_state,
 				double duration,
-				bool logging,
-				std::string& file);
+				std::optional<std::string> log_file_path);
 
 			joint_impedance_motion_generator
 			(franka::Robot& robot,
@@ -59,8 +59,7 @@ namespace franka_proxy
 				franka::RobotState& robot_state,
 				std::list<std::array<double, 7>> joint_positions,
 				double duration,
-				bool logging,
-				std::string& file);
+				std::optional<std::string> log_file_path);
 
 			franka::Torques callback
 			(const franka::RobotState& robot_state,

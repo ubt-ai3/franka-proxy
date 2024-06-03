@@ -30,17 +30,16 @@ namespace franka_proxy
 			franka::RobotState& robot_state,
 			double speed,
 			double duration,
-			bool logging,
-			std::string& file)
+			std::optional<std::string> log_file_path)
 			:
 			model_(robot.loadModel()),
 			state_lock_(state_lock),
 			state_(robot_state),
 			desired_speed_(speed),
 			duration_(duration),
-			logging_(logging),
+			logging_(log_file_path.has_value()),
 			sensor_(placeholder_, placeholder_),
-			logger_(file, 0, 1, 1, 1, 3)
+			logger_(log_file_path.value_or("none"), 0, 1, 1, 1, 3)
 		{
 			sensor_.set_load_mass(no_mass_);
 

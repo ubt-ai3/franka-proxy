@@ -14,6 +14,7 @@
 #include <mutex>
 #include <string>
 #include <Eigen/Geometry>
+#include <optional>
 
 #include <franka_proxy_share/franka_proxy_commands.hpp>
 
@@ -80,40 +81,42 @@ public:
 	/**
 	 * Admittance controller using desired rotational and translational stiffness within the admittance and the impedance controller
 	*/
-	void apply_admittance(double duration, bool log, std::string& file, double adm_rotational_stiffness,
+	void apply_admittance(double duration, double adm_rotational_stiffness,
 	                      double adm_translational_stiffness, double imp_rotational_stiffness,
-	                      double imp_translational_stiffness);
+	                      double imp_translational_stiffness, std::optional<std::string> log_file_path = std::nullopt);
 
 	/**
 	 * Cartesian impedance controller to hold the current pose with desired rotational and translational stiffness
 	*/
-	void cartesian_impedance_hold_pose(double duration, bool log, std::string& file, bool use_stiff_damp_online_calc,
-	                                   double rotational_stiffness, double translational_stiffness);
+	void cartesian_impedance_hold_pose(double duration, bool use_stiff_damp_online_calc,
+	                                   double rotational_stiffness, double translational_stiffness,
+									   std::optional<std::string> log_file_path = std::nullopt);
 
 	/**
 	*  Cartesian impedance controller to follow path of poses with desired rotational and translational stiffness
 	*  Duration parameter: duration to follow the complete path -> Example: 10s duration, 5 poses -> 2s per pose
 	*/
-	void cartesian_impedance_poses(std::list<std::array<double, 16>>& positions, double duration, bool log, std::string& file,
+	void cartesian_impedance_poses(std::list<std::array<double, 16>>& positions, double duration,
 	                               bool use_stiff_damp_online_calc, double rotational_stiffness,
-	                               double translational_stiffness);
+	                               double translational_stiffness, std::optional<std::string> log_file_path = std::nullopt);
 
 	/**
 	 * Joint space impedance controller to hold the current position with desired stiffness matrix parameter
 	*/
-	void joint_impedance_hold_position(double duration, bool log, std::string file, std::array<double, 49> stiffness);
+	void joint_impedance_hold_position(double duration, std::array<double, 49> stiffness,
+		                               std::optional<std::string> log_file_path = std::nullopt);
 
 	/**
 	*  Joint space impedance controller to follow path of positions with desired stiffness matrix parameter
 	*	Duration parameter: duration to follow the complete path -> Example: 10s duration, 5 positions -> 2s per position
 	*/
-	void joint_impedance_positions(std::list<std::array<double, 7>>& joint_positions, double duration, bool log, std::string file,
-	                               std::array<double, 49> stiffness);
+	void joint_impedance_positions(std::list<std::array<double, 7>>& joint_positions, double duration,
+								   std::array<double, 49> stiffness, std::optional<std::string> log_file_path = std::nullopt);
 
 	/**
 	 * Joint space impedance controller for executing a pre-defined motion for payload estimation
 	*/
-	void ple_motion(double speed, double duration, bool log, std::string file);
+	void ple_motion(double speed, double duration, std::optional<std::string> log_file_path = std::nullopt);
 
 	/**
 	 * todo docu
@@ -161,7 +164,7 @@ public:
 	/**
 	 * todo docu
 	 */
-	void start_recording(bool log, std::string& file);
+	void start_recording(std::optional<std::string> log_file_path = std::nullopt);
 
 	/**
 	 * todo docu

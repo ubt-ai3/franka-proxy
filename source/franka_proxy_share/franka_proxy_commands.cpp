@@ -91,24 +91,28 @@ void to_json(nlohmann::json& json, const command_apply_admittance_adm_imp_desire
 {
 	json["type"] = command_apply_admittance_adm_imp_desired_stiffness::type;
 	json["duration"] = object.duration;
-	json["log"] = object.log;
-	json["file"] = object.file;
 	json["adm_rotational_stiffness"] = object.adm_rotational_stiffness;
 	json["adm_translational_stiffness"] = object.adm_translational_stiffness;
 	json["imp_rotational_stiffness"] = object.imp_rotational_stiffness;
 	json["imp_translational_stiffness"] = object.imp_translational_stiffness;
+	json["log_file_path"] = object.log_file_path.value_or("");
 }
 
 
 void from_json(const nlohmann::json& json, command_apply_admittance_adm_imp_desired_stiffness& object)
 {
 	json.at("duration").get_to(object.duration);
-	json.at("log").get_to(object.log);
-	json.at("file").get_to(object.file);
 	json.at("adm_rotational_stiffness").get_to(object.adm_rotational_stiffness);
 	json.at("adm_translational_stiffness").get_to(object.adm_translational_stiffness);
 	json.at("imp_rotational_stiffness").get_to(object.imp_rotational_stiffness);
 	json.at("imp_translational_stiffness").get_to(object.imp_translational_stiffness);
+	
+	std::string lfp = json.at("log_file_path");
+	bool log = !(lfp == "");
+	if (log)
+		object.log_file_path = std::optional<std::string>(lfp);
+	else
+		object.log_file_path = std::optional<std::string>(std::nullopt);
 }
 
 
@@ -123,22 +127,26 @@ void to_json(nlohmann::json& json, const command_cartesian_impedance_hold_pose_d
 {
 	json["type"] = command_cartesian_impedance_hold_pose_desired_stiffness::type;
 	json["duration"] = object.duration;
-	json["log"] = object.log;
-	json["file"] = object.file;
 	json["use_stiff_damp_online_calc"] = object.use_stiff_damp_online_calc;
 	json["rotational_stiffness"] = object.rotational_stiffness;
 	json["translational_stiffness"] = object.translational_stiffness;
+	json["log_file_path"] = object.log_file_path.value_or("");
 }
 
 
 void from_json(const nlohmann::json& json, command_cartesian_impedance_hold_pose_desired_stiffness& object)
 {
 	json.at("duration").get_to(object.duration);
-	json.at("log").get_to(object.log);
-	json.at("file").get_to(object.file);
 	json.at("use_stiff_damp_online_calc").get_to(object.use_stiff_damp_online_calc);
 	json.at("rotational_stiffness").get_to(object.rotational_stiffness);
 	json.at("translational_stiffness").get_to(object.translational_stiffness);
+
+	std::string lfp = json.at("log_file_path");
+	bool log = !(lfp == "");
+	if (log)
+		object.log_file_path = std::optional<std::string>(lfp);
+	else
+		object.log_file_path = std::optional<std::string>(std::nullopt);
 }
 
 
@@ -154,11 +162,10 @@ void to_json(nlohmann::json& json, const command_cartesian_impedance_poses_desir
 	json["type"] = command_cartesian_impedance_poses_desired_stiffness::type;
 	json["poses"] = object.poses;
 	json["duration"] = object.duration;
-	json["log"] = object.log;
-	json["file"] = object.file;
 	json["use_stiff_damp_online_calc"] = object.use_stiff_damp_online_calc;
 	json["rotational_stiffness"] = object.rotational_stiffness;
 	json["translational_stiffness"] = object.translational_stiffness;
+	json["log_file_path"] = object.log_file_path.value_or("");
 }
 
 
@@ -166,11 +173,16 @@ void from_json(const nlohmann::json& json, command_cartesian_impedance_poses_des
 {
 	json.at("poses").get_to(object.poses);
 	json.at("duration").get_to(object.duration);
-	json.at("log").get_to(object.log);
-	json.at("file").get_to(object.file);
 	json.at("use_stiff_damp_online_calc").get_to(object.use_stiff_damp_online_calc);
 	json.at("rotational_stiffness").get_to(object.rotational_stiffness);
 	json.at("translational_stiffness").get_to(object.translational_stiffness);
+
+	std::string lfp = json.at("log_file_path");
+	bool log = !(lfp == "");
+	if (log)
+		object.log_file_path = std::optional<std::string>(lfp);
+	else
+		object.log_file_path = std::optional<std::string>(std::nullopt);
 }
 
 
@@ -185,18 +197,22 @@ void to_json(nlohmann::json& json, const command_joint_impedance_hold_position_d
 {
 	json["type"] = command_joint_impedance_hold_position_desired_stiffness::type;
 	json["duration"] = object.duration;
-	json["log"] = object.log;
-	json["file"] = object.file;
 	json["stiffness"] = object.stiffness;
+	json["log_file_path"] = object.log_file_path.value_or("");
 }
 
 
 void from_json(const nlohmann::json& json, command_joint_impedance_hold_position_desired_stiffness& object)
 {
 	json.at("duration").get_to(object.duration);
-	json.at("log").get_to(object.log);
-	json.at("file").get_to(object.file);
 	json.at("stiffness").get_to(object.stiffness);
+
+	std::string lfp = json.at("log_file_path");
+	bool log = !(lfp == "");
+	if (log)
+		object.log_file_path = std::optional<std::string>(lfp);
+	else
+		object.log_file_path = std::optional<std::string>(std::nullopt);
 }
 
 
@@ -212,9 +228,8 @@ void to_json(nlohmann::json& json, const command_joint_impedance_positions_desir
 	json["type"] = command_joint_impedance_positions_desired_stiffness::type;
 	json["joint_positions"] = object.joint_positions;
 	json["duration"] = object.duration;
-	json["log"] = object.log;
-	json["file"] = object.file;
 	json["stiffness"] = object.stiffness;
+	json["log_file_path"] = object.log_file_path.value_or("");
 }
 
 
@@ -222,9 +237,14 @@ void from_json(const nlohmann::json& json, command_joint_impedance_positions_des
 {
 	json.at("joint_positions").get_to(object.joint_positions);
 	json.at("duration").get_to(object.duration);
-	json.at("log").get_to(object.log);
-	json.at("file").get_to(object.file);
 	json.at("stiffness").get_to(object.stiffness);
+
+	std::string lfp = json.at("log_file_path");
+	bool log = !(lfp == "");
+	if (log)
+		object.log_file_path = std::optional<std::string>(lfp);
+	else
+		object.log_file_path = std::optional<std::string>(std::nullopt);
 }
 
 
@@ -240,8 +260,7 @@ void to_json(nlohmann::json& json, const command_ple_motion& object)
 	json["type"] = command_ple_motion::type;
 	json["speed"] = object.speed;
 	json["duration"] = object.duration;
-	json["log"] = object.log;
-	json["file"] = object.file;
+	json["log_file_path"] = object.log_file_path.value_or("");
 }
 
 
@@ -249,8 +268,13 @@ void from_json(const nlohmann::json& json, command_ple_motion& object)
 {
 	json.at("speed").get_to(object.speed);
 	json.at("duration").get_to(object.duration);
-	json.at("log").get_to(object.log);
-	json.at("file").get_to(object.file);
+	
+	std::string lfp = json.at("log_file_path");
+	bool log = !(lfp == "");
+	if (log)
+		object.log_file_path = std::optional<std::string>(lfp);
+	else
+		object.log_file_path = std::optional<std::string>(std::nullopt);
 }
 
 
@@ -348,15 +372,18 @@ void from_json(const nlohmann::json& json, command_grasp_gripper& object)
 void to_json(nlohmann::json& json, const command_start_recording& object)
 {
 	json["type"] = command_start_recording::type;
-	json["log"] = object.log;
-	json["file"] = object.file;
+	json["log_file_path"] = object.log_file_path.value_or("");
 }
 
 
 void from_json(const nlohmann::json& json, command_start_recording& object)
 {
-	json.at("log").get_to(object.log);
-	json.at("file").get_to(object.file);
+	std::string lfp = json.at("log_file_path");
+	bool log = !(lfp == "");
+	if (log)
+		object.log_file_path = std::optional<std::string>(lfp);
+	else
+		object.log_file_path = std::optional<std::string>(std::nullopt);
 }
 
 

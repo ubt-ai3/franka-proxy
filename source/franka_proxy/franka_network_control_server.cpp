@@ -286,8 +286,8 @@ command_generic_response franka_control_server::process_command
 command_generic_response franka_control_server::process_command
 (const command_apply_admittance_adm_imp_desired_stiffness& cmd)
 {
-	controller_.apply_admittance(cmd.duration, cmd.log, cmd.file, cmd.adm_rotational_stiffness, cmd.adm_translational_stiffness,
-	                             cmd.imp_rotational_stiffness, cmd.imp_translational_stiffness);
+	controller_.apply_admittance(cmd.duration, cmd.adm_rotational_stiffness, cmd.adm_translational_stiffness,
+	                             cmd.imp_rotational_stiffness, cmd.imp_translational_stiffness, cmd.log_file_path);
 	return command_result::success;
 }
 
@@ -295,8 +295,8 @@ command_generic_response franka_control_server::process_command
 command_generic_response franka_control_server::process_command
 (const command_cartesian_impedance_hold_pose_desired_stiffness& cmd)
 {
-	controller_.cartesian_impedance_hold_pose(cmd.duration, cmd.log, cmd.file, cmd.use_stiff_damp_online_calc,
-	                                          cmd.rotational_stiffness, cmd.translational_stiffness);
+	controller_.cartesian_impedance_hold_pose(cmd.duration, cmd.use_stiff_damp_online_calc,
+	                                          cmd.rotational_stiffness, cmd.translational_stiffness, cmd.log_file_path);
 	return command_result::success;
 }
 
@@ -304,8 +304,8 @@ command_generic_response franka_control_server::process_command
 command_generic_response franka_control_server::process_command
 (const command_cartesian_impedance_poses_desired_stiffness& cmd)
 {
-	controller_.cartesian_impedance_poses(cmd.poses, cmd.duration, cmd.log, cmd.file, cmd.use_stiff_damp_online_calc,
-	                                      cmd.rotational_stiffness, cmd.translational_stiffness);
+	controller_.cartesian_impedance_poses(cmd.poses, cmd.duration, cmd.use_stiff_damp_online_calc,
+	                                      cmd.rotational_stiffness, cmd.translational_stiffness, cmd.log_file_path);
 	return command_result::success;
 }
 
@@ -313,20 +313,20 @@ command_generic_response franka_control_server::process_command
 command_generic_response franka_control_server::process_command
 (const command_joint_impedance_hold_position_desired_stiffness& cmd)
 {
-	controller_.joint_impedance_hold_position(cmd.duration, cmd.log, cmd.file, cmd.stiffness);
+	controller_.joint_impedance_hold_position(cmd.duration, cmd.stiffness, cmd.log_file_path);
 	return command_result::success;
 }
 
 command_generic_response franka_control_server::process_command
 (const command_joint_impedance_positions_desired_stiffness& cmd)
 {
-	controller_.joint_impedance_positions(cmd.joint_positions, cmd.duration, cmd.log, cmd.file, cmd.stiffness);
+	controller_.joint_impedance_positions(cmd.joint_positions, cmd.duration, cmd.stiffness, cmd.log_file_path);
 	return command_result::success;
 }
 
 command_generic_response franka_control_server::process_command(const command_ple_motion& cmd)
 {
-	controller_.run_payload_estimation(cmd.speed, cmd.duration, cmd.log, cmd.file);
+	controller_.run_payload_estimation(cmd.speed, cmd.duration, cmd.log_file_path);
 	return command_generic_response();
 }
 
@@ -371,9 +371,8 @@ command_generic_response franka_control_server::process_command
 {
 	try
 	{
-		bool log = cmd.log;
-		std::string file = cmd.file;
-		controller_.start_recording(log, file);
+		std::optional<std::string> log_file_path = cmd.log_file_path;
+		controller_.start_recording(log_file_path);
 		return command_result::success;
 	}
 	catch (ft_sensor_connection_exception&)

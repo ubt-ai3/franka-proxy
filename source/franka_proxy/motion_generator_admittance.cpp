@@ -37,16 +37,15 @@ namespace franka_proxy
 			std::mutex& state_lock,
 			franka::RobotState& robot_state,
 			double duration,
-			bool logging,
-			std::string& file)
+			std::optional<std::string> log_file_path)
 			:
 			model_(robot.loadModel()),
 			state_lock_(state_lock),
 			state_(robot_state),
 			duration_(duration),
-			impedance_controller_(robot, state_lock, robot_state, duration, logging, file_, false),
-			logging_(logging),
-			logger_(file, 1, 3, 3, 1, 42)
+			impedance_controller_(robot, state_lock, robot_state, duration, false, log_file_path),
+			logging_(log_file_path.has_value()),
+			logger_(log_file_path.value_or("none"), 1, 3, 3, 1, 42)
 		{
 			{
 				std::lock_guard<std::mutex> state_guard(state_lock_);

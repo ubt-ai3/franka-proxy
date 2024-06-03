@@ -15,6 +15,7 @@
 #include <list>
 #include <vector>
 #include <string>
+#include <optional>
 
 #include <nlohmann/json_fwd.hpp>
 
@@ -118,12 +119,11 @@ struct command_apply_admittance_adm_imp_desired_stiffness
 	static constexpr char type[] = "admittance.apply_adm_imp_desired_stiffness";
 
 	double duration;
-	bool log;
-	std::string file;
 	double adm_rotational_stiffness;
 	double adm_translational_stiffness;
 	double imp_rotational_stiffness;
 	double imp_translational_stiffness;
+	std::optional<std::string> log_file_path;
 };
 
 void to_json(nlohmann::json&, const command_apply_admittance_adm_imp_desired_stiffness& object);
@@ -146,11 +146,10 @@ struct command_cartesian_impedance_hold_pose_desired_stiffness
 	static constexpr char type[] = "cartesian_impedance.hold_desired_stiffness";
 
 	double duration;
-	bool log;
-	std::string file;
 	bool use_stiff_damp_online_calc;
 	double rotational_stiffness;
 	double translational_stiffness;
+	std::optional<std::string> log_file_path;
 };
 
 void to_json(nlohmann::json&, const command_cartesian_impedance_hold_pose_desired_stiffness& object);
@@ -177,11 +176,10 @@ struct command_cartesian_impedance_poses_desired_stiffness
 
 	std::list<std::array<double, 16>> poses;
 	double duration;
-	bool log;
-	std::string file;
 	bool use_stiff_damp_online_calc;
 	double rotational_stiffness;
 	double translational_stiffness;
+	std::optional<std::string> log_file_path;
 };
 
 void to_json(nlohmann::json&, const command_cartesian_impedance_poses_desired_stiffness& object);
@@ -206,9 +204,8 @@ struct command_joint_impedance_hold_position_desired_stiffness
 	static constexpr char type[] = "joint_impedance.hold_desired_stiffness";
 
 	double duration;
-	bool log;
-	std::string file;
-	std::array<double,  49> stiffness;
+	std::array<double, 49> stiffness;
+	std::optional<std::string> log_file_path;
 };
 
 void to_json(nlohmann::json&, const command_joint_impedance_hold_position_desired_stiffness& object);
@@ -234,9 +231,8 @@ struct command_joint_impedance_positions_desired_stiffness
 
 	std::list<std::array<double, 7>> joint_positions;
 	double duration;
-	bool log;
-	std::string file;
 	std::array<double, 49> stiffness;
+	std::optional<std::string> log_file_path;
 };
 
 void to_json(nlohmann::json&, const command_joint_impedance_positions_desired_stiffness& object);
@@ -261,8 +257,7 @@ struct command_ple_motion
 
 	double speed;
 	double duration;
-	bool log;
-	std::string file;
+	std::optional<std::string> log_file_path;
 };
 
 void to_json(nlohmann::json&, const command_ple_motion& object);
@@ -376,8 +371,7 @@ struct command_start_recording
 	using response_type = command_generic_response;
 	static constexpr char type[] = "recording.start";
 
-	bool log;
-	std::string file;
+	std::optional<std::string> log_file_path;
 };
 
 void to_json(nlohmann::json& json, const command_start_recording& object);

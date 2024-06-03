@@ -39,17 +39,16 @@ namespace franka_proxy
 			std::mutex& state_lock,
 			franka::RobotState& robot_state,
 			double duration,
-			bool logging,
-			std::string& file,
-			bool use_online_parameter_calc)
+			bool use_online_parameter_calc,
+			std::optional<std::string> log_file_path)
 			:
 			model_(robot.loadModel()),
 			state_lock_(state_lock),
 			state_(robot_state),
 			duration_(duration),
 			online_parameter_calc_(use_online_parameter_calc),
-			logging_(logging),
-			logger_(file,0,4,3,1,0)
+			logging_(log_file_path.has_value()),
+			logger_(log_file_path.value_or("none"), 0, 4, 3, 1, 0)
 		{
 			init_impedance_motion_generator(robot, state_lock, robot_state);
 
@@ -67,9 +66,8 @@ namespace franka_proxy
 			franka::RobotState& robot_state,
 			std::list<std::array<double, 16>> poses,
 			double duration,
-			bool logging,
-			std::string& file,
-			bool use_online_parameter_calc)
+			bool use_online_parameter_calc,
+			std::optional<std::string> log_file_path)
 			:
 			model_(robot.loadModel()),
 			state_lock_(state_lock),
@@ -77,8 +75,8 @@ namespace franka_proxy
 			duration_(duration),
 			poses_(poses),
 			online_parameter_calc_(use_online_parameter_calc),
-			logging_(logging),
-			logger_(file, 0, 4, 3, 1, 0)
+			logging_(log_file_path.has_value()),
+			logger_(log_file_path.value_or("none"), 0, 4, 3, 1, 0)
 		{
 			init_impedance_motion_generator(robot, state_lock, robot_state);
 

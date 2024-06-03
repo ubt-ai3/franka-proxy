@@ -33,15 +33,15 @@ motion_recorder::motion_recorder(franka::Robot& robot,
 }
 
 
-void motion_recorder::start(bool log, std::string& file)
+void motion_recorder::start(std::optional<std::string> log_file_path)
 {
 	stop_ = false;
 	joints_record_.clear();
 	fts_record_.clear();
 
-	if (log) {
+	if (log_file_path.has_value()) {
 		log_ = true;
-		file_ = file;
+		file_ = log_file_path.value();
 	}
 
 
@@ -99,9 +99,9 @@ std::pair<std::vector<std::array<double, 7>>, std::vector<std::array<double, 6>>
 }
 
 
-std::pair<std::vector<std::array<double, 7>>, std::vector<std::array<double, 6>>> motion_recorder::start(float seconds, bool log, std::string& file)
+std::pair<std::vector<std::array<double, 7>>, std::vector<std::array<double, 6>>> motion_recorder::start(float seconds, std::optional<std::string> log_file_path)
 {
-	start(log, file);
+	start(log_file_path);
 	std::this_thread::sleep_for(std::chrono::duration<float>(seconds));
 	return stop();
 }

@@ -11,6 +11,7 @@
 
 
 #include <vector>
+#include <optional>
 
 #include <Eigen/Core>
 
@@ -53,8 +54,7 @@ namespace franka_proxy
 				std::mutex& state_lock,
 				franka::RobotState& robot_state,
 				double duration,
-				bool logging,
-				std::string& file_);
+				std::optional<std::string> log_file_path);
 
 			franka::Torques callback
 			(const franka::RobotState& robot_state,

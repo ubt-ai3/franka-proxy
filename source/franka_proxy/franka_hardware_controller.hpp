@@ -13,6 +13,7 @@
 #include <condition_variable>
 #include <string>
 #include <vector>
+#include <optional>
 
 #include <franka/robot.h>
 #include <franka/gripper.h>
@@ -105,9 +106,9 @@ public:
 	/**
 	 * Starts/Stops the recording callback.
 	 */
-	void start_recording(bool log, std::string& file);
+	void start_recording(std::optional<std::string> log_file_path = std::nullopt);
 	std::pair<std::vector<robot_config_7dof>, std::vector<wrench>> stop_recording();
-	std::pair<std::vector<robot_config_7dof>, std::vector<wrench>> start_recording(float seconds, bool log, std::string& file);
+	std::pair<std::vector<robot_config_7dof>, std::vector<wrench>> start_recording(float seconds, std::optional<std::string> log_file_path = std::nullopt);
 
 	/**
 	 * Moves the Panda robot along a given sequence.
@@ -127,42 +128,44 @@ public:
 	 * rotational and translational stiffness parameters.
 	 */
 	void apply_admittance(
-		double duration, bool log, std::string file, double adm_rotational_stiffness,
+		double duration, double adm_rotational_stiffness,
 		double adm_translational_stiffness, double imp_rotational_stiffness,
-		double imp_translational_stiffness);
+		double imp_translational_stiffness,
+		std::optional<std::string> log_file_path = std::nullopt);
 	/**
 	 * Cartesian impedance controller to hold the current pose
 	 * using desired rotational and translational stiffness parameter.
 	 */
 	void cartesian_impedance_hold_pose(
-		double duration, bool log, std::string file, bool use_stiff_damp_online_calc,
-		double rotational_stiffness, double translational_stiffness);
+		double duration, bool use_stiff_damp_online_calc,
+		double rotational_stiffness, double translational_stiffness,
+		std::optional<std::string> log_file_path = std::nullopt);
 	/**
 	 * Cartesian impedacne controller to hold multiple poses resp. to follow path of multiple poses
 	 * using desired rotational and translational stiffness parameter.
 	*/
 	void cartesian_impedance_poses(
-		const std::list<std::array<double, 16>>& poses, double duration, bool log, std::string file,
+		const std::list<std::array<double, 16>>& poses, double duration,
 		bool use_stiff_damp_online_calc, double rotational_stiffness,
-		double translational_stiffness);
+		double translational_stiffness, std::optional<std::string> log_file_path = std::nullopt);
 	/**
 	 * Joint space impedance controller to hold the current joint position
 	 * using desired stiffness matrix parameter.
 	 */
 	void joint_impedance_hold_position(
-		double duration, bool log, std::string file, std::array<double, 49> stiffness);
+		double duration, std::array<double, 49> stiffness, std::optional<std::string> log_file_path = std::nullopt);
 	/**
 	 * Joint space impedacne controller to hold multiple joint positions resp.
 	 * to follow path of multiple joint positions using desired stiffness matrix parameter.
 	*/
 	void joint_impedance_positions(
 		const std::list<std::array<double, 7>>& joint_positions, double duration,
-		bool log, std::string file, std::array<double, 49> stiffness);
+		std::array<double, 49> stiffness, std::optional<std::string> log_file_path = std::nullopt);
 
 	/**
 	 *  Runs the pre-defined motion for payload estimation
 	*/
-	void run_payload_estimation(double speed,  double duration, bool log, std::string file);
+	void run_payload_estimation(double speed,  double duration, std::optional<std::string> log_file_path = std::nullopt);
 
 private:
 	/**

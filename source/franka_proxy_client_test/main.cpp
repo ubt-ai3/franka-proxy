@@ -2,6 +2,7 @@
 #include <fstream>
 #include <iostream>
 #include <thread>
+#include <optional>
 
 #include <argparse/argparse.hpp>
 
@@ -354,7 +355,10 @@ void ple_motion_record_test(franka_proxy::franka_remote_interface& robot, double
 	execute_retry([&] { robot.move_to(starting_pos); }, robot);
 	
 	std::this_thread::sleep_for(std::chrono::seconds(3));
-	robot.ple_motion(speed, duration, log, file);
+
+	std::optional<std::string> log_file_path = std::nullopt;
+	if (log) log_file_path = file;
+	robot.ple_motion(speed, duration, log_file_path);
 
 	std::cout << "Finished PLE motion record test." << std::endl;
 }
@@ -363,13 +367,16 @@ void ple_motion_record_test(franka_proxy::franka_remote_interface& robot, double
 void playback_test(franka_proxy::franka_remote_interface& robot, bool log, std::string& file)
 {
 	std::cout << ("Starting Playback Test.") << std::endl;
+
+	std::optional<std::string> log_file_path = std::nullopt;
+	if (log) log_file_path = file;
 	
 	std::cout << ("--- press to start in 3s (lights white) ---") << std::endl;
 	std::cin.get();
 	std::this_thread::sleep_for(std::chrono::seconds(3));
 
 	std::cout << ("--- starting demonstration ---") << std::endl;
-	robot.start_recording(log, file);
+	robot.start_recording(log_file_path);
 	std::this_thread::sleep_for(std::chrono::seconds(10));
 
 	std::cout << ("--- stopped demonstration ---") << std::endl;
@@ -698,7 +705,9 @@ void impedance_admittance_ermer_ba_tests(franka_proxy::franka_remote_interface& 
 
 	// this likes to cause trouble every now and then
 	try {
-		robot.cartesian_impedance_hold_pose(10., log, file, false, rotational_stiffness, translational_stiffness);
+		std::optional<std::string> log_file_path = std::nullopt;
+		if (log) log_file_path = file;
+		robot.cartesian_impedance_hold_pose(10., false, rotational_stiffness, translational_stiffness, log_file_path);
 	}
 	catch (franka_proxy::command_exception& e) {
 		std::cout << e.what() << std::endl;
@@ -723,7 +732,9 @@ void impedance_admittance_ermer_ba_tests(franka_proxy::franka_remote_interface& 
 	// maybe related to position error? trying to fix in one go rather than over time?
 	//execute_retry([&] { robot.cartesian_impedance_poses(new_poses, 30., log, file, false, 50., 300.); }, robot);
 	try {
-		robot.cartesian_impedance_poses(new_poses, 30., log, file, false, rotational_stiffness, translational_stiffness);
+		std::optional<std::string> log_file_path = std::nullopt;
+		if (log) log_file_path = file;
+		robot.cartesian_impedance_poses(new_poses, 30., false, rotational_stiffness, translational_stiffness, log_file_path);
 	}
 	catch (franka_proxy::command_exception& e) {
 		std::cout << e.what() << std::endl;
@@ -752,7 +763,9 @@ void impedance_admittance_ermer_ba_tests(franka_proxy::franka_remote_interface& 
 
 	// see above
 	try {
-		robot.joint_impedance_hold_position(10., log, file, stiffness);
+		std::optional<std::string> log_file_path = std::nullopt;
+		if (log) log_file_path = file;
+		robot.joint_impedance_hold_position(10., stiffness, log_file_path);
 	}
 	catch (franka_proxy::command_exception& e) {
 		std::cout << e.what() << std::endl;
@@ -776,7 +789,9 @@ void impedance_admittance_ermer_ba_tests(franka_proxy::franka_remote_interface& 
 	//TODO: same as above, with more violent effect after a delay
 	//execute_retry([&] { robot.cartesian_impedance_poses(joint_poses, 30., log, file, stiffness); }, robot);
 	try {
-		robot.joint_impedance_positions(joint_poses, 30., log, file, stiffness);
+		std::optional<std::string> log_file_path = std::nullopt;
+		if (log) log_file_path = file;
+		robot.joint_impedance_positions(joint_poses, 30., stiffness, log_file_path);
 	}
 	catch (franka_proxy::command_exception& e) {
 		std::cout << e.what() << std::endl;
@@ -799,7 +814,9 @@ void impedance_admittance_ermer_ba_tests(franka_proxy::franka_remote_interface& 
 
 	//TODO: this fails to send command constantly
 	try {
-		robot.apply_admittance(10., log, file, 10., 150., 10., 150.);
+		std::optional<std::string> log_file_path = std::nullopt;
+		if (log) log_file_path = file;
+		robot.apply_admittance(10., 10., 150., 10., 150., log_file_path);
 	}
 	catch (franka_proxy::command_exception& e) {
 		std::cout << e.what() << std::endl;

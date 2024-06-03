@@ -7,6 +7,8 @@
  *
  ************************************************************************/
 
+#include <optional>
+
 #include "franka_controller_remote.hpp"
 
 #include <franka_proxy_client/franka_remote_interface.hpp>
@@ -118,7 +120,10 @@ void franka_controller_remote::update()
 
 void franka_controller_remote::start_recording(bool log, std::string& file)
 {
-	controller_->start_recording(log, file);
+	std::optional<std::string> log_file_path(std::nullopt);
+	if (log)
+		log_file_path = file;
+	controller_->start_recording(log_file_path);
 }
 
 

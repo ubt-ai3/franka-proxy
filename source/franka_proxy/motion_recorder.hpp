@@ -14,6 +14,7 @@
 #include <atomic>
 #include <thread>
 #include <vector>
+#include <optional>
 
 #include <franka/robot.h>
 
@@ -40,12 +41,12 @@ public:
 		franka::RobotState& robot_state,
 		ft_sensor* fts);
 
-	void start(bool log, std::string& file);
+	void start(std::optional<std::string> log_file_path);
 	std::pair<std::vector<std::array<double, 7>>, std::vector<std::array<double, 6>>> stop();
 
 	// this is blocking
 	std::pair<std::vector<std::array<double, 7>>, std::vector<std::array<double, 6>>> start(
-		float seconds, bool log, std::string& file);
+		float seconds, std::optional<std::string> log_file_path);
 
 private:
 	std::vector<std::array<double, 7>> joints_record_;
