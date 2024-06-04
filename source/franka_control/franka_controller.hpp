@@ -13,6 +13,7 @@
 #include <atomic>
 #include <thread>
 #include <vector>
+#include <optional>
 
 #include <Eigen/Geometry>
 
@@ -95,7 +96,7 @@ public:
 	 */
 	virtual void update() = 0;
 
-	virtual void start_recording(bool log, std::string& file) = 0;
+	virtual void start_recording(std::optional<std::string> log_file_path = std::nullopt) = 0;
 	virtual std::pair<std::vector<robot_config_7dof>, std::vector<wrench>> stop_recording() = 0;
 	virtual void move_sequence(
 		const std::vector<robot_config_7dof>& q_sequence,

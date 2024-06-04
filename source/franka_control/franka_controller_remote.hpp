@@ -11,6 +11,7 @@
 
 
 #include <mutex>
+#include <optional>
 
 #include <Eigen/Geometry>
 
@@ -63,7 +64,7 @@ public:
 	void update() override;
 
 
-	void start_recording(bool log, std::string& file) override;
+	void start_recording(std::optional<std::string> log_file_path = std::nullopt) override;
 	std::pair<std::vector<robot_config_7dof>, std::vector<wrench>> stop_recording() override;
 	void move_sequence(
 		const std::vector<robot_config_7dof>& q_sequence,

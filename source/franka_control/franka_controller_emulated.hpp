@@ -11,6 +11,7 @@
 
 
 #include <mutex>
+#include <optional>
 
 #include "franka_controller.hpp"
 
@@ -60,7 +61,7 @@ public:
 
 	void update() override;
 
-	void start_recording(bool log, std::string& file) override;
+	void start_recording(std::optional<std::string> log_file_path = std::nullopt) override;
 
 	/**
 	* Stop recording playback data, assumes that start_recording() has been called bevore.

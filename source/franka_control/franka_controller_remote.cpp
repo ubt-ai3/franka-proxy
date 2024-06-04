@@ -118,11 +118,8 @@ void franka_controller_remote::update()
 	{ controller_->update(); }
 
 
-void franka_controller_remote::start_recording(bool log, std::string& file)
+void franka_controller_remote::start_recording(std::optional<std::string> log_file_path)
 {
-	std::optional<std::string> log_file_path(std::nullopt);
-	if (log)
-		log_file_path = file;
 	controller_->start_recording(log_file_path);
 }
 

@@ -292,7 +292,7 @@ void franka_controller_emulated::update()
 }
 
 
-void franka_controller_emulated::start_recording(bool log, std::string& file)
+void franka_controller_emulated::start_recording(std::optional<std::string> log_file_path)
 {
 	std::lock_guard<std::mutex> lk(controller_mutex_);
 	recording_start_ = std::chrono::steady_clock::now();
