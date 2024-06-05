@@ -17,6 +17,7 @@ void franka_controller_remote_test(const std::string& ip);
 void franka_controller_emulated_test();
 void franka_fts_calibration(const std::string& ip);
 void guiding_mode_test(const std::string& ip);
+void generic_test_function(const std::string& ip);
 
 void print_status(const franka_control::franka_controller& controller);
 
@@ -45,6 +46,10 @@ int main(int argc, char* argv[])
 		   .default_value(std::string("127.0.0.1"))
 		   .metavar("IP");
 
+	program.add_argument("-t", "--test-generic")
+		.help("generic test function")
+		.default_value(std::string("127.0.0.1"))
+		.metavar("IP");
 
 	try
 	{
@@ -91,6 +96,14 @@ int main(int argc, char* argv[])
 			"--------------------------------------------------------------------------------\n"
 			"Executing guiding mode test: " << std::endl;
 		guiding_mode_test(ip);
+	}
+	if (program.is_used("-t"))
+	{
+		const auto ip = program.get<std::string>("-t");
+		std::cout <<
+			"--------------------------------------------------------------------------------\n"
+			"Executing generic test: " << std::endl;
+		generic_test_function(ip);
 	}
 	std::cout << "\nPress Enter to end test exe." << std::endl;
 	std::cin.get();
@@ -216,6 +229,8 @@ void print_status(const franka_control::franka_controller& controller)
 	const Eigen::IOFormat format(3, 0, ", ", "\n", "[ ", " ]");
 	std::cout << "Current robot joints: "
 		<< controller.current_config().transpose().format(format) << std::endl;
+	std::cout << "Current robot tcp pose: " 
+		<< controller.current_world_T_tcp().matrix().format(format) << "--- ends here" << std::endl;
 }
 
 void franka_fts_calibration(const std::string& ip)
@@ -259,4 +274,36 @@ void guiding_mode_test(const std::string& ip)
 	//set back to default after test
 	robot->set_guiding_mode(true, true, true, true, true, true, false);
 	std::cout << "Finished guiding mode test" << std::endl;
+}
+
+void generic_test_function(const std::string& ip)
+{
+	std::unique_ptr<franka_control::franka_controller> robot;
+	try
+	{
+		robot =
+			std::make_unique<franka_control::franka_controller_remote>(ip);
+	}
+	catch (const std::exception&)
+	{
+		std::cerr << "Could not connect to franka-proxy with IP " << ip << "." << std::endl;
+		return;
+	}
+	franka_control::franka_update_task update_task(*robot);
+
+	std::cout << "Status tests: 5 seconds.\n"; // todo: design a useful test function
+	std::atomic_bool stop(false);
+	std::thread t
+	([&stop, &robot]()
+		{
+			while (!stop)
+			{
+				print_status(*robot);
+				std::this_thread::sleep_for(std::chrono::duration<double>(1));
+			}
+		});
+
+	std::this_thread::sleep_for(std::chrono::duration<double>(3));
+	stop = true;
+	t.join();
 }
