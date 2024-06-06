@@ -20,7 +20,7 @@ vcpkg install --triplet=x64-windows asio argparse franka nlohmann-json
 
 mkdir build
 cd build
-cmake .. "-DCMAKE_TOOLCHAIN_FILE=C:\Users\hartwig\Desktop\franka_proxy_without_viral\tools\vcpkg\scripts\buildsystems\vcpkg.cmake"
+cmake .. "-DCMAKE_TOOLCHAIN_FILE=C:/insert/path/here/tools/vcpkg/scripts/buildsystems/vcpkg.cmake"
 cmake --build .
 ```
 
