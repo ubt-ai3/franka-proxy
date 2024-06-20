@@ -52,7 +52,7 @@ namespace franka_proxy
 				franka::RobotState& robot_state,
 				double duration,
 				bool use_online_parameter_calc,
-				std::optional<std::string> log_file_path);
+				std::optional<std::string> log_file_path = std::nullopt);
 
 			cartesian_impedance_motion_generator
 			(franka::Robot& robot,
@@ -61,7 +61,7 @@ namespace franka_proxy
 				std::list<std::array<double, 16>> poses,
 				double duration,
 				bool use_online_parameter_calc,
-				std::optional<std::string> log_file_path);
+				std::optional<std::string> log_file_path = std::nullopt);
 
 			franka::Torques callback
 				(const franka::RobotState& robot_state,

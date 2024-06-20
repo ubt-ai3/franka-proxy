@@ -54,7 +54,7 @@ namespace franka_proxy
 				std::mutex& state_lock,
 				franka::RobotState& robot_state,
 				double duration,
-				std::optional<std::string> log_file_path);
+				std::optional<std::string> log_file_path = std::nullopt);
 
 			franka::Torques callback
 			(const franka::RobotState& robot_state,

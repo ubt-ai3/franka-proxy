@@ -41,12 +41,12 @@ public:
 		franka::RobotState& robot_state,
 		ft_sensor* fts);
 
-	void start(std::optional<std::string> log_file_path);
+	void start(std::optional<std::string> log_file_path = std::nullopt);
 	std::pair<std::vector<std::array<double, 7>>, std::vector<std::array<double, 6>>> stop();
 
 	// this is blocking
 	std::pair<std::vector<std::array<double, 7>>, std::vector<std::array<double, 6>>> start(
-		float seconds, std::optional<std::string> log_file_path);
+		float seconds, std::optional<std::string> log_file_path = std::nullopt);
 
 private:
 	std::vector<std::array<double, 7>> joints_record_;

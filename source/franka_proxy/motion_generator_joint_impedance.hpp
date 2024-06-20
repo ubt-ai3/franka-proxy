@@ -51,7 +51,7 @@ namespace franka_proxy
 				std::mutex& state_lock,
 				franka::RobotState& robot_state,
 				double duration,
-				std::optional<std::string> log_file_path);
+				std::optional<std::string> log_file_path = std::nullopt);
 
 			joint_impedance_motion_generator
 			(franka::Robot& robot,
@@ -59,7 +59,7 @@ namespace franka_proxy
 				franka::RobotState& robot_state,
 				std::list<std::array<double, 7>> joint_positions,
 				double duration,
-				std::optional<std::string> log_file_path);
+				std::optional<std::string> log_file_path = std::nullopt);
 
 			franka::Torques callback
 			(const franka::RobotState& robot_state,
