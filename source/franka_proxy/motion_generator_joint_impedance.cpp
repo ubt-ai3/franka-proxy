@@ -39,7 +39,7 @@ namespace franka_proxy
 			std::mutex& state_lock,
 			franka::RobotState& robot_state,
 			double duration,
-			std::optional<std::string> log_file_path)
+			const std::optional<std::string>& log_file_path)
 			:
 			model_(robot.loadModel()),
 			state_lock_(state_lock),
@@ -62,9 +62,9 @@ namespace franka_proxy
 		(franka::Robot& robot,
 			std::mutex& state_lock,
 			franka::RobotState& robot_state,
-			std::list<std::array<double, 7>> joint_positions,
+			const std::list<std::array<double, 7>>& joint_positions,
 			double duration,
-			std::optional<std::string> log_file_path)
+			const std::optional<std::string>& log_file_path)
 			:
 			model_(robot.loadModel()),
 			state_lock_(state_lock),
@@ -113,7 +113,7 @@ namespace franka_proxy
 		franka::Torques joint_impedance_motion_generator::callback
 		(const franka::RobotState& robot_state,
 			franka::Duration period,
-			std::function<Eigen::Matrix<double, 7, 1>(const double)> get_joint_position_error)
+			const std::function<Eigen::Matrix<double, 7, 1>(const double)>& get_joint_position_error)
 		{
 			{
 				std::lock_guard<std::mutex> state_guard(state_lock_);

@@ -22,11 +22,11 @@ public:
 
 	schunk_ft_sensor(const Eigen::Affine3f& kms_T_flange,
 	                 const Eigen::Affine3f& EE_T_kms,
-	                 std::string config_file = "./assets/fts-config.json");
+	                 const std::string& config_file = "./assets/fts-config.json");
 
 	~schunk_ft_sensor() override;
 
-	void update_calibration(std::string config_file = "./assets/fts-config.json");
+	void update_calibration(const std::string& config_file = "./assets/fts-config.json");
 
 private:
 	void set_response_handler(const std::function<void(const ft_sensor_response&)>& functor);
@@ -83,7 +83,7 @@ private:
 		return msg;
 	}();
 
-	Eigen::Vector<double, 6> bias_from_config(std::string config_file) const;
-	Eigen::Vector3d load_mass_from_config(std::string config_file) const;
+	Eigen::Vector<double, 6> bias_from_config(const std::string& config_file) const;
+	Eigen::Vector3d load_mass_from_config(const std::string& config_file) const;
 };
 } /* namespace franka_proxy */

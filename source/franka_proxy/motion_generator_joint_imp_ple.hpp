@@ -51,12 +51,12 @@ namespace franka_proxy
 				franka::RobotState& robot_state,
 				double speed,
 				double duration,
-				std::optional<std::string> log_file_path = std::nullopt);
+				const std::optional<std::string>& log_file_path = std::nullopt);
 
 			franka::Torques callback
 			(const franka::RobotState& robot_state,
 				franka::Duration period,
-				std::function<Eigen::Matrix<double, 7, 1>(const double)> get_joint_position_error);
+				const std::function<Eigen::Matrix<double, 7, 1>(const double)>& get_joint_position_error);
 
 			Eigen::Matrix<double, 7, 1> calculate_ple_motion(const franka::RobotState& robot_state, double time);
 

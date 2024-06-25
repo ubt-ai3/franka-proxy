@@ -37,7 +37,7 @@ namespace franka_proxy
 			std::mutex& state_lock,
 			franka::RobotState& robot_state,
 			double duration,
-			std::optional<std::string> log_file_path)
+			const std::optional<std::string>& log_file_path)
 			:
 			model_(robot.loadModel()),
 			state_lock_(state_lock),

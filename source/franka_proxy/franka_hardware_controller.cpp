@@ -136,7 +136,7 @@ void franka_hardware_controller::apply_admittance(const double duration,
                                                   const double adm_translational_stiffness,
                                                   const double imp_rotational_stiffness,
                                                   const double imp_translational_stiffness,
-												  std::optional<std::string> log_file_path)
+                                                  const std::optional<std::string>& log_file_path)
 {
 	detail::admittance_motion_generator motion_generator(robot_, robot_state_lock_, robot_state_, duration, log_file_path);
 
@@ -171,8 +171,8 @@ void franka_hardware_controller::apply_admittance(const double duration,
 	set_control_loop_running(false);
 }
 
-void franka_hardware_controller::joint_impedance_hold_position(const double duration, const std::array<double, 49> stiffness,
-															   std::optional<std::string> log_file_path)
+void franka_hardware_controller::joint_impedance_hold_position(const double duration, const std::array<double, 49>& stiffness,
+                                                               const std::optional<std::string>& log_file_path)
 {
 	detail::joint_impedance_motion_generator motion_generator(robot_, robot_state_lock_, robot_state_, duration, log_file_path);
 
@@ -210,8 +210,8 @@ void franka_hardware_controller::joint_impedance_hold_position(const double dura
 }
 
 void franka_hardware_controller::joint_impedance_positions(const std::list<std::array<double, 7>>& joint_positions,
-                                                           const double duration, const std::array<double, 49> stiffness,
-														   std::optional<std::string> log_file_path)
+                                                           const double duration, const std::array<double, 49>& stiffness,
+                                                           const std::optional<std::string>& log_file_path)
 {
 	detail::joint_impedance_motion_generator motion_generator(
 		robot_, robot_state_lock_, robot_state_, 
@@ -254,7 +254,7 @@ void franka_hardware_controller::cartesian_impedance_hold_pose(const double dura
                                                                const bool use_stiff_damp_online_calc,
                                                                const double rotational_stiffness,
                                                                const double translational_stiffness,
-															   std::optional<std::string> log_file_path)
+                                                               const std::optional<std::string>& log_file_path)
 {
 	detail::cartesian_impedance_motion_generator motion_generator(
 		robot_, robot_state_lock_, robot_state_, duration,
@@ -299,7 +299,7 @@ void franka_hardware_controller::cartesian_impedance_poses(const std::list<std::
                                                            const bool use_stiff_damp_online_calc,
                                                            const double rotational_stiffness,
                                                            const double translational_stiffness,
-														   std::optional<std::string> log_file_path)
+                                                           const std::optional<std::string>& log_file_path)
 {
 	detail::cartesian_impedance_motion_generator motion_generator(
 		robot_, robot_state_lock_, robot_state_, poses, 
@@ -340,7 +340,7 @@ void franka_hardware_controller::cartesian_impedance_poses(const std::list<std::
 }
 
 
-void franka_hardware_controller::run_payload_estimation(double speed, double duration, std::optional<std::string> log_file_path)
+void franka_hardware_controller::run_payload_estimation(double speed, double duration, const std::optional<std::string>& log_file_path)
 {
 	detail::ple_motion_generator motion_generator(robot_, robot_state_lock_, robot_state_, speed, duration, log_file_path);
 
@@ -551,7 +551,7 @@ franka::GripperState franka_hardware_controller::gripper_state() const
 }
 
 
-void franka_hardware_controller::start_recording(std::optional<std::string> log_file_path)
+void franka_hardware_controller::start_recording(const std::optional<std::string>& log_file_path)
 {
 	if (!ft_sensor_)
 	{
@@ -578,7 +578,7 @@ franka_hardware_controller::stop_recording()
 
 
 std::pair<std::vector<robot_config_7dof>, std::vector<wrench>>
-franka_hardware_controller::start_recording(float seconds, std::optional<std::string> log_file_path)
+franka_hardware_controller::start_recording(float seconds, const std::optional<std::string>& log_file_path)
 {
 	set_control_loop_running(true);
 	{

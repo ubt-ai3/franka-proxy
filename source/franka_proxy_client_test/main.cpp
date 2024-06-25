@@ -31,7 +31,7 @@ void franka_proxy_client_test(const std::string& ip, mode test, std::vector<std:
 void print_status(const franka_proxy::franka_remote_interface& robot);
 template <class Function> void execute_retry(
 	Function&& f, franka_proxy::franka_remote_interface& robot);
-double calculate_pose_error( franka_proxy::robot_config_7dof pose_d, franka_proxy::robot_config_7dof pose_c);
+double calculate_pose_error(const franka_proxy::robot_config_7dof& pose_d, const franka_proxy::robot_config_7dof& pose_c);
 
 
 void ple_motion_record_test(franka_proxy::franka_remote_interface& robot, double speed, double duration, bool log, std::string file);
@@ -835,7 +835,7 @@ void impedance_admittance_ermer_ba_tests(franka_proxy::franka_remote_interface& 
 }
 
 
-double calculate_pose_error(franka_proxy::robot_config_7dof pose_d, franka_proxy::robot_config_7dof pose_c) {
+double calculate_pose_error(const franka_proxy::robot_config_7dof& pose_d, const franka_proxy::robot_config_7dof& pose_c) {
 	double error = 0.0;
 	for (int i = 0; i < 7; i++) {
 		error += std::abs((pose_d[i] - pose_c[i]) / pose_d[i]);

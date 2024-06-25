@@ -34,7 +34,7 @@ namespace detail
 
 
 franka_joint_motion_generator::franka_joint_motion_generator
-	(double speed_factor, const std::array<double, 7> q_goal,
+	(double speed_factor, const std::array<double, 7>& q_goal,
 	 std::mutex& current_state_lock,
 	 franka::RobotState& current_state,
 	 const std::atomic_bool& stop_motion_flag,

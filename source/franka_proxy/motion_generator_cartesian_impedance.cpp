@@ -40,7 +40,7 @@ namespace franka_proxy
 			franka::RobotState& robot_state,
 			double duration,
 			bool use_online_parameter_calc,
-			std::optional<std::string> log_file_path)
+			const std::optional<std::string>& log_file_path)
 			:
 			model_(robot.loadModel()),
 			state_lock_(state_lock),
@@ -64,10 +64,10 @@ namespace franka_proxy
 		(franka::Robot& robot,
 			std::mutex& state_lock,
 			franka::RobotState& robot_state,
-			std::list<std::array<double, 16>> poses,
+			const std::list<std::array<double, 16>>& poses,
 			double duration,
 			bool use_online_parameter_calc,
-			std::optional<std::string> log_file_path)
+			const std::optional<std::string>& log_file_path)
 			:
 			model_(robot.loadModel()),
 			state_lock_(state_lock),
