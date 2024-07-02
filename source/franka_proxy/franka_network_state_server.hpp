@@ -7,9 +7,7 @@
  *
  ************************************************************************/
 
-
-#if !defined(INCLUDED__FRANKA_PROXY__FRANKA_NETWORK_STATE_SERVER_HPP)
-#define INCLUDED__FRANKA_PROXY__FRANKA_NETWORK_STATE_SERVER_HPP
+#pragma once
 
 
 #include <asio/ip/tcp.hpp>
@@ -59,13 +57,8 @@ private:
 	std::atomic_bool terminate_internal_thread_;
 
 	static constexpr float sleep_seconds_disconnected_ = 0.033f;
-	static constexpr float sleep_seconds_connected_ = 0.002f;
+	static constexpr float sleep_seconds_connected_ = 0.033f;
 };
 
 
-
-
 } /* namespace franka_proxy */
-
-
-#endif /* !defined(INCLUDED__FRANKA_PROXY__FRANKA_NETWORK_STATE_SERVER_HPP) */

@@ -7,29 +7,24 @@
  *
  ************************************************************************/
 
-
-#if !defined(INCLUDED__FRANKA_CONTROL__FRANKA_UTIL_HPP)
-#define INCLUDED__FRANKA_CONTROL__FRANKA_UTIL_HPP
+#pragma once
 
 
 #include <vector>
 
 #include <Eigen/Geometry>
 
+//#include "franka_controller.hpp"
+
+#include "franka_proxy_share/franka_proxy_util.hpp"
+
+
 namespace franka_control
 {
 typedef Eigen::Matrix<double, 7, 1> robot_config_7dof;
 
-
-struct joint_limit
-{
-	joint_limit
-		(double min, double max);
-
-	double min;
-	double max;
-};
-
+	using joint_limit = franka_proxy::joint_limit;
+	using robot_config_7dof = Eigen::Matrix<double, 7, 1>;
 
 /**
  *************************************************************************
@@ -41,35 +36,39 @@ struct joint_limit
  ************************************************************************/
 class franka_util
 {
-public:
 
+public:
 	static std::vector<joint_limit> joint_limits();
 	static robot_config_7dof max_speed_per_joint();
 	static robot_config_7dof max_acc_per_joint();
 	static robot_config_7dof max_jerk_per_joint();
 
 
-	static bool is_reachable
-		(const robot_config_7dof& target);
+	static bool is_reachable(const robot_config_7dof& target);
+
+	/**
+	 * For coordinate frames see:
+	 * https://frankaemika.github.io/docs/control_parameters.html#denavithartenberg-parameters
+	 */
+	static std::vector<Eigen::Affine3d> fk(
+		const robot_config_7dof& configuration);
 
 
-	static std::vector<Eigen::Affine3d> fk
-		(const robot_config_7dof& configuration);
+	static std::vector<robot_config_7dof> ik_fast(
+		const Eigen::Affine3d& target_world_T_j7,
+		double joint_4_value = 0.);
 
 	static std::vector<Eigen::Affine3d> fk
 		(const std::array<double, 7>& configuration);
 
+	static std::vector<robot_config_7dof> ik_fast_robust(
+		const Eigen::Affine3d& target_world_T_j7,
+		double step_size = 0.174533);
 
-	static std::vector<robot_config_7dof> ik_fast
-		(const Eigen::Affine3d& world_T_nsa, double joint_4_value = 0.);
-	
-	static std::vector<robot_config_7dof> ik_fast_robust
-		(const Eigen::Affine3d& world_T_nsa, double step_size = 0.174533);
-
-	static robot_config_7dof ik_fast_closest
-		(const Eigen::Affine3d& target_world_T_nsa,
-		 const robot_config_7dof& current_configuration,
-		 double step_size = 0.174533);
+	static robot_config_7dof ik_fast_closest(
+		const Eigen::Affine3d& target_world_T_j7,
+		const robot_config_7dof& current_configuration,
+		double step_size = 0.174533);
 
 
 	/**
@@ -88,16 +87,7 @@ public:
 	static constexpr double deg_to_rad = pi / 180;
 	static constexpr double rad_to_deg = 180 / pi;
 
-
 private:
-	
 	static Eigen::Matrix3d a_tilde(const Eigen::Vector3d& a);
 };
-
-
-
-
 } /* namespace franka_control */
-
-
-#endif /* !defined(INCLUDED__FRANKA_CONTROL__FRANKA_UTIL_HPP) */

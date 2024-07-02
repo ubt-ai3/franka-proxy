@@ -8,8 +8,7 @@
  ************************************************************************/
 
 
-#if !defined(INCLUDED__FRANKA_PROXY_SHARE__ASIO_FORWARD_HPP)
-#define INCLUDED__FRANKA_PROXY_SHARE__ASIO_FORWARD_HPP
+#pragma once
 
 
 namespace asio
@@ -62,14 +61,7 @@ template <int I> struct never_t;
 }
 
 
-typedef execution::any_executor
-	<execution::context_as_t<execution_context&>,
-	 execution::detail::blocking::never_t<0>,
-	 execution::prefer_only<execution::detail::blocking::possibly_t<0>>,
-	 execution::prefer_only<execution::detail::outstanding_work::tracked_t<0>>,
-	 execution::prefer_only<execution::detail::outstanding_work::untracked_t<0>>,
-	 execution::prefer_only<execution::detail::relationship::fork_t<0>>,
-	 execution::prefer_only<execution::detail::relationship::continuation_t<0>>> any_io_executor;
+class any_io_executor;
 
 
 template <typename Protocol, typename Executor>
@@ -90,6 +82,3 @@ using asio_tcp_socket = asio::basic_stream_socket<asio::ip::tcp, asio::any_io_ex
 
 
 } /* namespace franka_proxy */
-
-
-#endif /* !defined(INCLUDED__FRANKA_PROXY_SHARE__ASIO_FORWARD_HPP) */

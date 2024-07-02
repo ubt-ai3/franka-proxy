@@ -1,3 +1,4 @@
+/.vs
 /build
 /tools/visual_studio_2017/.vs
 /tools/visual_studio_2017/projects/*.user
@@ -6,3 +7,9 @@
 /external/viral/build
 /tools/visual_studio_2019/*.DotSettings
 /vcpkg_installed/**
+/Folder.DotSettings
+/Debug
+/Release
+/RelWithDebInfo
+/out
+/source/.vs

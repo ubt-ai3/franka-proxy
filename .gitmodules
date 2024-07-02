@@ -1,3 +1,0 @@
-[submodule "tools/vcpkg"]
-	path = tools/vcpkg
-	url = https://resy-gitlab.inf.uni-bayreuth.de/tools/vcpkg.git

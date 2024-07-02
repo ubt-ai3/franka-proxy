@@ -19,6 +19,10 @@
 
 #include <franka/model.h>
 
+#include <franka/exception.h>
+
+#include "franka_proxy_share/franka_proxy_util.hpp"
+
 
 namespace franka_proxy
 {
@@ -271,9 +275,11 @@ bool franka_joint_motion_generator::colliding(const franka::RobotState& state)
 		std::ranges::any_of(state.cartesian_contact, [](const double& v) { return v > 0; });
 }
 
-
+//When a robot state is received, the callback function is used to calculate the response: the desired values for that time step. After sending back the response,
+//the callback function will be called again with the most recently received robot state. Since the robot is controlled with a 1 kHz frequency,
+//the callback functions have to compute their result in a short time frame in order to be accepted
 franka::JointPositions franka_joint_motion_generator::operator()
-	(const franka::RobotState& robot_state, franka::Duration period)
+	(const franka::RobotState& robot_state, franka::Duration period) //hier werden die zwei ben�tigten Argumente f�r dei Callback Funktion �bergeben
 {
 	time_ += period.toSec();
 
@@ -289,8 +295,12 @@ franka::JointPositions franka_joint_motion_generator::operator()
 		throw contact_stop_trigger();
 
 
-	if (time_ == 0.0)
+	if (time_ == 0.0) //the first invocation of the callback function
 	{
+		if (!franka_proxy_util::is_reachable(q_goal_)) {
+			throw franka::InvalidOperationException("Target is not reachable");
+		}
+
 		q_start_ = Vector7d(robot_state.q_d.data());
 		delta_q_ = q_goal_ - q_start_;
 		calculateSynchronizedValues();

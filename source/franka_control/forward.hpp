@@ -7,9 +7,7 @@
  *
  ************************************************************************/
 
-
-#if !defined(INCLUDED__FRANKA_CONTROL__FORWARD_HPP)
-#define INCLUDED__FRANKA_CONTROL__FORWARD_HPP
+#pragma once
 
 
 namespace franka_control
@@ -23,9 +21,4 @@ class franka_controller_emulated;
 class franka_controller_remote;
 
 
-
-
 } /* namespace franka_control */
-
-
-#endif /* !defined(INCLUDED__FRANKA_CONTROL__FORWARD_HPP) */

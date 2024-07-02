@@ -1,6 +1,7 @@
 include(CMakeFindDependencyMacro)
 
 find_dependency(asio CONFIG)
+find_dependency(nlohmann_json CONFIG)
 find_dependency(Eigen3 CONFIG)
 find_dependency(Threads REQUIRED)
 

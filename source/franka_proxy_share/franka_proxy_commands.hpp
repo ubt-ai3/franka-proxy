@@ -7,16 +7,16 @@
  *
  ************************************************************************/
 
-
-#if !defined(INCLUDED__FRANKA_PROXY_SHARE__FRANKA_PROXY_COMMANDS_HPP)
-#define INCLUDED__FRANKA_PROXY_SHARE__FRANKA_PROXY_COMMANDS_HPP
+#pragma once
 
 
 #include <array>
 #include <cstdint>
+#include <list>
 #include <vector>
 #include <string>
 #include <chrono>
+#include <optional>
 
 #include <nlohmann/json_fwd.hpp>
 
@@ -48,7 +48,7 @@ struct command_move_to_config
 	using response_type = command_generic_response;
 	static constexpr char type[] = "move.config";
 
-	std::array<double, 7>	target_joint_config;
+	std::array<double, 7> target_joint_config;
 };
 
 void to_json(nlohmann::json& json, const command_move_to_config& object);
@@ -69,9 +69,9 @@ void from_json(const nlohmann::json& json, command_move_to_config& object);
 struct command_move_until_contact
 {
 	using response_type = command_generic_response;
-	static constexpr char	type[] = "move.contact";
+	static constexpr char type[] = "move.contact";
 
-	std::array<double, 7>	target_joint_config;
+	std::array<double, 7> target_joint_config;
 };
 
 void to_json(nlohmann::json& json, const command_move_until_contact& object);
@@ -100,6 +100,170 @@ struct command_move_hybrid_sequence
 
 void to_json(nlohmann::json& json, const command_move_hybrid_sequence& object);
 void from_json(const nlohmann::json& json, command_move_hybrid_sequence& object);
+
+
+
+
+/**
+ *************************************************************************
+ *
+ * @class command_apply_admittance_adm_imp_desired_stiffness
+ *
+ * Commands the robot to use the admittance controller with desired
+ * rotational and translational stiffness within the admittance and the
+ * impedance controller
+ *
+ ************************************************************************/
+struct command_apply_admittance_adm_imp_desired_stiffness
+{
+	using response_type = command_generic_response;
+	static constexpr char type[] = "admittance.apply_adm_imp_desired_stiffness";
+
+	double duration;
+	double adm_rotational_stiffness;
+	double adm_translational_stiffness;
+	double imp_rotational_stiffness;
+	double imp_translational_stiffness;
+	std::optional<std::string> log_file_path;
+};
+
+void to_json(nlohmann::json&, const command_apply_admittance_adm_imp_desired_stiffness& object);
+void from_json(const nlohmann::json& json, command_apply_admittance_adm_imp_desired_stiffness& object);
+
+
+/**
+ *************************************************************************
+ *
+ * @class command_cartesian_impedance_hold_pose_desired_stiffness
+ *
+ * Commands the robot to use the cartesian impedance controller to hold the 
+ * current pose for a given duration using desired rotational and 
+ * translational stiffness
+ *
+ ************************************************************************/
+struct command_cartesian_impedance_hold_pose_desired_stiffness
+{
+	using response_type = command_generic_response;
+	static constexpr char type[] = "cartesian_impedance.hold_desired_stiffness";
+
+	double duration;
+	bool use_stiff_damp_online_calc;
+	double rotational_stiffness;
+	double translational_stiffness;
+	std::optional<std::string> log_file_path;
+};
+
+void to_json(nlohmann::json&, const command_cartesian_impedance_hold_pose_desired_stiffness& object);
+void from_json(const nlohmann::json& json, command_cartesian_impedance_hold_pose_desired_stiffness& object);
+
+
+
+
+
+/**
+ *************************************************************************
+ *
+ * @class command_cartesian_impedance_poses_desired_stiffness
+ *
+ * Commands the robot to use the cartesian impedance controller to follow 
+ * a path of given poses for a given duration using desired rotational and
+ * translational stiffness
+ *
+ ************************************************************************/
+struct command_cartesian_impedance_poses_desired_stiffness
+{
+	using response_type = command_generic_response;
+	static constexpr char type[] = "cartesian_impedance.poses_desired_stiffness";
+
+	std::list<std::array<double, 16>> poses;
+	double duration;
+	bool use_stiff_damp_online_calc;
+	double rotational_stiffness;
+	double translational_stiffness;
+	std::optional<std::string> log_file_path;
+};
+
+void to_json(nlohmann::json&, const command_cartesian_impedance_poses_desired_stiffness& object);
+void from_json(const nlohmann::json& json, command_cartesian_impedance_poses_desired_stiffness& object);
+
+
+
+
+/**
+ *************************************************************************
+ *
+ * @class command_joint_impedance_hold_position_desired_stiffness
+ *
+ * Commands the robot to use the joint space impedance controller to hold 
+ * the current position for a given duration using desired stiffness
+ * matrix parameter
+ *
+ ************************************************************************/
+struct command_joint_impedance_hold_position_desired_stiffness
+{
+	using response_type = command_generic_response;
+	static constexpr char type[] = "joint_impedance.hold_desired_stiffness";
+
+	double duration;
+	std::array<double, 49> stiffness;
+	std::optional<std::string> log_file_path;
+};
+
+void to_json(nlohmann::json&, const command_joint_impedance_hold_position_desired_stiffness& object);
+void from_json(const nlohmann::json& json, command_joint_impedance_hold_position_desired_stiffness& object);
+
+
+
+
+/**
+ *************************************************************************
+ *
+ * @class command_joint_impedance_positions_desired_stiffness
+ *
+ * Commands the robot to use the joint impedance controller to follow a
+ * path of given positions for a given duration using desired stiffness
+ * matrix parameter
+ *
+ ************************************************************************/
+struct command_joint_impedance_positions_desired_stiffness
+{
+	using response_type = command_generic_response;
+	static constexpr char type[] = "joint_impedance.positions_desired_stiffness";
+
+	std::list<std::array<double, 7>> joint_positions;
+	double duration;
+	std::array<double, 49> stiffness;
+	std::optional<std::string> log_file_path;
+};
+
+void to_json(nlohmann::json&, const command_joint_impedance_positions_desired_stiffness& object);
+void from_json(const nlohmann::json& json, command_joint_impedance_positions_desired_stiffness& object);
+
+
+
+
+/**
+ *************************************************************************
+ *
+ * @class command_ple_motion
+ *
+ * Commands the robot to execute the pre-defined motion for
+ * payload estimation
+ *
+ ************************************************************************/
+struct command_ple_motion
+{
+	using response_type = command_generic_response;
+	static constexpr char type[] = "ple_motion";
+
+	double speed;
+	double duration;
+	std::optional<std::string> log_file_path;
+};
+
+void to_json(nlohmann::json&, const command_ple_motion& object);
+void from_json(const nlohmann::json& json, command_ple_motion& object);
+
 
 
 
@@ -256,6 +420,8 @@ struct command_start_recording
 {
 	using response_type = command_generic_response;
 	static constexpr char type[] = "recording.start";
+
+	std::optional<std::string> log_file_path;
 };
 
 void to_json(nlohmann::json& json, const command_start_recording& object);
@@ -327,7 +493,62 @@ struct command_set_speed
 void to_json(nlohmann::json& json, const command_set_speed& object);
 void from_json(const nlohmann::json& json, command_set_speed& object);
 
+/**
+ *************************************************************************
+ *
+ * @class command_set_fts_bias
+ *
+ * Sets the bias of the force/torque sensor
+ *
+ ************************************************************************/
+struct command_set_fts_bias
+{
+	using response_type = command_generic_response;
+	static constexpr char type[] = "set.fts_bias";
 
+	std::array<double, 6> bias;
+};
+void to_json(nlohmann::json& json, const command_set_fts_bias& object);
+void from_json(const nlohmann::json& json, command_set_fts_bias& object);
+
+/**
+ *************************************************************************
+ *
+ * @class command_set_fts_bias
+ *
+ * Sets the load_mass of the force/torque sensor
+ *
+ ************************************************************************/
+struct command_set_fts_load_mass
+{
+	using response_type = command_generic_response;
+	static constexpr char type[] = "set.fts_load_mass";
+
+	std::array<double, 3> load_mass;
+};
+void to_json(nlohmann::json& json, const command_set_fts_load_mass& object);
+void from_json(const nlohmann::json& json, command_set_fts_load_mass& object);
+
+
+/**
+ *************************************************************************
+ *
+ * @class command_set_guiding_params
+ *
+ * Sets the guiding vector selected in the application by the user.
+ *
+ ************************************************************************/
+struct command_set_guiding_params
+{
+	using response_type = command_generic_response;
+	static constexpr char type[] = "set.guiding";
+
+	std::array<bool, 6> guiding_config;
+	bool elbow;
+};
+
+void to_json(nlohmann::json& json, const command_set_guiding_params& objekt);
+void from_json(const nlohmann::json& json, command_set_guiding_params& object);
 
 
 /**
@@ -358,7 +579,7 @@ void from_json(const nlohmann::json& json, command_recover_from_errors& object);
  * Result code sent in `command_generic_response`.
  *
  ************************************************************************/
-enum class command_result: std::uint8_t
+enum class command_result : std::uint8_t
 {
 	success,
 	success_command_failed,
@@ -371,6 +592,7 @@ enum class command_result: std::uint8_t
 	realtime_exception,
 	invalid_operation,
 	franka_exception,
+	force_torque_sensor_exception,
 	unknown_command
 };
 
@@ -468,9 +690,4 @@ void to_json(nlohmann::json& json, const command_get_config_response& object);
 void from_json(const nlohmann::json& json, command_get_config_response& object);
 
 
-
-
-}
-
-
-#endif	// INCLUDED__FRANKA_PROXY_SHARE__FRANKA_PROXY_MESSAGES_HPP
+} /* namespace franka_proxy */

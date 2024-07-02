@@ -7,9 +7,7 @@
  *
  ************************************************************************/
 
-
-#if !defined(INCLUDED__FRANKA_PROXY_CLIENT__FORWARD_HPP)
-#define INCLUDED__FRANKA_PROXY_CLIENT__FORWARD_HPP
+#pragma once
 
 
 #include <array>
@@ -17,7 +15,6 @@
 
 namespace franka_proxy
 {
-
 
 using robot_config_7dof = std::array<double, 7>;
 
@@ -28,9 +25,4 @@ class franka_control_client;
 class franka_remote_controller;
 
 
-
-
-} /* namespace franka_proxy */
-
-
-#endif /* !defined(INCLUDED__FRANKA_PROXY_CLIENT__FORWARD_HPP) */
+} /* namespace franka_proxy 

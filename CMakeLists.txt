@@ -1,13 +1,17 @@
 cmake_minimum_required(VERSION 3.20)
 project(franka-proxy)
 
+include(GNUInstallDirs)
 
 option(BUILD_SERVER "Build franka_proxy executable" ON)
 
+
 if(BUILD_SERVER)
 	find_package(Franka CONFIG REQUIRED)
+    find_package(Poco COMPONENTS Net Foundation REQUIRED)
 endif()
 
+find_package(argparse CONFIG REQUIRED)
 find_package(asio CONFIG REQUIRED)
 find_package(Eigen3 CONFIG REQUIRED)
 find_package(nlohmann_json REQUIRED)
@@ -25,19 +29,52 @@ if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 endif()
 
 
-## franka_proxy
+add_library(
+	franka_proxy_share
+	STATIC
+	""
+)
+
+target_sources(
+	franka_proxy_share
+	PRIVATE
+		${CMAKE_CURRENT_SOURCE_DIR}/source/franka_proxy_share/franka_proxy_commands.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/source/franka_proxy_share/franka_proxy_util.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/source/franka_proxy_share/franka_proxy_logger.cpp
+)
+
+target_include_directories(
+	franka_proxy_share
+	PUBLIC
+		$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/source>
+)
+
+target_link_libraries(
+	franka_proxy_share
+	PUBLIC
+        Eigen3::Eigen
+		nlohmann_json::nlohmann_json
+)
+
+
 if(BUILD_SERVER)
+## franka_proxy
 add_executable(
     franka_proxy
         ${CMAKE_CURRENT_SOURCE_DIR}/source/franka_proxy/franka_hardware_controller.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/source/franka_proxy/motion_generator_force.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/source/franka_proxy/motion_generator_joint_max_accel.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/source/franka_proxy/motion_generator_seq_cart_vel_tau.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/source/franka_proxy/franka_motion_recorder.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/source/franka_proxy/franka_network_control_server.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/source/franka_proxy/franka_network_state_server.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/source/franka_proxy/franka_proxy.cpp
-        #${CMAKE_CURRENT_SOURCE_DIR}/source/jr3_ft_sensor/force_torque_sensor.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/source/franka_proxy/motion_generator_admittance.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/source/franka_proxy/motion_generator_cartesian_impedance.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/source/franka_proxy/motion_generator_force.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/source/franka_proxy/motion_generator_joint_impedance.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/source/franka_proxy/motion_generator_joint_imp_ple.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/source/franka_proxy/motion_generator_joint_max_accel.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/source/franka_proxy/motion_generator_seq_cart_vel_tau.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/source/franka_proxy/motion_recorder.cpp
+
+        ${CMAKE_CURRENT_SOURCE_DIR}/source/ft_sensor/schunk_ft.cpp
 )
 
 target_include_directories(
@@ -49,6 +86,7 @@ target_include_directories(
 target_link_libraries(
     franka_proxy
     PUBLIC
+		argparse::argparse
         asio::asio
         Eigen3::Eigen
 		#Poco::Foundation
@@ -70,7 +108,7 @@ endif()
 add_library(
     franka_proxy_client STATIC
         ${CMAKE_CURRENT_SOURCE_DIR}/source/franka_proxy_client/franka_network_client.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/source/franka_proxy_client/franka_remote_controller.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/source/franka_proxy_client/franka_remote_interface.cpp
 )
 
 target_include_directories(
@@ -109,6 +147,7 @@ target_include_directories(
 target_link_libraries(
     franka_proxy_client_test
     PUBLIC
+        argparse::argparse
         asio::asio
         Eigen3::Eigen
         Threads::Threads
@@ -121,6 +160,31 @@ target_compile_definitions(
 		std_cxx_20
 )
 
+## franka_util
+add_library(
+    franka_util
+    STATIC
+        ${CMAKE_CURRENT_SOURCE_DIR}/source/franka_util/franka_util.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/source/franka_util/ikfast.cpp
+)
+
+target_include_directories(
+    franka_util
+    PUBLIC
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/source>
+)
+
+target_link_libraries(
+    franka_util
+    PUBLIC
+        Eigen3::Eigen
+)
+
+target_compile_definitions(
+    franka_util
+    PUBLIC
+		std_cxx_20
+)
 
 ## franka_control
 add_library(
@@ -129,8 +193,6 @@ add_library(
         ${CMAKE_CURRENT_SOURCE_DIR}/source/franka_control/franka_controller.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/source/franka_control/franka_controller_emulated.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/source/franka_control/franka_controller_remote.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/source/franka_control/franka_util.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/source/franka_control/ikfast.cpp
 )
 
 target_include_directories(
@@ -142,6 +204,7 @@ target_include_directories(
 target_link_libraries(
     franka_control
     PUBLIC
+        franka_util
         asio::asio
         Eigen3::Eigen
         franka_proxy_client
@@ -153,58 +216,106 @@ target_compile_definitions(
 		std_cxx_20
 )
 
-add_library(
-	franka_proxy_share
-	STATIC
-	""
-)
 
-target_sources(
-	franka_proxy_share
-	PRIVATE
-		${CMAKE_CURRENT_SOURCE_DIR}/source/franka_proxy_share/franka_proxy_commands.cpp
+
+## franka_proxy_client_test
+#add_executable(
+#    franka_proxy_client_test
+#        ${CMAKE_CURRENT_SOURCE_DIR}/source/franka_proxy_client_test/main.cpp
+#)
+
+#target_include_directories(
+#    franka_proxy_client_test
+#    PUBLIC
+#        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/source>
+#)
+
+#target_link_libraries(
+#    franka_proxy_client_test
+#    PUBLIC
+#		argparse::argparse
+#        asio::asio
+#        Eigen3::Eigen
+#        Threads::Threads
+#		franka_proxy_share
+#		franka_proxy_client
+#)
+
+#target_compile_definitions(
+#    franka_proxy_client_test
+#    PUBLIC
+#		std_cxx_17
+#)
+
+## franka_control_test
+add_executable(
+    franka_control_test
+        ${CMAKE_CURRENT_SOURCE_DIR}/source/franka_control_test/main.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/source/sensor_calibration/schunk_ft_to_franka_calibration.cpp
 )
 
 target_include_directories(
-	franka_proxy_share
-	PUBLIC
-		$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/source>
+    franka_control_test
+    PUBLIC
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/source>
 )
 
 target_link_libraries(
-	franka_proxy_share
-	PUBLIC
-		nlohmann_json::nlohmann_json
+    franka_control_test
+    PUBLIC
+		argparse::argparse
+        asio::asio
+        Eigen3::Eigen
+        Threads::Threads
+		franka_proxy_share
+		franka_proxy_client
+		franka_control
 )
 
+target_compile_definitions(
+    franka_control_test
+    PUBLIC
+		std_cxx_17
+)
+
+
+
+
 ## install
+file(GLOB franka_proxy_share_headers
+    "${CMAKE_CURRENT_SOURCE_DIR}/source/franka_proxy_share/*.hpp"
+)
 file(GLOB franka_proxy_client_headers
     "${CMAKE_CURRENT_SOURCE_DIR}/source/franka_proxy_client/*.hpp"
 )
 file(GLOB franka_control_headers
     "${CMAKE_CURRENT_SOURCE_DIR}/source/franka_control/*.hpp"
 )
-file(GLOB franka_proxy_share_headers
-    "${CMAKE_CURRENT_SOURCE_DIR}/source/franka_proxy_share/*.hpp"
+file(GLOB franka_util_headers
+    "${CMAKE_CURRENT_SOURCE_DIR}/source/franka_control/*.hpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/source/franka_control/*.h"
 )
-
 
 if(BUILD_SERVER)
 	install(
-		TARGETS franka_control franka_proxy franka_proxy_client franka_proxy_share
+		TARGETS franka_proxy franka_control franka_proxy_client franka_proxy_share franka_util
 		EXPORT franka-proxyConfig
 		LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
 		RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
 	)
 else()
 	install(
-		TARGETS franka_control franka_proxy_client franka_proxy_share
+		TARGETS franka_control franka_proxy_client franka_proxy_share franka_util
 		EXPORT franka-proxyConfig
 		LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
 		RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
 	)
 endif()
 	
+install(
+	FILES ${franka_proxy_share_headers}
+	DESTINATION include/franka_proxy_share
+)
 install(
 	FILES ${franka_proxy_client_headers}
 	DESTINATION include/franka_proxy_client
@@ -214,8 +325,43 @@ install(
 	DESTINATION include/franka_control
 )
 install(
-	FILES ${franka_proxy_share_headers}
-	DESTINATION include/franka_proxy_share
+	FILES ${franka_util_headers}
+	DESTINATION include/franka_util
 )
 
-install(EXPORT franka-proxyConfig DESTINATION share FILE franka-proxyTargets.cmake)
+install(EXPORT franka-proxyConfig 
+        DESTINATION share 
+        FILE franka-proxyTargets.cmake)
+
+
+# assets
+if(BUILD_SERVER)
+    file(GLOB franka_assets
+        "${CMAKE_CURRENT_SOURCE_DIR}/assets/*"
+    )
+
+    file(
+        GENERATE 
+            OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/CopyConfigurationData$<CONFIG>.cmake"
+            CONTENT 
+                "if (NOT EXISTS \"${CMAKE_CURRENT_BINARY_DIR}/assets\")
+                    execute_process(
+                         COMMAND \"${CMAKE_COMMAND}\" -E copy_directory
+                             \"${PROJECT_SOURCE_DIR}/assets\"
+                             \"${CMAKE_CURRENT_BINARY_DIR}/assets\"
+                    )
+                endif()"
+    )
+
+    add_custom_command(
+        TARGET franka_proxy
+        POST_BUILD 
+        COMMAND "${CMAKE_COMMAND}" -P "CopyConfigurationData$<CONFIG>.cmake"
+        WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
+    )
+
+    install(
+	FILES ${franka_assets}
+	DESTINATION "${CMAKE_INSTALL_BINDIR}/assets"
+)
+endif()

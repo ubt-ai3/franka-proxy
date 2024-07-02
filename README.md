@@ -1,18 +1,33 @@
 # Setup
+## Using the project
+This project is split into two parts. A client library for inclusion into your own project and a server application, that runs directly on the computer connected to the Franka Emika robot. Normally you install both of these via vcpkg.
+
+To install the client library use:  
+```./vcpkg.exe install franka-proxy:x64-windows ```
+
+And to install the server application use:  
+```./vcpkg.exe install franka-proxy[server]:x64-windows```
+
+Server and client are only compatible if you use the same port, so make sure to work on an identical version of vcpkg (ai3 internal version).
+
+
+# Building from Source 
 ## Externals via vcpkg
 ```sh
 ./bootstrap-vcpkg.bat
 
-vcpkg install asio:x64-windows franka:x64-windows nlohmann-json:x64-windows
+vcpkg install --triplet=x64-windows asio argparse franka nlohmann-json
 
 mkdir build
 cd build
-cmake .. "-DCMAKE_TOOLCHAIN_FILE=C:\Users\hartwig\Desktop\franka_proxy_without_viral\tools\vcpkg\scripts\buildsystems\vcpkg.cmake"
+cmake .. "-DCMAKE_TOOLCHAIN_FILE=C:/insert/path/here/tools/vcpkg/scripts/buildsystems/vcpkg.cmake"
 cmake --build .
 ```
 
+If building using the CMakePresets make sure to change the common-config to point your CMAKE_TOOLCHAIN_FILE of vcpkg (default points to the vcpkg in ./tools/vcpkg).
 
-# Project structure
+
+## Project structure
 ```mermaid
 classDiagram
     class franka_state_server{

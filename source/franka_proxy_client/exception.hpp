@@ -7,9 +7,7 @@
  *
  ************************************************************************/
 
-
-#if !defined(INCLUDED__FRANKA_PROXY_CLIENT__EXCEPTION_HPP)
-#define INCLUDED__FRANKA_PROXY_CLIENT__EXCEPTION_HPP
+#pragma once
 
 
 #include <exception>
@@ -17,8 +15,6 @@
 
 namespace franka_proxy
 {
-
-
 /**
  *************************************************************************
  *
@@ -31,22 +27,18 @@ namespace franka_proxy
 class exception : public std::exception
 {
 public:
-
 	exception() = default;
-	~exception() noexcept override = default;
 
 
 	/**
 	 * Retrieve (static, constant) description string via
 	 * the standard C++ exception interface.
 	 */
-	const char* what() const noexcept override
+	[[nodiscard]] const char* what() const noexcept override
 	{
 		return "General exception";
 	}
 };
-
-
 
 
 /**
@@ -61,23 +53,20 @@ public:
 class remote_exception : public exception
 {
 public:
-	
 	explicit remote_exception(const std::string& reason) noexcept
 		: reason_(reason)
-		{}
+	{
+	}
 
-	
-	const char* what() const noexcept override
+
+	[[nodiscard]] const char* what() const noexcept override
 	{
 		return reason_.what();
 	}
 
 private:
-	
 	std::runtime_error reason_;
 };
-
-
 
 
 /**
@@ -87,14 +76,11 @@ private:
 class model_exception : public remote_exception
 {
 public:
-	
 	explicit model_exception(const std::string& reason) noexcept
 		: remote_exception{reason}
-		{}
-		
+	{
+	}
 };
-
-
 
 
 /**
@@ -105,13 +91,11 @@ public:
 class network_exception : public remote_exception
 {
 public:
-	
 	explicit network_exception(const std::string& reason) noexcept
 		: remote_exception{reason}
-		{}
+	{
+	}
 };
-
-
 
 
 /**
@@ -121,13 +105,11 @@ public:
 class protocol_exception : public remote_exception
 {
 public:
-	
 	explicit protocol_exception(const std::string& reason) noexcept
 		: remote_exception{reason}
-		{}
+	{
+	}
 };
-
-
 
 
 /**
@@ -137,13 +119,11 @@ public:
 class incompatible_version_exception : public remote_exception
 {
 public:
-	
 	explicit incompatible_version_exception(const std::string& reason) noexcept
 		: remote_exception{reason}
-		{}
+	{
+	}
 };
-
-
 
 
 /**
@@ -153,13 +133,11 @@ public:
 class control_exception : public remote_exception
 {
 public:
-	
 	explicit control_exception(const std::string& reason) noexcept
 		: remote_exception{reason}
-		{}
+	{
+	}
 };
-
-
 
 
 /**
@@ -169,13 +147,11 @@ public:
 class command_exception : public remote_exception
 {
 public:
-	
 	explicit command_exception(const std::string& reason) noexcept
 		: remote_exception{reason}
-		{}
+	{
+	}
 };
-
-
 
 
 /**
@@ -185,13 +161,11 @@ public:
 class realtime_exception : public remote_exception
 {
 public:
-	
 	explicit realtime_exception(const std::string& reason) noexcept
 		: remote_exception{reason}
-		{}
+	{
+	}
 };
-
-
 
 
 /**
@@ -201,49 +175,50 @@ public:
 class invalid_operation_exception : public remote_exception
 {
 public:
-	
 	explicit invalid_operation_exception(const std::string& reason) noexcept
 		: remote_exception{reason}
-		{}
+	{
+	}
+};
+
+/**
+ *************************************************************************
+ * Thrown if force/troque sensor is unavailable.
+ ************************************************************************/
+class ft_sensor_exception : public remote_exception
+{
+public:
+	explicit ft_sensor_exception() noexcept
+		: remote_exception{""}
+	{
+	}
 };
 
 
-
-	
 /**
  *************************************************************************
  * Thrown if a command is unknown to the server.
  ************************************************************************/
-class unknown_command_exception: public remote_exception
+class unknown_command_exception : public remote_exception
 {
 public:
-
 	explicit unknown_command_exception(const std::string& reason) noexcept
 		: remote_exception{reason}
-	{}
+	{
+	}
 };
-
-
 
 
 /**
  *************************************************************************
  * Thrown if the response received was bad.
  ************************************************************************/
-class bad_response_exception: public exception
+class bad_response_exception : public exception
 {
 public:
-	
-	const char* what() const noexcept override
+	[[nodiscard]] const char* what() const noexcept override
 	{
 		return "Bad response sent by the server.";
 	}
 };
-
-
-
-
 } /* namespace franka_proxy */
-
-
-#endif /* !defined(INCLUDED__FRANKA_PROXY_CLIENT__EXCEPTION_HPP) */

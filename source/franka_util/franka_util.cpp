@@ -7,35 +7,16 @@
  *
  ************************************************************************/
 
-
 #include "franka_util.hpp"
 
 #include <iostream>
 
-#include "ikfast.h"
 #include "exception.hpp"
+#include "ikfast.h"
 
 
 namespace franka_control
 {
-
-
-//////////////////////////////////////////////////////////////////////////
-//
-// joint_limit
-//
-//////////////////////////////////////////////////////////////////////////
-
-
-joint_limit::joint_limit
-	(double min, double max)
-	:
-	min(min),
-	max(max)
-{ }
-
-
-
 
 //////////////////////////////////////////////////////////////////////////
 //
@@ -46,49 +27,30 @@ joint_limit::joint_limit
 
 std::vector<joint_limit> franka_util::joint_limits()
 {
-	std::vector<joint_limit> limits;
-
-	limits.emplace_back(-2.8973, 2.8973);
-	limits.emplace_back(-1.7628, 1.7628);
-	limits.emplace_back(-2.8973, 2.8973);
-	limits.emplace_back(-3.0718, -0.0698);
-	limits.emplace_back(-2.8973, 2.8973);
-	limits.emplace_back(-0.0175, 3.7525);
-	limits.emplace_back(-2.8973, 2.8973);
-
-	return limits;
+	return franka_proxy::franka_proxy_util::joint_limits();
 }
 
 
 robot_config_7dof franka_util::max_speed_per_joint()
 {
-	return
-		(robot_config_7dof() << 2.1750, 2.1750, 2.1750, 2.1750, 2.6100, 2.6100, 2.6100).finished();
+	return franka_proxy::franka_proxy_util::max_speed_per_joint();
 }
 
 
 robot_config_7dof franka_util::max_acc_per_joint()
 {
-	return
-		(robot_config_7dof() << 15., 7.5, 10., 12.5, 15., 20., 20.).finished();
+	return franka_proxy::franka_proxy_util::max_acc_per_joint();
 }
 robot_config_7dof franka_util::max_jerk_per_joint()
 {
-	return
-		(robot_config_7dof() << 7500., 3750., 5000., 6250., 7500., 10000., 10000.).finished();
+	return franka_proxy::franka_proxy_util::max_speed_per_joint();
 }
 
 
 bool franka_util::is_reachable
 	(const robot_config_7dof& target)
 {
-	auto limits = joint_limits();
-
-	for (int i = 0; i < 7; i++)
-		if (target[i] < limits[i].min || target[i] > limits[i].max)
-			return false;
-
-	return true;
+	return franka_proxy::franka_proxy_util::is_reachable(target);
 }
 
 std::vector<Eigen::Affine3d> franka_util::fk
@@ -157,18 +119,27 @@ std::vector<Eigen::Affine3d> franka_util::fk(const std::array<double, 7>& config
 	trafo *= Eigen::AngleAxisd(configuration[6], Eigen::Vector3d(0., 0., 1.));
 	frames.emplace_back(trafo);
 
+	//// link 7 to flange
+	//trafo *= Eigen::Translation3d(0.0f, 0.0f, 0.107);
+	//frames.push_back(trafo);
+
+	//// flange to standard end effector
+	//trafo *= Eigen::Translation3d(0.0f, 0.0f, 0.1034f);
+	//trafo *= Eigen::AngleAxisd(pi / 4., Eigen::Vector3d(0.0f, 0.0f, -1.0f));
+	//frames.push_back(trafo);
+
 	return frames;
 }
 
 
 std::vector<robot_config_7dof> franka_util::ik_fast
-	(const Eigen::Affine3d& world_T_j6, double joint_4_value)
+	(const Eigen::Affine3d& target_world_T_j7, double joint_4_value)
 {
 	const Eigen::Affine3d last_segment_T_tcp
 		(Eigen::Translation3d(0., 0., 0.107));
 
 	Eigen::Affine3d target
-		(world_T_j6 * last_segment_T_tcp);
+		(target_world_T_j7 * last_segment_T_tcp);
 
 	std::vector<robot_config_7dof> result;
 
@@ -215,13 +186,13 @@ std::vector<robot_config_7dof> franka_util::ik_fast
 
 
 std::vector<robot_config_7dof> franka_util::ik_fast_robust
-	(const Eigen::Affine3d& world_T_j6, double step_size)
+	(const Eigen::Affine3d& target_world_T_j7, double step_size)
 {
-	std::vector<robot_config_7dof> solutions = ik_fast(world_T_j6);
+	std::vector<robot_config_7dof> solutions = ik_fast(target_world_T_j7);
 	double joint_4 = joint_limits_[4].min;
 	while (solutions.empty() && joint_4 < joint_limits_[4].max)
 	{
-		solutions = ik_fast(world_T_j6, joint_4);
+		solutions = ik_fast(target_world_T_j7, joint_4);
 		joint_4 += step_size;
 	}
 	return solutions;
@@ -229,7 +200,7 @@ std::vector<robot_config_7dof> franka_util::ik_fast_robust
 
 
 robot_config_7dof franka_util::ik_fast_closest
-	(const Eigen::Affine3d& target_world_T_j6,
+	(const Eigen::Affine3d& target_world_T_j7,
 	 const robot_config_7dof& current_configuration,
 	 double step_size)
 {
@@ -238,7 +209,7 @@ robot_config_7dof franka_util::ik_fast_closest
 	for (double joint_4 = joint_limits_[4].min; joint_4 < joint_limits_[4].max; joint_4 += step_size)
 	{
 		std::vector<robot_config_7dof> new_solutions =
-			ik_fast(target_world_T_j6, joint_4);
+			ik_fast(target_world_T_j7, joint_4);
 		for (const robot_config_7dof& solution : new_solutions)
 			solutions.push_back(solution);
 	}
