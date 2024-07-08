@@ -4,20 +4,21 @@ project(franka-proxy)
 include(GNUInstallDirs)
 
 option(BUILD_SERVER "Build franka_proxy executable" ON)
-
+option(BUILD_TESTS "Build franka_proxy tests" ON)
 
 if(BUILD_SERVER)
 	find_package(Franka CONFIG REQUIRED)
     find_package(Poco COMPONENTS Net Foundation REQUIRED)
 endif()
 
-find_package(argparse CONFIG REQUIRED)
+if(BUILD_SERVER OR BUILD_TESTS)
+    find_package(argparse CONFIG REQUIRED)
+endif()
+
 find_package(asio CONFIG REQUIRED)
 find_package(Eigen3 CONFIG REQUIRED)
 find_package(nlohmann_json REQUIRED)
 find_package(Threads REQUIRED)
-#find_package(Poco REQUIRED COMPONENTS Foundation Net)
-
 
 ## TODO convert to modern cmake
 set(CMAKE_CXX_STANDARD 20)
@@ -131,7 +132,7 @@ target_compile_definitions(
         std_cxx_20
 )
 
-
+if(BUILD_TESTS)
 ## franka_proxy_client_test
 add_executable(
     franka_proxy_client_test
@@ -159,6 +160,7 @@ target_compile_definitions(
     PUBLIC
 		std_cxx_20
 )
+endif()
 
 ## franka_util
 add_library(
@@ -247,6 +249,7 @@ target_compile_definitions(
 #		std_cxx_17
 #)
 
+if(BUILD_TESTS)
 ## franka_control_test
 add_executable(
     franka_control_test
@@ -277,7 +280,7 @@ target_compile_definitions(
     PUBLIC
 		std_cxx_17
 )
-
+endif()
 
 
 
@@ -292,25 +295,30 @@ file(GLOB franka_control_headers
     "${CMAKE_CURRENT_SOURCE_DIR}/source/franka_control/*.hpp"
 )
 file(GLOB franka_util_headers
-    "${CMAKE_CURRENT_SOURCE_DIR}/source/franka_control/*.hpp"
-    "${CMAKE_CURRENT_SOURCE_DIR}/source/franka_control/*.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/source/franka_util/*.hpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/source/franka_util/*.h"
 )
 
+set(PROXY_TARGETS
+    franka_control
+    franka_proxy_client
+    franka_proxy_share
+    franka_util
+)
 if(BUILD_SERVER)
-	install(
-		TARGETS franka_proxy franka_control franka_proxy_client franka_proxy_share franka_util
-		EXPORT franka-proxyConfig
-		LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-		RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-	)
-else()
-	install(
-		TARGETS franka_control franka_proxy_client franka_proxy_share franka_util
-		EXPORT franka-proxyConfig
-		LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-		RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-	)
+    list(APPEND PROXY_TARGETS franka_proxy)
 endif()
+
+if(BUILD_TESTS)
+    list(APPEND PROXY_TARGETS franka_proxy_client_test franka_control_test)
+endif()
+
+install(
+    TARGETS ${PROXY_TARGETS}
+    EXPORT franka-proxyConfig
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+)
 	
 install(
 	FILES ${franka_proxy_share_headers}
