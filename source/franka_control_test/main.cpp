@@ -7,7 +7,7 @@
 
 #include <franka_control/franka_controller_emulated.hpp>
 #include <franka_control/franka_controller_remote.hpp>
-#include <franka_control/franka_util.hpp>
+#include <franka_util/franka_util.hpp>
 
 // todo: this sensor calibration should not be used from here
 #include "sensor_calibration/schunk_ft_to_franka_calibration.hpp"

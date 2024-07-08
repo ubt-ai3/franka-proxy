@@ -10,6 +10,7 @@
 #include "franka_hardware_controller.hpp"
 
 #include <iostream>
+#include <fstream>
 #include <chrono>
 
 #include <Eigen/Core>
@@ -29,7 +30,7 @@
 
 #include "ft_sensor/schunk_ft.hpp"
 
-#include "franka_control/franka_util.hpp"
+#include "franka_util/franka_util.hpp"
 
 
 namespace franka_proxy
@@ -82,12 +83,33 @@ franka_hardware_controller::franka_hardware_controller(
 			"Connection to gripper could not be established." << std::endl;
 	}
 
+	try
+	{
+		vacuum_gripper_ = std::make_unique<franka::VacuumGripper>(controller_ip);
+		vacuum_gripper_state_ = vacuum_gripper_->readOnce();
+	}
+	catch (...)
+	{
+		// todo
+		//debug
+		std::cout << "No vacuum gripper detected\n";
+	}
 	set_guiding_mode({ {true, true, true, true, true, true} }, false);
 }
 
 
 franka_hardware_controller::~franka_hardware_controller() noexcept
 {
+	try 
+	{
+		if (vacuum_gripper_)
+			vacuum_gripper_drop();
+	}
+	catch (const std::exception& e)
+	{
+		std::cout << e.what() << std::endl;
+	}
+
 	terminate_state_threads_ = true;
 	robot_state_thread_.join();
 	gripper_state_thread_.join();
@@ -376,9 +398,18 @@ void franka_hardware_controller::run_payload_estimation(double speed, double dur
 }
 
 
+
 void franka_hardware_controller::move_to(const robot_config_7dof& target)
 {
 	set_default_impedance_and_collision_parameters();
+	
+	{
+		// update robot_state to get the most current robot config for motion generation
+		std::lock_guard<std::mutex> state_guard(robot_state_lock_);
+		robot_state_ = robot_.readOnce();
+	}
+	
+	auto robot_state_before = robot_state_;
 
 	detail::franka_joint_motion_generator motion_generator
 		(speed_factor_, target, robot_state_lock_, robot_state_, stop_motion_, false);
@@ -394,16 +425,47 @@ void franka_hardware_controller::move_to(const robot_config_7dof& target)
 		}
 
 		robot_.control
+			/*(motion_generator,
+			 franka::ControllerMode::kJointImpedance,
+			 true, 100.);*/
 		(motion_generator,
 		 franka::ControllerMode::kJointImpedance,
 		 true, 20.);
 	}
 	catch (const detail::franka_joint_motion_generator::stop_motion_trigger&)
 	{
+		std::cout << "motion stop triggered\n";
 	}
-	catch (const franka::Exception&)
+	catch (const detail::franka_joint_motion_generator::contact_stop_trigger&)
 	{
+		std::cout << "contact occured\n";
+	}
+	catch (const franka::Exception& e)
+	{
+
 		set_control_loop_running(false);
+		std::cout << "Error in move_to control loop :" << e.what() << "\n";
+		//debug
+		/*std::fstream f("motion_log.csv", std::ios::app);
+		f << robot_state_before.q[0];
+		for (int i = 1; i < 7; i++)
+		{
+			f << "," << robot_state_before.q_d[i];
+		}
+		f << "\n";
+		auto new_state = robot_.readOnce();
+		f << new_state.q[0];
+		for (int i = 1; i < 7; i++)
+		{
+			f << "," << new_state.q[i];
+		}
+		f << "\n";
+		f << target[0];
+		for (int i = 1; i < 7; i++)
+		{
+			f << "," << target[i];
+		}
+		f << "\n";*/
 		throw;
 	}
 
@@ -430,13 +492,17 @@ bool franka_hardware_controller::move_to_until_contact
 		}
 
 		robot_.control
+			(motion_generator,
+			 franka::ControllerMode::kJointImpedance,
+			 true, 20.);
+		/*robot_.control
 		(motion_generator,
-		 franka::ControllerMode::kJointImpedance,
-		 true, 20.);
+			franka::ControllerMode::kCartesianImpedance,
+			true, 100.);*/
 	}
 	catch (const detail::franka_joint_motion_generator::stop_motion_trigger&)
 	{
-		
+		std::cout << "motion stopped\n";
 	}
 	catch (const detail::franka_joint_motion_generator::contact_stop_trigger&)
 	{
@@ -451,6 +517,7 @@ bool franka_hardware_controller::move_to_until_contact
 	catch (const franka::Exception&)
 	{
 		set_control_loop_running(false);
+		std::cout << "error in move to until contact control loop\n";
 		throw;
 	}
 
@@ -512,7 +579,7 @@ franka::RobotState franka_hardware_controller::robot_state() const
 void franka_hardware_controller::open_gripper(double speed)
 {
 	if (!gripper_)
-		return; // todo throw something usefull
+		throw std::runtime_error("Tried to use non existent gripper, make sure you use the jaw gripper");
 
 	if (!gripper_->move(max_width_, speed))
 	{
@@ -524,7 +591,7 @@ void franka_hardware_controller::open_gripper(double speed)
 void franka_hardware_controller::close_gripper(double speed)
 {
 	if (!gripper_)
-		return; // todo throw something usefull
+		throw std::runtime_error("Tried to use non existent gripper, make sure you use the jaw gripper");
 
 	if (!gripper_->move(min_grasp_width, speed))
 	{
@@ -536,7 +603,7 @@ void franka_hardware_controller::close_gripper(double speed)
 bool franka_hardware_controller::grasp_gripper(double speed, double force)
 {
 	if (!gripper_)
-		return false; // todo throw something usefull
+		throw std::runtime_error("Tried to use non existent gripper, make sure you use the jaw gripper");
 
 	bool grasped = gripper_->grasp(min_grasp_width, speed, force, 0, 1);
 
@@ -550,6 +617,84 @@ franka::GripperState franka_hardware_controller::gripper_state() const
 	return gripper_state_;
 }
 
+bool franka_hardware_controller::vacuum_gripper_drop(std::chrono::milliseconds timeout)
+{
+	if(!vacuum_gripper_)
+		throw std::runtime_error("Tried to use non existent gripper, make sure you use the vacuum gripper");
+	bool success = false;
+	try
+	{
+		success = vacuum_gripper_->dropOff(drop_timeout);
+	}
+	catch (const franka::CommandException& e)
+	{
+		//TODO
+		//for some reason dropoff always throws this
+		std::cout << "drop off failed\n";
+	}
+	if(success)
+		std::cout << "drop off successful\n";
+	{
+		std::scoped_lock<std::mutex> state_guard(gripper_state_lock_);
+		vacuum_gripper_state_ = vacuum_gripper_->readOnce();
+	}
+	return success;
+}
+
+bool franka_hardware_controller::vacuum_gripper_vacuum(std::uint8_t vacuum_strength, std::chrono::milliseconds timeout)
+{
+	if (!vacuum_gripper_)
+		throw std::runtime_error("vacuum gripper not found, make sure you mounted the vacuum gripper");
+
+	//std::cout << "vacuum with strength :"<<(int)vacuum_strength<<" and timeout: "<<timeout.count()<<"ms\n" ;
+	bool success = false;
+	try {
+		success = vacuum_gripper_->vacuum(vacuum_strength, vacuum_timeout);
+		//if (success)
+		//	std::cout << "established vacuum\n";
+		//else
+		//	std::cout << "no vacuum established\n";
+	}
+	catch (const franka::CommandException& e)
+	{
+		//std::cout << e.what()<<"\n";
+		//std::cout << "error establishing vacuum\n";
+	}
+	{
+		std::scoped_lock<std::mutex> state_guard(gripper_state_lock_);
+		vacuum_gripper_state_ = vacuum_gripper_->readOnce();
+	}
+	if (success != vacuum_gripper_state_.part_present)
+		std::cout << "Failed vacuum but attached object\n";
+	//if (vacuum_gripper_state_.in_control_range)
+	//	std::cout << "in control range\n";
+	//if (vacuum_gripper_state_.part_detached)
+	//	std::cout << "part detached\n";
+	//if (vacuum_gripper_state_.part_present)
+	//	std::cout << "part present\n";
+	//std::cout << "vacuum level: " << vacuum_gripper_state_.vacuum << "\n\n";
+	return vacuum_gripper_state_.part_present;
+}
+
+bool franka_hardware_controller::vacuum_gripper_stop()
+{
+		if (!vacuum_gripper_)
+			throw std::runtime_error("Tried to use non existent gripper, make sure you use the vacuum gripper");
+		bool success = vacuum_gripper_->stop();
+		{
+			std::scoped_lock<std::mutex> state_guard(gripper_state_lock_);
+			vacuum_gripper_state_ = vacuum_gripper_->readOnce();
+		}
+		std::cout << "Stopping\n";
+		return success;
+}
+
+
+franka::VacuumGripperState franka_hardware_controller::vacuum_gripper_state() const
+{
+	std::scoped_lock guard(gripper_state_lock_);
+	return vacuum_gripper_state_;
+}
 
 void franka_hardware_controller::start_recording(std::optional<std::string> log_file_path)
 {
@@ -563,7 +708,7 @@ void franka_hardware_controller::start_recording(std::optional<std::string> log_
 		std::lock_guard state_guard(robot_state_lock_);
 	}
 
-	motion_recorder_->start(log_file_path);
+	motion_recorder_->start(std::move(log_file_path));
 }
 
 
@@ -791,6 +936,11 @@ void franka_hardware_controller::robot_state_update_loop()
 		{
 			std::lock_guard state_guard(robot_state_lock_);
 			robot_state_ = robot_.readOnce();
+
+			if (gripper_) 
+				gripper_state_ = gripper_->readOnce();
+			if (vacuum_gripper_)
+				vacuum_gripper_state_ = vacuum_gripper_->readOnce();
 		}
 		catch (...)
 		{

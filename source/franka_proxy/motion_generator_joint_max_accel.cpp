@@ -11,6 +11,10 @@
 
 #include "motion_generator_joint_max_accel.hpp"
 
+#include <cmath>
+#include <ranges>
+#include <algorithm>
+
 #include <Eigen/Dense>
 
 #include <franka/model.h>
@@ -25,6 +29,10 @@ namespace franka_proxy
 namespace detail
 {
 
+bool JointMovement::isMotionFinished() const
+{
+	return std::ranges::all_of(joint_motion_finished, [](bool x) { return x; });
+}
 
 //////////////////////////////////////////////////////////////////////////
 //
@@ -61,141 +69,223 @@ franka_joint_motion_generator::franka_joint_motion_generator
 }
 
 
-bool franka_joint_motion_generator::calculateDesiredValues
-	(double t, Vector7d* delta_q_d) const
+JointMovement franka_joint_motion_generator::calculateDesiredValues(double t) const
 {
+	JointMovement out;
+
 	Vector7i sign_delta_q;
 	for (int i = 0; i < 7; i++)
-	{
-		if (delta_q_[i] < 0)
-			sign_delta_q[i] = -1;
-		else
-			sign_delta_q[i] = 1;
-	}
+		sign_delta_q[i] = static_cast<int>(std::copysign(1.0, delta_q_[i]));
 
-	Vector7d t_d = t_2_sync_ - t_1_sync_;
-	Vector7d delta_t_2_sync_ = t_f_sync_ - t_2_sync_;
-	std::array<bool, 7> joint_motion_finished{};
-
-	for (size_t i = 0; i < 7; i++)
+	for (Eigen::Index i = 0; i < 7; i++)
 	{
-		if (std::abs(delta_q_[i]) < kDeltaQMotionFinished) //vermutlich: wenn Differenz zwischen gewünschter- und aktueller Position kleiner 1e-6 ist, wird true zurückgegeben (motion kann beendet werden)
+		if (isMotionFinished(delta_q_[i]))
 		{
-			(*delta_q_d)[i] = 0;
-			joint_motion_finished[i] = true; //für dieses eine Gelenk wird bei genügend geringer Differenz das finished auf true gesetzt
+			out.delta_q_d[i] = 0;
+			out.joint_motion_finished[i] = true;
 		}
 		else
 		{
+			//uses the Formulas of Modeling, identification and control of robots
+			//from page 327 to page 328
 			if (t < t_1_sync_[i])
 			{
-				(*delta_q_d)[i] = -1.0 / std::pow(t_1_sync_[i], 3.0) * dq_max_sync_[i] * sign_delta_q[i] *
+				//formula 13.37
+				out.delta_q_d[i] = -1.0 / std::pow(t_1_sync_[i], 3.0) * dq_max_sync_[i] * sign_delta_q[i] *
 					(0.5 * t - t_1_sync_[i]) * std::pow(t, 3.0);
 			}
 			else if (t >= t_1_sync_[i] && t < t_2_sync_[i])
 			{
-				(*delta_q_d)[i] = q_1_[i] + (t - t_1_sync_[i]) * dq_max_sync_[i] * sign_delta_q[i];
+				//13.42
+				out.delta_q_d[i] = q_1_[i] + (t - t_1_sync_[i]) * dq_max_sync_[i] * sign_delta_q[i];
 			}
 			else if (t >= t_2_sync_[i] && t < t_f_sync_[i])
 			{
-				(*delta_q_d)[i] = delta_q_[i] +
+				const double t_d = t_2_sync_[i] - t_1_sync_[i];
+				const double delta_t_2_sync_ = t_f_sync_[i] - t_2_sync_[i];
+				//13.43
+				out.delta_q_d[i] = delta_q_[i] +
 					0.5 *
-					(1.0 / std::pow(delta_t_2_sync_[i], 3.0) *
-						(t - t_1_sync_[i] - 2.0 * delta_t_2_sync_[i] - t_d[i]) *
-						std::pow((t - t_1_sync_[i] - t_d[i]), 3.0) +
-						(2.0 * t - 2.0 * t_1_sync_[i] - delta_t_2_sync_[i] - 2.0 * t_d[i])) *
+					(1.0 / std::pow(delta_t_2_sync_, 3.0) *
+						(t - t_1_sync_[i] - 2.0 * delta_t_2_sync_ - t_d) *
+						std::pow((t - t_1_sync_[i] - t_d), 3.0) +
+						(2.0 * t - 2.0 * t_1_sync_[i] - delta_t_2_sync_ - 2.0 * t_d)) *
 					dq_max_sync_[i] * sign_delta_q[i];
 			}
 			else
 			{
-				(*delta_q_d)[i] = delta_q_[i];
-				joint_motion_finished[i] = true;
+				out.delta_q_d[i] = delta_q_[i];
+				out.joint_motion_finished[i] = true;
 			}
 		}
 	}
-	return std::all_of //returns true, wenn alle 7 Gelenke in genügend kleiner Differenz zu gewünschter Position stehen
-		(joint_motion_finished.cbegin(), joint_motion_finished.cend(),
-		 [](bool x) { return x; });
+	return out;
 }
-
 
 void franka_joint_motion_generator::calculateSynchronizedValues()
 {
-	Vector7d dq_max_reach(dq_max_);
-	Vector7d t_f = Vector7d::Zero();
-	Vector7d delta_t_2 = Vector7d::Zero();
-	Vector7d t_1 = Vector7d::Zero();
-	Vector7d delta_t_2_sync = Vector7d::Zero();
 	Vector7i sign_delta_q;
 	for (int i = 0; i < 7; i++)
-	{
-		if (delta_q_[i] < 0)
-			sign_delta_q[i] = -1;
-		else
-			sign_delta_q[i] = 1;
-	}
+		sign_delta_q[i] = static_cast<int>(std::copysign(1.0, delta_q_[i]));
 
-	for (size_t i = 0; i < 7; i++)
+	constexpr double factor = 1.5;
+
+	Vector7d t_f = Vector7d::Zero();
+	for (Eigen::Index i = 0; i < 7; i++)
 	{
-		if (std::abs(delta_q_[i]) > kDeltaQMotionFinished)
+		if (isMotionFinished(delta_q_[i]))
+			continue;
+
+		//max reachable speed
+		double dq_max_reach = dq_max_[i];
+
+		if (std::abs(delta_q_[i]) < //if overshooting target distance
+			factor / 2.0 * (std::pow(dq_max_[i], 2.0) / ddq_max_start_[i]) +
+			factor / 2.0 * (std::pow(dq_max_[i], 2.0) / ddq_max_goal_[i]))
 		{
-			if (std::abs(delta_q_[i]) < (3.0 / 4.0 * (std::pow(dq_max_[i], 2.0) / ddq_max_start_[i]) +
-				3.0 / 4.0 * (std::pow(dq_max_[i], 2.0) / ddq_max_goal_[i])))
-			{
-				dq_max_reach[i] = std::sqrt
-					(4.0 / 3.0 * delta_q_[i] * sign_delta_q[i] *
-					 (ddq_max_start_[i] * ddq_max_goal_[i]) /
-					 (ddq_max_start_[i] + ddq_max_goal_[i]));
-			}
-			t_1[i] = 1.5 * dq_max_reach[i] / ddq_max_start_[i];
-			delta_t_2[i] = 1.5 * dq_max_reach[i] / ddq_max_goal_[i];
-			t_f[i] = t_1[i] / 2.0 + delta_t_2[i] / 2.0 + std::abs(delta_q_[i]) / dq_max_reach[i];
+			//reduce max speed
+			dq_max_reach = std::sqrt
+			(2.0 / factor * delta_q_[i] * sign_delta_q[i] *
+				(ddq_max_start_[i] * ddq_max_goal_[i]) /
+				(ddq_max_start_[i] + ddq_max_goal_[i]));
 		}
+
+		//acceleration time
+		const double t_1 = factor * dq_max_reach / ddq_max_start_[i];
+		//deceleration time
+		const double delta_t_2 = factor * dq_max_reach / ddq_max_goal_[i];
+
+		//final time = acceleration + deceleration + constant speed time?
+		t_f[i] = (t_1 + delta_t_2) / 2.0 + std::abs(delta_q_[i]) / dq_max_reach;
 	}
-	double max_t_f = t_f.maxCoeff();
-	for (size_t i = 0; i < 7; i++)
+	const double max_t_f = t_f.maxCoeff();
+
+	Vector7d delta_t_2_sync = Vector7d::Zero();
+	for (Eigen::Index i = 0; i < 7; i++)
 	{
-		if (std::abs(delta_q_[i]) > kDeltaQMotionFinished)
-		{
-			double a = 1.5 / 2.0 * (ddq_max_goal_[i] + ddq_max_start_[i]);
-			double b = -1.0 * max_t_f * ddq_max_goal_[i] * ddq_max_start_[i];
-			double c = std::abs(delta_q_[i]) * ddq_max_goal_[i] * ddq_max_start_[i];
-			double delta = b * b - 4.0 * a * c;
-			if (delta < 0.0)
-			{
-				delta = 0.0;
-			}
-			dq_max_sync_[i] = (-1.0 * b - std::sqrt(delta)) / (2.0 * a);
-			t_1_sync_[i] = 1.5 * dq_max_sync_[i] / ddq_max_start_[i];
-			delta_t_2_sync[i] = 1.5 * dq_max_sync_[i] / ddq_max_goal_[i];
-			t_f_sync_[i] =
-				(t_1_sync_)[i] / 2.0 + delta_t_2_sync[i] / 2.0 + std::abs(delta_q_[i] / dq_max_sync_[i]);
-			t_2_sync_[i] = (t_f_sync_)[i] - delta_t_2_sync[i];
-			q_1_[i] = (dq_max_sync_)[i] * sign_delta_q[i] * (0.5 * (t_1_sync_)[i]);
-		}
+		if (isMotionFinished(delta_q_[i]))
+			continue;
+
+		const double a = factor / 2.0 * (ddq_max_goal_[i] + ddq_max_start_[i]);
+		const double b = -1.0 * max_t_f * ddq_max_goal_[i] * ddq_max_start_[i];
+		const double c = std::abs(delta_q_[i]) * ddq_max_goal_[i] * ddq_max_start_[i];
+
+		dq_max_sync_[i] = calculateQuadraticSolution(a, b, c);
+		t_1_sync_[i] = factor * dq_max_sync_[i] / ddq_max_start_[i];
+		delta_t_2_sync[i] = factor * dq_max_sync_[i] / ddq_max_goal_[i];
+
+		t_f_sync_[i] = (t_1_sync_[i] + delta_t_2_sync[i]) / 2.0 + std::abs(delta_q_[i] / dq_max_sync_[i]);
+		t_2_sync_[i] = t_f_sync_[i] - delta_t_2_sync[i];
+		q_1_[i] = dq_max_sync_[i] * sign_delta_q[i] * 0.5 * t_1_sync_[i];
 	}
 }
 
+	/*
+	 
+void franka_joint_motion_generator::calculateSynchronizedValues()
+{
+	Vector7i sign_delta_q;
+	for (int i = 0; i < 7; i++)
+		sign_delta_q[i] = static_cast<int>(std::copysign(1.0, delta_q_[i]));
+
+	//max reachable speed
+	Vector7d dq_max_reach(dq_max_);
+
+	Vector7d t_f = Vector7d::Zero();
+	for (Eigen::Index i = 0; i < 7; i++)
+	{
+		if (isMotionFinished(delta_q_[i]))
+			continue;
+
+		const double dq_max_p2 = dq_max_[i] * dq_max_[i];
+		const double max_a_dist = 
+			(dq_max_p2 / ddq_max_start_[i] +
+			dq_max_p2 / ddq_max_goal_[i]) / 2.0;
+
+		double t_intermediate = 0.0;
+
+		if (std::abs(delta_q_[i]) < //if overshooting target distance
+			max_a_dist)
+		{
+			//reduce max speed V^2 = 2 * a * dx
+			dq_max_reach[i] = std::sqrt(2.0 * std::abs(delta_q_[i]) *
+				(ddq_max_start_[i] * ddq_max_goal_[i]) /
+				(ddq_max_start_[i] + ddq_max_goal_[i]));
+		}
+		else
+			t_intermediate = (max_a_dist - std::abs(delta_q_[i])) / dq_max_reach[i];
+
+		//acceleration time
+		const double t_1 = dq_max_reach[i] / ddq_max_start_[i];
+		//deceleration time
+		const double delta_t_2 = dq_max_reach[i] / ddq_max_goal_[i];
+
+		//final time = acceleration + deceleration + constant speed time?
+		t_f[i] = t_1 + delta_t_2 + t_intermediate;
+	}
+	const double max_t_f = t_f.maxCoeff();
+
+	Vector7d delta_t_2_sync = Vector7d::Zero();
+	for (Eigen::Index i = 0; i < 7; i++)
+	{
+		if (isMotionFinished(delta_q_[i]))
+			continue;
+
+		if (max_t_f == t_f[i])
+		{
+			dq_max_sync_[i] = dq_max_reach[i];
+		}
+		else //smaller time -> decrease velocity
+		{
+			
+		}
+
+		const double a = (ddq_max_goal_[i] + ddq_max_start_[i]) / 2.0;
+		const double b = -1.0 * max_t_f * ddq_max_goal_[i] * ddq_max_start_[i];
+		const double c = std::abs(delta_q_[i]) * ddq_max_goal_[i] * ddq_max_start_[i];
+
+		dq_max_sync_[i] = calculateQuadraticSolution(a, b, c);
+		t_1_sync_[i] = dq_max_sync_[i] / ddq_max_start_[i] / 2.0;
+		delta_t_2_sync[i] = dq_max_sync_[i] / ddq_max_goal_[i] / 2.0;
+
+		t_f_sync_[i] = t_1_sync_[i] + delta_t_2_sync[i] + std::abs(delta_q_[i] / dq_max_sync_[i]);
+		t_2_sync_[i] = t_f_sync_[i] - delta_t_2_sync[i] * 2.0;
+		q_1_[i] = dq_max_sync_[i] * sign_delta_q[i] * t_1_sync_[i];
+	}
+}
+*/
+
+double franka_joint_motion_generator::calculateQuadraticSolution(double a, double b, double c)
+{
+	double delta = b * b - 4.0 * a * c;
+	//only consider positive solution
+	delta = std::max(delta, 0.0);
+
+	return (-b - std::sqrt(delta)) / (2.0 * a);
+}
+
+bool franka_joint_motion_generator::isMotionFinished(double delta)
+{
+	return std::abs(delta) <= kDeltaQMotionFinished;
+}
 
 bool franka_joint_motion_generator::colliding(const franka::RobotState& state)
 {
-	for (double v : state.joint_contact)
-		if (v > 0) return true;
-	for (double v : state.cartesian_contact)
-		if (v > 0) return true;
-	return false;
+	return std::ranges::any_of(state.joint_contact, [](const double& v) { return v > 0; }) ||
+		std::ranges::any_of(state.cartesian_contact, [](const double& v) { return v > 0; });
 }
 
 //When a robot state is received, the callback function is used to calculate the response: the desired values for that time step. After sending back the response,
 //the callback function will be called again with the most recently received robot state. Since the robot is controlled with a 1 kHz frequency,
 //the callback functions have to compute their result in a short time frame in order to be accepted
 franka::JointPositions franka_joint_motion_generator::operator()
-	(const franka::RobotState& robot_state, franka::Duration period) //hier werden die zwei benötigten Argumente für dei Callback Funktion übergeben
+	(const franka::RobotState& robot_state, franka::Duration period) //hier werden die zwei benï¿½tigten Argumente fï¿½r dei Callback Funktion ï¿½bergeben
 {
 	time_ += period.toSec();
 
 	{
-		std::lock_guard<std::mutex> state_guard(current_state_lock_);
-		current_state_ = robot_state;
+		//debug std::lock_guard<std::mutex> state_guard(current_state_lock_);
+		//current_state_ = robot_state;
 	}
 
 	if (stop_motion_)
@@ -215,19 +305,15 @@ franka::JointPositions franka_joint_motion_generator::operator()
 		delta_q_ = q_goal_ - q_start_;
 		calculateSynchronizedValues();
 	}
-
-	Vector7d delta_q_d;
-	bool motion_finished = calculateDesiredValues(time_, &delta_q_d);
+	
+	const auto desiredValues = calculateDesiredValues(time_);
 
 	std::array<double, 7> joint_positions{};
-	Eigen::VectorXd::Map(&joint_positions[0], 7) = (q_start_ + delta_q_d);
+	Eigen::VectorXd::Map(joint_positions.data(), 7) = (q_start_ + desiredValues.delta_q_d);
 	franka::JointPositions output(joint_positions);
-	output.motion_finished = motion_finished;
-	return output; //gibt die response für den einen Zeitschritt zurück
+	output.motion_finished = desiredValues.isMotionFinished();
+	return output;
 }
-
-
-
 
 } /* namespace detail */
 } /* namespace franka_proxy */

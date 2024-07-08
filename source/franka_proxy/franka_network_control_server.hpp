@@ -14,7 +14,8 @@
 
 #include <asio/ip/tcp.hpp>
 
-#include <nlohmann/json_fwd.hpp>
+#include <nlohmann/json.hpp>
+//#include <nlohmann/json_fwd.hpp>
 
 #include <franka_proxy_share/franka_proxy_commands.hpp>
 
@@ -86,6 +87,9 @@ private:
 	command_generic_response process_command(const command_open_gripper&);
 	command_generic_response process_command(const command_close_gripper&);
 	command_generic_response process_command(const command_grasp_gripper&);
+	command_generic_response process_command(const command_vacuum_gripper_drop&);
+	command_generic_response process_command(const command_vacuum_gripper_vacuum&);
+	command_generic_response process_command(const command_vacuum_gripper_stop&);
 	command_generic_response process_command(const command_start_recording&);
 	command_stop_recording_response process_command(const command_stop_recording&);
 	command_generic_response process_command(const command_set_speed&);

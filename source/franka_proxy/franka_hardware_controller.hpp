@@ -17,6 +17,7 @@
 
 #include <franka/robot.h>
 #include <franka/gripper.h>
+#include <franka/vacuum_gripper.h>
 
 #include "ft_sensor/ft_sensor.hpp"
 
@@ -82,7 +83,7 @@ public:
 
 	franka::RobotState robot_state() const;
 
-
+	//jaw gripper methods
 	/** Move the gripper to gripper::max_width. */
 	void open_gripper(double speed = default_gripper_speed);
 	/** Move the gripper to gripper::min_grasp_width. */
@@ -91,6 +92,13 @@ public:
 	bool grasp_gripper(double speed, double force);
 
 	franka::GripperState gripper_state() const;
+
+	//vacuum gripper methods
+	bool vacuum_gripper_drop(std::chrono::milliseconds timeout = drop_timeout);
+	bool vacuum_gripper_vacuum(std::uint8_t vacuum_strength, std::chrono::milliseconds timeout = vacuum_timeout);
+	bool vacuum_gripper_stop();
+
+	franka::VacuumGripperState vacuum_gripper_state()const;
 
 	static constexpr double default_gripper_speed = 0.025;
 
@@ -198,13 +206,21 @@ private:
 	double speed_factor_ = 0.05;
 
 
-	// gripper
+	// Gripper
+	enum class effector
+	{
+		VACUUM_GRIPPER,
+		GRIPPER
+	};
+
 	mutable std::unique_ptr<franka::Gripper> gripper_;
 	double max_width_;
+	mutable std::unique_ptr<franka::VacuumGripper> vacuum_gripper_;
+	static constexpr std::chrono::milliseconds drop_timeout = std::chrono::milliseconds(100);
+	static constexpr std::chrono::milliseconds vacuum_timeout = std::chrono::milliseconds(100);
 
 	static constexpr double open_epsilon = 0.1;
 	static constexpr double min_grasp_width = 0.003;
-
 
 	// fts
 	mutable std::unique_ptr<ft_sensor> ft_sensor_;
@@ -223,6 +239,7 @@ private:
 
 	mutable std::mutex gripper_state_lock_;
 	franka::GripperState gripper_state_;
+	franka::VacuumGripperState vacuum_gripper_state_;
 
 	std::atomic_bool terminate_state_threads_;
 	std::thread robot_state_thread_;

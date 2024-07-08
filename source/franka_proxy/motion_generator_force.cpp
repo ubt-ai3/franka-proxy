@@ -102,7 +102,7 @@ franka::Torques force_motion_generator::callback
 
 	//The final output vector
 	std::array<double, 7> tau_d_array{};
-	Eigen::VectorXd::Map(&tau_d_array[0], 7) = (tau_command + tau_J_d) * 0.5;
+	Eigen::VectorXd::Map(tau_d_array.data(), 7) = (tau_command + tau_J_d) * 0.5;
 
 
 	forces_z.push_back(robot_state.O_F_ext_hat_K[2]);
@@ -129,7 +129,7 @@ void force_motion_generator::update_dq_filter(const franka::RobotState& robot_st
 }
 
 
-double force_motion_generator::compute_dq_filtered(int j)
+double force_motion_generator::compute_dq_filtered(int j) const
 {
 	double value = 0.0;
 	for (size_t i = j; i < 7 * dq_filter_size_; i += 7)

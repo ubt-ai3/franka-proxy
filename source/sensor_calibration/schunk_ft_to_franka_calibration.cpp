@@ -5,7 +5,7 @@
 
 #include <nlohmann/json.hpp>
 
-#include <franka_control/franka_util.hpp>
+#include <franka_util/franka_util.hpp>
 
 
 franka_control::wrench schunk_ft_sensor_to_franka_calibration::calibrate_bias(
@@ -23,9 +23,9 @@ franka_control::wrench schunk_ft_sensor_to_franka_calibration::calibrate_bias(
 
 	//calculate the avg forces/torques at rest for each pose to allow for even weighting
 	std::array<std::array<double, 6>, 24> ft_avgs;
-	for (int pose_idx = 0; pose_idx < ft_avgs.size(); pose_idx++)
+	for (auto& ft_avg : ft_avgs)
 	{
-		ft_avgs[pose_idx] = {0, 0, 0, 0, 0, 0};
+		ft_avg = {0, 0, 0, 0, 0, 0};
 	}
 
 	franka.start_recording();
@@ -40,7 +40,7 @@ franka_control::wrench schunk_ft_sensor_to_franka_calibration::calibrate_bias(
 		// get the closest config matching the pose
 		auto ik_solution =
 			franka_control::franka_util::ik_fast_closest(poses[pose_idx], prev_joint_config);
-		Eigen::VectorXd::Map(&q[0], 7) = ik_solution;
+		Eigen::VectorXd::Map(q.data(), 7) = ik_solution;
 
 		bool move_finished = false;
 		while (!move_finished)
@@ -110,9 +110,9 @@ Eigen::Vector3d schunk_ft_sensor_to_franka_calibration::calibrate_load(
 	std::array<Eigen::Affine3d, 5> poses = calibration_poses_load();
 
 	std::array<Eigen::Vector3d, 5> force_world_avgs;
-	for (int pose_idx = 0; pose_idx < force_world_avgs.size(); pose_idx++)
+	for (auto& force_world_avg : force_world_avgs)
 	{
-		force_world_avgs[pose_idx] = {0, 0, 0};
+		force_world_avg = {0, 0, 0};
 	}
 
 	franka.start_recording();
@@ -128,7 +128,7 @@ Eigen::Vector3d schunk_ft_sensor_to_franka_calibration::calibrate_load(
 		// get the closest config matching the pose
 		auto ik_solution =
 			franka_control::franka_util::ik_fast_closest(poses[pose_idx], prev_joint_config);
-		Eigen::VectorXd::Map(&q[0], 7) = ik_solution;
+		Eigen::VectorXd::Map(q.data(), 7) = ik_solution;
 
 
 		bool move_finished = false;

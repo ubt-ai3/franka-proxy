@@ -15,6 +15,7 @@
 #include <list>
 #include <vector>
 #include <string>
+#include <chrono>
 #include <optional>
 
 #include <nlohmann/json_fwd.hpp>
@@ -356,7 +357,56 @@ void to_json(nlohmann::json& json, const command_grasp_gripper& object);
 void from_json(const nlohmann::json& json, command_grasp_gripper& object);
 
 
+/**
+ *************************************************************************
+ *
+ * @class command_vacuum_gripper_drop
+ *
+ * Commands the robot to stop vacuum with the vacuum_gripper.
+ *
+ ************************************************************************/
+struct command_vacuum_gripper_drop
+{
+	using response_type = command_generic_response;
+	static constexpr char type[] = "vacuum_gripper.drop";
+	std::chrono::milliseconds timeout;
+};
 
+void to_json(nlohmann::json& json, const command_vacuum_gripper_drop& object);
+void from_json(const nlohmann::json& json, command_vacuum_gripper_drop& object);
+
+/**
+ *************************************************************************
+ *
+ * @class command_vacuum_gripper_vacuum
+ *
+ * Commands the robot to create a vacuum using the vacuum gripper.
+ *
+ ************************************************************************/
+struct command_vacuum_gripper_vacuum
+{
+	using response_type = command_generic_response;
+	static constexpr char type[] = "vacuum_gripper.vacuum";
+	std::uint8_t vacuum_strength;
+	std::chrono::milliseconds timeout;
+};
+void to_json(nlohmann::json& json, const command_vacuum_gripper_vacuum& object);
+void from_json(const nlohmann::json& json, command_vacuum_gripper_vacuum& object);
+/**
+ *************************************************************************
+ *
+ * @class command_grasp_gripper
+ *
+ * Commands the robot to stop the current vacuum gripper command
+ *
+ ************************************************************************/
+struct command_vacuum_gripper_stop
+{
+	using response_type = command_generic_response;
+	static constexpr char type[] = "vacuum_gripper.stop";
+};
+void to_json(nlohmann::json& json, const command_vacuum_gripper_stop& object);
+void from_json(const nlohmann::json& json, command_vacuum_gripper_stop& object);
 
 /**
  *************************************************************************
@@ -622,10 +672,19 @@ struct command_get_config_response
 	static constexpr char type[] = "response.config";
 
 	std::array<double, 7> joint_configuration;
+
+	//jaw gripper
 	double width;
 	double max_width;
 	bool is_grasped;
-};
+
+	//vacuum gripper
+	uint8_t actual_power;
+	uint8_t vacuum;
+	bool part_detached;
+	bool part_present;
+	bool in_control_range;
+};	
 
 void to_json(nlohmann::json& json, const command_get_config_response& object);
 void from_json(const nlohmann::json& json, command_get_config_response& object);

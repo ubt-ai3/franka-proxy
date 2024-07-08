@@ -361,6 +361,44 @@ void from_json(const nlohmann::json& json, command_grasp_gripper& object)
 	json.at("force").get_to(object.force);
 }
 
+void to_json(nlohmann::json& json, const command_vacuum_gripper_drop& object)
+{
+	json["type"] = command_vacuum_gripper_drop::type;
+	json["timeout"] = object.timeout.count();
+}
+
+void from_json(const nlohmann::json& json, command_vacuum_gripper_drop& object)
+{
+	long long tick_count{};
+	json.at("timeout").get_to(tick_count);
+	object.timeout = std::chrono::milliseconds(tick_count);
+}
+
+void to_json(nlohmann::json& json, const command_vacuum_gripper_vacuum& object)
+{
+	json["type"] = command_vacuum_gripper_vacuum::type;
+	json["timeout"] = object.timeout.count();
+	json["vacuum"] = object.vacuum_strength;
+}
+
+void from_json(const nlohmann::json& json, command_vacuum_gripper_vacuum& object)
+{
+	long long tick_count{};
+	json.at("timeout").get_to(tick_count);
+	json.at("vacuum").get_to(object.vacuum_strength);
+	object.timeout = std::chrono::milliseconds(tick_count);
+}
+
+void to_json(nlohmann::json& json, const command_vacuum_gripper_stop& object)
+{
+	json["type"] = command_vacuum_gripper_stop::type;
+}
+
+void from_json(const nlohmann::json& json, command_vacuum_gripper_stop& object)
+{
+	//do nothing
+}
+
 
 //////////////////////////////////////////////////////////////////////////
 //
@@ -585,6 +623,13 @@ void to_json(nlohmann::json& json, const command_get_config_response& object)
 	json["width"] = object.width;
 	json["max_width"] = object.max_width;
 	json["is_grasped"] = object.is_grasped;
+
+	json["actual_power"] = object.actual_power;
+	json["vacuum_level"] = object.vacuum;
+	json["in_control_range"] = object.in_control_range;
+	json["part_detached"] = object.part_detached;
+	json["part_present"] = object.part_present;
+
 }
 
 
@@ -594,5 +639,11 @@ void from_json(const nlohmann::json& json, command_get_config_response& object)
 	json.at("width").get_to(object.width);
 	json.at("max_width").get_to(object.max_width);
 	json.at("is_grasped").get_to(object.is_grasped);
+
+	json.at("actual_power").get_to(object.actual_power);
+	json.at("vacuum_level").get_to(object.vacuum);
+	json.at("in_control_range").get_to(object.in_control_range);
+	json.at("part_detached").get_to(object.part_detached);
+	json.at("part_present").get_to(object.part_present);
 }
 } /* namespace franka_proxy */

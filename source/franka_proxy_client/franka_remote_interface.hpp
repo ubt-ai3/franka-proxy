@@ -25,11 +25,20 @@ namespace franka_proxy
 {
 using robot_config_7dof = std::array<double, 7>;
 
+//values correspond to libfranka::VacuumGripperState
+struct vacuum_gripper_state
+{
+	uint8_t actual_power_;
+	uint8_t vacuum_level;
+	bool part_detached_;
+	bool part_present_;
+	bool in_control_range_;
+};
 
 class franka_remote_interface
 {
 public:
-	franka_remote_interface
+	explicit franka_remote_interface
 	(std::string proxy_ip);
 
 	~franka_remote_interface() noexcept;
@@ -160,6 +169,58 @@ public:
 	 */
 	bool grasp_gripper(double speed = 0.025, double force = 0.05);
 
+	/**
+	 * Drops objects by stopping then vacuum.
+	 * Remote function for franka::VacuumGripper::drop
+	 * 
+	 * Returns if the movement was completed successfully.
+	 * Throws some remote_exception on failure.
+	 * 
+	 * @TODO: Check exceptions.
+	 *
+	 * @throw remote_exception if the movement was unsuccessful.
+	 * @throw viral_core::network_exception if the connection was lost.
+	 */
+	bool vacuum_gripper_drop(std::chrono::milliseconds timeout = std::chrono::milliseconds(100));
+
+	/**
+ * Creates a vacuum with the vacuum gripper in order to grip objects.
+ * Remote function for franka::VacuumGripper::vacuum.
+
+ *	returns if the vacuum was created successful
+ *
+ * @TODO: Check exceptions.
+ *
+ * @throw remote_exception if the movement was unsuccessful.
+ * @throw viral_core::network_exception if the connection was lost.
+ */
+	bool vacuum_gripper_vacuum(std::uint8_t vacuum_strength, std::chrono::milliseconds timeout = std::chrono::milliseconds(100));
+
+	/**
+* Stops the current vaccum gripper command
+*
+*	remote function for franka::VacuumGripper::stop
+*
+* @TODO: Check exceptions.
+*
+* @throw remote_exception if the movement was unsuccessful.
+* @throw viral_core::network_exception if the connection was lost.
+*/
+
+	bool vacuum_gripper_stop();
+	/**
+ * Drops objects by stopping then vacuum
+ *
+ * Returns if the movement was completed successfully.
+ * Throws some remote_exception on failure.
+ *
+ * @TODO: Check exceptions.
+ *
+ * @throw remote_exception if the movement was unsuccessful.
+ * @throw viral_core::network_exception if the connection was lost.
+ */
+
+
 
 	/**
 	 * todo docu
@@ -243,6 +304,11 @@ public:
 	 */
 	void update();
 
+	/*
+		returns the current vacuum gripper state
+	*/
+	vacuum_gripper_state get_vacuum_gripper_state() const;
+
 private:
 	template <typename TCommandType> using TResponseType = std::conditional_t<
 		std::is_same_v<typename TCommandType::response_type, command_generic_response>,
@@ -301,6 +367,8 @@ private:
 	double max_gripper_pos_;
 	bool gripper_grasped_{false};
 
+	private:
+	vacuum_gripper_state vacuum_gripper_state_;
 
 	static constexpr unsigned short franka_control_port = 4711;
 	static constexpr unsigned short franka_state_port = 4712;

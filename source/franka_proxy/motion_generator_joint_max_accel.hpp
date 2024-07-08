@@ -24,7 +24,16 @@ namespace franka_proxy
 {
 namespace detail
 {
+using Vector7d = Eigen::Matrix<double, 7, 1, Eigen::ColMajor>;
+using Vector7i = Eigen::Matrix<int, 7, 1, Eigen::ColMajor>;
 
+struct JointMovement
+{
+	std::array<bool, 7> joint_motion_finished;
+	Vector7d delta_q_d;
+
+	[[nodiscard]] bool isMotionFinished() const;
+};
 
 /**
  *************************************************************************
@@ -61,7 +70,7 @@ public:
 		 franka::RobotState& current_state,
 		 const std::atomic_bool& stop_motion_flag,
 		 bool stop_on_contact);
-
+	
 	/**
 	 * Sends joint position calculations
 	 *
@@ -74,14 +83,17 @@ public:
 		(const franka::RobotState& robot_state,
 		 franka::Duration period);
 
-	
-private:
-	
-	using Vector7d = Eigen::Matrix<double, 7, 1, Eigen::ColMajor>;
-	using Vector7i = Eigen::Matrix<int, 7, 1, Eigen::ColMajor>;
+	/**
+	 * Returns each joints position and finish state
+	 */
+	[[nodiscard]] JointMovement calculateDesiredValues(double t) const;
 
-	bool calculateDesiredValues(double t, Vector7d* delta_q_d) const;
+private:
+
 	void calculateSynchronizedValues();
+
+	static double calculateQuadraticSolution(double a, double b, double c);
+	static bool isMotionFinished(double delta);
 
 	static bool colliding(const franka::RobotState& state);
 

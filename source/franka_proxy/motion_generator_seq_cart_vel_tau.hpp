@@ -26,7 +26,8 @@ namespace franka_proxy
 namespace detail
 {
 
-
+	using eigen_vector7d = Eigen::Matrix<double, 7, 1>;
+	using eigen_vector6d = Eigen::Matrix<double, 6, 1>;
 /**
  *************************************************************************
  *
@@ -72,18 +73,11 @@ public:
 
 private:
 
-
 	void update_dq_filter(const franka::RobotState& robot_state);
-	Eigen::Matrix<double, 7, 1> compute_dq_filtered();
+	[[nodiscard]] eigen_vector7d compute_dq_filtered() const;
 
-
-	void update_ft_filter(const Eigen::Matrix<double, 6, 1>& current_ft);
-	Eigen::Matrix<double, 6, 1> compute_ft_filtered();
-
-
-
-	using eigen_vector7d = Eigen::Matrix<double, 7, 1>;
-
+	void update_ft_filter(const eigen_vector6d& current_ft);
+	[[nodiscard]] eigen_vector6d compute_ft_filtered() const;
 
 	std::mutex& current_state_lock_;
 	franka::RobotState& current_state_;
@@ -107,7 +101,7 @@ private:
 
 	size_t ft_current_filter_position_ = 0;
 	size_t ft_filter_size_ = 20;
-	std::vector<Eigen::Matrix<double, 6, 1>> ft_buffer_;
+	std::vector<eigen_vector6d> ft_buffer_;
 
 
 	const double translational_stiffness_{3000.0};
@@ -118,7 +112,7 @@ private:
 	const double target_mass{0.0};
 	double desired_mass_{0.0};
 	double filter_gain{0.05};
-	Eigen::Matrix<double, 6, 1> force_error_integral_{Eigen::Matrix<double, 6, 1>::Zero()};
+	eigen_vector6d force_error_integral_{eigen_vector6d::Zero()};
 
 	double f_x_error_integral_{0.0};
 	double f_z_error_integral_{0.0};
@@ -130,9 +124,9 @@ private:
 	bool log_ = true;
 	std::vector<Eigen::Affine3d> pose_log_;
 	std::vector<Eigen::Affine3d> pose_d_log_;
-	std::vector<Eigen::Matrix<double, 6, 1>> error_log_;
-	std::vector<Eigen::Matrix<double, 6, 1>> ft_log_;
-	std::vector<Eigen::Matrix<double, 6, 1>> ft_existing_log_;
+	std::vector<eigen_vector6d> error_log_;
+	std::vector<eigen_vector6d> ft_log_;
+	std::vector<eigen_vector6d> ft_existing_log_;
 };
 
 
@@ -184,15 +178,11 @@ private:
 
 
 	void update_dq_filter(const franka::RobotState& robot_state);
-	Eigen::Matrix<double, 7, 1> compute_dq_filtered();
+	[[nodiscard]] eigen_vector7d compute_dq_filtered() const;
 
 
-	void update_ft_filter(const Eigen::Matrix<double, 6, 1>& current_ft);
-	Eigen::Matrix<double, 6, 1> compute_ft_filtered();
-
-
-
-	using eigen_vector7d = Eigen::Matrix<double, 7, 1>;
+	void update_ft_filter(const eigen_vector6d& current_ft);
+	[[nodiscard]] eigen_vector6d compute_ft_filtered() const;
 
 
 	std::mutex& current_state_lock_;
@@ -217,7 +207,7 @@ private:
 
 	size_t ft_current_filter_position_ = 0;
 	size_t ft_filter_size_ = 20;
-	std::vector<Eigen::Matrix<double, 6, 1>> ft_buffer_;
+	std::vector<eigen_vector6d> ft_buffer_;
 
 
 	const double translational_stiffness_{ 3000.0 };
@@ -228,7 +218,7 @@ private:
 	const double target_mass{ 0.0 };
 	double desired_mass_{ 0.0 };
 	double filter_gain{ 0.05 };
-	Eigen::Matrix<double, 6, 1> force_error_integral_{ Eigen::Matrix<double, 6, 1>::Zero() };
+	eigen_vector6d force_error_integral_{ eigen_vector6d::Zero() };
 
 	double f_x_error_integral_{ 0.0 };
 	double f_z_error_integral_{ 0.0 };
@@ -238,8 +228,8 @@ private:
 	bool log_ = true;
 	std::vector<Eigen::Affine3d> pose_log_;
 	std::vector<Eigen::Affine3d> pose_d_log_;
-	std::vector<Eigen::Matrix<double, 6, 1>> error_log_;
-	std::vector<Eigen::Matrix<double, 6, 1>> ft_log_;
+	std::vector<eigen_vector6d> error_log_;
+	std::vector<eigen_vector6d> ft_log_;
 };
 
 

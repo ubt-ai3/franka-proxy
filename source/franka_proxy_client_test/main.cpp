@@ -8,7 +8,7 @@
 
 #include <franka_proxy_client/exception.hpp>
 #include <franka_proxy_client/franka_remote_interface.hpp>
-
+#include <franka_util/franka_util.hpp>
 #include <franka_proxy_share/franka_proxy_logger.hpp>
 
 
@@ -16,7 +16,7 @@
 // use this to specify which test to run within the franka_proxy_client_test method
 // for new tests, add a new, distinct and sensible entry here, a new subparser to the main method,
 // and a new case to franka_proxy_client_test
-enum mode{none, ple, playback, gripper, ptp, force, ermer};
+enum mode{none, ple, playback, gripper, ptp, force, ermer, vacuum};
 
 
 // general purpose starting position, centered above table with some good space in all directions
@@ -39,6 +39,7 @@ void ptp_test(franka_proxy::franka_remote_interface& robot, double margin, bool 
 void gripper_test(franka_proxy::franka_remote_interface& robot, double margin, bool grasp);
 void playback_test(franka_proxy::franka_remote_interface& robot, bool log, std::string& file);
 void force_test(franka_proxy::franka_remote_interface& robot, double mass, double duration);
+void vacuum_test(franka_proxy::franka_remote_interface& robot);
 
 
 // todo: untested since bachelor thesis d. ermer; handle with care.
@@ -102,6 +103,8 @@ int main(int argc, char* argv[])
 		.default_value("10.0");
 	// logs nothing
 
+	argparse::ArgumentParser vacuum_test("vacuum");
+
 
 	argparse::ArgumentParser playback_test("playback");
 	// has no further arguments
@@ -114,6 +117,7 @@ int main(int argc, char* argv[])
 
 
 	//program.add_subparser(ermer_test);
+	program.add_subparser(vacuum_test);
 	program.add_subparser(playback_test);
 	program.add_subparser(force_test);
 	program.add_subparser(ptp_test);
@@ -205,6 +209,10 @@ int main(int argc, char* argv[])
 		params.push_back(log);
 		params.push_back(file);
 	}
+	else if (program.is_subcommand_used(vacuum_test)) {
+		test = mode::vacuum;
+		//TODO::
+	}
 	/*else if (program.is_subcommand_used(ermer_test)) {
 		test = mode::ermer;
 
@@ -293,6 +301,10 @@ void franka_proxy_client_test(const std::string& ip, mode test, std::vector<std:
 		std::string file = params[1];
 
 		playback_test(*robot, log, file);
+	}
+	else if (test == mode::vacuum)
+	{
+		vacuum_test(*robot);
 	}
 	/*else if (test == mode::ermer) {
 		bool log = (params[0] == "true");
@@ -457,6 +469,15 @@ void gripper_test(franka_proxy::franka_remote_interface& robot, double margin, b
 	std::cout << "Finished Gripper Test." << std::endl;
 }
 
+void vacuum_test(franka_proxy::franka_remote_interface& robot)
+{
+	execute_retry([&] { robot.vacuum_gripper_stop(); }, robot);
+	std::this_thread::sleep_for(std::chrono::seconds(10));
+	execute_retry([&] { robot.vacuum_gripper_vacuum(100, std::chrono::milliseconds(1000)); }, robot);
+	std::cout << "pause\n";
+	std::this_thread::sleep_for(std::chrono::seconds(10));
+	execute_retry([&] { robot.vacuum_gripper_stop(); }, robot);
+}
 
 void ptp_test(franka_proxy::franka_remote_interface& robot, double margin, bool log, std::string& file)
 {

@@ -12,7 +12,7 @@
 #include <vector>
 #include <iostream>
 
-#include "franka_util.hpp"
+#include <franka_util/franka_util.hpp>
 
 
 namespace franka_control

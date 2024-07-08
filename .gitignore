@@ -1,6 +1,8 @@
-/.vs
 /build
-/Folder.DotSettings
-/install
+/Debug
+/Release
+/RelWithDebInfo
 /out
-/source/.vs
+/.vs
+/Folder.DotSettings
+/vcpkg_installed

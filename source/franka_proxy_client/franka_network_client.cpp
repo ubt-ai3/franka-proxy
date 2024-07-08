@@ -218,6 +218,7 @@ std::unique_ptr<asio::ip::tcp::socket> franka_control_client::connect
 	{
 		std::cerr << "franka_control_client::connect(): Failed to connect: "
 			<< e.what() << std::endl;
+
 		throw network_exception("");
 	}
 

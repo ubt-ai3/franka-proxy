@@ -242,6 +242,13 @@ void franka_remote_interface::update()
 		current_gripper_pos_ = state.width;
 		max_gripper_pos_ = state.max_width;
 		gripper_grasped_ = state.is_grasped;
+
+		//vacuum gripper
+		vacuum_gripper_state_.actual_power_ = state.actual_power;
+		vacuum_gripper_state_.vacuum_level = state.vacuum;
+		vacuum_gripper_state_.part_detached_ = state.part_detached;
+		vacuum_gripper_state_.part_present_ = state.part_present;
+		vacuum_gripper_state_.in_control_range_ = state.in_control_range;
 	}
 
 	socket_state_->clear_states();
@@ -298,4 +305,26 @@ void franka_remote_interface::shutdown_sockets() noexcept
 	socket_control_.reset();
 	socket_state_.reset();
 }
+
+bool franka_remote_interface::vacuum_gripper_drop(std::chrono::milliseconds timeout)
+{
+	return send_command<command_vacuum_gripper_drop>(timeout)==command_result::success;
+}
+
+bool franka_remote_interface::vacuum_gripper_vacuum(std::uint8_t vacuum_strength, std::chrono::milliseconds timeout)
+{
+	return send_command<command_vacuum_gripper_vacuum>(vacuum_strength,timeout) == command_result::success;
+}
+
+bool franka_remote_interface::vacuum_gripper_stop()
+{
+	return send_command<command_vacuum_gripper_stop>() == command_result::success;
+}
+
+vacuum_gripper_state franka_remote_interface::get_vacuum_gripper_state() const
+{
+	std::lock_guard<std::mutex> state_guard(state_lock_);
+	return vacuum_gripper_state_;
+}
+
 } /* namespace franka_proxy */

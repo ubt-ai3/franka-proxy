@@ -85,7 +85,7 @@ protected:
 class ft_sensor_connection_exception : public std::exception
 {
 public:
-	char* what()
+	const char* what() const override
 	{
 		return "no force/torque sensor available";
 	}

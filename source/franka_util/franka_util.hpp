@@ -14,13 +14,14 @@
 
 #include <Eigen/Geometry>
 
-#include "franka_controller.hpp"
+//#include "franka_controller.hpp"
 
 #include "franka_proxy_share/franka_proxy_util.hpp"
 
 
 namespace franka_control
 {
+typedef Eigen::Matrix<double, 7, 1> robot_config_7dof;
 
 	using joint_limit = franka_proxy::joint_limit;
 	using robot_config_7dof = Eigen::Matrix<double, 7, 1>;
@@ -56,6 +57,9 @@ public:
 	static std::vector<robot_config_7dof> ik_fast(
 		const Eigen::Affine3d& target_world_T_j7,
 		double joint_4_value = 0.);
+
+	static std::vector<Eigen::Affine3d> fk
+		(const std::array<double, 7>& configuration);
 
 	static std::vector<robot_config_7dof> ik_fast_robust(
 		const Eigen::Affine3d& target_world_T_j7,

@@ -33,6 +33,7 @@ public:
 private:
 	franka_hardware_controller controller_;
 
+private:
 	franka_control_server control_server_;
 	franka_state_server state_server_;
 
