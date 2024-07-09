@@ -38,7 +38,7 @@ namespace franka_proxy
 			desired_speed_(speed),
 			duration_(duration),
 			logging_(log_file_path.has_value()),
-			sensor_(placeholder_, placeholder_),
+			sensor_(placeholder_, placeholder_, "./assets/fts-config_ple.json"),
 			logger_(log_file_path.value_or("none"), 0, 1, 1, 1, 3)
 		{
 			sensor_.set_load_mass(no_mass_);
