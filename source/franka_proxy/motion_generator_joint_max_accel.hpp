@@ -29,7 +29,7 @@ using Vector7i = Eigen::Matrix<int, 7, 1, Eigen::ColMajor>;
 
 struct JointMovement
 {
-	std::array<bool, 7> joint_motion_finished;
+	std::array<bool, 7> joint_motion_finished = {false, false, false, false, false, false, false};
 	Vector7d delta_q_d;
 
 	[[nodiscard]] bool isMotionFinished() const;

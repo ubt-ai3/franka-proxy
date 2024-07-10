@@ -408,8 +408,6 @@ void franka_hardware_controller::move_to(const robot_config_7dof& target)
 		std::lock_guard<std::mutex> state_guard(robot_state_lock_);
 		robot_state_ = robot_.readOnce();
 	}
-	
-	auto robot_state_before = robot_state_;
 
 	detail::franka_joint_motion_generator motion_generator
 		(speed_factor_, target, robot_state_lock_, robot_state_, stop_motion_, false);
@@ -430,7 +428,7 @@ void franka_hardware_controller::move_to(const robot_config_7dof& target)
 			 true, 100.);*/
 		(motion_generator,
 		 franka::ControllerMode::kJointImpedance,
-		 true, 20.);
+		 true, 100.);
 	}
 	catch (const detail::franka_joint_motion_generator::stop_motion_trigger&)
 	{

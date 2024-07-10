@@ -14,8 +14,6 @@
 
 #include <Eigen/Geometry>
 
-//#include "franka_controller.hpp"
-
 #include "franka_proxy_share/franka_proxy_util.hpp"
 
 
