@@ -340,10 +340,6 @@ install(EXPORT franka-proxyConfig
 
 # assets
 if(BUILD_SERVER)
-    file(GLOB franka_assets
-        "${CMAKE_CURRENT_SOURCE_DIR}/assets/*"
-    )
-
     file(
         GENERATE 
             OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/CopyConfigurationData$<CONFIG>.cmake"
@@ -365,7 +361,7 @@ if(BUILD_SERVER)
     )
 
     install(
-	FILES ${franka_assets}
+	DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/assets/"
 	DESTINATION "${CMAKE_INSTALL_BINDIR}/assets"
-)
+	)
 endif()
