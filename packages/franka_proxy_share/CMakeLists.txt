@@ -14,13 +14,16 @@ target_sources(${LIB_NAME}
     src/franka_proxy_commands.cpp
     src/franka_proxy_logger.cpp
     src/franka_proxy_util.cpp
+    src/ikfast.cpp
   PUBLIC FILE_SET HEADERS 
   BASE_DIRS ${INCLUDE_DIR}
   FILES
     ${INCLUDE_DIR}/asio_forward.hpp
+    ${INCLUDE_DIR}/exception.hpp
     ${INCLUDE_DIR}/franka_proxy_commands.hpp
     ${INCLUDE_DIR}/franka_proxy_logger.hpp
     ${INCLUDE_DIR}/franka_proxy_util.hpp
+    ${INCLUDE_DIR}/ikfast.h
 )
 
 target_link_libraries(${LIB_NAME}

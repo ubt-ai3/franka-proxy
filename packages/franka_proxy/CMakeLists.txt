@@ -51,7 +51,6 @@ target_link_libraries(${EXE_NAME}
         Threads::Threads
         Franka::Franka
         franka_proxy_share
-        franka_util
 )
 
 target_compile_features(${EXE_NAME} PUBLIC cxx_std_20)

@@ -5,8 +5,9 @@
 
 #include <nlohmann/json.hpp>
 
-#include <franka_util/franka_util.hpp>
+#include <franka_proxy_share/franka_proxy_util.hpp>
 
+using namespace franka_proxy;
 
 franka_control::wrench schunk_ft_sensor_to_franka_calibration::calibrate_bias(
 	franka_control::franka_controller_remote& franka,
@@ -39,7 +40,7 @@ franka_control::wrench schunk_ft_sensor_to_franka_calibration::calibrate_bias(
 		franka_control::robot_config_7dof q{};
 		// get the closest config matching the pose
 		auto ik_solution =
-			franka_control::franka_util::ik_fast_closest(poses[pose_idx], prev_joint_config);
+			franka_proxy_util::ik_fast_closest(poses[pose_idx], prev_joint_config);
 		Eigen::VectorXd::Map(q.data(), 7) = ik_solution;
 
 		bool move_finished = false;
@@ -127,7 +128,7 @@ Eigen::Vector3d schunk_ft_sensor_to_franka_calibration::calibrate_load(
 		franka_control::robot_config_7dof q{};
 		// get the closest config matching the pose
 		auto ik_solution =
-			franka_control::franka_util::ik_fast_closest(poses[pose_idx], prev_joint_config);
+			franka_proxy_util::ik_fast_closest(poses[pose_idx], prev_joint_config);
 		Eigen::VectorXd::Map(q.data(), 7) = ik_solution;
 
 
@@ -205,7 +206,7 @@ std::array<Eigen::Affine3d, 24> schunk_ft_sensor_to_franka_calibration::calibrat
 	std::array<Eigen::Affine3d, 24> poses;
 
 	//position of the endeffector
-	Eigen::Affine3d pos(franka_control::franka_util::fk(position).back());
+	Eigen::Affine3d pos(franka_proxy_util::fk(position).back());
 
 
 	std::fill_n(poses.begin(), 24, pos);
@@ -251,7 +252,7 @@ std::array<Eigen::Affine3d, 5> schunk_ft_sensor_to_franka_calibration::calibrati
 	// using 5 likely orientations of the robot for force/torque controlled motions
 	std::array<Eigen::Affine3d, 5> poses;
 
-	Eigen::Affine3d pos(franka_control::franka_util::fk(position).back());
+	Eigen::Affine3d pos(franka_proxy_util::fk(position).back());
 	std::fill_n(poses.begin(), 5, pos);
 
 	poses.at(0).linear() =

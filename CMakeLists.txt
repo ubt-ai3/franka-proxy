@@ -33,14 +33,12 @@ if(BUILD_SERVER)
 endif()
 
 add_subdirectory(packages/franka_proxy_client)
-add_subdirectory(packages/franka_util)
 add_subdirectory(packages/franka_control)
 
 set(PROXY_TARGETS
     franka_control
     franka_proxy_client
     franka_proxy_share
-    franka_util
 )
 if(BUILD_SERVER)
     list(APPEND PROXY_TARGETS franka_proxy)

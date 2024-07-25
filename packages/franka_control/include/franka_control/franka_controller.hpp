@@ -17,9 +17,6 @@
 
 #include <Eigen/Geometry>
 
-#include <franka_util/franka_util.hpp>
-
-
 namespace franka_control
 {
 using robot_config_7dof = Eigen::Matrix<double, 7, 1>;

@@ -30,8 +30,6 @@
 
 #include "ft_sensor/schunk_ft.hpp"
 
-#include "franka_util/franka_util.hpp"
-
 
 namespace franka_proxy
 {

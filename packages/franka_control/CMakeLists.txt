@@ -25,10 +25,10 @@ target_sources(${LIB_NAME}
 
 target_link_libraries(${LIB_NAME}
     PUBLIC
-        franka_util
         asio::asio
         Eigen3::Eigen
         franka_proxy_client
+        franka_proxy_share
 )
 
 target_compile_features(${LIB_NAME} PUBLIC cxx_std_20)

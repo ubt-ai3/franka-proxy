@@ -12,8 +12,9 @@
 #include <vector>
 #include <iostream>
 
-#include <franka_util/franka_util.hpp>
+#include <franka_proxy_share/franka_proxy_util.hpp>
 
+using namespace franka_proxy;
 
 namespace franka_control
 {
@@ -38,14 +39,14 @@ franka_controller::~franka_controller() noexcept = default;
 
 void franka_controller::move(const Eigen::Affine3d& target_world_T_tcp)
 {
-	move(franka_util::ik_fast_closest(
+	move(franka_proxy_util::ik_fast_closest(
 		target_world_T_tcp * tcp_T_j7, current_config()));
 }
 
 
 bool franka_controller::move_until_contact(const Eigen::Affine3d& target_world_T_tcp)
 {
-	return move_until_contact(franka_util::ik_fast_closest(
+	return move_until_contact(franka_proxy_util::ik_fast_closest(
 		target_world_T_tcp * tcp_T_j7, current_config()));
 }
 
@@ -58,7 +59,7 @@ Eigen::Affine3d franka_controller::current_world_T_tcp() const
 
 Eigen::Affine3d franka_controller::current_world_T_j7() const
 {
-	return franka_util::fk(current_config()).at(7);
+	return franka_proxy_util::fk(current_config()).at(7);
 }
 
 
@@ -77,7 +78,7 @@ Eigen::Affine3d franka_controller::build_j7_T_flange()
 Eigen::Affine3d franka_controller::build_flange_T_tcp()
 {
 	Eigen::Affine3d flange_T_tcp(Eigen::AngleAxisd
-		(-45. * franka_util::deg_to_rad, Eigen::Vector3d::UnitZ()));
+		(-45. * franka_proxy_util::deg_to_rad, Eigen::Vector3d::UnitZ()));
 	flange_T_tcp.translate(Eigen::Vector3d(0, 0, 0.1034));
 	return flange_T_tcp;
 }

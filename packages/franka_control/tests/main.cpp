@@ -7,11 +7,12 @@
 
 #include <franka_control/franka_controller_emulated.hpp>
 #include <franka_control/franka_controller_remote.hpp>
-#include <franka_util/franka_util.hpp>
+#include <franka_proxy_share/franka_proxy_util.hpp>
 
 // todo: this sensor calibration should not be used from here
 #include "schunk_ft_to_franka_calibration.hpp"
 
+using namespace franka_proxy;
 
 void franka_controller_remote_test(const std::string& ip);
 void franka_controller_emulated_test();
@@ -139,13 +140,13 @@ void franka_controller_remote_test(const std::string& ip)
 
 	robot->move(joints_test);
 
-	Eigen::Affine3d pose(franka_control::franka_util::fk(joints_test).back());
+	Eigen::Affine3d pose(franka_proxy_util::fk(joints_test).back());
 	pose.linear()
 		<< 0.707107, 0.707107, 0,
 		0.707107, -0.707107, 0,
 		0, 0, -1;
 
-	const auto ik_solution = franka_control::franka_util::ik_fast_closest(
+	const auto ik_solution = franka_proxy_util::ik_fast_closest(
 		pose, franka_control::robot_config_7dof(joints_test));
 	robot->move(ik_solution);
 
@@ -182,13 +183,13 @@ void franka_controller_emulated_test()
 	std::cout << "Move tests: ... ";
 	robot->move(joints_test);
 
-	Eigen::Affine3d pose(franka_control::franka_util::fk(joints_test).back());
+	Eigen::Affine3d pose(franka_proxy_util::fk(joints_test).back());
 	pose.linear()
 		<< 0.707107, 0.707107, 0,
 		0.707107, -0.707107, 0,
 		0, 0, -1;
 
-	const auto ik_solution_joints = franka_control::franka_util::ik_fast_closest(
+	const auto ik_solution_joints = franka_proxy_util::ik_fast_closest(
 		pose, franka_control::robot_config_7dof(joints_test));
 	robot->move(ik_solution_joints);
 

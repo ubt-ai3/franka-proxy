@@ -27,7 +27,6 @@ target_link_libraries(${LIB_NAME}
         asio::asio
         Eigen3::Eigen
         franka_proxy_share
-        franka_util
 )
 
 target_compile_features(${LIB_NAME} PUBLIC cxx_std_20)

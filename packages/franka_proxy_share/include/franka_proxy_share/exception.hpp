@@ -13,7 +13,7 @@
 #include <exception>
 
 
-namespace franka_control
+namespace franka_proxy
 {
 /**
  *************************************************************************
