@@ -28,8 +28,8 @@ using robot_config_7dof = std::array<double, 7>;
 //values correspond to libfranka::VacuumGripperState
 struct vacuum_gripper_state
 {
-	uint8_t actual_power_;
-	uint8_t vacuum_level;
+	uint16_t actual_power_;
+	uint16_t vacuum_level;
 	bool part_detached_;
 	bool part_present_;
 	bool in_control_range_;

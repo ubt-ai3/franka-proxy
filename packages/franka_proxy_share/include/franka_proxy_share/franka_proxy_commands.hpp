@@ -679,8 +679,8 @@ struct command_get_config_response
 	bool is_grasped;
 
 	//vacuum gripper
-	uint8_t actual_power;
-	uint8_t vacuum;
+	uint16_t actual_power;
+	uint16_t vacuum;
 	bool part_detached;
 	bool part_present;
 	bool in_control_range;
