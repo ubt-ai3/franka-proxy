@@ -149,7 +149,7 @@ public:
 		double rotational_stiffness, double translational_stiffness,
 		std::optional<std::string> log_file_path = std::nullopt);
 	/**
-	 * Cartesian impedacne controller to hold multiple poses resp. to follow path of multiple poses
+	 * Cartesian impedance controller to hold multiple poses resp. to follow path of multiple poses
 	 * using desired rotational and translational stiffness parameter.
 	*/
 	void cartesian_impedance_poses(
@@ -163,7 +163,7 @@ public:
 	void joint_impedance_hold_position(
 		double duration, std::array<double, 49> stiffness, std::optional<std::string> log_file_path = std::nullopt);
 	/**
-	 * Joint space impedacne controller to hold multiple joint positions resp.
+	 * Joint space impedance controller to hold multiple joint positions resp.
 	 * to follow path of multiple joint positions using desired stiffness matrix parameter.
 	*/
 	void joint_impedance_positions(

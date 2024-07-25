@@ -170,13 +170,13 @@ namespace franka_proxy
 
 			// convert current velcoity and push it to measured velocities
 			std::array<double, 6> new_measured_velocity_;
-			Eigen::VectorXd::Map(&new_measured_velocity_[0], 6) = velocity;
+			Eigen::VectorXd::Map(new_measured_velocity_.data(), 6) = velocity;
 
 			measured_velocities_.push_back(new_measured_velocity_);
 
 			// convert current joint velocity to feed measured joint velocities
 			std::array<double, 7> new_measured_joint_velocity;
-			Eigen::VectorXd::Map(&new_measured_joint_velocity[0], 7) = dq;
+			Eigen::VectorXd::Map(new_measured_joint_velocity.data(), 7) = dq;
 
 			measured_joint_velocities_.push_back(new_measured_joint_velocity);
 
@@ -275,7 +275,7 @@ namespace franka_proxy
 			Eigen::VectorXd tau_d = mass_matrix * j_acceleration + coriolis - jacobian.transpose() * f_ext;
 
 			std::array<double, 7> tau_d_ar;
-			Eigen::VectorXd::Map(&tau_d_ar[0], 7) = tau_d;
+			Eigen::VectorXd::Map(tau_d_ar.data(), 7) = tau_d;
 
 			if (logging_) {
 				// log to csv

@@ -86,8 +86,9 @@ std::pair<std::vector<std::array<double, 7>>, std::vector<std::array<double, 6>>
 			logger logger_(file_, 1, 0, 0, 0, 0);
 			logger_.start_logging(&joints_, nullptr, nullptr, nullptr, nullptr);
 
-			for (int i = 0; i < joints_record_.size(); i++) {
-				logger_.add_joint_data(joints_record_.at(i));
+			for (const auto& joint_data : joints_record_)
+			{
+				logger_.add_joint_data(joint_data);
 				logger_.log();
 			}
 

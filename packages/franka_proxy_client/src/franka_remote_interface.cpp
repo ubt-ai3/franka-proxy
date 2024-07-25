@@ -15,6 +15,7 @@
 #include <utility>
 
 #include <franka_proxy_share/franka_proxy_commands.hpp>
+#include <franka_proxy_share/franka_proxy_util.hpp>
 
 #include "exception.hpp"
 
@@ -48,6 +49,11 @@ franka_remote_interface::~franka_remote_interface() noexcept
 void franka_remote_interface::move_to(const robot_config_7dof& target)
 {
 	send_command<command_move_to_config>(target);
+}
+
+void franka_remote_interface::move_to(const Eigen::Vector<double, 7>& target)
+{
+	move_to(franka_proxy_util::cvt2stdArray(target));
 }
 
 
@@ -293,10 +299,10 @@ void franka_remote_interface::initialize_sockets()
 		"Creating network connections.\n";
 
 	socket_control_.reset
-		(new franka_control_client(franka_ip_.data(), franka_control_port));
+		(new franka_control_client(franka_ip_, franka_control_port));
 
 	socket_state_.reset
-		(new franka_state_client(franka_ip_.data(), franka_state_port));
+		(new franka_state_client(franka_ip_, franka_state_port));
 }
 
 

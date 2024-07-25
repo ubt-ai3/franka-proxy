@@ -106,7 +106,7 @@ void franka_state_client::update_messages_buffer()
 	catch (...)
 	{
 		std::cerr << "franka_state_client::update_messages_buffer(): "
-			<< "State message discarted due to bad JSON."
+			<< "State message discarded due to bad JSON."
 			<< std::endl;
 	}
 }
@@ -144,11 +144,11 @@ std::unique_ptr<asio::ip::tcp::socket> franka_state_client::connect
 
 
 franka_control_client::franka_control_client
-(const std::string& remote_ip,
+(std::string remote_ip,
  std::uint16_t remote_port)
 	: io_context_(new asio::io_context),
 
-	  remote_ip_(remote_ip),
+	  remote_ip_(std::move(remote_ip)),
 	  remote_port_(remote_port),
 	  connection_(connect(remote_ip_, remote_port_))
 {

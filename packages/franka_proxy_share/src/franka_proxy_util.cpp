@@ -40,17 +40,17 @@ namespace franka_proxy {
 	}
 
 
-	robot_config_7dof franka_proxy_util::max_speed_per_joint()
+	franka_proxy_util::robot_config_7dof franka_proxy_util::max_speed_per_joint()
 	{
 		return { 2.1750, 2.1750, 2.1750, 2.1750, 2.6100, 2.6100, 2.6100 };
 	}
 
-	robot_config_7dof franka_proxy_util::max_acc_per_joint()
+	franka_proxy_util::robot_config_7dof franka_proxy_util::max_acc_per_joint()
 	{
 		return { 15., 7.5, 10., 12.5, 15., 20., 20. };
 	}
 
-	robot_config_7dof franka_proxy_util::max_jerk_per_joint()
+	franka_proxy_util::robot_config_7dof franka_proxy_util::max_jerk_per_joint()
 	{
 		return { 7500., 3750., 5000., 6250., 7500., 10000., 10000. };
 	}
@@ -148,7 +148,7 @@ namespace franka_proxy {
 	}
 
 
-	std::vector<robot_config_7dof> franka_proxy_util::ik_fast
+	std::vector<franka_proxy_util::robot_config_7dof> franka_proxy_util::ik_fast
 	(const Eigen::Affine3d& target_world_T_j7, double joint_4_value)
 	{
 		const Eigen::Affine3d last_segment_T_tcp
@@ -201,7 +201,7 @@ namespace franka_proxy {
 	}
 
 
-	std::vector<robot_config_7dof> franka_proxy_util::ik_fast_robust
+	std::vector<franka_proxy_util::robot_config_7dof> franka_proxy_util::ik_fast_robust
 	(const Eigen::Affine3d& target_world_T_j7, double step_size)
 	{
 		std::vector<robot_config_7dof> solutions = ik_fast(target_world_T_j7);
@@ -215,7 +215,7 @@ namespace franka_proxy {
 	}
 
 
-	robot_config_7dof franka_proxy_util::ik_fast_closest
+	franka_proxy_util::robot_config_7dof franka_proxy_util::ik_fast_closest
 	(const Eigen::Affine3d& target_world_T_j7,
 		const robot_config_7dof& current_configuration,
 		double step_size)

@@ -161,7 +161,7 @@ namespace franka_proxy
 
 			// convert current joint velocity to feed measured joint velocities
 			std::array<double, 7> new_measured_joint_velocity;
-			Eigen::VectorXd::Map(&new_measured_joint_velocity[0], 7) = joint_velocity;
+			Eigen::VectorXd::Map(new_measured_joint_velocity.data(), 7) = joint_velocity;
 
 			measured_joint_velocities_.push_back(new_measured_joint_velocity);
 
@@ -201,7 +201,7 @@ namespace franka_proxy
 			Eigen::VectorXd tau_d = coriolis - (stiffness_matrix_ * joint_position_error + damping_matrix_ * joint_velocity);
 
 			std::array<double, 7> tau_d_ar;
-			Eigen::VectorXd::Map(&tau_d_ar[0], 7) = tau_d;
+			Eigen::VectorXd::Map(tau_d_ar.data(), 7) = tau_d;
 
 			if (logging_) {
 				// log to csv

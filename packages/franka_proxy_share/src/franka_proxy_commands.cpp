@@ -108,7 +108,7 @@ void from_json(const nlohmann::json& json, command_apply_admittance_adm_imp_desi
 	json.at("imp_translational_stiffness").get_to(object.imp_translational_stiffness);
 	
 	std::string lfp = json.at("log_file_path");
-	bool log = !(lfp == "");
+	bool log = !lfp.empty();
 	if (log)
 		object.log_file_path = std::optional<std::string>(lfp);
 	else
@@ -142,7 +142,7 @@ void from_json(const nlohmann::json& json, command_cartesian_impedance_hold_pose
 	json.at("translational_stiffness").get_to(object.translational_stiffness);
 
 	std::string lfp = json.at("log_file_path");
-	bool log = !(lfp == "");
+	bool log = !lfp.empty();
 	if (log)
 		object.log_file_path = std::optional<std::string>(lfp);
 	else
@@ -178,7 +178,7 @@ void from_json(const nlohmann::json& json, command_cartesian_impedance_poses_des
 	json.at("translational_stiffness").get_to(object.translational_stiffness);
 
 	std::string lfp = json.at("log_file_path");
-	bool log = !(lfp == "");
+	bool log = !lfp.empty();
 	if (log)
 		object.log_file_path = std::optional<std::string>(lfp);
 	else
@@ -208,7 +208,7 @@ void from_json(const nlohmann::json& json, command_joint_impedance_hold_position
 	json.at("stiffness").get_to(object.stiffness);
 
 	std::string lfp = json.at("log_file_path");
-	bool log = !(lfp == "");
+	bool log = !lfp.empty();
 	if (log)
 		object.log_file_path = std::optional<std::string>(lfp);
 	else
@@ -240,7 +240,7 @@ void from_json(const nlohmann::json& json, command_joint_impedance_positions_des
 	json.at("stiffness").get_to(object.stiffness);
 
 	std::string lfp = json.at("log_file_path");
-	bool log = !(lfp == "");
+	bool log = !lfp.empty();
 	if (log)
 		object.log_file_path = std::optional<std::string>(lfp);
 	else
@@ -270,7 +270,7 @@ void from_json(const nlohmann::json& json, command_ple_motion& object)
 	json.at("duration").get_to(object.duration);
 	
 	std::string lfp = json.at("log_file_path");
-	bool log = !(lfp == "");
+	bool log = !lfp.empty();
 	if (log)
 		object.log_file_path = std::optional<std::string>(lfp);
 	else
@@ -417,7 +417,7 @@ void to_json(nlohmann::json& json, const command_start_recording& object)
 void from_json(const nlohmann::json& json, command_start_recording& object)
 {
 	std::string lfp = json.at("log_file_path");
-	bool log = !(lfp == "");
+	bool log = !lfp.empty();
 	if (log)
 		object.log_file_path = std::optional<std::string>(lfp);
 	else
@@ -496,8 +496,8 @@ void to_json(nlohmann::json& json, const command_set_fts_bias& object)
 	json["type"] = command_set_fts_bias::type;
 	json["bias"] = nlohmann::json::array();
 
-	for (int i = 0; i < object.bias.size(); i++)
-		json["bias"].push_back(object.bias[i]);
+	for (double bias : object.bias)
+		json["bias"].push_back(bias);
 }
 
 
@@ -520,8 +520,8 @@ void to_json(nlohmann::json& json, const command_set_fts_load_mass& object)
 	json["type"] = command_set_fts_load_mass::type;
 	json["load_mass"] = nlohmann::json::array();
 
-	for (int i = 0; i < object.load_mass.size(); i++)
-		json["load_mass"].push_back(object.load_mass[i]);
+	for (double load_mass : object.load_mass)
+		json["load_mass"].push_back(load_mass);
 }
 
 

@@ -14,9 +14,6 @@
 
 namespace franka_proxy
 {
-	typedef Eigen::Matrix<double, 7, 1> robot_config_7dof;
-	using robot_config_7dof = Eigen::Matrix<double, 7, 1>;
-
 	struct joint_limit
 	{
 		joint_limit(double min, double max);
@@ -28,6 +25,8 @@ namespace franka_proxy
 	class franka_proxy_util
 	{
 	public:
+
+		typedef Eigen::Vector<double, 7> robot_config_7dof;
 
 		static std::vector<joint_limit> joint_limits();
 		static robot_config_7dof max_speed_per_joint();
@@ -61,6 +60,22 @@ namespace franka_proxy
 			const robot_config_7dof& current_configuration,
 			double step_size = 0.174533);
 
+		template<typename T, size_t N>
+		static Eigen::Vector<T, N> cvt2Eigen(const std::array<T, N>& std_array)
+		{
+			Eigen::Vector<T, N> out = Eigen::Map<const Eigen::Vector<T, N>>(std_array.data());
+			return out;
+		}
+
+		template<typename T, size_t N>
+		static std::array<T, N> cvt2stdArray(const Eigen::Vector<T, N>& eigen_array)
+		{
+			std::array<T, N> out;
+			for (int i = 0; i < N; i++)
+				out[i] = eigen_array(i, 0);
+
+			return out;
+		}
 
 		/**
 		 * Helper functions to calculate tool mass, mass center and inertia tensor.

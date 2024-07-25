@@ -76,11 +76,11 @@ namespace franka_proxy
 		private:
 			void calculate_stiffness_and_damping();
 
-			std::vector<Eigen::Affine3d> fk(const Eigen::Matrix<double, 7, 1>& configuration);
+			//std::vector<Eigen::Affine3d> fk(const Eigen::Matrix<double, 7, 1>& configuration);
 
 			static constexpr double pi = 3.14159265358979323846;
-			static constexpr double deg_to_rad = pi / 180;
-			static constexpr double rad_to_deg = 180 / pi;
+			static constexpr double deg_to_rad = pi / 180.;
+			static constexpr double rad_to_deg = 180. / pi;
 
 			franka::Model model_;
 

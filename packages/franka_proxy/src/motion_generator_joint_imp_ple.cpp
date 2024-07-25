@@ -33,13 +33,13 @@ namespace franka_proxy
 			std::optional<std::string> log_file_path)
 			:
 			model_(robot.loadModel()),
+			sensor_(placeholder_, placeholder_),
 			state_lock_(state_lock),
 			state_(robot_state),
-			desired_speed_(speed),
 			duration_(duration),
-			logging_(log_file_path.has_value()),
-			sensor_(placeholder_, placeholder_),
-			logger_(log_file_path.value_or("none"), 0, 1, 1, 1, 3)
+			desired_speed_(speed),
+			logger_(log_file_path.value_or("none"), 0, 1, 1, 1, 3),
+			logging_(log_file_path.has_value())
 		{
 			sensor_.set_load_mass(no_mass_);
 

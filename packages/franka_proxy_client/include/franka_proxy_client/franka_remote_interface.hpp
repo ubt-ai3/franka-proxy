@@ -56,6 +56,7 @@ public:
 	 * @throw viral_core::network_exception if the connection was lost.
 	 */
 	void move_to(const robot_config_7dof& target);
+	void move_to(const Eigen::Vector<double, 7>& target);
 
 
 	/**

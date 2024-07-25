@@ -79,7 +79,7 @@ class franka_control_client
 {
 public:
 	franka_control_client
-	(const std::string& remote_ip,
+	(std::string remote_ip,
 	 std::uint16_t remote_port);
 
 	~franka_control_client() noexcept;
