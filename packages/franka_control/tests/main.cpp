@@ -10,7 +10,7 @@
 #include <franka_util/franka_util.hpp>
 
 // todo: this sensor calibration should not be used from here
-#include "sensor_calibration/schunk_ft_to_franka_calibration.hpp"
+#include "schunk_ft_to_franka_calibration.hpp"
 
 
 void franka_controller_remote_test(const std::string& ip);

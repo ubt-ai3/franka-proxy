@@ -1,4 +1,4 @@
-#include "schunk_ft.hpp"
+#include <ft_sensor/schunk_ft.hpp>
 
 #include <chrono>
 #include <fstream>
