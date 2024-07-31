@@ -68,7 +68,7 @@ int main(int argc, char* argv[])
 
 	if (enforce_realtime)
 		std::cout << "Enabled realtime control loops. "
-			"(This will only work on a realtime linux system.)" << std::endl;
+			"(This will only work on a realtime linux system or on Windows with administrator privileges)" << std::endl;
 
 	try
 	{
