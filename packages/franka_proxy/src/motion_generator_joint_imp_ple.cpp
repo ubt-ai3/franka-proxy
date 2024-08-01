@@ -33,7 +33,9 @@ namespace franka_proxy
 			std::optional<std::string> log_file_path)
 			:
 			model_(robot.loadModel()),
+#ifdef FRANKA_FT_SENSOR
 			sensor_(placeholder_, placeholder_),
+#endif
 			state_lock_(state_lock),
 			state_(robot_state),
 			duration_(duration),
@@ -41,8 +43,9 @@ namespace franka_proxy
 			logger_(log_file_path.value_or("none"), 0, 1, 1, 1, 3),
 			logging_(log_file_path.has_value())
 		{
+#ifdef FRANKA_FT_SENSOR
 			sensor_.set_load_mass(no_mass_);
-
+#endif
 			init_ple_motion_generator(robot, state_lock, robot_state);
 
 			if (logging_) {
@@ -137,7 +140,7 @@ namespace franka_proxy
 
 			// convert current joint velocity to feed measured joint velocities
 			std::array<double, 7> new_measured_joint_velocity;
-			Eigen::VectorXd::Map(&new_measured_joint_velocity[0], 7) = joint_velocity;
+			Eigen::VectorXd::Map(new_measured_joint_velocity.data(), 7) = joint_velocity;
 
 			measured_joint_velocities_.push_back(new_measured_joint_velocity);
 
@@ -188,7 +191,7 @@ namespace franka_proxy
 			Eigen::VectorXd tau_d = coriolis - (stiffness_matrix_ * joint_position_error + damping_matrix_ * joint_velocity);
 
 			std::array<double, 7> tau_d_ar;
-			Eigen::VectorXd::Map(&tau_d_ar[0], 7) = tau_d;
+			Eigen::VectorXd::Map(tau_d_ar.data(), 7) = tau_d;
 
 			return tau_d_ar;
 		}
@@ -198,8 +201,9 @@ namespace franka_proxy
 		{
 			// get current joint position and measurements
 			std::array<double, 7> j = state_.q;
+#ifdef FRANKA_FT_SENSOR
 			std::array<double, 6> ft = sensor_.read().data;
-
+#endif
 
 			// get jacobian flange
 			std::array<double, 42> jac_ar = model_.zeroJacobian(franka::Frame::kEndEffector, state_);
@@ -236,7 +240,9 @@ namespace franka_proxy
 			//	std::cout << g.transpose() << "\n";
 
 			if (logging_) {
+#ifdef FRANKA_FT_SENSOR
 				logger_.add_ft_data(ft);
+#endif
 				logger_.add_cart_data(sensor_velos);
 				logger_.add_single_data(time);
 				std::vector<std::string> grav = { std::to_string(g(0)), std::to_string(g(1)), std::to_string(g(2)) };

@@ -23,12 +23,9 @@ target_sources(${EXE_NAME}
     src/motion_generator_joint_max_accel.cpp
     src/motion_generator_seq_cart_vel_tau.cpp
     src/motion_recorder.cpp
-    src/schunk_ft.cpp
   PRIVATE FILE_SET HEADERS 
   BASE_DIRS ${INCLUDE_DIR}
   FILES
-    ${INCLUDE_DIR}/ft_sensor/ft_sensor.hpp
-    ${INCLUDE_DIR}/ft_sensor/schunk_ft.hpp
     ${INCLUDE_DIR}/franka_hardware_controller.hpp
     ${INCLUDE_DIR}/franka_network_control_server.hpp
     ${INCLUDE_DIR}/franka_network_state_server.hpp
@@ -53,9 +50,16 @@ target_link_libraries(${EXE_NAME}
         franka_proxy_share
 )
 
+if (BUILD_FT_SENSOR)
+  target_link_libraries(${EXE_NAME}
+      PUBLIC
+          ft_sensor
+  )
+endif()
+
 target_compile_features(${EXE_NAME} PUBLIC cxx_std_20)
 
-# assets
+# assets ::TODO:: should assets be copied if FT is disabled?
 file(GLOB franka_assets
     "${CMAKE_SOURCE_DIR}/assets/*"
 )

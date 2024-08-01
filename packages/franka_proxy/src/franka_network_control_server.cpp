@@ -398,16 +398,22 @@ command_generic_response franka_control_server::process_command
 command_generic_response franka_control_server::process_command
 (const command_start_recording& cmd)
 {
+#ifdef FRANKA_FT_SENSOR
 	try
 	{
+#endif
+
 		std::optional<std::string> log_file_path = cmd.log_file_path;
 		controller_.start_recording(log_file_path);
 		return command_result::success;
+
+#ifdef FRANKA_FT_SENSOR
 	}
 	catch (ft_sensor_connection_exception&)
 	{
 		return command_result::force_torque_sensor_exception;
 	}
+#endif
 }
 
 

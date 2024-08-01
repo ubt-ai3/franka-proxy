@@ -6,6 +6,7 @@ include(GNUInstallDirs)
 
 option(BUILD_SERVER "Build franka_proxy executable" ON)
 option(BUILD_TESTS "Build franka_proxy tests" ON)
+option(BUILD_FT_SENSOR "Build with FT sensor" ON)
 
 if(BUILD_SERVER)
 	find_package(Franka CONFIG REQUIRED)
@@ -26,23 +27,26 @@ if (WIN32)
 	add_compile_definitions(NOMINMAX)
 endif()
 
-add_subdirectory(packages/franka_proxy_share)
-
-if(BUILD_SERVER)
-    add_subdirectory(packages/franka_proxy)
-endif()
-
-add_subdirectory(packages/franka_proxy_client)
-add_subdirectory(packages/franka_control)
-
 set(PROXY_TARGETS
     franka_control
     franka_proxy_client
     franka_proxy_share
 )
+
+add_subdirectory(packages/franka_proxy_share)
+
+if(BUILD_FT_SENSOR)
+    add_subdirectory(packages/ft_sensor)
+    list(APPEND PROXY_TARGETS ft_sensor)
+endif()
+
 if(BUILD_SERVER)
+    add_subdirectory(packages/franka_proxy)
     list(APPEND PROXY_TARGETS franka_proxy)
 endif()
+
+add_subdirectory(packages/franka_proxy_client)
+add_subdirectory(packages/franka_control)
 
 if(BUILD_TESTS)
     list(APPEND PROXY_TARGETS franka_proxy_client_test franka_control_test)

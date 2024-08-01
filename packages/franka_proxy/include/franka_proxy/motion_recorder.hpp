@@ -21,7 +21,11 @@
 
 namespace franka_proxy
 {
+#ifdef FRANKA_FT_SENSOR
 class ft_sensor;
+#else
+class ft_sensor{};
+#endif
 
 namespace detail
 {
