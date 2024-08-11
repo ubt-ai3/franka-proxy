@@ -25,9 +25,7 @@
 
 #include <franka_proxy_share/franka_proxy_logger.hpp>
 
-#ifdef FRANKA_FT_SENSOR
 #include "ft_sensor/schunk_ft.hpp"
-#endif
 
 
 namespace franka_proxy
@@ -76,9 +74,7 @@ namespace franka_proxy
 			
 			franka::Model model_;
 
-#ifdef FRANKA_FT_SENSOR
 			franka_proxy::schunk_ft_sensor sensor_;
-#endif
 
 			Eigen::Affine3f placeholder_ = Eigen::Affine3f::Identity();
 			Eigen::Vector3d no_mass_ = Eigen::Vector3d::Zero();

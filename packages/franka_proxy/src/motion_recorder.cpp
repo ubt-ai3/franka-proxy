@@ -7,9 +7,7 @@
  *
  ************************************************************************/
 
-#ifdef FRANKA_FT_SENSOR
 #include "ft_sensor/ft_sensor.hpp"
-#endif
 
 #include "motion_recorder.hpp"
 
@@ -54,13 +52,11 @@ void motion_recorder::start(std::optional<std::string> log_file_path)
 			franka::RobotState current_state(robot_.readOnce()); // sync call with approx. 1kHz
 			joints_record_.emplace_back(current_state.q);
 
-#ifdef FRANKA_FT_SENSOR
 			if (fts_)
 			{
 				ft_sensor_response current_ft(fts_->read());
 				fts_record_.emplace_back(current_ft.data);
 			}
-#endif
 			robot_state_ = current_state;
 		}
 	});

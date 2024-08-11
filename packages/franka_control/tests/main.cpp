@@ -9,10 +9,8 @@
 #include <franka_control/franka_controller_remote.hpp>
 #include <franka_proxy_share/franka_proxy_util.hpp>
 
-#ifdef FRANKA_FT_SENSOR
 // todo: this sensor calibration should not be used from here
 #include "schunk_ft_to_franka_calibration.hpp"
-#endif
 
 using namespace franka_proxy;
 
@@ -223,13 +221,9 @@ void print_status(const franka_control::franka_controller& controller)
 
 void franka_fts_calibration(const std::string& ip)
 {
-#ifdef FRANKA_FT_SENSOR
 	franka_control::franka_controller_remote controller(ip);
 	schunk_ft_sensor_to_franka_calibration::calibrate_bias(controller);
 	schunk_ft_sensor_to_franka_calibration::calibrate_load(controller);
-#else
-	std::cerr << "This method was disabled at compile time" << std::endl;
-#endif
 }
 
 void guiding_mode_test(const std::string& ip)
@@ -259,7 +253,7 @@ void guiding_mode_test(const std::string& ip)
 	robot->set_guiding_mode(true, true, true, true, true, true, false);
 	std::this_thread::sleep_for(duration);
 
-	std::cout << "´Robot is now for 20 secs in guiding mode with guidable DOF (1,1,0,1,1,0) and elbow is false" << std::endl;
+	std::cout << "ï¿½Robot is now for 20 secs in guiding mode with guidable DOF (1,1,0,1,1,0) and elbow is false" << std::endl;
 	robot->set_guiding_mode(true, true, false, true, true, false, false);
 	std::this_thread::sleep_for(duration);
 

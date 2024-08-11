@@ -7,16 +7,11 @@ target_sources(${EXE_NAME}
     main.cpp
 )
 
-if (BUILD_FT_SENSOR)
-  target_sources(${EXE_NAME}
-    PRIVATE    
-      schunk_ft_to_franka_calibration.cpp
-      schunk_ft_to_franka_calibration.hpp
-  )
-  #linking here is just for the compile_definitions of ft_sensor
-  target_link_libraries(${EXE_NAME} PRIVATE ft_sensor)
-endif()
-
+target_sources(${EXE_NAME}
+  PRIVATE    
+    schunk_ft_to_franka_calibration.cpp
+    schunk_ft_to_franka_calibration.hpp
+)
 
 target_link_libraries(${EXE_NAME}
     PUBLIC

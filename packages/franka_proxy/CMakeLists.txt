@@ -50,12 +50,10 @@ target_link_libraries(${EXE_NAME}
         franka_proxy_share
 )
 
-if (BUILD_FT_SENSOR)
-  target_link_libraries(${EXE_NAME}
-      PUBLIC
-          ft_sensor
-  )
-endif()
+target_link_libraries(${EXE_NAME}
+    PUBLIC
+        ft_sensor
+)
 
 target_compile_features(${EXE_NAME} PUBLIC cxx_std_20)
 

@@ -28,9 +28,7 @@
 #include "motion_generator_joint_imp_ple.hpp"
 #include "motion_recorder.hpp"
 
-#ifdef FRANKA_FT_SENSOR
 #include "ft_sensor/schunk_ft.hpp"
-#endif
 
 namespace franka_proxy
 {
@@ -47,9 +45,7 @@ franka_hardware_controller::franka_hardware_controller(
 		  controller_ip,
 		  enforce_realtime ? franka::RealtimeConfig::kEnforce : franka::RealtimeConfig::kIgnore),
 
-#ifdef FRANKA_FT_SENSOR
 	  ft_sensor_(nullptr),
-#endif
 	  motion_recorder_(nullptr),
 
 	  control_loop_running_(false),
@@ -63,12 +59,8 @@ franka_hardware_controller::franka_hardware_controller(
 {
 	try
 	{
-#ifdef FRANKA_FT_SENSOR
 		ft_sensor_ = std::make_unique<schunk_ft_sensor>(Eigen::Affine3f::Identity(), Eigen::Affine3f::Identity());
 		motion_recorder_ = std::make_unique<detail::motion_recorder>(robot_, robot_state_, ft_sensor_.get());
-#else
-		motion_recorder_ = std::make_unique<detail::motion_recorder>(robot_, robot_state_, nullptr);
-#endif
 	}
 	catch (const std::exception&)
 	{
@@ -554,20 +546,16 @@ void franka_hardware_controller::set_speed_factor(double speed_factor)
 
 void franka_hardware_controller::set_bias(const std::array<double, 6>& bias)
 {
-#ifdef FRANKA_FT_SENSOR
 	if (ft_sensor_)
 		ft_sensor_->set_bias(Eigen::Vector<double, 6>(bias.data()));
 	else throw ft_sensor_connection_exception();
-#endif
 }
 
 void franka_hardware_controller::set_load_mass(const std::array<double, 3>& load_mass)
 {
-#ifdef FRANKA_FT_SENSOR
 	if (ft_sensor_)
 		ft_sensor_->set_load_mass(Eigen::Vector3d(load_mass.data()));
 	else throw ft_sensor_connection_exception();
-#endif
 }
 
 void franka_hardware_controller::set_guiding_mode(const std::array<bool, 6>& guiding_mode, const bool elbow)
@@ -705,12 +693,10 @@ franka::VacuumGripperState franka_hardware_controller::vacuum_gripper_state() co
 
 void franka_hardware_controller::start_recording(std::optional<std::string> log_file_path)
 {
-#ifdef FRANKA_FT_SENSOR
 	if (!ft_sensor_)
 	{
 		throw ft_sensor_connection_exception();
 	}
-#endif
 	set_control_loop_running(true);
 	{
 		// Lock the current_state_lock_ to wait for state_thread_ to finish.

@@ -19,9 +19,7 @@
 #include <franka/gripper.h>
 #include <franka/vacuum_gripper.h>
 
-#ifdef FRANKA_FT_SENSOR
 #include "ft_sensor/ft_sensor.hpp"
-#endif
 
 
 namespace franka_proxy
@@ -224,10 +222,8 @@ private:
 	static constexpr double open_epsilon = 0.1;
 	static constexpr double min_grasp_width = 0.003;
 
-#ifdef FRANKA_FT_SENSOR
 	// fts
 	mutable std::unique_ptr<ft_sensor> ft_sensor_;
-#endif
 
 	std::unique_ptr<detail::motion_recorder> motion_recorder_;
 
