@@ -4,11 +4,6 @@ add_executable(${EXE_NAME})
 
 set(INCLUDE_DIR include/${EXE_NAME})
 
-target_include_directories(${EXE_NAME} PRIVATE  
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>  
-    $<INSTALL_INTERFACE:include>
-)
-
 target_sources(${EXE_NAME}
   PRIVATE    
     src/franka_hardware_controller.cpp

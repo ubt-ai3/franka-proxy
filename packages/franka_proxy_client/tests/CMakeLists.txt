@@ -13,6 +13,7 @@ target_link_libraries(${EXE_NAME}
         asio::asio
         Eigen3::Eigen
         Threads::Threads
+        franka_proxy_share
         franka_proxy_client
 )
 

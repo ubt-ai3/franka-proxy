@@ -23,13 +23,11 @@ target_link_libraries(${LIB_NAME}
     PUBLIC
         asio::asio
         Eigen3::Eigen
-        #franka_proxy_client
         franka_proxy_share
         nlohmann_json::nlohmann_json
 )
 
 target_compile_features(${LIB_NAME} PUBLIC cxx_std_20)
-#target_compile_definitions(${LIB_NAME} PUBLIC FRANKA_FT_SENSOR)
 
 install(
   TARGETS 
