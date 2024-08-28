@@ -30,7 +30,7 @@ cmake .. "-DCMAKE_TOOLCHAIN_FILE=C:/insert/path/here/tools/vcpkg/scripts/buildsy
 cmake --build .
 ```
 
-If building using the CMakePresets make sure to change the common-config to point your CMAKE_TOOLCHAIN_FILE of vcpkg (default points to the vcpkg in ./tools/vcpkg).
+If building using the CMakePresets make sure to change the common-config to point your CMAKE_TOOLCHAIN_FILE of vcpkg.
 
 
 ## Project structure
