@@ -12,12 +12,18 @@ Server and client are only compatible if you use the same port, so make sure to 
 
 
 # Building from Source 
-## Externals via vcpkg
+## Externals via vcpkg 
+
+Use the AI3 vcpkg for this: https://resy-gitlab.inf.uni-bayreuth.de/tools/vcpkg.git
+
 ```sh
 ./bootstrap-vcpkg.bat
 
 vcpkg install --triplet=x64-windows asio argparse franka nlohmann-json
+```
 
+Build everything from source:
+```
 mkdir build
 cd build
 cmake .. "-DCMAKE_TOOLCHAIN_FILE=C:/insert/path/here/tools/vcpkg/scripts/buildsystems/vcpkg.cmake"
