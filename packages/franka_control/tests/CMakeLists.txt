@@ -5,6 +5,10 @@ add_executable(${EXE_NAME})
 target_sources(${EXE_NAME}
   PRIVATE    
     main.cpp
+)
+
+target_sources(${EXE_NAME}
+  PRIVATE    
     schunk_ft_to_franka_calibration.cpp
     schunk_ft_to_franka_calibration.hpp
 )

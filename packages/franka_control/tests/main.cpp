@@ -253,7 +253,7 @@ void guiding_mode_test(const std::string& ip)
 	robot->set_guiding_mode(true, true, true, true, true, true, false);
 	std::this_thread::sleep_for(duration);
 
-	std::cout << "´Robot is now for 20 secs in guiding mode with guidable DOF (1,1,0,1,1,0) and elbow is false" << std::endl;
+	std::cout << "ï¿½Robot is now for 20 secs in guiding mode with guidable DOF (1,1,0,1,1,0) and elbow is false" << std::endl;
 	robot->set_guiding_mode(true, true, false, true, true, false, false);
 	std::this_thread::sleep_for(duration);
 

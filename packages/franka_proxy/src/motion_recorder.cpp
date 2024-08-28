@@ -57,7 +57,6 @@ void motion_recorder::start(std::optional<std::string> log_file_path)
 				ft_sensor_response current_ft(fts_->read());
 				fts_record_.emplace_back(current_ft.data);
 			}
-
 			robot_state_ = current_state;
 		}
 	});

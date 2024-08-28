@@ -26,23 +26,24 @@ if (WIN32)
 	add_compile_definitions(NOMINMAX)
 endif()
 
-add_subdirectory(packages/franka_proxy_share)
-
-if(BUILD_SERVER)
-    add_subdirectory(packages/franka_proxy)
-endif()
-
-add_subdirectory(packages/franka_proxy_client)
-add_subdirectory(packages/franka_control)
-
 set(PROXY_TARGETS
     franka_control
     franka_proxy_client
     franka_proxy_share
 )
+
+add_subdirectory(packages/franka_proxy_share)
+
+add_subdirectory(packages/ft_sensor)
+list(APPEND PROXY_TARGETS ft_sensor)
+
 if(BUILD_SERVER)
+    add_subdirectory(packages/franka_proxy)
     list(APPEND PROXY_TARGETS franka_proxy)
 endif()
+
+add_subdirectory(packages/franka_proxy_client)
+add_subdirectory(packages/franka_control)
 
 if(BUILD_TESTS)
     list(APPEND PROXY_TARGETS franka_proxy_client_test franka_control_test)

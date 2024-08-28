@@ -18,6 +18,7 @@
 #include <optional>
 
 #include <Eigen/Core>
+#include <Eigen/Geometry>
 
 #include <franka/robot.h>
 #include <franka/model.h>
@@ -74,6 +75,7 @@ namespace franka_proxy
 			franka::Model model_;
 
 			franka_proxy::schunk_ft_sensor sensor_;
+
 			Eigen::Affine3f placeholder_ = Eigen::Affine3f::Identity();
 			Eigen::Vector3d no_mass_ = Eigen::Vector3d::Zero();
 
