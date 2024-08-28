@@ -79,8 +79,8 @@ public:
 
 	virtual robot_config_7dof current_config() const = 0;
 	virtual wrench current_force_torque() const = 0;
-	virtual int current_gripper_pos() const = 0;
-	virtual int max_gripper_pos() const = 0;
+	virtual int current_gripper_pos() const = 0; // in [mm]
+	virtual int max_gripper_pos() const = 0; // in [mm]
 
 	Eigen::Affine3d current_world_T_tcp() const;
 	Eigen::Affine3d current_world_T_j7() const;

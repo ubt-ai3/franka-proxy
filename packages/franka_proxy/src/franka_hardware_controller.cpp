@@ -579,7 +579,7 @@ void franka_hardware_controller::open_gripper(double speed)
 
 	if (!gripper_->move(max_width_, speed))
 	{
-		std::cerr << "Gripper opening failed." << std::endl;
+		std::cerr << "Gripper opening failed." << '\n';
 	}
 }
 
@@ -591,7 +591,7 @@ void franka_hardware_controller::close_gripper(double speed)
 
 	if (!gripper_->move(min_grasp_width, speed))
 	{
-		std::cerr << "Gripper closing failed." << std::endl;
+		std::cerr << "Gripper closing failed." << '\n';
 	}
 }
 
