@@ -1,6 +1,6 @@
 # Setup
 ## Using the project
-This project is split into two parts. A client library for inclusion into your own project and a server application, that runs directly on the computer connected to the Franka Emika robot. Normally you install both of these via vcpkg.
+This project is split into two parts. A client library for inclusion into your own project and a server application, that runs directly on the computer connected to the Franka Emika robot. Normally you install both of these via vcpkg. Use the AI3 vcpkg for this: https://resy-gitlab.inf.uni-bayreuth.de/tools/vcpkg.git
 
 To install the client library use:  
 ```./vcpkg.exe install franka-proxy:x64-windows ```

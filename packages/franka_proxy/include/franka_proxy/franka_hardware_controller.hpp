@@ -19,7 +19,7 @@
 #include <franka/gripper.h>
 #include <franka/vacuum_gripper.h>
 
-#include "ft_sensor/ft_sensor.hpp"
+#include <ft_sensor/ft_sensor.hpp>
 
 
 namespace franka_proxy

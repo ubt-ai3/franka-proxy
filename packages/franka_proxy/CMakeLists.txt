@@ -4,10 +4,10 @@ add_executable(${EXE_NAME})
 
 set(INCLUDE_DIR include/${EXE_NAME})
 
-#target_include_directories(${LIB_NAME} PRIVATE  
-#    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>  
-#    $<INSTALL_INTERFACE:include>
-#)
+target_include_directories(${EXE_NAME} PRIVATE  
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>  
+    $<INSTALL_INTERFACE:include>
+)
 
 target_sources(${EXE_NAME}
   PRIVATE    
@@ -23,12 +23,9 @@ target_sources(${EXE_NAME}
     src/motion_generator_joint_max_accel.cpp
     src/motion_generator_seq_cart_vel_tau.cpp
     src/motion_recorder.cpp
-    src/schunk_ft.cpp
   PRIVATE FILE_SET HEADERS 
   BASE_DIRS ${INCLUDE_DIR}
   FILES
-    ${INCLUDE_DIR}/ft_sensor/ft_sensor.hpp
-    ${INCLUDE_DIR}/ft_sensor/schunk_ft.hpp
     ${INCLUDE_DIR}/franka_hardware_controller.hpp
     ${INCLUDE_DIR}/franka_network_control_server.hpp
     ${INCLUDE_DIR}/franka_network_state_server.hpp
@@ -51,6 +48,7 @@ target_link_libraries(${EXE_NAME}
         Threads::Threads
         Franka::Franka
         franka_proxy_share
+		ft_sensor
 )
 
 target_compile_features(${EXE_NAME} PUBLIC cxx_std_20)
