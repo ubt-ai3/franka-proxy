@@ -45,3 +45,30 @@ install(
   FILE_SET HEADERS
     DESTINATION ${INCLUDE_DIR}
 )
+
+# assets
+file(
+    GENERATE 
+        OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/CopyConfigurationData$<CONFIG>.cmake"
+        CONTENT 
+            "if (NOT EXISTS \"${CMAKE_CURRENT_BINARY_DIR}/assets\")
+                execute_process(
+                      COMMAND \"${CMAKE_COMMAND}\" -E copy_directory
+                          \"${PROJECT_SOURCE_DIR}/assets\"
+                          \"${CMAKE_CURRENT_BINARY_DIR}/assets\"
+                )
+            endif()"
+)
+
+add_custom_command(
+    TARGET ${LIB_NAME}
+    POST_BUILD 
+    COMMAND "${CMAKE_COMMAND}" -P "CopyConfigurationData$<CONFIG>.cmake"
+    WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
+)
+
+install(
+	DIRECTORY "${CMAKE_SOURCE_DIR}/assets/"
+    DESTINATION "${CMAKE_INSTALL_BINDIR}/assets"
+)
+# assets end

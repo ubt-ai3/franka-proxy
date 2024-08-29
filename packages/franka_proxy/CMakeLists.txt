@@ -48,33 +48,6 @@ target_link_libraries(${EXE_NAME}
 
 target_compile_features(${EXE_NAME} PUBLIC cxx_std_20)
 
-# assets
-file(
-    GENERATE 
-        OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/CopyConfigurationData$<CONFIG>.cmake"
-        CONTENT 
-            "if (NOT EXISTS \"${CMAKE_CURRENT_BINARY_DIR}/assets\")
-                execute_process(
-                      COMMAND \"${CMAKE_COMMAND}\" -E copy_directory
-                          \"${PROJECT_SOURCE_DIR}/assets\"
-                          \"${CMAKE_CURRENT_BINARY_DIR}/assets\"
-                )
-            endif()"
-)
-
-add_custom_command(
-    TARGET franka_proxy
-    POST_BUILD 
-    COMMAND "${CMAKE_COMMAND}" -P "CopyConfigurationData$<CONFIG>.cmake"
-    WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
-)
-
-install(
-	DIRECTORY "${CMAKE_SOURCE_DIR}/assets/"
-    DESTINATION "${CMAKE_INSTALL_BINDIR}/assets"
-)
-#assets end
-
 install(
   TARGETS 
     ${EXE_NAME}
