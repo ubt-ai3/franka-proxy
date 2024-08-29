@@ -14,24 +14,28 @@ Server and client are only compatible if you use the same port, so make sure to 
 # Building from Source 
 ## Externals via vcpkg 
 
-Use the AI3 vcpkg for this: https://resy-gitlab.inf.uni-bayreuth.de/tools/vcpkg.git
+Use the AI3 vcpkg ( https://resy-gitlab.inf.uni-bayreuth.de/tools/vcpkg.git ):
 
 ```sh
 ./bootstrap-vcpkg.bat
-
-vcpkg install --triplet=x64-windows asio argparse franka nlohmann-json
+vcpkg install --triplet=x64-windows asio argparse eigen3 franka nlohmann-json poco
 ```
 
 Build everything from source:
-```
+
+```sh
 mkdir build
 cd build
 cmake .. "-DCMAKE_TOOLCHAIN_FILE=C:/insert/path/here/tools/vcpkg/scripts/buildsystems/vcpkg.cmake"
 cmake --build .
 ```
 
-If building using the CMakePresets make sure to change the common-config to point your CMAKE_TOOLCHAIN_FILE of vcpkg.
+If building using the CMakePresets make sure to change the common-config to point your CMAKE_TOOLCHAIN_FILE of vcpkg and to set the compiler of your choice:
 
+```sh
+cmake --preset Release
+cmake --build .\build\Release\ --config Release
+```
 
 ## Project structure
 ```mermaid
