@@ -33,7 +33,7 @@ namespace franka_proxy
 		  state_server_(franka_state_port, controller_)
 	{
 	}
-} /* namespace franka_proxy */
+}
 
 
 int main(int argc, char* argv[])
@@ -80,7 +80,8 @@ int main(int argc, char* argv[])
 	}
 	catch (const std::exception& e)
 	{
-		std::cerr << "Connection to fci is not possible with error:\n" << e.what() << '\n';
+		std::cerr << "Connection to fci is not possible with error:\n"
+			<< e.what() << '\n';
 		std::cout << "Use franka_proxy --help for more program options." << '\n';
 		return -1;
 	}

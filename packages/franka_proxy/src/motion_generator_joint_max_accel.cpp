@@ -279,7 +279,7 @@ bool franka_joint_motion_generator::colliding(const franka::RobotState& state)
 //the callback function will be called again with the most recently received robot state. Since the robot is controlled with a 1 kHz frequency,
 //the callback functions have to compute their result in a short time frame in order to be accepted
 franka::JointPositions franka_joint_motion_generator::operator()
-	(const franka::RobotState& robot_state, franka::Duration period) //hier werden die zwei ben�tigten Argumente f�r dei Callback Funktion �bergeben
+	(const franka::RobotState& robot_state, franka::Duration period)
 {
 	time_ += period.toSec();
 
