@@ -62,10 +62,11 @@ namespace franka_proxy
 			ft_sensor_ = std::make_unique<schunk_ft_sensor>(Eigen::Affine3f::Identity(), Eigen::Affine3f::Identity());
 			motion_recorder_ = std::make_unique<detail::motion_recorder>(robot_, robot_state_, ft_sensor_.get());
 		}
-		catch (const std::exception&)
+		catch (const std::exception& e)
 		{
 			std::cout << "franka_proxy::franka_hardware_controller(const std::string & controller_ip): "
-				"Connection to force/torque sensor could not be established." << '\n';
+				"Connection to force/torque sensor could not be established:" << '\n' <<
+				e.what() << '\n';
 		}
 
 		try
@@ -74,10 +75,11 @@ namespace franka_proxy
 			max_width_ = gripper_->readOnce().max_width;
 			gripper_state_ = gripper_->readOnce();
 		}
-		catch (const std::exception&)
+		catch (const std::exception& e)
 		{
 			std::cout << "franka_proxy::franka_hardware_controller(const std::string & controller_ip): "
-				"Connection to gripper could not be established." << '\n';
+				"Connection to gripper could not be established." <<
+				e.what() << '\n';
 		}
 
 		try
@@ -91,6 +93,7 @@ namespace franka_proxy
 			//debug
 			std::cout << "No vacuum gripper detected\n";
 		}
+
 		set_guiding_mode({{true, true, true, true, true, true}}, false);
 	}
 

@@ -143,8 +143,8 @@ void franka_state_server::task_main()
 				if (collision)
 					controller_.automatic_error_recovery();
 
-				if (robot_state.control_command_success_rate  && robot_state.control_command_success_rate < 100)
-					std::cout << "Command success rate: " << robot_state.control_command_success_rate << "\n";
+				//if (robot_state.control_command_success_rate  && robot_state.control_command_success_rate < 100)
+				//	std::cout << "Command success rate: " << robot_state.control_command_success_rate << "\n";
 				
 			}
 			command_get_config_response response{};
