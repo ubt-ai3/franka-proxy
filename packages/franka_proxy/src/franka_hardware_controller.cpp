@@ -65,7 +65,7 @@ franka_hardware_controller::franka_hardware_controller(
 	catch (const std::exception&)
 	{
 		std::cout << "franka_proxy::franka_hardware_controller(const std::string & controller_ip): "
-			"Connection to force/torque sensor could not be established." << std::endl;
+			"Connection to force/torque sensor could not be established." << '\n';
 	}
 
 	try
@@ -77,7 +77,7 @@ franka_hardware_controller::franka_hardware_controller(
 	catch (const std::exception&)
 	{
 		std::cout << "franka_proxy::franka_hardware_controller(const std::string & controller_ip): "
-			"Connection to gripper could not be established." << std::endl;
+			"Connection to gripper could not be established." << '\n';
 	}
 
 	try
@@ -104,7 +104,7 @@ franka_hardware_controller::~franka_hardware_controller() noexcept
 	}
 	catch (const std::exception& e)
 	{
-		std::cout << e.what() << std::endl;
+		std::cout << e.what() << '\n';
 	}
 
 	terminate_state_threads_ = true;
@@ -530,7 +530,7 @@ void franka_hardware_controller::stop_movement()
 	{
 		if (gripper_)
 			if (!gripper_->stop())
-				std::cerr << "Gripper stop failed." << std::endl;
+				std::cerr << "Gripper stop failed." << '\n';
 	}
 	catch (const franka::Exception&)
 	{
@@ -978,7 +978,7 @@ void franka_hardware_controller::set_default_impedance_and_collision_parameters(
 	catch (franka::Exception& e)
 	{
 		std::cerr << "franka_hardware_controller::set_default_impedance_and_collision_parameters(): " 
-			<< e.what() << std::endl;
+			<< e.what() << '\n';
 	}
 }
 
@@ -998,7 +998,7 @@ void franka_hardware_controller::set_contact_move_impedance_and_collision_parame
 	catch (franka::Exception& e)
 	{
 		std::cerr << "franka_hardware_controller::set_contact_move_impedance_and_collision_parameters(): "
-			<< e.what() << std::endl;
+			<< e.what() << '\n';
 	}
 }
 

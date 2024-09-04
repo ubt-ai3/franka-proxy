@@ -53,7 +53,7 @@ int main(int argc, char* argv[])
 	}
 	catch (const std::exception& e)
 	{
-		std::cerr << e.what() << std::endl;
+		std::cerr << e.what() << '\n';
 		std::cerr << program;
 		return -1;
 	}
@@ -64,7 +64,7 @@ int main(int argc, char* argv[])
 	{
 		std::cout <<
 			"--------------------------------------------------------------------------------\n"
-			"Executing franka controller emulated test: " << std::endl;
+			"Executing franka controller emulated test: " << '\n';
 		franka_controller_emulated_test();
 	}
 	if (program.is_used("-r"))
@@ -72,7 +72,7 @@ int main(int argc, char* argv[])
 		const auto ip = program.get<std::string>("-r");
 		std::cout <<
 			"--------------------------------------------------------------------------------\n"
-			"Executing franka controller remote test with IP " << ip << ": " << std::endl;
+			"Executing franka controller remote test with IP " << ip << ": " << '\n';
 		//std::string ip("132.180.194.112"); // franka1-proxy@resy-lab
 		franka_controller_remote_test(ip);
 	}
@@ -81,7 +81,7 @@ int main(int argc, char* argv[])
 		const auto ip = program.get<std::string>("-r");
 		std::cout <<
 			"--------------------------------------------------------------------------------\n"
-			"Executing franka-schunk-fts calibration with IP " << ip << ": " << std::endl;
+			"Executing franka-schunk-fts calibration with IP " << ip << ": " << '\n';
 		//std::string ip("132.180.194.112"); // franka1-proxy@resy-lab
 		franka_fts_calibration(ip);
 	}
@@ -90,10 +90,10 @@ int main(int argc, char* argv[])
 		const auto ip = program.get<std::string>("-g");
 		std::cout <<
 			"--------------------------------------------------------------------------------\n"
-			"Executing guiding mode test: " << std::endl;
+			"Executing guiding mode test: " << '\n';
 		guiding_mode_test(ip);
 	}
-	std::cout << "\nPress Enter to end test exe." << std::endl;
+	std::cout << "\nPress Enter to end test exe." << '\n';
 	std::cin.get();
 	return 0;
 }
@@ -109,7 +109,7 @@ void franka_controller_remote_test(const std::string& ip)
 	}
 	catch (const std::exception&)
 	{
-		std::cerr << "Could not connect to franka-proxy with IP " << ip << "." << std::endl;
+		std::cerr << "Could not connect to franka-proxy with IP " << ip << "." << '\n';
 		return;
 	}
 	franka_control::franka_update_task update_task(*robot);
@@ -150,7 +150,7 @@ void franka_controller_remote_test(const std::string& ip)
 		pose, franka_control::robot_config_7dof(joints_test));
 	robot->move(ik_solution);
 
-	std::cout << "result unknown." << std::endl; // todo: design a useful test function
+	std::cout << "result unknown." << '\n'; // todo: design a useful test function
 }
 
 void franka_controller_emulated_test()
@@ -194,7 +194,7 @@ void franka_controller_emulated_test()
 	robot->move(ik_solution_joints);
 
 	[[maybe_unused]] bool target_reached = robot->move_until_contact(ik_solution_joints);
-	std::cout << "result unknown." << std::endl; // todo: design a useful test function
+	std::cout << "result unknown." << '\n'; // todo: design a useful test function
 
 
 	std::cout << "Gripper tests: ... ";
@@ -203,20 +203,20 @@ void franka_controller_emulated_test()
 	robot->grasp_gripper();
 	[[maybe_unused]] bool gripper_grasped = robot->gripper_grasped();
 	robot->open_gripper();
-	std::cout << "result unknown." << std::endl; // todo: design a useful test function
+	std::cout << "result unknown." << '\n'; // todo: design a useful test function
 
 
 	std::cout << "Speed tests: ... ";
 	robot->set_speed_factor(0.1);
 	[[maybe_unused]] double speed = robot->speed_factor();
-	std::cout << "result unknown." << std::endl; // todo: design a useful test function
+	std::cout << "result unknown." << '\n'; // todo: design a useful test function
 }
 
 void print_status(const franka_control::franka_controller& controller)
 {
 	const Eigen::IOFormat format(3, 0, ", ", "\n", "[ ", " ]");
 	std::cout << "Current robot joints: "
-		<< controller.current_config().transpose().format(format) << std::endl;
+		<< controller.current_config().transpose().format(format) << '\n';
 }
 
 void franka_fts_calibration(const std::string& ip)
@@ -236,7 +236,7 @@ void guiding_mode_test(const std::string& ip)
 	}
 	catch (const std::exception&)
 	{
-		std::cerr << "Could not connect to franka-proxy with IP " << ip << "." << std::endl;
+		std::cerr << "Could not connect to franka-proxy with IP " << ip << "." << '\n';
 		return;
 	}
 	franka_control::franka_update_task update_task(*robot);
@@ -245,19 +245,19 @@ void guiding_mode_test(const std::string& ip)
 	//set to default before test
 	robot->set_guiding_mode(true, true, true, true, true, true, false);
 
-	std::cout << "Robot is now for 20 secs in guiding mode with guidable DOF (1,1,1,0,0,0) and elbow is false" << std::endl;
+	std::cout << "Robot is now for 20 secs in guiding mode with guidable DOF (1,1,1,0,0,0) and elbow is false" << '\n';
 	robot->set_guiding_mode(true, true, true, false, false, false, false);
 	std::this_thread::sleep_for(duration);
 
-	std::cout << "Robot is now for 20 secs in default guiding mode" << std::endl;
+	std::cout << "Robot is now for 20 secs in default guiding mode" << '\n';
 	robot->set_guiding_mode(true, true, true, true, true, true, false);
 	std::this_thread::sleep_for(duration);
 
-	std::cout << "Robot is now for 20 secs in guiding mode with guidable DOF (1,1,0,1,1,0) and elbow is false" << std::endl;
+	std::cout << "Robot is now for 20 secs in guiding mode with guidable DOF (1,1,0,1,1,0) and elbow is false" << '\n';
 	robot->set_guiding_mode(true, true, false, true, true, false, false);
 	std::this_thread::sleep_for(duration);
 
 	//set back to default after test
 	robot->set_guiding_mode(true, true, true, true, true, true, false);
-	std::cout << "Finished guiding mode test" << std::endl;
+	std::cout << "Finished guiding mode test" << '\n';
 }

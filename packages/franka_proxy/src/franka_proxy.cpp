@@ -17,22 +17,22 @@
 
 namespace franka_proxy
 {
-//////////////////////////////////////////////////////////////////////////
-//
-// franka_proxy
-//
-//////////////////////////////////////////////////////////////////////////
+	//////////////////////////////////////////////////////////////////////////
+	//
+	// franka_proxy
+	//
+	//////////////////////////////////////////////////////////////////////////
 
 
-franka_proxy::franka_proxy(
-	const std::string& ip,
-	const bool enforce_realtime)
-	: controller_(ip, enforce_realtime),
+	franka_proxy::franka_proxy(
+		const std::string& ip,
+		const bool enforce_realtime)
+		: controller_(ip, enforce_realtime),
 
-	  control_server_(franka_control_port, controller_),
-	  state_server_(franka_state_port, controller_)
-{
-}
+		  control_server_(franka_control_port, controller_),
+		  state_server_(franka_state_port, controller_)
+	{
+	}
 } /* namespace franka_proxy */
 
 
@@ -54,7 +54,7 @@ int main(int argc, char* argv[])
 	}
 	catch (const std::exception& e)
 	{
-		std::cerr << e.what() << std::endl;
+		std::cerr << e.what() << '\n';
 		std::cout << program;
 		return -1;
 	}
@@ -64,30 +64,31 @@ int main(int argc, char* argv[])
 		ip = program.get<std::string>("--ip");
 
 	const bool enforce_realtime = program["--enforce-realtime"] == true;
-	std::cout << "Starting franka-proxy with ip: " << ip << std::endl;
+	std::cout << "Starting franka-proxy with ip: " << ip << '\n';
 
 	if (enforce_realtime)
 		std::cout << "Enabled realtime control loops. "
-			"(This will only work on a realtime linux system or on Windows with administrator privileges)" << std::endl;
+			"(This will only work on a realtime linux system or on Windows with administrator privileges)" << '\n';
 
 	try
 	{
 		franka_proxy::franka_proxy proxy(ip, enforce_realtime);
 
-		std::cout << "\nPress Enter to stop proxy." << std::endl;
+		std::cout << "\nPress Enter to stop proxy." << '\n';
 		return std::cin.get();
 	}
 	catch (const std::exception& e)
 	{
-		std::cerr << "Connection to fci is not possible with error:\n" << e.what() << std::endl;
-		std::cout << "Use franka_proxy --help for more program options." << std::endl;
+		std::cerr << "Connection to fci is not possible with error:\n" << e.what() << '\n';
+		std::cout << "Use franka_proxy --help for more program options." << '\n';
 		return -1;
 	}
 }
 
-auto find_derivative(std::vector<std::array<double, 7>> trajectory)
+std::vector<std::array<double, 7>> find_derivative(
+	const std::vector<std::array<double, 7>>& trajectory)
 {
-	decltype(trajectory) d;
+	std::vector<std::array<double, 7>> d;
 	for (int i = 0; i < trajectory.size() - 1; i++)
 	{
 		std::array<double, 7> pos;
@@ -100,11 +101,12 @@ auto find_derivative(std::vector<std::array<double, 7>> trajectory)
 	return d;
 }
 
-auto find_abs_max(std::vector<std::array<double, 7>> curve)
+std::vector<double> find_abs_max(
+	const std::vector<std::array<double, 7>>& curve)
 {
-	std::array<double, 7> out{ 0 };
+	std::array<double, 7> out{0};
 	int index = 0;
-	for (int a =0;a<curve.size(); a++)
+	for (int a = 0; a < curve.size(); a++)
 	{
 		auto& arr = curve[a];
 		for (int i = 0; i < 7; i++)
@@ -116,28 +118,29 @@ auto find_abs_max(std::vector<std::array<double, 7>> curve)
 				index = a;
 			}
 		}
-
 	}
 	std::cout << "Max at " << index << "\n";
-	return std::vector<double>(out.begin(),out.end());
+	return std::vector(out.begin(), out.end());
 }
-void print_vec(std::vector<double> vec)
+
+void print_vec(const std::vector<double>& vec)
 {
-	for (auto e : vec)
-	{
+	for (const auto e : vec)
 		std::cout << e << " ";
-	}
+
 	std::cout << "\n";
 }
+
 #include "motion_generator_joint_max_accel.hpp"
 #include <fstream>
+
 int main2(int argc, char* argv[])
 {
 	using namespace franka_proxy;
-	std::array<double, 7> q_goal = { 1,1,1,1,1,1,1 };
+	std::array<double, 7> q_goal = {1, 1, 1, 1, 1, 1, 1};
 	std::mutex state_lock;
 	franka::RobotState cur_state;
-	cur_state.q_d = { 0 };
+	cur_state.q_d = {0};
 	std::atomic_bool stop_motion;
 	bool stop_on_contact = false;
 	detail::franka_joint_motion_generator gen(1, q_goal, state_lock, cur_state, stop_motion, stop_on_contact);
@@ -183,15 +186,15 @@ int main2(int argc, char* argv[])
 
 	std::cout << "x:\n";
 	print_vec(max_loc);
-	
-	std::ofstream f("./motion.csv",std::ios::trunc);
+
+	std::ofstream f("./motion.csv", std::ios::trunc);
 	f << "time,x,vel,acc,jerk\n";
-	for (int i = 0;i< jerk.size();i++)
+	for (int i = 0; i < jerk.size(); i++)
 	{
-		f << i<<","<<trajectory[i][0] <<","<< vel[i][0] << "," << acc[i][0] << "," << jerk[i][0]  << "\n";
+		f << i << "," << trajectory[i][0] << "," << vel[i][0] << "," << acc[i][0] << "," << jerk[i][0] << "\n";
 	}
 	f.close();
-	std::cout <<argv[0]<< "wrote to file";
+	std::cout << argv[0] << "wrote to file";
 
 	return 0;
 }

@@ -88,7 +88,7 @@ seq_cart_vel_tau_generator::~seq_cart_vel_tau_generator()
 					<< error_log_[i][4] << ","
 					<< error_log_[i][5] << "\n";
 			
-			std::cout << "did logging" << std::endl;
+			std::cout << "did logging" << '\n';
 		}
 		catch (std::exception&)
 		{
@@ -399,7 +399,7 @@ seq_cart_vel_tau_generator_wo_fts::seq_cart_vel_tau_generator_wo_fts
 seq_cart_vel_tau_generator_wo_fts::~seq_cart_vel_tau_generator_wo_fts()
 {
 	if (log_)
-		std::cout << "~seq_cart_vel_tau_generator_wo_fts" << std::endl;
+		std::cout << "~seq_cart_vel_tau_generator_wo_fts" << '\n';
 }
 
 

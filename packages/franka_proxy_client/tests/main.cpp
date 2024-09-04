@@ -130,7 +130,7 @@ int main(int argc, char* argv[])
 	}
 	catch (const std::exception& e)
 	{
-		std::cerr << e.what() << std::endl;
+		std::cerr << e.what() << '\n';
 		std::cerr << program;
 		return -1;
 	}
@@ -139,7 +139,7 @@ int main(int argc, char* argv[])
 	const auto ip = program.get<std::string>("-ip");
 	std::cout <<
 		"--------------------------------------------------------------------------------\n"
-		"Executing franka client test with IP " << ip << ": " << std::endl;
+		"Executing franka client test with IP " << ip << ": " << '\n';
 	//std::string ip("132.180.194.112"); // franka1-proxy@resy-lab
 
 
@@ -224,7 +224,7 @@ int main(int argc, char* argv[])
 
 
 	franka_proxy_client_test(ip, test, params);
-	std::cout << "Press Enter to end test exe." << std::endl;
+	std::cout << "Press Enter to end test exe." << '\n';
 	std::cin.get();
 	return 0;
 }
@@ -240,7 +240,7 @@ void franka_proxy_client_test(const std::string& ip, mode test, std::vector<std:
 	}
 	catch (const std::exception&)
 	{
-		std::cerr << "Could not connect to franka-proxy with IP " << ip << "." << std::endl;
+		std::cerr << "Could not connect to franka-proxy with IP " << ip << "." << '\n';
 		return;
 	}
 
@@ -325,7 +325,7 @@ void print_status(const franka_proxy::franka_remote_interface& robot)
 	std::cout << "Current robot joints: ";
 	for (int i = 0; i < 6; ++i)
 		std::cout << config[i] << ", ";
-	std::cout << config[6] << std::endl;
+	std::cout << config[6] << '\n';
 }
 
 
@@ -351,7 +351,7 @@ template <class Function> void execute_retry(
 		{
 			std::cout << "Encountered command exception. "
 				"Probably because of wrong working mode. "
-				"Waiting before retry." << std::endl;
+				"Waiting before retry." << '\n';
 			using namespace std::chrono_literals;
 			std::this_thread::sleep_for(1s);
 		}
@@ -361,7 +361,7 @@ template <class Function> void execute_retry(
 
 void ple_motion_record_test(franka_proxy::franka_remote_interface& robot, double speed, double duration, bool log, std::string file)
 {
-	std::cout << "Starting PLE motion record test." << std::endl;
+	std::cout << "Starting PLE motion record test." << '\n';
 
 	execute_retry([&] { robot.move_to(starting_pos); }, robot);
 	
@@ -371,30 +371,30 @@ void ple_motion_record_test(franka_proxy::franka_remote_interface& robot, double
 	if (log) log_file_path = file;
 	robot.ple_motion(speed, duration, log_file_path);
 
-	std::cout << "Finished PLE motion record test." << std::endl;
+	std::cout << "Finished PLE motion record test." << '\n';
 }
 
 
 void playback_test(franka_proxy::franka_remote_interface& robot, bool log, std::string& file)
 {
-	std::cout << ("Starting Playback Test.") << std::endl;
+	std::cout << ("Starting Playback Test.") << '\n';
 
 	std::optional<std::string> log_file_path = std::nullopt;
 	if (log) log_file_path = file;
 	
-	std::cout << ("--- press to start in 3s (lights white) ---") << std::endl;
+	std::cout << ("--- press to start in 3s (lights white) ---") << '\n';
 	std::cin.get();
 	std::this_thread::sleep_for(std::chrono::seconds(3));
 
-	std::cout << ("--- starting demonstration ---") << std::endl;
+	std::cout << ("--- starting demonstration ---") << '\n';
 	robot.start_recording(log_file_path);
 	std::this_thread::sleep_for(std::chrono::seconds(10));
 
-	std::cout << ("--- stopped demonstration ---") << std::endl;
+	std::cout << ("--- stopped demonstration ---") << '\n';
 	const std::pair record(robot.stop_recording());
 
 
-	std::cout << ("--- press to start reproduction in 3s (lights blue) ---") << std::endl;
+	std::cout << ("--- press to start reproduction in 3s (lights blue) ---") << '\n';
 	std::cin.get();
 	
 	std::this_thread::sleep_for(std::chrono::seconds(3));
@@ -406,7 +406,7 @@ void playback_test(franka_proxy::franka_remote_interface& robot, bool log, std::
 
 	franka_proxy::robot_config_7dof curr_pos = robot.current_config();
 	double error = calculate_pose_error(start_pos, curr_pos);
-	std::cout << "Starting position reached with a relative error of: " << error << std::endl;
+	std::cout << "Starting position reached with a relative error of: " << error << '\n';
 
 	const std::vector selection_vectors(
 		record.second.size(), std::array<double, 6>{1, 1, 1, 1, 1, 1});
@@ -414,58 +414,58 @@ void playback_test(franka_proxy::franka_remote_interface& robot, bool log, std::
 
 	curr_pos = robot.current_config();
 	error = calculate_pose_error(stop_pos, curr_pos);
-	std::cout << "Final position reached with a relative error of: " << error << std::endl;
+	std::cout << "Final position reached with a relative error of: " << error << '\n';
 	
-	std::cout << ("Finished Playback Test.") << std::endl;
+	std::cout << ("Finished Playback Test.") << '\n';
 }
 
 
 void gripper_test(franka_proxy::franka_remote_interface& robot, double margin, bool grasp)
 {
-	std::cout << "Starting Gripper Test." << std::endl;
+	std::cout << "Starting Gripper Test." << '\n';
 
 
-	std::cout << "Grasping with gripper." << std::endl;
+	std::cout << "Grasping with gripper." << '\n';
 	robot.grasp_gripper(0.1);
 	double gripper_pos = robot.current_gripper_pos(); // if there's nothing to grasp, grasp will be treated like close
 	if (!((!grasp && gripper_pos < margin) || robot.gripper_grasped())) {
-		std::cout << "Failed to grasp with gripper, aborting test." << std::endl;
+		std::cout << "Failed to grasp with gripper, aborting test." << '\n';
 		return;
 	}
-	std::cout << "Success." << std::endl;
+	std::cout << "Success." << '\n';
 
 
-	std::cout << "Opening gripper." << std::endl;
+	std::cout << "Opening gripper." << '\n';
 	robot.open_gripper(0.1);
 	gripper_pos = robot.current_gripper_pos();
 	if (gripper_pos < margin) {
-		std::cout << "Failed to open gripper, aborting test." << std::endl;
+		std::cout << "Failed to open gripper, aborting test." << '\n';
 		return;
 	}
-	std::cout << "Success." << std::endl;
+	std::cout << "Success." << '\n';
 
 
-	std::cout << "Closing gripper." << std::endl;
+	std::cout << "Closing gripper." << '\n';
 	robot.close_gripper(1);
 	gripper_pos = robot.current_gripper_pos();
 	if (gripper_pos >= margin) {
-		std::cout << "Failed to close gripper, aborting test." << std::endl;
+		std::cout << "Failed to close gripper, aborting test." << '\n';
 		return;
 	}
-	std::cout << "Success." << std::endl;
+	std::cout << "Success." << '\n';
 
 
-	std::cout << "Opening gripper." << std::endl;
+	std::cout << "Opening gripper." << '\n';
 	robot.open_gripper(1);
 	gripper_pos = robot.current_gripper_pos();
 	if (gripper_pos < margin) {
-		std::cout << "Failed to open gripper, aborting test." << std::endl;
+		std::cout << "Failed to open gripper, aborting test." << '\n';
 		return;
 	}
-	std::cout << "Success." << std::endl;
+	std::cout << "Success." << '\n';
 
 
-	std::cout << "Finished Gripper Test." << std::endl;
+	std::cout << "Finished Gripper Test." << '\n';
 }
 
 void vacuum_test(franka_proxy::franka_remote_interface& robot)
@@ -480,7 +480,7 @@ void vacuum_test(franka_proxy::franka_remote_interface& robot)
 
 void ptp_test(franka_proxy::franka_remote_interface& robot, double margin, bool log, std::string& file)
 {
-	std::cout << "Starting PTP-Movement Test." << std::endl;
+	std::cout << "Starting PTP-Movement Test." << '\n';
 
 	franka_proxy::logger logger(file, 2, 0, 0, 1, 1);
 	std::string succ;
@@ -512,11 +512,11 @@ void ptp_test(franka_proxy::franka_remote_interface& robot, double margin, bool 
 	franka_proxy::robot_config_7dof posc = robot.current_config();
 	double error = calculate_pose_error(pos1, posc);
 	if (error < margin) {
-		std::cout << "Pose 1 of 4 reached successfully (relative error: " << error << ")." << std::endl;
+		std::cout << "Pose 1 of 4 reached successfully (relative error: " << error << ")." << '\n';
 		succ = "yes";
 	}
 	else {
-		std::cout << "Pose 1 of 4 missed with a relative error of: " << error << std::endl;
+		std::cout << "Pose 1 of 4 missed with a relative error of: " << error << '\n';
 		succ = "no";
 	}
 	if (log) {
@@ -533,11 +533,11 @@ void ptp_test(franka_proxy::franka_remote_interface& robot, double margin, bool 
 	posc = robot.current_config();
 	error = calculate_pose_error(pos2, posc);
 	if (error < margin) {
-		std::cout << "Pose 2 of 4 reached successfully (relative error: " << error << ")." << std::endl;
+		std::cout << "Pose 2 of 4 reached successfully (relative error: " << error << ")." << '\n';
 		succ = "yes";
 	}
 	else {
-		std::cout << "Pose 2 of 4 missed with a relative error of: " << error << std::endl;
+		std::cout << "Pose 2 of 4 missed with a relative error of: " << error << '\n';
 		succ = "no";
 	}
 	if (log) {
@@ -554,11 +554,11 @@ void ptp_test(franka_proxy::franka_remote_interface& robot, double margin, bool 
 	posc = robot.current_config();
 	error = calculate_pose_error(starting_pos, posc);
 	if (error < margin) {
-		std::cout << "Pose 3 of 4 reached successfully (relative error: " << error << ")." << std::endl;
+		std::cout << "Pose 3 of 4 reached successfully (relative error: " << error << ")." << '\n';
 		succ = "yes";
 	}
 	else {
-		std::cout << "Pose 3 of 4 missed with a relative error of: " << error << std::endl;
+		std::cout << "Pose 3 of 4 missed with a relative error of: " << error << '\n';
 		succ = "no";
 	}
 	if (log) {
@@ -575,32 +575,32 @@ void ptp_test(franka_proxy::franka_remote_interface& robot, double margin, bool 
 		robot.move_to(unreachable_pos);
 	}
 	catch (franka_proxy::invalid_operation_exception& e) {
-		std::cout << e.what() << std::endl;
-		std::cout << "Pose 4 of 4 successfully identified as unreachable." << std::endl;
+		std::cout << e.what() << '\n';
+		std::cout << "Pose 4 of 4 successfully identified as unreachable." << '\n';
 	}
 	catch (franka_proxy::exception& f) {
-		std::cout << "A franka exception ocurred (not related to pose 4 of 4 being unreachable)." << std::endl;
-		std::cout << f.what() << std::endl;
-		std::cout << typeid(f).name() << std::endl;
-		std::cout << "Pose 4 not identified as unreachable. Test failed." << std::endl;
+		std::cout << "A franka exception ocurred (not related to pose 4 of 4 being unreachable)." << '\n';
+		std::cout << f.what() << '\n';
+		std::cout << typeid(f).name() << '\n';
+		std::cout << "Pose 4 not identified as unreachable. Test failed." << '\n';
 	}
 	catch (std::exception& g) {
-		std::cout << "A general exception occured (not related to pose 4 of 4 being unreachable)." << std::endl;
-		std::cout << g.what() << std::endl;
-		std::cout << typeid(g).name() << std::endl;
-		std::cout << "Pose 4 not identified as unreachable. Test failed." << std::endl;
+		std::cout << "A general exception occured (not related to pose 4 of 4 being unreachable)." << '\n';
+		std::cout << g.what() << '\n';
+		std::cout << typeid(g).name() << '\n';
+		std::cout << "Pose 4 not identified as unreachable. Test failed." << '\n';
 	}
 
 
 	if (log) logger.stop_logging();
 
-	std::cout << "Finished PTP-Movement Test." << std::endl;
+	std::cout << "Finished PTP-Movement Test." << '\n';
 }
 
 
 void force_test(franka_proxy::franka_remote_interface& robot, double mass, double duration)
 {
-	std::cout << "Starting Force Test." << std::endl;
+	std::cout << "Starting Force Test." << '\n';
 
 
 	// this one is down from starting_pos by (0.0, 0.0, 0.5)
@@ -616,8 +616,8 @@ void force_test(franka_proxy::franka_remote_interface& robot, double mass, doubl
 		robot.move_to_until_contact(tgt_pos);
 	}
 	catch (franka_proxy::remote_exception& e) {
-		std::cout << e.what() << std::endl;
-		std::cout << "Aborting Force Test, please try again." << std::endl;
+		std::cout << e.what() << '\n';
+		std::cout << "Aborting Force Test, please try again." << '\n';
 		return;
 	}
 
@@ -632,13 +632,13 @@ void force_test(franka_proxy::franka_remote_interface& robot, double mass, doubl
 		robot.apply_z_force(mass, duration);
 	}
 	catch (franka_proxy::remote_exception& e) {
-		std::cout << e.what() << std::endl;
+		std::cout << e.what() << '\n';
 	}
 
 	robot.set_speed_factor(0.2);
 	execute_retry([&] { robot.move_to(starting_pos); }, robot);
 	
-	std::cout << "Finished Force Test." << std::endl;
+	std::cout << "Finished Force Test." << '\n';
 }
 
 
@@ -708,19 +708,19 @@ void impedance_admittance_ermer_ba_tests(franka_proxy::franka_remote_interface& 
 	double translational_stiffness = 300.;
 
 
-	std::cout << "Starting Impedance and Admittance Tests." << std::endl;
+	std::cout << "Starting Impedance and Admittance Tests." << '\n';
 
 
-	std::cout << "Moving into starting position." << std::endl;
+	std::cout << "Moving into starting position." << '\n';
 	robot.set_speed_factor(0.2);
 	execute_retry([&] { robot.move_to(starting_pos); }, robot);
-	std::cout << "Starting position reached." << std::endl;
+	std::cout << "Starting position reached." << '\n';
 
 
 	std::this_thread::sleep_for(std::chrono::seconds(3));
 
 
-	std::cout << "Starting Impedance - Hold Position with Cartesian Impedance Test." << std::endl;
+	std::cout << "Starting Impedance - Hold Position with Cartesian Impedance Test." << '\n';
 	std::string file = "ermer_cart_impedance_hold.csv";
 
 	// this likes to cause trouble every now and then
@@ -730,22 +730,22 @@ void impedance_admittance_ermer_ba_tests(franka_proxy::franka_remote_interface& 
 		robot.cartesian_impedance_hold_pose(10., false, rotational_stiffness, translational_stiffness, log_file_path);
 	}
 	catch (franka_proxy::command_exception& e) {
-		std::cout << e.what() << std::endl;
+		std::cout << e.what() << '\n';
 	}
 	catch (franka_proxy::control_exception& f) {
-		std::cout << f.what() << std::endl;
+		std::cout << f.what() << '\n';
 	}
 	catch (franka_proxy::network_exception& g) {
-		std::cout << g.what() << std::endl;
+		std::cout << g.what() << '\n';
 	}
 
-	std::cout << "Finished Impedance - Hold Position with Cartesian Impedance Test." << std::endl;
+	std::cout << "Finished Impedance - Hold Position with Cartesian Impedance Test." << '\n';
 
 
 	std::this_thread::sleep_for(std::chrono::seconds(3));
 
 
-	std::cout << "Starting Impedance - Follow Poses with Cartesian Impedance Test." << std::endl;
+	std::cout << "Starting Impedance - Follow Poses with Cartesian Impedance Test." << '\n';
 	file = "ermer_cart_impedance_follow.csv";
 	
 	//TODO: Robot apparently tries to snap into position, weird things happen with execute_retry wrap (plus lots of exceptions)
@@ -757,28 +757,28 @@ void impedance_admittance_ermer_ba_tests(franka_proxy::franka_remote_interface& 
 		robot.cartesian_impedance_poses(new_poses, 30., false, rotational_stiffness, translational_stiffness, log_file_path);
 	}
 	catch (franka_proxy::command_exception& e) {
-		std::cout << e.what() << std::endl;
+		std::cout << e.what() << '\n';
 	}
 	catch (franka_proxy::control_exception& f) {
-		std::cout << f.what() << std::endl;
+		std::cout << f.what() << '\n';
 	}
 	catch (franka_proxy::network_exception& g) {
-		std::cout << g.what() << std::endl;
+		std::cout << g.what() << '\n';
 	}
 
-	std::cout << "Finished Impedance - Follow Poses with Cartesian Impedance Test." << std::endl;
+	std::cout << "Finished Impedance - Follow Poses with Cartesian Impedance Test." << '\n';
 
 
-	std::cout << "Moving back to starting position." << std::endl;
+	std::cout << "Moving back to starting position." << '\n';
 	robot.set_speed_factor(0.2);
 	execute_retry([&] { robot.move_to(starting_pos); }, robot);
-	std::cout << "Starting position reached." << std::endl;
+	std::cout << "Starting position reached." << '\n';
 
 
 	std::this_thread::sleep_for(std::chrono::seconds(3));
 
 
-	std::cout << "Starting Impedance - Hold Position with Joint Impedance Test." << std::endl;
+	std::cout << "Starting Impedance - Hold Position with Joint Impedance Test." << '\n';
 	file = "ermer_joint_impedance_hold.csv";
 
 	// see above
@@ -788,22 +788,22 @@ void impedance_admittance_ermer_ba_tests(franka_proxy::franka_remote_interface& 
 		robot.joint_impedance_hold_position(10., stiffness, log_file_path);
 	}
 	catch (franka_proxy::command_exception& e) {
-		std::cout << e.what() << std::endl;
+		std::cout << e.what() << '\n';
 	}
 	catch (franka_proxy::control_exception& f) {
-		std::cout << f.what() << std::endl;
+		std::cout << f.what() << '\n';
 	}
 	catch (franka_proxy::network_exception& g) {
-		std::cout << g.what() << std::endl;
+		std::cout << g.what() << '\n';
 	}
 
-	std::cout << "Finished Impedance - Hold Position with Joint Impedance Test." << std::endl;
+	std::cout << "Finished Impedance - Hold Position with Joint Impedance Test." << '\n';
 
 
 	std::this_thread::sleep_for(std::chrono::seconds(3));
 
 
-	std::cout << "Starting Impedance - Follow Poses with Joint Impedance Test." << std::endl;
+	std::cout << "Starting Impedance - Follow Poses with Joint Impedance Test." << '\n';
 	file = "ermer_joint_impedance_follow.csv";
 
 	//TODO: same as above, with more violent effect after a delay
@@ -814,22 +814,22 @@ void impedance_admittance_ermer_ba_tests(franka_proxy::franka_remote_interface& 
 		robot.joint_impedance_positions(joint_poses, 30., stiffness, log_file_path);
 	}
 	catch (franka_proxy::command_exception& e) {
-		std::cout << e.what() << std::endl;
+		std::cout << e.what() << '\n';
 	}
 	catch (franka_proxy::control_exception& f) {
-		std::cout << f.what() << std::endl;
+		std::cout << f.what() << '\n';
 	}
 	catch (franka_proxy::network_exception& g) {
-		std::cout << g.what() << std::endl;
+		std::cout << g.what() << '\n';
 	}
 
-	std::cout << "Finished Impedance - Follow Poses with Joint Impedance Test." << std::endl;
+	std::cout << "Finished Impedance - Follow Poses with Joint Impedance Test." << '\n';
 
 
 	std::this_thread::sleep_for(std::chrono::seconds(3));
 
 
-	std::cout << "Starting Admittance - Apply Force Test." << std::endl;
+	std::cout << "Starting Admittance - Apply Force Test." << '\n';
 	file = "ermer_apply_admittance.csv";
 
 	//TODO: this fails to send command constantly
@@ -839,19 +839,19 @@ void impedance_admittance_ermer_ba_tests(franka_proxy::franka_remote_interface& 
 		robot.apply_admittance(10., 10., 150., 10., 150., log_file_path);
 	}
 	catch (franka_proxy::command_exception& e) {
-		std::cout << e.what() << std::endl;
+		std::cout << e.what() << '\n';
 	}
 	catch (franka_proxy::control_exception& f) {
-		std::cout << f.what() << std::endl;
+		std::cout << f.what() << '\n';
 	}
 	catch (franka_proxy::network_exception& g) {
-		std::cout << g.what() << std::endl;
+		std::cout << g.what() << '\n';
 	}
 
-	std::cout << "Finished Admittance - Apply Force Test." << std::endl;
+	std::cout << "Finished Admittance - Apply Force Test." << '\n';
 
 
-	std::cout << "Finished Impedance and Admittance Tests." << std::endl;
+	std::cout << "Finished Impedance and Admittance Tests." << '\n';
 }
 
 

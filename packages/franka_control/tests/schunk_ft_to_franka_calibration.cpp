@@ -14,7 +14,7 @@ franka_control::wrench schunk_ft_sensor_to_franka_calibration::calibrate_bias(
 	double record_time_per_pose_seconds,
 	double wait_time_seconds)
 {
-	std::cout << "Starting bias calibration." << std::endl;
+	std::cout << "Starting bias calibration." << '\n';
 
 	std::ifstream in_stream(config_file);
 	nlohmann::json config = nlohmann::json::parse(in_stream);
@@ -35,7 +35,7 @@ franka_control::wrench schunk_ft_sensor_to_franka_calibration::calibrate_bias(
 
 	for (int pose_idx = 0; pose_idx < ft_avgs.size(); pose_idx++)
 	{
-		std::cout << "calibrate_bias progress: " << pose_idx << " / " << ft_avgs.size() << std::endl;
+		std::cout << "calibrate_bias progress: " << pose_idx << " / " << ft_avgs.size() << '\n';
 
 		franka_control::robot_config_7dof q{};
 		// get the closest config matching the pose
@@ -91,10 +91,10 @@ franka_control::wrench schunk_ft_sensor_to_franka_calibration::calibrate_bias(
 		config["bias"].at(ft_idx) = biases[ft_idx];
 	}
 	std::ofstream out_stream(config_file);
-	out_stream << std::setw(4) << config << std::endl;
+	out_stream << std::setw(4) << config << '\n';
 	franka.set_fts_bias(biases);
 
-	std::cout << "calibrated bias: " << biases.transpose() << std::endl;
+	std::cout << "calibrated bias: " << biases.transpose() << '\n';
 	return biases;
 }
 
@@ -103,7 +103,7 @@ Eigen::Vector3d schunk_ft_sensor_to_franka_calibration::calibrate_load(
 	double record_time_per_pose_seconds,
 	double wait_time_seconds)
 {
-	std::cout << "Starting load calibration." << std::endl;
+	std::cout << "Starting load calibration." << '\n';
 
 	std::ifstream in_stream(config_file);
 	nlohmann::json config = nlohmann::json::parse(in_stream);
@@ -123,7 +123,7 @@ Eigen::Vector3d schunk_ft_sensor_to_franka_calibration::calibrate_load(
 	for (int pose_idx = 0; pose_idx < force_world_avgs.size(); pose_idx++)
 	{
 		std::cout << "calibrate_load progress: " << pose_idx << " / "
-			<< force_world_avgs.size() << std::endl;
+			<< force_world_avgs.size() << '\n';
 
 		franka_control::robot_config_7dof q{};
 		// get the closest config matching the pose
@@ -187,10 +187,10 @@ Eigen::Vector3d schunk_ft_sensor_to_franka_calibration::calibrate_load(
 		config["load_mass"].push_back(load[i]);
 
 	std::ofstream out_stream(config_file);
-	out_stream << std::setw(4) << config << std::endl;
+	out_stream << std::setw(4) << config << '\n';
 
 	franka.set_fts_load_mass(load);
-	std::cout << "calibrated load: " << load.transpose() << std::endl;
+	std::cout << "calibrated load: " << load.transpose() << '\n';
 
 	return load;
 }

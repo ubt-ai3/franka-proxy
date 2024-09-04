@@ -36,50 +36,50 @@ template <typename TFunctor, typename... TArgs> nlohmann::json execute_safe(TFun
 	}
 	catch (const franka::ControlException& exc)
 	{
-		std::cout << "franka_control_server::receive_requests(): " << "Encountered control exception." << std::endl;
+		std::cout << "franka_control_server::receive_requests(): " << "Encountered control exception." << '\n';
 		return command_generic_response{command_result::control_exception, exc.what()};
 	}
 	catch (const franka::CommandException& exc)
 	{
-		std::cout << "franka_control_server::receive_requests(): " << "Encountered command exception." << std::endl;
+		std::cout << "franka_control_server::receive_requests(): " << "Encountered command exception." << '\n';
 		return command_generic_response{command_result::command_exception, exc.what()};
 	}
 	catch (const franka::NetworkException& exc)
 	{
-		std::cout << "franka_control_server::receive_requests(): " << "Encountered command exception." << std::endl;
+		std::cout << "franka_control_server::receive_requests(): " << "Encountered command exception." << '\n';
 		return command_generic_response{command_result::network_exception, exc.what()};
 	}
 	catch (const franka::RealtimeException& exc)
 	{
-		std::cout << "franka_control_server::receive_requests(): " << "Encountered realtime exception." << std::endl;
+		std::cout << "franka_control_server::receive_requests(): " << "Encountered realtime exception." << '\n';
 		return command_generic_response{command_result::realtime_exception, exc.what()};
 	}
 	catch (const franka::ModelException& exc)
 	{
-		std::cout << "franka_control_server::receive_requests(): " << "Encountered model exception." << std::endl;
+		std::cout << "franka_control_server::receive_requests(): " << "Encountered model exception." << '\n';
 		return command_generic_response{command_result::model_exception, exc.what()};
 	}
 	catch (const franka::ProtocolException& exc)
 	{
-		std::cout << "franka_control_server::receive_requests(): " << "Encountered protocol exception." << std::endl;
+		std::cout << "franka_control_server::receive_requests(): " << "Encountered protocol exception." << '\n';
 		return command_generic_response{command_result::protocol_exception, exc.what()};
 	}
 	catch (const franka::IncompatibleVersionException& exc)
 	{
 		std::cout << "franka_control_server::receive_requests(): " << "Encountered incompatible version exception." <<
-			std::endl;
+			'\n';
 		return command_generic_response{command_result::incompatible_version, exc.what()};
 	}
 	catch (const franka::InvalidOperationException& exc)
 	{
 		std::cout << "franka_control_server::receive_requests(): " << "Encountered invalid oparation exception." <<
-			std::endl;
+			'\n';
 		return command_generic_response{ command_result::invalid_operation, exc.what() };
 	}
 	catch (const franka::Exception& exc)
 	{
 		std::cout << "franka_control_server::receive_requests(): " << "Encountered generic franka exception." <<
-			std::endl;
+			'\n';
 		return command_generic_response{command_result::franka_exception, exc.what()};
 	}
 }
@@ -175,13 +175,13 @@ void franka_control_server::task_main()
 			std::cout << "franka_control_server::task_main(): ";
 			if (exc.code() == asio::error::connection_reset)
 				std::cout << " The connection was reset by the client. Dropping stream and stopping robot." <<
-					std::endl;
+					'\n';
 			else if (exc.code() == asio::error::connection_aborted)
-				std::cout << " The connection was aborted. Dropping stream and stopping robot." << std::endl;
+				std::cout << " The connection was aborted. Dropping stream and stopping robot." << '\n';
 			else if (exc.code() == asio::error::timed_out)
-				std::cout << " The connection timed out. Dropping stream and stopping robot." << std::endl;
+				std::cout << " The connection timed out. Dropping stream and stopping robot." << '\n';
 			else
-				std::cout << "Unknown connection error. Dropping stream and stopping robot." << std::endl;
+				std::cout << "Unknown connection error. Dropping stream and stopping robot." << '\n';
 			controller_.stop_movement();
 			connection_.reset();
 		}
@@ -189,7 +189,7 @@ void franka_control_server::task_main()
 		{
 			std::cerr << "franka_control_server::task_main(): " <<
 				"An exception occurred while processing requests, dropping stream and stopping robot. " <<
-				std::endl << "Exception message: " << exc.what() << std::endl;
+				'\n' << "Exception message: " << exc.what() << '\n';
 
 			controller_.stop_movement();
 			connection_.reset();
@@ -197,7 +197,7 @@ void franka_control_server::task_main()
 		catch (...)
 		{
 			std::cerr << "franka_control_server::task_main(): " <<
-				"An unknown error occured while processing requests, dropping stream and stopping robot." << std::endl;
+				"An unknown error occured while processing requests, dropping stream and stopping robot." << '\n';
 			controller_.stop_movement();
 			connection_.reset();
 		}
@@ -250,7 +250,7 @@ void franka_control_server::receive_requests()
 		std::cerr <<
 			"franka_control_server::receive_requests(): " <<
 			"Received unknown command of type: " <<
-			message.value("type", "") << std::endl;
+			message.value("type", "") << '\n';
 
 		command_generic_response response{command_result::unknown_command};
 		send_response(response);

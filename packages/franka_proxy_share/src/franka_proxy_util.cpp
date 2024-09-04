@@ -232,7 +232,7 @@ namespace franka_proxy {
 
 		if (solutions.empty())
 		{
-			std::cerr << "No solution found." << std::endl;
+			std::cerr << "No solution found." << '\n';
 			throw ik_failed();
 		}
 

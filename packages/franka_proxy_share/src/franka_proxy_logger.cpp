@@ -324,11 +324,11 @@ void logger::check_data()
 	
 
 	if (over)
-		std::cout << "LOGGER WARNING: Too many elements in the following categories: " + excess << std::endl <<
-			"Excess entries will be ignored, log will only contain entries up to specified numbers." << std::endl;
+		std::cout << "LOGGER WARNING: Too many elements in the following categories: " + excess << '\n' <<
+			"Excess entries will be ignored, log will only contain entries up to specified numbers." << '\n';
 	if (miss)
-		std::cout << "LOGGER WARNING: Missing elements in the following categories: " + misses << std::endl <<
-			"Log will contain padding with zero values or none entries." << std::endl;
+		std::cout << "LOGGER WARNING: Missing elements in the following categories: " + misses << '\n' <<
+			"Log will contain padding with zero values or none entries." << '\n';
 }
 
 }

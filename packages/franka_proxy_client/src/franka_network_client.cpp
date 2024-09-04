@@ -107,7 +107,7 @@ void franka_state_client::update_messages_buffer()
 	{
 		std::cerr << "franka_state_client::update_messages_buffer(): "
 			<< "State message discarded due to bad JSON."
-			<< std::endl;
+			<< '\n';
 	}
 }
 
@@ -128,7 +128,7 @@ std::unique_ptr<asio::ip::tcp::socket> franka_state_client::connect
 	catch (const std::system_error& e)
 	{
 		std::cerr << "franka_state_client::connect(): Failed to connect: "
-			<< e.what() << std::endl;
+			<< e.what() << '\n';
 		throw network_exception("");
 	}
 
@@ -217,7 +217,7 @@ std::unique_ptr<asio::ip::tcp::socket> franka_control_client::connect
 	catch (const std::system_error& e)
 	{
 		std::cerr << "franka_control_client::connect(): Failed to connect: "
-			<< e.what() << std::endl;
+			<< e.what() << '\n';
 
 		throw network_exception("");
 	}
