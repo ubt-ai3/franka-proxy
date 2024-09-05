@@ -42,9 +42,9 @@ int main(int argc, char* argv[])
 	       .metavar("IP");
 
 	program.add_argument("-g", "--guiding-mode")
-		   .help("guiding mode test")
-		   .default_value(std::string("127.0.0.1"))
-		   .metavar("IP");
+	       .help("guiding mode test")
+	       .default_value(std::string("127.0.0.1"))
+	       .metavar("IP");
 
 
 	try
@@ -57,7 +57,6 @@ int main(int argc, char* argv[])
 		std::cerr << program;
 		return -1;
 	}
-	
 
 
 	if (program.is_used("-e"))

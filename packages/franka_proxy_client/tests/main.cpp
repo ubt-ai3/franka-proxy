@@ -11,17 +11,16 @@
 #include <franka_proxy_share/franka_proxy_logger.hpp>
 
 
-
 // use this to specify which test to run within the franka_proxy_client_test method
 // for new tests, add a new, distinct and sensible entry here, a new subparser to the main method,
 // and a new case to franka_proxy_client_test
-enum mode{none, ple, playback, gripper, ptp, force, ermer, vacuum};
+enum mode { none, ple, playback, gripper, ptp, force, ermer, vacuum };
 
 
 // general purpose starting position, centered above table with some good space in all directions
 // if you don't know where to have the robot start, use this
 constexpr franka_proxy::robot_config_7dof starting_pos
-{ 0.0346044, -0.0666144, -0.0398886, -2.04985, -0.0229875, 1.99782, 0.778461 };
+	{0.0346044, -0.0666144, -0.0398886, -2.04985, -0.0229875, 1.99782, 0.778461};
 
 
 void franka_proxy_client_test(const std::string& ip, mode test, std::vector<std::string>& params);
@@ -30,10 +29,11 @@ void franka_proxy_client_test(const std::string& ip, mode test, std::vector<std:
 void print_status(const franka_proxy::franka_remote_interface& robot);
 template <class Function> void execute_retry(
 	Function&& f, franka_proxy::franka_remote_interface& robot);
-double calculate_pose_error( franka_proxy::robot_config_7dof pose_d, franka_proxy::robot_config_7dof pose_c);
+double calculate_pose_error(franka_proxy::robot_config_7dof pose_d, franka_proxy::robot_config_7dof pose_c);
 
 
-void ple_motion_record_test(franka_proxy::franka_remote_interface& robot, double speed, double duration, bool log, std::string file);
+void ple_motion_record_test(franka_proxy::franka_remote_interface& robot, double speed, double duration, bool log,
+                            std::string file);
 void ptp_test(franka_proxy::franka_remote_interface& robot, double margin, bool log, std::string& file);
 void gripper_test(franka_proxy::franka_remote_interface& robot, double margin, bool grasp);
 void playback_test(franka_proxy::franka_remote_interface& robot, bool log, std::string& file);
@@ -51,55 +51,56 @@ int main(int argc, char* argv[])
 	// this is the main parser, which will only handle specifying an IP and calling individual subparsers
 	argparse::ArgumentParser program("franka_client_test");
 	program.add_argument("-ip")
-		.help("specify IP for franka-proxy remote connection")
-		.default_value(std::string{ "127.0.0.1" });
+	       .help("specify IP for franka-proxy remote connection")
+	       .default_value(std::string{"127.0.0.1"});
 
 
 	// this is a base parser, including optional arguments for logging; use as parent for all subparsers that need it
 	argparse::ArgumentParser base("fct_base", "1.0", argparse::default_arguments::none);
 	base.add_argument("-l", "-log")
-		.help("enable logging")
-		.flag();
+	    .help("enable logging")
+	    .flag();
 	base.add_argument("-f", "-file")
-		.help("specify file to write log into")
-		.default_value("franka_client_test_log.csv");
+	    .help("specify file to write log into")
+	    .default_value("franka_client_test_log.csv");
 
 
 	// subparsers for individual tests
 	argparse::ArgumentParser ple_test("ple");
 	ple_test.add_argument("speed")
-		.help("specify speed factor for ple motion")
-		.default_value("0.3");
+	        .help("specify speed factor for ple motion")
+	        .default_value("0.3");
 	ple_test.add_argument("-d", "-duration")
-		.help("specify duration (sec) for ple motion")
-		.default_value("10.0");
+	        .help("specify duration (sec) for ple motion")
+	        .default_value("10.0");
 	ple_test.add_parents(base);
 
-	
+
 	argparse::ArgumentParser gripper_test("gripper");
 	gripper_test.add_argument("margin")
-		.help("specify margin below which gripper is considered closed/grasped (useful for different gripper configs)")
-		.default_value("0.01");
+	            .help(
+		            "specify margin below which gripper is considered closed/grasped (useful for different gripper configs)")
+	            .default_value("0.01");
 	gripper_test.add_argument("-g")
-		.help("enable grasping of a provided object (gripper will close normally otherwise)")
-		.flag();
+	            .help("enable grasping of a provided object (gripper will close normally otherwise)")
+	            .flag();
 	// logs nothing
 
 
 	argparse::ArgumentParser ptp_test("ptp");
 	ptp_test.add_argument("margin")
-		.help("specify margin below which relative pose error is ignored and pose is considered reached")
-		.default_value("0.1");
+	        .help("specify margin below which relative pose error is ignored and pose is considered reached")
+	        .default_value("0.1");
 	ptp_test.add_parents(base);
 
 
 	argparse::ArgumentParser force_test("force");
 	force_test.add_argument("-m")
-		.help("specify mass (kg) with which to press downward")
-		.default_value("0.5");
+	          .help("specify mass (kg) with which to press downward")
+	          .default_value("0.5");
 	force_test.add_argument("-d")
-		.help("specify duration (sec) for which to press downward")
-		.default_value("10.0");
+	          .help("specify duration (sec) for which to press downward")
+	          .default_value("10.0");
 	// logs nothing
 
 	argparse::ArgumentParser vacuum_test("vacuum");
@@ -109,7 +110,7 @@ int main(int argc, char* argv[])
 	// has no further arguments
 	playback_test.add_parents(base);
 
-	
+
 	//argparse::ArgumentParser ermer_test("ermer");
 	//// has no further arguments and logs into multiple files (ignores "-f" argument)
 	//ermer_test.add_parents(base);
@@ -143,31 +144,33 @@ int main(int argc, char* argv[])
 	//std::string ip("132.180.194.112"); // franka1-proxy@resy-lab
 
 
-	mode test = mode::none;
+	mode test = none;
 	std::vector<std::string> params;
-	
+
 	// case distinction for individual tests / subparsers, remember to set "test" to the corresponding mode
 	// this is where input arguments are handled, which will be passed to franka_proxy_client_test as a vector of strings
 	// note that only one test can be run at the same time, so add new tests with an "else if" block
-	if (program.is_subcommand_used(ple_test)) {
-		test = mode::ple;
+	if (program.is_subcommand_used(ple_test))
+	{
+		test = ple;
 
-		std::string speed = ple_test.get<std::string>("speed");
-		std::string duration = ple_test.get<std::string>("-d");
+		auto speed = ple_test.get<std::string>("speed");
+		auto duration = ple_test.get<std::string>("-d");
 		bool log_flag = ple_test.get<bool>("-l");
 		std::string log("false");
 		if (log_flag) log = "true";
-		std::string file = ple_test.get<std::string>("-f");
+		auto file = ple_test.get<std::string>("-f");
 
 		params.push_back(speed);
 		params.push_back(duration);
 		params.push_back(log);
 		params.push_back(file);
 	}
-	else if (program.is_subcommand_used(gripper_test)) {
-		test = mode::gripper;
+	else if (program.is_subcommand_used(gripper_test))
+	{
+		test = gripper;
 
-		std::string margin = gripper_test.get<std::string>("margin");
+		auto margin = gripper_test.get<std::string>("margin");
 		bool grasp_flag = gripper_test.get<bool>("-g");
 		std::string grasp("false");
 		if (grasp_flag) grasp = "true";
@@ -175,41 +178,45 @@ int main(int argc, char* argv[])
 		params.push_back(margin);
 		params.push_back(grasp);
 	}
-	else if (program.is_subcommand_used(ptp_test)) {
-		test = mode::ptp;
+	else if (program.is_subcommand_used(ptp_test))
+	{
+		test = ptp;
 
-		std::string margin = ptp_test.get<std::string>("margin");
+		auto margin = ptp_test.get<std::string>("margin");
 		bool log_flag = ptp_test.get<bool>("-l");
 		std::string log("false");
 		if (log_flag) log = "true";
-		std::string file = ptp_test.get<std::string>("-f");
-		
+		auto file = ptp_test.get<std::string>("-f");
+
 		params.push_back(margin);
 		params.push_back(log);
 		params.push_back(file);
 	}
-	else if (program.is_subcommand_used(force_test)) {
-		test = mode::force;
+	else if (program.is_subcommand_used(force_test))
+	{
+		test = force;
 
-		std::string mass = force_test.get<std::string>("-m");
-		std::string duration = force_test.get<std::string>("-d");
+		auto mass = force_test.get<std::string>("-m");
+		auto duration = force_test.get<std::string>("-d");
 
 		params.push_back(mass);
 		params.push_back(duration);
 	}
-	else if (program.is_subcommand_used(playback_test)) {
-		test = mode::playback;
+	else if (program.is_subcommand_used(playback_test))
+	{
+		test = playback;
 
 		bool log_flag = playback_test.get<bool>("-l");
 		std::string log("false");
 		if (log_flag) log = "true";
-		std::string file = playback_test.get<std::string>("-f");
+		auto file = playback_test.get<std::string>("-f");
 
 		params.push_back(log);
 		params.push_back(file);
 	}
-	else if (program.is_subcommand_used(vacuum_test)) {
-		test = mode::vacuum;
+	else if (program.is_subcommand_used(vacuum_test))
+	{
+		test = vacuum;
 		//TODO::
 	}
 	/*else if (program.is_subcommand_used(ermer_test)) {
@@ -268,7 +275,8 @@ void franka_proxy_client_test(const std::string& ip, mode test, std::vector<std:
 
 	// case distinction for individual tests (add new tests with an "else if" block)
 	// parameters for test methods arrive here as a vector of strings, so convert accordingly
-	if (test == mode::ple) {
+	if (test == ple)
+	{
 		double speed = stod(params[0]);
 		double duration = stod(params[1]);
 		bool log = (params[2] == "true");
@@ -276,32 +284,36 @@ void franka_proxy_client_test(const std::string& ip, mode test, std::vector<std:
 
 		ple_motion_record_test(*robot, speed, duration, log, file);
 	}
-	else if (test == mode::gripper) {
+	else if (test == gripper)
+	{
 		double margin = stod(params[0]);
 		bool grasp = (params[1] == "true");
 
 		gripper_test(*robot, margin, grasp);
 	}
-	else if (test == mode::ptp) {
+	else if (test == ptp)
+	{
 		double margin = stod(params[0]);
 		bool log = (params[1] == "true");
 		std::string file = params[2];
 
 		ptp_test(*robot, margin, log, file);
 	}
-	else if (test == mode::force) {
+	else if (test == force)
+	{
 		double mass = stod(params[0]);
 		double duration = stod(params[1]);
 
 		force_test(*robot, mass, duration);
 	}
-	else if (test == mode::playback) {
+	else if (test == playback)
+	{
 		bool log = (params[0] == "true");
 		std::string file = params[1];
 
 		playback_test(*robot, log, file);
 	}
-	else if (test == mode::vacuum)
+	else if (test == vacuum)
 	{
 		vacuum_test(*robot);
 	}
@@ -310,7 +322,7 @@ void franka_proxy_client_test(const std::string& ip, mode test, std::vector<std:
 
 		impedance_admittance_ermer_ba_tests(*robot, log);
 	}*/
-	
+
 
 	// --- cleanup status thread ---
 	stop = true;
@@ -359,12 +371,13 @@ template <class Function> void execute_retry(
 }
 
 
-void ple_motion_record_test(franka_proxy::franka_remote_interface& robot, double speed, double duration, bool log, std::string file)
+void ple_motion_record_test(franka_proxy::franka_remote_interface& robot, double speed, double duration, bool log,
+                            std::string file)
 {
 	std::cout << "Starting PLE motion record test." << '\n';
 
 	execute_retry([&] { robot.move_to(starting_pos); }, robot);
-	
+
 	std::this_thread::sleep_for(std::chrono::seconds(3));
 
 	std::optional<std::string> log_file_path = std::nullopt;
@@ -381,7 +394,7 @@ void playback_test(franka_proxy::franka_remote_interface& robot, bool log, std::
 
 	std::optional<std::string> log_file_path = std::nullopt;
 	if (log) log_file_path = file;
-	
+
 	std::cout << ("--- press to start in 3s (lights white) ---") << '\n';
 	std::cin.get();
 	std::this_thread::sleep_for(std::chrono::seconds(3));
@@ -396,7 +409,7 @@ void playback_test(franka_proxy::franka_remote_interface& robot, bool log, std::
 
 	std::cout << ("--- press to start reproduction in 3s (lights blue) ---") << '\n';
 	std::cin.get();
-	
+
 	std::this_thread::sleep_for(std::chrono::seconds(3));
 
 	franka_proxy::robot_config_7dof start_pos = record.first.front();
@@ -415,7 +428,7 @@ void playback_test(franka_proxy::franka_remote_interface& robot, bool log, std::
 	curr_pos = robot.current_config();
 	error = calculate_pose_error(stop_pos, curr_pos);
 	std::cout << "Final position reached with a relative error of: " << error << '\n';
-	
+
 	std::cout << ("Finished Playback Test.") << '\n';
 }
 
@@ -428,7 +441,8 @@ void gripper_test(franka_proxy::franka_remote_interface& robot, double margin, b
 	std::cout << "Grasping with gripper." << '\n';
 	robot.grasp_gripper(0.1);
 	double gripper_pos = robot.current_gripper_pos(); // if there's nothing to grasp, grasp will be treated like close
-	if (!((!grasp && gripper_pos < margin) || robot.gripper_grasped())) {
+	if (!((!grasp && gripper_pos < margin) || robot.gripper_grasped()))
+	{
 		std::cout << "Failed to grasp with gripper, aborting test." << '\n';
 		return;
 	}
@@ -438,7 +452,8 @@ void gripper_test(franka_proxy::franka_remote_interface& robot, double margin, b
 	std::cout << "Opening gripper." << '\n';
 	robot.open_gripper(0.1);
 	gripper_pos = robot.current_gripper_pos();
-	if (gripper_pos < margin) {
+	if (gripper_pos < margin)
+	{
 		std::cout << "Failed to open gripper, aborting test." << '\n';
 		return;
 	}
@@ -448,7 +463,8 @@ void gripper_test(franka_proxy::franka_remote_interface& robot, double margin, b
 	std::cout << "Closing gripper." << '\n';
 	robot.close_gripper(1);
 	gripper_pos = robot.current_gripper_pos();
-	if (gripper_pos >= margin) {
+	if (gripper_pos >= margin)
+	{
 		std::cout << "Failed to close gripper, aborting test." << '\n';
 		return;
 	}
@@ -458,7 +474,8 @@ void gripper_test(franka_proxy::franka_remote_interface& robot, double margin, b
 	std::cout << "Opening gripper." << '\n';
 	robot.open_gripper(1);
 	gripper_pos = robot.current_gripper_pos();
-	if (gripper_pos < margin) {
+	if (gripper_pos < margin)
+	{
 		std::cout << "Failed to open gripper, aborting test." << '\n';
 		return;
 	}
@@ -484,11 +501,14 @@ void ptp_test(franka_proxy::franka_remote_interface& robot, double margin, bool 
 
 	franka_proxy::logger logger(file, 2, 0, 0, 1, 1);
 	std::string succ;
-	if (log) {
-		std::vector<std::string> j = { "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q0_d", "q1_d", "q2_d", "q3_d", "q4_d", "q5_d", "q6_d" };
+	if (log)
+	{
+		std::vector<std::string> j = {
+			"q0", "q1", "q2", "q3", "q4", "q5", "q6", "q0_d", "q1_d", "q2_d", "q3_d", "q4_d", "q5_d", "q6_d"
+		};
 		std::vector<std::string> e = {"error"};
-		std::vector<std::string> s = { "success" };
-		
+		std::vector<std::string> s = {"success"};
+
 		logger.start_logging(&j, nullptr, nullptr, &e, &s);
 	}
 
@@ -511,15 +531,18 @@ void ptp_test(franka_proxy::franka_remote_interface& robot, double margin, bool 
 	execute_retry([&] { robot.move_to(pos1); }, robot);
 	franka_proxy::robot_config_7dof posc = robot.current_config();
 	double error = calculate_pose_error(pos1, posc);
-	if (error < margin) {
+	if (error < margin)
+	{
 		std::cout << "Pose 1 of 4 reached successfully (relative error: " << error << ")." << '\n';
 		succ = "yes";
 	}
-	else {
+	else
+	{
 		std::cout << "Pose 1 of 4 missed with a relative error of: " << error << '\n';
 		succ = "no";
 	}
-	if (log) {
+	if (log)
+	{
 		logger.add_joint_data(posc);
 		logger.add_joint_data(pos1);
 		logger.add_single_data(error);
@@ -532,15 +555,18 @@ void ptp_test(franka_proxy::franka_remote_interface& robot, double margin, bool 
 	execute_retry([&] { robot.move_to(pos2); }, robot);
 	posc = robot.current_config();
 	error = calculate_pose_error(pos2, posc);
-	if (error < margin) {
+	if (error < margin)
+	{
 		std::cout << "Pose 2 of 4 reached successfully (relative error: " << error << ")." << '\n';
 		succ = "yes";
 	}
-	else {
+	else
+	{
 		std::cout << "Pose 2 of 4 missed with a relative error of: " << error << '\n';
 		succ = "no";
 	}
-	if (log) {
+	if (log)
+	{
 		logger.add_joint_data(posc);
 		logger.add_joint_data(pos2);
 		logger.add_single_data(error);
@@ -553,15 +579,18 @@ void ptp_test(franka_proxy::franka_remote_interface& robot, double margin, bool 
 	execute_retry([&] { robot.move_to(starting_pos); }, robot);
 	posc = robot.current_config();
 	error = calculate_pose_error(starting_pos, posc);
-	if (error < margin) {
+	if (error < margin)
+	{
 		std::cout << "Pose 3 of 4 reached successfully (relative error: " << error << ")." << '\n';
 		succ = "yes";
 	}
-	else {
+	else
+	{
 		std::cout << "Pose 3 of 4 missed with a relative error of: " << error << '\n';
 		succ = "no";
 	}
-	if (log) {
+	if (log)
+	{
 		logger.add_joint_data(posc);
 		logger.add_joint_data(starting_pos);
 		logger.add_single_data(error);
@@ -570,21 +599,25 @@ void ptp_test(franka_proxy::franka_remote_interface& robot, double margin, bool 
 		logger.log();
 	}
 
-	
-	try {
+
+	try
+	{
 		robot.move_to(unreachable_pos);
 	}
-	catch (franka_proxy::invalid_operation_exception& e) {
+	catch (franka_proxy::invalid_operation_exception& e)
+	{
 		std::cout << e.what() << '\n';
 		std::cout << "Pose 4 of 4 successfully identified as unreachable." << '\n';
 	}
-	catch (franka_proxy::exception& f) {
+	catch (franka_proxy::exception& f)
+	{
 		std::cout << "A franka exception ocurred (not related to pose 4 of 4 being unreachable)." << '\n';
 		std::cout << f.what() << '\n';
 		std::cout << typeid(f).name() << '\n';
 		std::cout << "Pose 4 not identified as unreachable. Test failed." << '\n';
 	}
-	catch (std::exception& g) {
+	catch (std::exception& g)
+	{
 		std::cout << "A general exception occured (not related to pose 4 of 4 being unreachable)." << '\n';
 		std::cout << g.what() << '\n';
 		std::cout << typeid(g).name() << '\n';
@@ -605,17 +638,19 @@ void force_test(franka_proxy::franka_remote_interface& robot, double mass, doubl
 
 	// this one is down from starting_pos by (0.0, 0.0, 0.5)
 	constexpr franka_proxy::robot_config_7dof tgt_pos
-	{ 0.0226325, 0.980913, - 0.0348997, - 1.99411, 0.069761, 2.98885, 0.708856 };
+		{0.0226325, 0.980913, -0.0348997, -1.99411, 0.069761, 2.98885, 0.708856};
 
 
 	robot.set_speed_factor(0.2);
 	execute_retry([&] { robot.move_to(starting_pos); }, robot);
 	robot.close_gripper();
 	robot.set_speed_factor(0.05);
-	try {
+	try
+	{
 		robot.move_to_until_contact(tgt_pos);
 	}
-	catch (franka_proxy::remote_exception& e) {
+	catch (franka_proxy::remote_exception& e)
+	{
 		std::cout << e.what() << '\n';
 		std::cout << "Aborting Force Test, please try again." << '\n';
 		return;
@@ -623,21 +658,25 @@ void force_test(franka_proxy::franka_remote_interface& robot, double mass, doubl
 
 	// move out of contact again to prevent robot from jerking left/right - twitching still occurs, but robot doesn't move as much (most of the time)
 	franka_proxy::robot_config_7dof contact = robot.current_config();
-	franka_proxy::robot_config_7dof relax{ contact[0], (contact[1] - 0.01), contact[2], contact[3], contact[4], (contact[5] - 0.01), contact[6] };
+	franka_proxy::robot_config_7dof relax{
+		contact[0], (contact[1] - 0.01), contact[2], contact[3], contact[4], (contact[5] - 0.01), contact[6]
+	};
 	execute_retry([&] { robot.move_to(relax); }, robot);
 
 	std::this_thread::sleep_for(std::chrono::seconds(5));
 
-	try {
+	try
+	{
 		robot.apply_z_force(mass, duration);
 	}
-	catch (franka_proxy::remote_exception& e) {
+	catch (franka_proxy::remote_exception& e)
+	{
 		std::cout << e.what() << '\n';
 	}
 
 	robot.set_speed_factor(0.2);
 	execute_retry([&] { robot.move_to(starting_pos); }, robot);
-	
+
 	std::cout << "Finished Force Test." << '\n';
 }
 
@@ -669,20 +708,26 @@ void impedance_admittance_ermer_ba_tests(franka_proxy::franka_remote_interface& 
 
 	// new poses, mirroring those of the ptp and joint impedance tests
 	std::list<std::array<double, 16>> new_poses = {
-		{0.999834,0.011222,0.014328,0.000000,
-		0.010956,-0.999769,0.018504,0.000000,
-		0.014532,-0.018343,-0.999726,0.000000,
-		0.537203,-0.006444,0.366354,1.000000},
+		{
+			0.999834, 0.011222, 0.014328, 0.000000,
+			0.010956, -0.999769, 0.018504, 0.000000,
+			0.014532, -0.018343, -0.999726, 0.000000,
+			0.537203, -0.006444, 0.366354, 1.000000
+		},
 
-		{-0.632624,-0.121834,0.764816,0.000000,
-		0.734050,-0.409155,0.541999,0.000000,
-		0.246894,0.904295,0.348273,0.000000,
-		0.422637,0.606252,0.913909,1.000000},
+		{
+			-0.632624, -0.121834, 0.764816, 0.000000,
+			0.734050, -0.409155, 0.541999, 0.000000,
+			0.246894, 0.904295, 0.348273, 0.000000,
+			0.422637, 0.606252, 0.913909, 1.000000
+		},
 
-		{-0.834496,-0.024363,0.550476,0.000000,
-		-0.548973,-0.049154,-0.834393,0.000000,
-		0.047386,-0.998494,0.027644,0.000000,
-		0.688281,-0.420545,0.376022,1.000000}
+		{
+			-0.834496, -0.024363, 0.550476, 0.000000,
+			-0.548973, -0.049154, -0.834393, 0.000000,
+			0.047386, -0.998494, 0.027644, 0.000000,
+			0.688281, -0.420545, 0.376022, 1.000000
+		}
 	};
 
 
@@ -697,7 +742,7 @@ void impedance_admittance_ermer_ba_tests(franka_proxy::franka_remote_interface& 
 
 
 	// stiffness for joint tests
-	std::array<double, 49> stiffness{ 0. };
+	std::array<double, 49> stiffness{0.};
 	stiffness[0] = stiffness[8] = stiffness[16] = stiffness[24] = 600.; // first four joints
 	stiffness[32] = 250.;
 	stiffness[40] = 150.;
@@ -724,18 +769,22 @@ void impedance_admittance_ermer_ba_tests(franka_proxy::franka_remote_interface& 
 	std::string file = "ermer_cart_impedance_hold.csv";
 
 	// this likes to cause trouble every now and then
-	try {
+	try
+	{
 		std::optional<std::string> log_file_path = std::nullopt;
 		if (log) log_file_path = file;
 		robot.cartesian_impedance_hold_pose(10., false, rotational_stiffness, translational_stiffness, log_file_path);
 	}
-	catch (franka_proxy::command_exception& e) {
+	catch (franka_proxy::command_exception& e)
+	{
 		std::cout << e.what() << '\n';
 	}
-	catch (franka_proxy::control_exception& f) {
+	catch (franka_proxy::control_exception& f)
+	{
 		std::cout << f.what() << '\n';
 	}
-	catch (franka_proxy::network_exception& g) {
+	catch (franka_proxy::network_exception& g)
+	{
 		std::cout << g.what() << '\n';
 	}
 
@@ -747,22 +796,27 @@ void impedance_admittance_ermer_ba_tests(franka_proxy::franka_remote_interface& 
 
 	std::cout << "Starting Impedance - Follow Poses with Cartesian Impedance Test." << '\n';
 	file = "ermer_cart_impedance_follow.csv";
-	
+
 	//TODO: Robot apparently tries to snap into position, weird things happen with execute_retry wrap (plus lots of exceptions)
 	// maybe related to position error? trying to fix in one go rather than over time?
 	//execute_retry([&] { robot.cartesian_impedance_poses(new_poses, 30., log, file, false, 50., 300.); }, robot);
-	try {
+	try
+	{
 		std::optional<std::string> log_file_path = std::nullopt;
 		if (log) log_file_path = file;
-		robot.cartesian_impedance_poses(new_poses, 30., false, rotational_stiffness, translational_stiffness, log_file_path);
+		robot.cartesian_impedance_poses(new_poses, 30., false, rotational_stiffness, translational_stiffness,
+		                                log_file_path);
 	}
-	catch (franka_proxy::command_exception& e) {
+	catch (franka_proxy::command_exception& e)
+	{
 		std::cout << e.what() << '\n';
 	}
-	catch (franka_proxy::control_exception& f) {
+	catch (franka_proxy::control_exception& f)
+	{
 		std::cout << f.what() << '\n';
 	}
-	catch (franka_proxy::network_exception& g) {
+	catch (franka_proxy::network_exception& g)
+	{
 		std::cout << g.what() << '\n';
 	}
 
@@ -782,18 +836,22 @@ void impedance_admittance_ermer_ba_tests(franka_proxy::franka_remote_interface& 
 	file = "ermer_joint_impedance_hold.csv";
 
 	// see above
-	try {
+	try
+	{
 		std::optional<std::string> log_file_path = std::nullopt;
 		if (log) log_file_path = file;
 		robot.joint_impedance_hold_position(10., stiffness, log_file_path);
 	}
-	catch (franka_proxy::command_exception& e) {
+	catch (franka_proxy::command_exception& e)
+	{
 		std::cout << e.what() << '\n';
 	}
-	catch (franka_proxy::control_exception& f) {
+	catch (franka_proxy::control_exception& f)
+	{
 		std::cout << f.what() << '\n';
 	}
-	catch (franka_proxy::network_exception& g) {
+	catch (franka_proxy::network_exception& g)
+	{
 		std::cout << g.what() << '\n';
 	}
 
@@ -808,18 +866,22 @@ void impedance_admittance_ermer_ba_tests(franka_proxy::franka_remote_interface& 
 
 	//TODO: same as above, with more violent effect after a delay
 	//execute_retry([&] { robot.cartesian_impedance_poses(joint_poses, 30., log, file, stiffness); }, robot);
-	try {
+	try
+	{
 		std::optional<std::string> log_file_path = std::nullopt;
 		if (log) log_file_path = file;
 		robot.joint_impedance_positions(joint_poses, 30., stiffness, log_file_path);
 	}
-	catch (franka_proxy::command_exception& e) {
+	catch (franka_proxy::command_exception& e)
+	{
 		std::cout << e.what() << '\n';
 	}
-	catch (franka_proxy::control_exception& f) {
+	catch (franka_proxy::control_exception& f)
+	{
 		std::cout << f.what() << '\n';
 	}
-	catch (franka_proxy::network_exception& g) {
+	catch (franka_proxy::network_exception& g)
+	{
 		std::cout << g.what() << '\n';
 	}
 
@@ -833,18 +895,22 @@ void impedance_admittance_ermer_ba_tests(franka_proxy::franka_remote_interface& 
 	file = "ermer_apply_admittance.csv";
 
 	//TODO: this fails to send command constantly
-	try {
+	try
+	{
 		std::optional<std::string> log_file_path = std::nullopt;
 		if (log) log_file_path = file;
 		robot.apply_admittance(10., 10., 150., 10., 150., log_file_path);
 	}
-	catch (franka_proxy::command_exception& e) {
+	catch (franka_proxy::command_exception& e)
+	{
 		std::cout << e.what() << '\n';
 	}
-	catch (franka_proxy::control_exception& f) {
+	catch (franka_proxy::control_exception& f)
+	{
 		std::cout << f.what() << '\n';
 	}
-	catch (franka_proxy::network_exception& g) {
+	catch (franka_proxy::network_exception& g)
+	{
 		std::cout << g.what() << '\n';
 	}
 
@@ -855,9 +921,11 @@ void impedance_admittance_ermer_ba_tests(franka_proxy::franka_remote_interface& 
 }
 
 
-double calculate_pose_error(franka_proxy::robot_config_7dof pose_d, franka_proxy::robot_config_7dof pose_c) {
+double calculate_pose_error(franka_proxy::robot_config_7dof pose_d, franka_proxy::robot_config_7dof pose_c)
+{
 	double error = 0.0;
-	for (int i = 0; i < 7; i++) {
+	for (int i = 0; i < 7; i++)
+	{
 		error += std::abs((pose_d[i] - pose_c[i]) / pose_d[i]);
 	}
 
