@@ -1,8 +1,7 @@
 #include <atomic>
-#include <fstream>
 #include <iostream>
-#include <thread>
 #include <optional>
+#include <thread>
 
 #include <argparse/argparse.hpp>
 
@@ -14,36 +13,34 @@
 // use this to specify which test to run within the franka_proxy_client_test method
 // for new tests, add a new, distinct and sensible entry here, a new subparser to the main method,
 // and a new case to franka_proxy_client_test
-enum mode { none, ple, playback, gripper, ptp, force, ermer, vacuum };
+enum test_mode { none, ple, playback, gripper, ptp, force, ermer, vacuum };
 
 
 // general purpose starting position, centered above table with some good space in all directions
-// if you don't know where to have the robot start, use this
 constexpr franka_proxy::robot_config_7dof starting_pos
 	{0.0346044, -0.0666144, -0.0398886, -2.04985, -0.0229875, 1.99782, 0.778461};
 
 
-void franka_proxy_client_test(const std::string& ip, mode test, std::vector<std::string>& params);
+void franka_proxy_client_test(const std::string& ip, test_mode test, const std::vector<std::string>& params);
 
-
-void print_status(const franka_proxy::franka_remote_interface& robot);
-template <class Function> void execute_retry(
-	Function&& f, franka_proxy::franka_remote_interface& robot);
-double calculate_pose_error(franka_proxy::robot_config_7dof pose_d, franka_proxy::robot_config_7dof pose_c);
-
-
-void ple_motion_record_test(franka_proxy::franka_remote_interface& robot, double speed, double duration, bool log,
-                            std::string file);
+void ple_motion_record_test(
+	franka_proxy::franka_remote_interface& robot, double speed, double duration, bool log, std::string file);
 void ptp_test(franka_proxy::franka_remote_interface& robot, double margin, bool log, std::string& file);
 void gripper_test(franka_proxy::franka_remote_interface& robot, double margin, bool grasp);
 void playback_test(franka_proxy::franka_remote_interface& robot, bool log, std::string& file);
 void force_test(franka_proxy::franka_remote_interface& robot, double mass, double duration);
 void vacuum_test(franka_proxy::franka_remote_interface& robot);
-
-
-// todo: untested since bachelor thesis d. ermer; handle with care.
-[[deprecated("Revise test code before execution on real robot!")]]
+[[deprecated("Revise test code (untested since bachelor thesis d. ermer;"
+	" handle with care) before execution on real robot!")]]
 void impedance_admittance_ermer_ba_tests(franka_proxy::franka_remote_interface& robot, bool log);
+
+
+void print_status(const franka_proxy::franka_remote_interface& robot);
+template <class Function> void execute_retry(
+	Function&& f, franka_proxy::franka_remote_interface& robot);
+double relative_config_error(
+	const franka_proxy::robot_config_7dof& desired_config,
+	const franka_proxy::robot_config_7dof& current_config);
 
 
 int main(int argc, char* argv[])
@@ -144,7 +141,7 @@ int main(int argc, char* argv[])
 	//std::string ip("132.180.194.112"); // franka1-proxy@resy-lab
 
 
-	mode test = none;
+	test_mode test = none;
 	std::vector<std::string> params;
 
 	// case distinction for individual tests / subparsers, remember to set "test" to the corresponding mode
@@ -236,8 +233,11 @@ int main(int argc, char* argv[])
 	return 0;
 }
 
-
-void franka_proxy_client_test(const std::string& ip, mode test, std::vector<std::string>& params)
+// todo PLi: What is this second nesting of tests for if only one can be called at a time?
+void franka_proxy_client_test(
+	const std::string& ip,
+	const test_mode test,
+	const std::vector<std::string>& params)
 {
 	std::unique_ptr<franka_proxy::franka_remote_interface> robot;
 	try
@@ -317,7 +317,7 @@ void franka_proxy_client_test(const std::string& ip, mode test, std::vector<std:
 	{
 		vacuum_test(*robot);
 	}
-	/*else if (test == mode::ermer) {
+	/*else if (test == ermer) {
 		bool log = (params[0] == "true");
 
 		impedance_admittance_ermer_ba_tests(*robot, log);
@@ -364,8 +364,7 @@ template <class Function> void execute_retry(
 			std::cout << "Encountered command exception. "
 				"Probably because of wrong working mode. "
 				"Waiting before retry." << '\n';
-			using namespace std::chrono_literals;
-			std::this_thread::sleep_for(1s);
+			std::this_thread::sleep_for(std::chrono::seconds(1));
 		}
 	}
 }
@@ -418,7 +417,7 @@ void playback_test(franka_proxy::franka_remote_interface& robot, bool log, std::
 	robot.move_to(start_pos);
 
 	franka_proxy::robot_config_7dof curr_pos = robot.current_config();
-	double error = calculate_pose_error(start_pos, curr_pos);
+	double error = relative_config_error(start_pos, curr_pos);
 	std::cout << "Starting position reached with a relative error of: " << error << '\n';
 
 	const std::vector selection_vectors(
@@ -426,7 +425,7 @@ void playback_test(franka_proxy::franka_remote_interface& robot, bool log, std::
 	robot.move_sequence(record.first, record.second, selection_vectors);
 
 	curr_pos = robot.current_config();
-	error = calculate_pose_error(stop_pos, curr_pos);
+	error = relative_config_error(stop_pos, curr_pos);
 	std::cout << "Final position reached with a relative error of: " << error << '\n';
 
 	std::cout << ("Finished Playback Test.") << '\n';
@@ -530,7 +529,7 @@ void ptp_test(franka_proxy::franka_remote_interface& robot, double margin, bool 
 
 	execute_retry([&] { robot.move_to(pos1); }, robot);
 	franka_proxy::robot_config_7dof posc = robot.current_config();
-	double error = calculate_pose_error(pos1, posc);
+	double error = relative_config_error(pos1, posc);
 	if (error < margin)
 	{
 		std::cout << "Pose 1 of 4 reached successfully (relative error: " << error << ")." << '\n';
@@ -554,7 +553,7 @@ void ptp_test(franka_proxy::franka_remote_interface& robot, double margin, bool 
 
 	execute_retry([&] { robot.move_to(pos2); }, robot);
 	posc = robot.current_config();
-	error = calculate_pose_error(pos2, posc);
+	error = relative_config_error(pos2, posc);
 	if (error < margin)
 	{
 		std::cout << "Pose 2 of 4 reached successfully (relative error: " << error << ")." << '\n';
@@ -578,7 +577,7 @@ void ptp_test(franka_proxy::franka_remote_interface& robot, double margin, bool 
 
 	execute_retry([&] { robot.move_to(starting_pos); }, robot);
 	posc = robot.current_config();
-	error = calculate_pose_error(starting_pos, posc);
+	error = relative_config_error(starting_pos, posc);
 	if (error < margin)
 	{
 		std::cout << "Pose 3 of 4 reached successfully (relative error: " << error << ")." << '\n';
@@ -631,10 +630,13 @@ void ptp_test(franka_proxy::franka_remote_interface& robot, double margin, bool 
 }
 
 
-void force_test(franka_proxy::franka_remote_interface& robot, double mass, double duration)
+void force_test(
+	franka_proxy::franka_remote_interface& robot,
+	const double mass,
+	const double duration)
 {
-	std::cout << "Starting Force Test." << '\n';
-
+	std::cout << "Starting Force Test with mass " << mass
+		<< " for " << duration << " seconds." << '\n';
 
 	// this one is down from starting_pos by (0.0, 0.0, 0.5)
 	constexpr franka_proxy::robot_config_7dof tgt_pos
@@ -647,7 +649,11 @@ void force_test(franka_proxy::franka_remote_interface& robot, double mass, doubl
 	robot.set_speed_factor(0.05);
 	try
 	{
-		robot.move_to_until_contact(tgt_pos);
+		if (!robot.move_to_until_contact(tgt_pos))
+		{
+			std::cout << "Aborting Force Test, not able to make contact." << '\n';
+			return;
+		}
 	}
 	catch (franka_proxy::remote_exception& e)
 	{
@@ -657,7 +663,7 @@ void force_test(franka_proxy::franka_remote_interface& robot, double mass, doubl
 	}
 
 	// move out of contact again to prevent robot from jerking left/right - twitching still occurs, but robot doesn't move as much (most of the time)
-	franka_proxy::robot_config_7dof contact = robot.current_config();
+	const auto contact = robot.current_config();
 	franka_proxy::robot_config_7dof relax{
 		contact[0], (contact[1] - 0.01), contact[2], contact[3], contact[4], (contact[5] - 0.01), contact[6]
 	};
@@ -921,13 +927,14 @@ void impedance_admittance_ermer_ba_tests(franka_proxy::franka_remote_interface& 
 }
 
 
-double calculate_pose_error(franka_proxy::robot_config_7dof pose_d, franka_proxy::robot_config_7dof pose_c)
+double relative_config_error(
+	const franka_proxy::robot_config_7dof& desired_config,
+	const franka_proxy::robot_config_7dof& current_config)
 {
 	double error = 0.0;
-	for (int i = 0; i < 7; i++)
-	{
-		error += std::abs((pose_d[i] - pose_c[i]) / pose_d[i]);
-	}
 
-	return error / 7.0;
+	for (size_t i = 0; i < desired_config.size(); i++)
+		error += std::abs((desired_config[i] - current_config[i]) / desired_config[i]);
+
+	return error / static_cast<double>(desired_config.size());
 }
