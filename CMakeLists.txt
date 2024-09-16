@@ -49,6 +49,11 @@ if(BUILD_TESTS)
     list(APPEND PROXY_TARGETS franka_proxy_client_test franka_control_test)
 endif()
 
-install(EXPORT franka-proxyConfig 
-        DESTINATION share 
+install(FILES
+        "${CMAKE_SOURCE_DIR}/cmake/franka-proxyConfig.cmake"
+        DESTINATION share
+)
+
+install(EXPORT franka-proxyConfig
+        DESTINATION share
         FILE franka-proxyTargets.cmake)
