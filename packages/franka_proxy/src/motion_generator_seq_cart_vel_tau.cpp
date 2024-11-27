@@ -99,7 +99,9 @@ seq_cart_vel_tau_generator::~seq_cart_vel_tau_generator()
 
 franka::Torques seq_cart_vel_tau_generator::step
 	(const franka::RobotState& robot_state,
-	 franka::Duration period)
+	 franka::Duration period,
+		const std::array<double, 16>& offset_position,
+		const std::array<double,6>& offset_force)
 {
 	{
 		std::lock_guard<std::mutex> state_guard(current_state_lock_);
@@ -167,6 +169,8 @@ franka::Torques seq_cart_vel_tau_generator::step
 
 	// calculate pose from desired joints 
 	auto desired_pose = model.pose(franka::Frame::kEndEffector, q_d, robot_state.F_T_EE, robot_state.EE_T_K);
+	desired_pose = apply_pos_increment(desired_pose,offset_position);
+
 	Eigen::Affine3d transform_d(Eigen::Matrix4d::Map(desired_pose.data()));
 	Eigen::Vector3d position_d(transform_d.translation());
 	Eigen::Quaterniond orientation_d(transform_d.linear());
@@ -220,6 +224,8 @@ franka::Torques seq_cart_vel_tau_generator::step
 
 	// ff
 	Eigen::Matrix<double, 6, 1> ft_force = ft_desired;
+	ft_desired = apply_force_increment(ft_desired,offset_force);
+	
 
 /*
 	// pi controller using fts for neg z-direction
@@ -349,6 +355,62 @@ Eigen::Matrix<double, 6, 1> seq_cart_vel_tau_generator::compute_ft_filtered() co
 		value += ft_buffer_[i];
 
 	return value / ft_filter_size_;
+}
+
+std::array<double, 16> seq_cart_vel_tau_generator::apply_pos_increment(const std::array<double, 16>& desired_pose, const std::array<double, 16>& increment)
+{
+	std::array<double, 16> result;
+
+	// First Column
+	result[0] = increment[0] * desired_pose[0] + increment[4] * desired_pose[1] +
+		increment[8] * desired_pose[2] + increment[12] * desired_pose[3];
+	result[1] = increment[1] * desired_pose[0] + increment[5] * desired_pose[1] +
+		increment[9] * desired_pose[2] + increment[13] * desired_pose[3];
+	result[2] = increment[2] * desired_pose[0] + increment[6] * desired_pose[1] +
+		increment[10] * desired_pose[2] + increment[14] * desired_pose[3];
+	result[3] = increment[3] * desired_pose[0] + increment[7] * desired_pose[1] +
+		increment[11] * desired_pose[2] + increment[15] * desired_pose[3];
+
+	// Second Column
+	result[4] = increment[0] * desired_pose[4] + increment[4] * desired_pose[5] +
+		increment[8] * desired_pose[6] + increment[12] * desired_pose[7];
+	result[5] = increment[1] * desired_pose[4] + increment[5] * desired_pose[5] +
+		increment[9] * desired_pose[6] + increment[13] * desired_pose[7];
+	result[6] = increment[2] * desired_pose[4] + increment[6] * desired_pose[5] +
+		increment[10] * desired_pose[6] + increment[14] * desired_pose[7];
+	result[7] = increment[3] * desired_pose[4] + increment[7] * desired_pose[5] +
+		increment[11] * desired_pose[6] + increment[15] * desired_pose[7];
+
+	// Third Column
+	result[8] = increment[0] * desired_pose[8] + increment[4] * desired_pose[9] +
+		increment[8] * desired_pose[10] + increment[12] * desired_pose[11];
+	result[9] = increment[1] * desired_pose[8] + increment[5] * desired_pose[9] +
+		increment[9] * desired_pose[10] + increment[13] * desired_pose[11];
+	result[10] = increment[2] * desired_pose[8] + increment[6] * desired_pose[9] +
+		increment[10] * desired_pose[10] + increment[14] * desired_pose[11];
+	result[11] = increment[3] * desired_pose[8] + increment[7] * desired_pose[9] +
+		increment[11] * desired_pose[10] + increment[15] * desired_pose[11];
+
+	// Forth Column
+	result[12] = increment[0] * desired_pose[12] + increment[4] * desired_pose[13] +
+		increment[8] * desired_pose[14] + increment[12] * desired_pose[15];
+	result[13] = increment[1] * desired_pose[12] + increment[5] * desired_pose[13] +
+		increment[9] * desired_pose[14] + increment[13] * desired_pose[15];
+	result[14] = increment[2] * desired_pose[12] + increment[6] * desired_pose[13] +
+		increment[10] * desired_pose[14] + increment[14] * desired_pose[15];
+	result[15] = increment[3] * desired_pose[12] + increment[7] * desired_pose[13] +
+		increment[11] * desired_pose[14] + increment[15] * desired_pose[15];
+
+	return result;
+}
+
+Eigen::Matrix<double, 6, 1> seq_cart_vel_tau_generator::apply_force_increment(const Eigen::Matrix<double, 6, 1>& ft_desired, const std::array<double, 6> increment)
+{
+	Eigen::Matrix<double, 6, 1> result = ft_desired;
+	for (int i = 0; i < 6; i++) {
+		result(i) += increment[0];
+	}
+	return result;
 }
 
 

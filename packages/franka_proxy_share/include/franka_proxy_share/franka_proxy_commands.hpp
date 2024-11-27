@@ -96,6 +96,8 @@ struct command_move_hybrid_sequence
 	std::vector<std::array<double, 7>>	joint_config_sequence;
 	std::vector<std::array<double, 6>>	force_sequence;
 	std::vector<std::array<double, 6>>	selection_sequence;
+	std::array<double, 16> offset_position;
+	std::array<double, 6> offset_force;
 };
 
 void to_json(nlohmann::json& json, const command_move_hybrid_sequence& object);

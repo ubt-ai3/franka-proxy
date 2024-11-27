@@ -861,7 +861,9 @@ namespace franka_proxy
 	void franka_hardware_controller::move_sequence(
 		const std::vector<std::array<double, 7>>& q_sequence,
 		const std::vector<std::array<double, 6>>& f_sequence,
-		const std::vector<std::array<double, 6>>& selection_vector)
+		const std::vector<std::array<double, 6>>& selection_vector,
+		const std::array<double, 16>& offset_position,
+		const std::array<double, 6>& offset_force)
 	{
 		stop_motion_ = false;
 		detail::seq_cart_vel_tau_generator motion_generator(
@@ -880,7 +882,7 @@ namespace franka_proxy
 			               const franka::RobotState& robot_state,
 			               franka::Duration period) -> franka::Torques
 			               {
-				               return motion_generator.step(robot_state, period);
+				               return motion_generator.step(robot_state, period, offset_position, offset_force);
 			               },
 			               true,
 			               1000.);

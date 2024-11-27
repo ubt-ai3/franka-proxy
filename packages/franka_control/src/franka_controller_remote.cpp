@@ -146,7 +146,9 @@ std::pair<std::vector<robot_config_7dof>, std::vector<wrench>> franka_controller
 void franka_controller_remote::move_sequence(
 	const std::vector<robot_config_7dof>& q_sequence,
 	const std::vector<wrench>& f_sequence,
-	const std::vector<selection_diagonal>& selection_vector_sequence)
+	const std::vector<selection_diagonal>& selection_vector_sequence,
+	const std::array<double,16>& offset_cartesian,
+	const std::array<double,6>& offset_force)
 {
 	// todo do this efficient
 	std::vector<std::array<double, 7>> joints;
@@ -165,8 +167,10 @@ void franka_controller_remote::move_sequence(
 	for (auto datum : selection_vector_sequence)
 		selection.emplace_back(std::array<double, 6>{datum(0), datum(1), datum(2), datum(3), datum(4), datum(5)});
 
+	// TODO maltschik here increment
 	controller_->move_to(joints.front());
-	controller_->move_sequence(joints, forces, selection);
+	controller_->move_sequence(joints, forces, selection,offset_cartesian,offset_force);
+	// TODO maltschik here increment
 	controller_->move_to(joints.back());
 }
 

@@ -22,11 +22,11 @@ public:
 
 	schunk_ft_sensor(const Eigen::Affine3f& kms_T_flange,
 	                 const Eigen::Affine3f& EE_T_kms,
-	                 std::string config_file = "./assets/fts-config.json");
+	                 std::string config_file = "../franka_proxy_share/assets/fts-config.json");
 
 	~schunk_ft_sensor() override;
 
-	void update_calibration(std::string config_file = "./assets/fts-config.json");
+	void update_calibration(std::string config_file = "../franka_proxy_share/assets/fts-config.json");
 
 private:
 	void set_response_handler(const std::function<void(const ft_sensor_response&)>& functor);

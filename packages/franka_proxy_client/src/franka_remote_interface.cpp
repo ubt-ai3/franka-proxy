@@ -67,10 +67,12 @@ bool franka_remote_interface::move_to_until_contact
 void franka_remote_interface::move_sequence(
 	const std::vector<robot_config_7dof>& q_sequence,
 	const std::vector<std::array<double, 6>>& f_sequence,
-	const std::vector<std::array<double, 6>>& selection_vector_sequence)
+	const std::vector<std::array<double, 6>>& selection_vector_sequence,
+	const std::array<double,16>& offset_position,
+	const std::array<double,6>& offset_force)
 {
 	send_command<command_move_hybrid_sequence>
-		(q_sequence, f_sequence, selection_vector_sequence);
+		(q_sequence, f_sequence, selection_vector_sequence,offset_position,offset_force);
 }
 
 
