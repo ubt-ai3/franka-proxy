@@ -36,39 +36,44 @@ namespace detail
  * in use
  *
  ************************************************************************/
-class seq_cart_vel_tau_generator
-{
-public:
+	class seq_cart_vel_tau_generator
+	{
+	public:
 
-	/**
-	 * Thrown from motion_generators to terminate it.
-	 */
-	class stop_motion_trigger {};
-	class contact_stop_trigger {};
+		/**
+		 * Thrown from motion_generators to terminate it.
+		 */
+		class stop_motion_trigger {};
+		class contact_stop_trigger {};
 
 
-	/**
-	 * Creates a new joint_motion_generator instance for a target q.
-	 *
-	 * todo doc
-	 */
-	seq_cart_vel_tau_generator
-	(std::mutex& current_state_lock,
-		franka::RobotState& current_state,
-		franka::Robot& robot,
-		const std::atomic_bool& stop_motion_flag,
-		std::vector<std::array<double, 7>> q_sequence,
-		std::vector<std::array<double, 6>> f_sequence,
-		std::vector<std::array<double, 6>> selection_vector_sequence);
+		/**
+		 * Creates a new joint_motion_generator instance for a target q.
+		 *
+		 * todo doc
+		 */
+		seq_cart_vel_tau_generator
+		(std::mutex& current_state_lock,
+			franka::RobotState& current_state,
+			franka::Robot& robot,
+			const std::atomic_bool& stop_motion_flag,
+			std::vector<std::array<double, 7>> q_sequence,
+			std::vector<std::array<double, 6>> f_sequence,
+			std::vector<std::array<double, 6>> selection_vector_sequence
+		);
 
-	~seq_cart_vel_tau_generator();
+		~seq_cart_vel_tau_generator();
 
-	/**
-	 * todo doc
-	 */
-	franka::Torques step
+		/**
+		 * todo doc
+		 */
+		franka::Torques step
 		(const franka::RobotState& robot_state,
-			franka::Duration period);
+			franka::Duration period,
+			const std::array<double, 16>& offset_position = {0},
+			const std::array<double, 6>& offset_force = {0}
+			);
+	
 
 
 private:
@@ -78,6 +83,11 @@ private:
 
 	void update_ft_filter(const eigen_vector6d& current_ft);
 	[[nodiscard]] eigen_vector6d compute_ft_filtered() const;
+
+	std::array<double, 16> apply_pos_increment(const std::array<double, 16>& desired_pose,
+		const std::array<double, 16>& increment);
+	Eigen::Matrix<double, 6, 1> apply_force_increment(const Eigen::Matrix<double, 6, 1>& ft_desired,
+		const std::array<double, 6> increment);
 
 	std::mutex& current_state_lock_;
 	franka::RobotState& current_state_;

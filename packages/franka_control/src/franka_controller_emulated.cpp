@@ -322,8 +322,11 @@ franka_controller_emulated::stop_recording()
 void franka_controller_emulated::move_sequence(
 	const std::vector<robot_config_7dof>& q_sequence,
 	const std::vector<wrench>& f_sequence,
-	const std::vector<selection_diagonal>& selection_vector_sequence)
+	const std::vector<selection_diagonal>& selection_vector_sequence,
+	std::array<double, 16> offset_cartesian,
+	std::array<double, 6> offset_force)
 {
+	// TODO maltschik offsets are not used atm
 	const auto start_time = std::chrono::steady_clock::now();
 
 	//passed milliseconds since call of function

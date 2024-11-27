@@ -86,7 +86,9 @@ public:
 	void move_sequence
 	(const std::vector<robot_config_7dof>& q_sequence,
 	 const std::vector<std::array<double, 6>>& f_sequence,
-	 const std::vector<std::array<double, 6>>& selection_vector_sequence);
+	 const std::vector<std::array<double, 6>>& selection_vector_sequence,
+	 std::array<double, 16> offset_position = {0},
+	 std::array<double, 6> offset_force = {0});
 
 	/**
 	 * Admittance controller using desired rotational and translational stiffness within the admittance and the impedance controller
