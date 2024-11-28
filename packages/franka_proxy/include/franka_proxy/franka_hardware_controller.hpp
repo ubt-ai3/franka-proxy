@@ -62,6 +62,16 @@ namespace franka_proxy
 		 * after automatic error recovery
 		 */
 		void move_to(const robot_config_7dof& target);
+
+		/**
+		 * Moves the Panda robot to given target with a given offset.; In case
+		 * of collision, the movement is retried and continued
+		 * after automatic error recovery
+		 */
+		void move_to(const robot_config_7dof& target,
+			const std::array<double, 16>& offset_position,
+			const std::array<double, 6>& offset_force);
+
 		/**
 		 * Moves the Panda robot to given target; In case
 		 * of contact, the movement is aborted and false is returned.
@@ -134,6 +144,10 @@ namespace franka_proxy
 			const std::vector<selection_diagonal>& selection_vector,
 			const std::array<double, 16>& offset_position,
 			const std::array<double, 6>& offset_force);
+		void move_sequence(
+			const std::vector<robot_config_7dof>& q_sequence,
+			const std::vector<wrench>& f_sequence,
+			const std::vector<selection_diagonal>& selection_vector);
 
 		/**
 		 * Admittance controller using desired admittance and impedance

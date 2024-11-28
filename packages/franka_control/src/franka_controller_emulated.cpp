@@ -361,6 +361,45 @@ void franka_controller_emulated::move_sequence(
 	state_force_torque_values_ = Eigen::Map<const Eigen::Matrix<double, 6, 1>>(f_sequence.back().data());
 }
 
+void franka_controller_emulated::move_sequence(
+	const std::vector<robot_config_7dof>& q_sequence,
+	const std::vector<wrench>& f_sequence,
+	const std::vector<selection_diagonal>& selection_vector_sequence)
+{
+	// TODO maltschik offsets are not used atm
+	const auto start_time = std::chrono::steady_clock::now();
+
+	//passed milliseconds since call of function
+
+	for (;;)
+	{
+		//calculate timepoint in sequence
+		auto now = std::chrono::steady_clock::now();
+		const auto next_timepoint = now +
+			std::chrono::duration_cast<std::chrono::milliseconds>
+			(std::chrono::duration<double>(move_update_rate_));
+		unsigned long long ticks_passed = std::max(
+			std::chrono::duration_cast<std::chrono::milliseconds>(now - start_time).count(), 0ll);
+
+
+		//stop after sequence is finished
+		if (ticks_passed >= q_sequence.size())
+			break;
+
+		// Copy from process variables to exposed state.
+		{
+			std::lock_guard<std::mutex> lk(controller_mutex_);
+			state_joint_values_ = Eigen::Map<const Eigen::Matrix<double, 7, 1>>(q_sequence[ticks_passed].data());
+			state_force_torque_values_ = Eigen::Map<const Eigen::Matrix<double, 6, 1>>(f_sequence[ticks_passed].data());
+		}
+
+		std::this_thread::sleep_until(next_timepoint);
+	}
+
+	std::lock_guard<std::mutex> lk(controller_mutex_);
+	state_joint_values_ = Eigen::Map<const Eigen::Matrix<double, 7, 1>>(q_sequence.back().data());
+	state_force_torque_values_ = Eigen::Map<const Eigen::Matrix<double, 6, 1>>(f_sequence.back().data());
+}
 
 void franka_controller_emulated::move_gripper(int target, double speed_mps)
 {

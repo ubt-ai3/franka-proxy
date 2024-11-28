@@ -51,6 +51,11 @@ void franka_remote_interface::move_to(const robot_config_7dof& target)
 	send_command<command_move_to_config>(target);
 }
 
+void franka_remote_interface::move_to(const robot_config_7dof& target, std::array<double,16> offset_position,std::array<double,6> offset_force)
+{
+	send_command<command_move_to_config_with_offset>(target);
+}
+
 void franka_remote_interface::move_to(const Eigen::Vector<double, 7>& target)
 {
 	move_to(franka_proxy_util::cvt2stdArray(target));
@@ -71,9 +76,20 @@ void franka_remote_interface::move_sequence(
 	std::array<double,16> offset_position,
 	std::array<double,6> offset_force)
 {
-	send_command<command_move_hybrid_sequence>
+	send_command<command_move_hybrid_sequence_with_offset>
 		(q_sequence, f_sequence, selection_vector_sequence,offset_position,offset_force);
 }
+
+void franka_remote_interface::move_sequence(
+	const std::vector<robot_config_7dof>& q_sequence,
+	const std::vector<std::array<double, 6>>& f_sequence,
+	const std::vector<std::array<double, 6>>& selection_vector_sequence
+	)
+{
+	send_command<command_move_hybrid_sequence>
+		(q_sequence, f_sequence, selection_vector_sequence);
+}
+
 
 
 void franka_remote_interface::apply_admittance(

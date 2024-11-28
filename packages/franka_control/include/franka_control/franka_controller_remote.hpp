@@ -73,6 +73,11 @@ public:
 		std::array<double, 16> offset_cartesian = {0},
 		std::array<double, 6> offset_force = {0}) override;
 
+	void move_sequence(
+		const std::vector<robot_config_7dof>& q_sequence,
+		const std::vector<wrench>& f_sequence,
+		const std::vector<selection_diagonal>& selection_vector_sequence) override;
+
 	void set_fts_bias(const wrench& bias);
 	void set_fts_load_mass(const Eigen::Vector3d& load_mass);
 

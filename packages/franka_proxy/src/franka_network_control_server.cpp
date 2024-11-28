@@ -269,12 +269,25 @@ command_generic_response franka_control_server::process_command
 	return command_result::success;
 }
 
+command_generic_response franka_control_server::process_command(const command_move_to_config_with_offset& cmd)
+{
+	controller_.move_to(cmd.target_joint_config, cmd.offset_position, cmd.offset_force);
+	return command_result::success;
+}
+
 
 command_generic_response franka_control_server::process_command
-(const command_move_hybrid_sequence& cmd)
+(const command_move_hybrid_sequence_with_offset& cmd)
 {
 	controller_.move_sequence
 		(cmd.joint_config_sequence, cmd.force_sequence, cmd.selection_sequence,cmd.offset_position,cmd.offset_force);
+	return command_result::success;
+}
+
+command_generic_response franka_control_server::process_command(const command_move_hybrid_sequence& cmd)
+{
+	controller_.move_sequence
+	(cmd.joint_config_sequence, cmd.force_sequence, cmd.selection_sequence);
 	return command_result::success;
 }
 

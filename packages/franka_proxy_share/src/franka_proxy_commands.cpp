@@ -35,6 +35,30 @@ void from_json(const nlohmann::json& json, command_move_to_config& object)
 	json.at("target").get_to(object.target_joint_config);
 }
 
+//////////////////////////////////////////////////////////////////////////
+//
+// command_move_to_config_with_offset
+//
+//////////////////////////////////////////////////////////////////////////
+
+
+void to_json(nlohmann::json& json, const command_move_to_config_with_offset& object)
+{
+	json["type"] = command_move_to_config_with_offset::type;
+	json["target"] = object.target_joint_config;
+	json["offset_position"] = object.offset_position;
+	json["offset_force"] = object.offset_force;
+}
+
+
+void from_json(const nlohmann::json& json, command_move_to_config_with_offset& object)
+{
+	json.at("target").get_to(object.target_joint_config);
+	json.at("offset_position").get_to(object.offset_position);
+	json.at("offset_force").get_to(object.offset_force);
+}
+
+
 
 //////////////////////////////////////////////////////////////////////////
 //
@@ -55,10 +79,37 @@ void from_json(const nlohmann::json& json, command_move_until_contact& object)
 	json.at("target").get_to(object.target_joint_config);
 }
 
+//////////////////////////////////////////////////////////////////////////
+//
+// command_move_hybrid_sequence_with_offset
+//
+//////////////////////////////////////////////////////////////////////////
+
+
+void to_json(nlohmann::json& json, const command_move_hybrid_sequence_with_offset& object)
+{
+	json["type"] = command_move_hybrid_sequence_with_offset::type;
+	json["joint_config_sequence"] = object.joint_config_sequence;
+	json["force_sequence"] = object.force_sequence;
+	json["selection_sequence"] = object.selection_sequence;
+	json["offset_position"] = object.offset_position;
+	json["offset_force"] = object.offset_force;
+}
+
+
+void from_json(const nlohmann::json& json, command_move_hybrid_sequence_with_offset& object)
+{
+	json.at("joint_config_sequence").get_to(object.joint_config_sequence);
+	json.at("force_sequence").get_to(object.force_sequence);
+	json.at("selection_sequence").get_to(object.selection_sequence);
+	json.at("offset_position").get_to(object.offset_position);
+	json.at("offset_force").get_to(object.offset_force);
+
+}
 
 //////////////////////////////////////////////////////////////////////////
 //
-// command_move_hybrid_sequence
+// command_move_hybrid_sequence_with_offset
 //
 //////////////////////////////////////////////////////////////////////////
 
@@ -69,8 +120,6 @@ void to_json(nlohmann::json& json, const command_move_hybrid_sequence& object)
 	json["joint_config_sequence"] = object.joint_config_sequence;
 	json["force_sequence"] = object.force_sequence;
 	json["selection_sequence"] = object.selection_sequence;
-	json["offset_position"] = object.offset_position;
-	json["offset_force"] = object.offset_force;
 }
 
 
@@ -79,11 +128,9 @@ void from_json(const nlohmann::json& json, command_move_hybrid_sequence& object)
 	json.at("joint_config_sequence").get_to(object.joint_config_sequence);
 	json.at("force_sequence").get_to(object.force_sequence);
 	json.at("selection_sequence").get_to(object.selection_sequence);
-	json.at("offset_position").get_to(object.offset_position);
-	json.at("offset_force").get_to(object.offset_force);
+	
 
 }
-
 
 //////////////////////////////////////////////////////////////////////////
 //

@@ -57,6 +57,7 @@ public:
 	 */
 	void move_to(const robot_config_7dof& target);
 	void move_to(const Eigen::Vector<double, 7>& target);
+	void move_to(const robot_config_7dof& target, std::array<double, 16> offset_position, std::array<double, 6> offset_force);
 
 
 	/**
@@ -87,8 +88,22 @@ public:
 	(const std::vector<robot_config_7dof>& q_sequence,
 	 const std::vector<std::array<double, 6>>& f_sequence,
 	 const std::vector<std::array<double, 6>>& selection_vector_sequence,
-	 std::array<double, 16> offset_position = {0},
-	 std::array<double, 6> offset_force = {0});
+	 std::array<double, 16> offset_position ,
+	 std::array<double, 6> offset_force );
+
+
+	/**
+	 * todo docu
+	 * @TODO: Check exceptions.
+	 *
+	 * @throw remote_exception if the movement was unsuccessful.
+	 * @throw viral_core::network_exception if the connection was lost.
+	 */
+	void move_sequence(
+		const std::vector<robot_config_7dof>& q_sequence,
+		const std::vector<std::array<double, 6>>& f_sequence,
+		const std::vector<std::array<double, 6>>& selection_vector_sequence
+	);
 
 	/**
 	 * Admittance controller using desired rotational and translational stiffness within the admittance and the impedance controller

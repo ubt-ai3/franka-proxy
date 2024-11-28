@@ -8,6 +8,7 @@
  ************************************************************************/
 
 #include <optional>
+#include <execution>
 
 #include "franka_controller_remote.hpp"
 
@@ -150,22 +151,49 @@ void franka_controller_remote::move_sequence(
 	std::array<double,16> offset_cartesian,
 	std::array<double,6> offset_force)
 {
-	// todo do this efficient
+	
 	std::vector<std::array<double, 7>> joints;
 	std::vector<std::array<double, 6>> forces;
 	std::vector<std::array<double, 6>> selection;
 
-	joints.reserve(q_sequence.size());
-	for (auto datum : q_sequence)
-		joints.emplace_back(std::array<double, 7>{datum(0), datum(1), datum(2), datum(3), datum(4), datum(5), datum(6)});
+	joints.resize(q_sequence.size());
+	forces.resize(f_sequence.size());
+	selection.resize(selection_vector_sequence.size());
 
-	forces.reserve(f_sequence.size());
-	for (auto datum : f_sequence)
-		forces.emplace_back(std::array<double, 6>{datum(0), datum(1), datum(2), datum(3), datum(4), datum(5)});
+	std::for_each(std::execution::par, q_sequence.begin(), q_sequence.end(),
+		[&joints, &q_sequence](const auto& datum) {
+			size_t idx = &datum - &q_sequence[0];
+			joints[idx] = std::array<double, 7>{
+				datum(0), datum(1), datum(2), datum(3),
+					datum(4), datum(5), datum(6)
+			};
+		});
 
-	selection.reserve(selection_vector_sequence.size());
-	for (auto datum : selection_vector_sequence)
-		selection.emplace_back(std::array<double, 6>{datum(0), datum(1), datum(2), datum(3), datum(4), datum(5)});
+	std::for_each(std::execution::par, f_sequence.begin(), f_sequence.end(),
+		[&forces, &f_sequence](const auto& datum) {
+			size_t idx = &datum - &f_sequence[0];
+			forces[idx] = std::array<double, 6>{
+				datum(0), datum(1), datum(2),
+					datum(3), datum(4), datum(5)
+			};
+		});
+
+	std::for_each(std::execution::par, selection_vector_sequence.begin(), selection_vector_sequence.end(),
+		[&selection, &selection_vector_sequence](const auto& datum) {
+			size_t idx = &datum - &selection_vector_sequence[0];
+			selection[idx] = std::array<double, 6>{
+				datum(0), datum(1), datum(2),
+					datum(3), datum(4), datum(5)
+			};
+		});
+
+	// Both arrays are zero (default values) -> use move_sequence with no offset/increment
+	if (std::all_of(offset_cartesian.begin(), offset_cartesian.end(), [](double x) { return x == 0.0; }) &&
+		std::all_of(offset_force.begin(), offset_force.end(), [](double x) { return x == 0.0; })) {
+		controller_->move_to(joints.front());
+		controller_->move_sequence(joints, forces, selection);
+		controller_->move_to(joints.back());
+	}
 
 	// TODO maltschik here increment
 	controller_->move_to(joints.front());
@@ -173,6 +201,52 @@ void franka_controller_remote::move_sequence(
 	// TODO maltschik here increment
 	controller_->move_to(joints.back());
 }
+
+void franka_controller_remote::move_sequence(
+	const std::vector<robot_config_7dof>& q_sequence,
+	const std::vector<wrench>& f_sequence,
+	const std::vector<selection_diagonal>& selection_vector_sequence)
+{
+	std::vector<std::array<double, 7>> joints;
+	std::vector<std::array<double, 6>> forces;
+	std::vector<std::array<double, 6>> selection;
+
+	joints.resize(q_sequence.size());
+	forces.resize(f_sequence.size());
+	selection.resize(selection_vector_sequence.size());
+
+	std::for_each(std::execution::par, q_sequence.begin(), q_sequence.end(),
+		[&joints, &q_sequence](const auto& datum) {
+			size_t idx = &datum - &q_sequence[0];
+			joints[idx] = std::array<double, 7>{
+				datum(0), datum(1), datum(2), datum(3),
+					datum(4), datum(5), datum(6)
+			};
+		});
+
+	std::for_each(std::execution::par, f_sequence.begin(), f_sequence.end(),
+		[&forces, &f_sequence](const auto& datum) {
+			size_t idx = &datum - &f_sequence[0];
+			forces[idx] = std::array<double, 6>{
+				datum(0), datum(1), datum(2),
+					datum(3), datum(4), datum(5)
+			};
+		});
+
+	std::for_each(std::execution::par, selection_vector_sequence.begin(), selection_vector_sequence.end(),
+		[&selection, &selection_vector_sequence](const auto& datum) {
+			size_t idx = &datum - &selection_vector_sequence[0];
+			selection[idx] = std::array<double, 6>{
+				datum(0), datum(1), datum(2),
+					datum(3), datum(4), datum(5)
+			};
+		});
+
+	controller_->move_to(joints.front());
+	controller_->move_sequence(joints, forces, selection);
+	controller_->move_to(joints.back());
+}
+
 
 void franka_controller_remote::set_fts_bias(const wrench& bias)
 {

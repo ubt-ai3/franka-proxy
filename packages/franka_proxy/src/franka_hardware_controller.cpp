@@ -42,19 +42,19 @@ namespace franka_proxy
 		const std::string& controller_ip,
 		const bool enforce_realtime)
 		: robot_(
-			  controller_ip,
-			  enforce_realtime ? franka::RealtimeConfig::kEnforce : franka::RealtimeConfig::kIgnore),
+			controller_ip,
+			enforce_realtime ? franka::RealtimeConfig::kEnforce : franka::RealtimeConfig::kIgnore),
 
-		  ft_sensor_(nullptr),
-		  motion_recorder_(nullptr),
+		ft_sensor_(nullptr),
+		motion_recorder_(nullptr),
 
-		  control_loop_running_(false),
+		control_loop_running_(false),
 
-		  robot_state_(robot_.readOnce()),
-		  terminate_state_threads_(false),
+		robot_state_(robot_.readOnce()),
+		terminate_state_threads_(false),
 
-		  robot_state_thread_([this]() { robot_state_update_loop(); }),
-		  gripper_state_thread_([this]() { gripper_state_update_loop(); })
+		robot_state_thread_([this]() { robot_state_update_loop(); }),
+		gripper_state_thread_([this]() { gripper_state_update_loop(); })
 
 	{
 		try
@@ -94,7 +94,7 @@ namespace franka_proxy
 			std::cout << "No vacuum gripper detected\n";
 		}
 
-		set_guiding_mode({{true, true, true, true, true, true}}, false);
+		set_guiding_mode({ {true, true, true, true, true, true} }, false);
 	}
 
 
@@ -138,7 +138,7 @@ namespace franka_proxy
 			// start real-time control loop
 			robot_.control(
 				[&](const franka::RobotState& robot_state,
-				    franka::Duration period) -> franka::Torques
+					franka::Duration period) -> franka::Torques
 				{
 					return fmg.callback(robot_state, period);
 				}, true, 10.0);
@@ -154,14 +154,14 @@ namespace franka_proxy
 	}
 
 	void franka_hardware_controller::apply_admittance(const double duration,
-	                                                  const double adm_rotational_stiffness,
-	                                                  const double adm_translational_stiffness,
-	                                                  const double imp_rotational_stiffness,
-	                                                  const double imp_translational_stiffness,
-	                                                  std::optional<std::string> log_file_path)
+		const double adm_rotational_stiffness,
+		const double adm_translational_stiffness,
+		const double imp_rotational_stiffness,
+		const double imp_translational_stiffness,
+		std::optional<std::string> log_file_path)
 	{
 		detail::admittance_motion_generator motion_generator(robot_, robot_state_lock_, robot_state_, duration,
-		                                                     log_file_path);
+			log_file_path);
 
 		motion_generator.set_admittance_rotational_stiffness(adm_rotational_stiffness);
 		motion_generator.set_admittance_translational_stiffness(adm_translational_stiffness);
@@ -179,7 +179,7 @@ namespace franka_proxy
 
 			robot_.control(
 				[&](const franka::RobotState& robot_state,
-				    franka::Duration period) -> franka::Torques
+					franka::Duration period) -> franka::Torques
 				{
 					return motion_generator.callback(robot_state, period);
 				}, true, 10.0
@@ -195,11 +195,11 @@ namespace franka_proxy
 	}
 
 	void franka_hardware_controller::joint_impedance_hold_position(const double duration,
-	                                                               const std::array<double, 49> stiffness,
-	                                                               std::optional<std::string> log_file_path)
+		const std::array<double, 49> stiffness,
+		std::optional<std::string> log_file_path)
 	{
 		detail::joint_impedance_motion_generator motion_generator(robot_, robot_state_lock_, robot_state_, duration,
-		                                                          log_file_path);
+			log_file_path);
 
 		motion_generator.set_stiffness(stiffness); // always true;
 
@@ -213,14 +213,14 @@ namespace franka_proxy
 
 			robot_.control(
 				[&](const franka::RobotState& robot_state,
-				    franka::Duration period) -> franka::Torques
+					franka::Duration period) -> franka::Torques
 				{
 					return motion_generator.callback
 					(robot_state, period,
-					 [&](const double time) -> Eigen::Matrix<double, 7, 1>
-					 {
-						 return motion_generator.calculate_joint_position_error(robot_state, time);
-					 }
+						[&](const double time) -> Eigen::Matrix<double, 7, 1>
+						{
+							return motion_generator.calculate_joint_position_error(robot_state, time);
+						}
 					);
 				}, true, 10.0
 			);
@@ -235,9 +235,9 @@ namespace franka_proxy
 	}
 
 	void franka_hardware_controller::joint_impedance_positions(const std::list<std::array<double, 7>>& joint_positions,
-	                                                           const double duration,
-	                                                           const std::array<double, 49> stiffness,
-	                                                           std::optional<std::string> log_file_path)
+		const double duration,
+		const std::array<double, 49> stiffness,
+		std::optional<std::string> log_file_path)
 	{
 		detail::joint_impedance_motion_generator motion_generator(
 			robot_, robot_state_lock_, robot_state_,
@@ -255,14 +255,14 @@ namespace franka_proxy
 
 			robot_.control(
 				[&](const franka::RobotState& robot_state,
-				    franka::Duration period) -> franka::Torques
+					franka::Duration period) -> franka::Torques
 				{
 					return motion_generator.callback
 					(robot_state, period,
-					 [&](const double time) -> Eigen::Matrix<double, 7, 1>
-					 {
-						 return motion_generator.calculate_joint_position_error(robot_state, time);
-					 }
+						[&](const double time) -> Eigen::Matrix<double, 7, 1>
+						{
+							return motion_generator.calculate_joint_position_error(robot_state, time);
+						}
 					);
 				}, true, 10.0
 			);
@@ -277,10 +277,10 @@ namespace franka_proxy
 	}
 
 	void franka_hardware_controller::cartesian_impedance_hold_pose(const double duration,
-	                                                               const bool use_stiff_damp_online_calc,
-	                                                               const double rotational_stiffness,
-	                                                               const double translational_stiffness,
-	                                                               std::optional<std::string> log_file_path)
+		const bool use_stiff_damp_online_calc,
+		const double rotational_stiffness,
+		const double translational_stiffness,
+		std::optional<std::string> log_file_path)
 	{
 		detail::cartesian_impedance_motion_generator motion_generator(
 			robot_, robot_state_lock_, robot_state_, duration,
@@ -299,14 +299,14 @@ namespace franka_proxy
 
 			robot_.control(
 				[&](const franka::RobotState& robot_state,
-				    franka::Duration period) -> franka::Torques
+					franka::Duration period) -> franka::Torques
 				{
 					return motion_generator.callback
 					(robot_state, period,
-					 [&](const double time) -> Eigen::Matrix<double, 6, 1>
-					 {
-						 return motion_generator.calculate_position_error(robot_state, time);
-					 }
+						[&](const double time) -> Eigen::Matrix<double, 6, 1>
+						{
+							return motion_generator.calculate_position_error(robot_state, time);
+						}
 					);
 				}, true, 10.0
 			);
@@ -321,11 +321,11 @@ namespace franka_proxy
 	}
 
 	void franka_hardware_controller::cartesian_impedance_poses(const std::list<std::array<double, 16>>& poses,
-	                                                           const double duration,
-	                                                           const bool use_stiff_damp_online_calc,
-	                                                           const double rotational_stiffness,
-	                                                           const double translational_stiffness,
-	                                                           std::optional<std::string> log_file_path)
+		const double duration,
+		const bool use_stiff_damp_online_calc,
+		const double rotational_stiffness,
+		const double translational_stiffness,
+		std::optional<std::string> log_file_path)
 	{
 		detail::cartesian_impedance_motion_generator motion_generator(
 			robot_, robot_state_lock_, robot_state_, poses,
@@ -344,14 +344,14 @@ namespace franka_proxy
 
 			robot_.control(
 				[&](const franka::RobotState& robot_state,
-				    franka::Duration period) -> franka::Torques
+					franka::Duration period) -> franka::Torques
 				{
 					return motion_generator.callback
 					(robot_state, period,
-					 [&](const double time) -> Eigen::Matrix<double, 6, 1>
-					 {
-						 return motion_generator.calculate_position_error(robot_state, time);
-					 }
+						[&](const double time) -> Eigen::Matrix<double, 6, 1>
+						{
+							return motion_generator.calculate_position_error(robot_state, time);
+						}
 					);
 				}, true, 10.0
 			);
@@ -367,10 +367,10 @@ namespace franka_proxy
 
 
 	void franka_hardware_controller::run_payload_estimation(double speed, double duration,
-	                                                        std::optional<std::string> log_file_path)
+		std::optional<std::string> log_file_path)
 	{
 		detail::ple_motion_generator motion_generator(robot_, robot_state_lock_, robot_state_, speed, duration,
-		                                              log_file_path);
+			log_file_path);
 
 		try
 		{
@@ -382,14 +382,14 @@ namespace franka_proxy
 
 			robot_.control(
 				[&](const franka::RobotState& robot_state,
-				    franka::Duration period) -> franka::Torques
+					franka::Duration period) -> franka::Torques
 				{
 					return motion_generator.callback
 					(robot_state, period,
-					 [&](const double time) -> Eigen::Matrix<double, 7, 1>
-					 {
-						 return motion_generator.calculate_ple_motion(robot_state, time);
-					 }
+						[&](const double time) -> Eigen::Matrix<double, 7, 1>
+						{
+							return motion_generator.calculate_ple_motion(robot_state, time);
+						}
 					);
 				}, true, 10.0
 			);
@@ -415,7 +415,7 @@ namespace franka_proxy
 		}
 
 		detail::franka_joint_motion_generator motion_generator
-			(speed_factor_, target, robot_state_lock_, robot_state_, stop_motion_, false);
+		(speed_factor_, target, robot_state_lock_, robot_state_, stop_motion_, false);
 
 		stop_motion_ = false;
 
@@ -428,9 +428,9 @@ namespace franka_proxy
 			}
 
 			robot_.control
-				(motion_generator,
-				 franka::ControllerMode::kJointImpedance,
-				 true, 100.);
+			(motion_generator,
+				franka::ControllerMode::kJointImpedance,
+				true, 100.);
 		}
 		catch (const detail::franka_joint_motion_generator::stop_motion_trigger&)
 		{
@@ -450,6 +450,55 @@ namespace franka_proxy
 		set_control_loop_running(false);
 	}
 
+	void franka_hardware_controller::move_to(
+		const robot_config_7dof& target,
+		const std::array<double, 16>& offset_position,
+		const std::array<double, 6>& offset_force) {
+
+		set_default_impedance_and_collision_parameters();
+
+		{
+			std::lock_guard<std::mutex> state_guard(robot_state_lock_);
+		}
+
+		detail::franka_joint_motion_generator motion_generator(
+			speed_factor_, target, offset_position,
+			robot_state_lock_, robot_state_, stop_motion_, false);
+
+		// discuss magic numbers with JHa
+		detail::force_motion_generator force_generator(robot_,0,5,offset_force);
+
+		stop_motion_ = false;
+
+		try {
+			set_control_loop_running(true);
+			{
+				std::lock_guard state_guard(robot_state_lock_);
+			}
+
+			// Use the combined control interface
+			robot_.control(
+				[&force_generator](const franka::RobotState& state, franka::Duration period) {
+					return force_generator.callback(state, period);
+				},
+				motion_generator,
+				true, 100.);
+		}
+		catch (const detail::franka_joint_motion_generator::stop_motion_trigger&) {
+			std::cout << "motion stop triggered\n";
+		}
+		catch (const detail::franka_joint_motion_generator::contact_stop_trigger&) {
+			std::cout << "contact occurred\n";
+		}
+		catch (const franka::Exception& e) {
+			set_control_loop_running(false);
+			std::cout << "Error in move_to control loop: " << e.what() << "\n";
+			throw;
+		}
+
+		set_control_loop_running(false);
+	}
+
 
 	bool franka_hardware_controller::move_to_until_contact
 	(const robot_config_7dof& target)
@@ -457,7 +506,7 @@ namespace franka_proxy
 		set_contact_move_impedance_and_collision_parameters();
 
 		detail::franka_joint_motion_generator motion_generator
-			(speed_factor_, target, robot_state_lock_, robot_state_, stop_motion_, true);
+		(speed_factor_, target, robot_state_lock_, robot_state_, stop_motion_, true);
 
 		stop_motion_ = false;
 
@@ -471,8 +520,8 @@ namespace franka_proxy
 
 			robot_.control
 			(motion_generator,
-			 franka::ControllerMode::kJointImpedance,
-			 true, 20.);
+				franka::ControllerMode::kJointImpedance,
+				true, 20.);
 			/*robot_.control
 			(motion_generator,
 				franka::ControllerMode::kCartesianImpedance,
@@ -620,7 +669,7 @@ namespace franka_proxy
 	}
 
 	bool franka_hardware_controller::vacuum_gripper_vacuum(std::uint8_t vacuum_strength,
-	                                                       std::chrono::milliseconds timeout)
+		std::chrono::milliseconds timeout)
 	{
 		if (!vacuum_gripper_)
 			throw std::runtime_error("vacuum gripper not found, make sure you mounted the vacuum gripper");
@@ -693,7 +742,7 @@ namespace franka_proxy
 
 
 	std::pair<std::vector<robot_config_7dof>, std::vector<wrench>>
-	franka_hardware_controller::stop_recording()
+		franka_hardware_controller::stop_recording()
 	{
 		auto record = motion_recorder_->stop();
 		set_control_loop_running(false);
@@ -703,7 +752,7 @@ namespace franka_proxy
 
 
 	std::pair<std::vector<robot_config_7dof>, std::vector<wrench>>
-	franka_hardware_controller::start_recording(float seconds, std::optional<std::string> log_file_path)
+		franka_hardware_controller::start_recording(float seconds, std::optional<std::string> log_file_path)
 	{
 		set_control_loop_running(true);
 		{
@@ -721,8 +770,8 @@ namespace franka_proxy
 	void franka_hardware_controller::move_sequence
 	(const std::vector<std::array<double, 7>>& q_sequence)
 	{
-		std::vector<std::array<double, 6>> f_sequence(q_sequence.size(), {0, 0, 0, 0, 0, 0});
-		std::vector<std::array<double, 6>> selection_vector_sequence(q_sequence.size(), {1, 1, 1, 1, 1, 1});
+		std::vector<std::array<double, 6>> f_sequence(q_sequence.size(), { 0, 0, 0, 0, 0, 0 });
+		std::vector<std::array<double, 6>> selection_vector_sequence(q_sequence.size(), { 1, 1, 1, 1, 1, 1 });
 
 		stop_motion_ = false;
 		detail::seq_cart_vel_tau_generator motion_generator(
@@ -739,7 +788,7 @@ namespace franka_proxy
 
 			robot_.control(
 				[&](const franka::RobotState& robot_state,
-				    franka::Duration period) -> franka::Torques
+					franka::Duration period) -> franka::Torques
 				{
 					return motion_generator.step(robot_state, period);
 				},
@@ -767,8 +816,8 @@ namespace franka_proxy
 		//detail::force_motion_generator force_motion_generator(robot_, 0.5, 10.0);
 		//detail::sequence_joint_velocity_motion_generator joint_velocity_motion_generator(1., q_sequence, state_lock_, robot_state_, stop_motion_);
 
-		std::vector<std::array<double, 6>> f_sequence(q_sequence.size(), {0, 0, f_z, 0, 0, 0});
-		std::vector<std::array<double, 6>> selection_vector_sequence(q_sequence.size(), {1, 1, 0, 1, 1, 1});
+		std::vector<std::array<double, 6>> f_sequence(q_sequence.size(), { 0, 0, f_z, 0, 0, 0 });
+		std::vector<std::array<double, 6>> selection_vector_sequence(q_sequence.size(), { 1, 1, 0, 1, 1, 1 });
 
 		//double f_x = -5.0;
 
@@ -802,7 +851,7 @@ namespace franka_proxy
 
 			robot_.control(
 				[&](const franka::RobotState& robot_state,
-				    franka::Duration period) -> franka::Torques
+					franka::Duration period) -> franka::Torques
 				{
 					return motion_generator.step(robot_state, period);
 				},
@@ -879,13 +928,13 @@ namespace franka_proxy
 			}
 
 			robot_.control([&](
-			               const franka::RobotState& robot_state,
-			               franka::Duration period) -> franka::Torques
-			               {
-				               return motion_generator.step(robot_state, period, offset_position, offset_force);
-			               },
-			               true,
-			               1000.);
+				const franka::RobotState& robot_state,
+				franka::Duration period) -> franka::Torques
+				{
+					return motion_generator.step(robot_state, period, offset_position, offset_force);
+				},
+				true,
+				1000.);
 		}
 		catch (const detail::seq_cart_vel_tau_generator::stop_motion_trigger&)
 		{
@@ -898,6 +947,43 @@ namespace franka_proxy
 
 		set_control_loop_running(false);
 	}
+
+	void franka_hardware_controller::move_sequence(const std::vector<robot_config_7dof>& q_sequence, const std::vector<wrench>& f_sequence, const std::vector<selection_diagonal>& selection_vector)
+	{
+		stop_motion_ = false;
+		detail::seq_cart_vel_tau_generator motion_generator(
+			robot_state_lock_, robot_state_, robot_, stop_motion_,
+			q_sequence, f_sequence, selection_vector);
+
+		try
+		{
+			set_control_loop_running(true);
+			{
+				// Lock the current_state_lock_ to wait for state_thread_ to finish.
+				std::lock_guard state_guard(robot_state_lock_);
+			}
+
+			robot_.control([&](
+				const franka::RobotState& robot_state,
+				franka::Duration period) -> franka::Torques
+				{
+					return motion_generator.step(robot_state, period);
+				},
+				true,
+				1000.);
+		}
+		catch (const detail::seq_cart_vel_tau_generator::stop_motion_trigger&)
+		{
+		}
+		catch (const franka::Exception&)
+		{
+			set_control_loop_running(false);
+			throw;
+		}
+
+		set_control_loop_running(false);
+	}
+
 
 
 	void franka_hardware_controller::robot_state_update_loop()

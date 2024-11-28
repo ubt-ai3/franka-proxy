@@ -68,6 +68,51 @@ franka_joint_motion_generator::franka_joint_motion_generator
 	q_1_.setZero();
 }
 
+franka_joint_motion_generator::franka_joint_motion_generator
+	(double speed_factor,
+	 std::array<double, 7> q_goal,
+	 const std::array<double, 16>& offset_position,
+	 std::mutex& current_state_lock, 
+	 franka::RobotState& current_state, 
+	 const std::atomic_bool& stop_motion_flag, 
+	 bool stop_on_contact)
+	:
+	q_goal_(calculateOffsetGoal(q_goal,offset_position)),
+	current_state_lock_(current_state_lock),
+	current_state_(current_state),
+	stop_motion_(stop_motion_flag),
+	stop_on_contact_(stop_on_contact)
+{
+
+	dq_max_ *= speed_factor;
+	ddq_max_start_ *= speed_factor;
+	ddq_max_goal_ *= speed_factor;
+	dq_max_sync_.setZero();
+	q_start_.setZero();
+	delta_q_.setZero();
+	t_1_sync_.setZero();
+	t_2_sync_.setZero();
+	t_f_sync_.setZero();
+	q_1_.setZero();
+}
+
+Vector7d franka_joint_motion_generator::calculateOffsetGoal(
+	const std::array<double, 7>& q_goal,
+	const std::array<double, 16>& offset_position)
+{
+	Vector7d config_goal = Eigen::Map<const Vector7d>(q_goal.data());
+
+	Eigen::Affine3d offset_transform;
+
+	offset_transform.matrix() = Eigen::Map<const Eigen::Matrix4d>(offset_position.data());
+
+	std::vector<Eigen::Affine3d> original_pose = franka_proxy_util::fk(config_goal);
+
+	Eigen::Affine3d new_pose = offset_transform * original_pose[7];
+
+	return franka_proxy_util::ik_fast_closest(new_pose, config_goal);
+}
+
 
 JointMovement franka_joint_motion_generator::calculateDesiredValues(double t) const
 {

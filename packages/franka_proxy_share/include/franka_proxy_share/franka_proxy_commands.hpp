@@ -55,6 +55,26 @@ void to_json(nlohmann::json& json, const command_move_to_config& object);
 void from_json(const nlohmann::json& json, command_move_to_config& object);
 
 
+/**
+ *************************************************************************
+ *
+ * @class command_move_to_config
+ *
+ * Commands the robot to move to given config.
+ *
+ ************************************************************************/
+struct command_move_to_config_with_offset
+{
+	using response_type = command_generic_response;
+	static constexpr char type[] = "move.config";
+
+	std::array<double, 7> target_joint_config;
+	std::array<double, 16> offset_position;
+	std::array<double, 6> offset_force;
+};
+
+void to_json(nlohmann::json& json, const command_move_to_config_with_offset& object);
+void from_json(const nlohmann::json& json, command_move_to_config_with_offset& object);
 
 
 /**
@@ -72,12 +92,37 @@ struct command_move_until_contact
 	static constexpr char type[] = "move.contact";
 
 	std::array<double, 7> target_joint_config;
+	
 };
 
 void to_json(nlohmann::json& json, const command_move_until_contact& object);
 void from_json(const nlohmann::json& json, command_move_until_contact& object);
 
 
+
+
+/**
+ *************************************************************************
+ *
+ * @class command_move_hybrid_sequence
+ *
+ * Commands the robot to move following the given hybrid sequence with a given position and force offset.
+ *
+ ************************************************************************/
+struct command_move_hybrid_sequence_with_offset
+{
+	using response_type = command_generic_response;
+	static constexpr char	type[] = "move.hybrid-sequence-with-offset";
+
+	std::vector<std::array<double, 7>>	joint_config_sequence;
+	std::vector<std::array<double, 6>>	force_sequence;
+	std::vector<std::array<double, 6>>	selection_sequence;
+	std::array<double, 16> offset_position;
+	std::array<double, 6> offset_force;
+};
+
+void to_json(nlohmann::json& json, const command_move_hybrid_sequence_with_offset& object);
+void from_json(const nlohmann::json& json, command_move_hybrid_sequence_with_offset& object);
 
 
 /**
@@ -96,15 +141,10 @@ struct command_move_hybrid_sequence
 	std::vector<std::array<double, 7>>	joint_config_sequence;
 	std::vector<std::array<double, 6>>	force_sequence;
 	std::vector<std::array<double, 6>>	selection_sequence;
-	std::array<double, 16> offset_position;
-	std::array<double, 6> offset_force;
 };
 
 void to_json(nlohmann::json& json, const command_move_hybrid_sequence& object);
 void from_json(const nlohmann::json& json, command_move_hybrid_sequence& object);
-
-
-
 
 /**
  *************************************************************************
