@@ -46,13 +46,12 @@ force_motion_generator::force_motion_generator
 	initial_state_ = robot.readOnce();
 }
 
-force_motion_generator::force_motion_generator(franka::Robot& robot, double mass, double duration, const std::array<double, 6>& offset_force)
+force_motion_generator::force_motion_generator(franka::Robot& robot, double mass, double duration)
 	: dq_d_({ 0., 0., 0., 0., 0., 0., 0. }),
 	dq_buffer_(dq_filter_size_ * 7, 0),
 	target_mass(mass),
 	duration(duration),
-	model(robot.loadModel()),
-	force_offset_(offset_force)  
+	model(robot.loadModel())
 {
 	initial_state_ = robot.readOnce();
 }
@@ -92,10 +91,6 @@ franka::Torques force_motion_generator::callback
 	desired_force_torque.setZero();
 	desired_force_torque(2) = desired_mass * -9.81;
 
-	// Add force offsets to the desired force/torque
-	for (size_t i = 0; i < 6; i++) {
-		desired_force_torque(i) += force_offset_[i];
-	}
 
 	tau_existing = tau_measured - gravity;
 	tau_desired = jacobian.transpose() * desired_force_torque;

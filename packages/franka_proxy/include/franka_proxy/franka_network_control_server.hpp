@@ -75,7 +75,6 @@ private:
 	void receive_requests();
 
 	command_generic_response process_command(const command_move_to_config&);
-	command_generic_response process_command(const command_move_to_config_with_offset&);
 	command_generic_response process_command(const command_move_hybrid_sequence_with_offset& cmd);
 	command_generic_response process_command(const command_move_hybrid_sequence&);
 	command_generic_response process_command(const command_move_until_contact&);

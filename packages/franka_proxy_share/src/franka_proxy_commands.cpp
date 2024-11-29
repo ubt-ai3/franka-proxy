@@ -35,29 +35,6 @@ void from_json(const nlohmann::json& json, command_move_to_config& object)
 	json.at("target").get_to(object.target_joint_config);
 }
 
-//////////////////////////////////////////////////////////////////////////
-//
-// command_move_to_config_with_offset
-//
-//////////////////////////////////////////////////////////////////////////
-
-
-void to_json(nlohmann::json& json, const command_move_to_config_with_offset& object)
-{
-	json["type"] = command_move_to_config_with_offset::type;
-	json["target"] = object.target_joint_config;
-	json["offset_position"] = object.offset_position;
-	json["offset_force"] = object.offset_force;
-}
-
-
-void from_json(const nlohmann::json& json, command_move_to_config_with_offset& object)
-{
-	json.at("target").get_to(object.target_joint_config);
-	json.at("offset_position").get_to(object.offset_position);
-	json.at("offset_force").get_to(object.offset_force);
-}
-
 
 
 //////////////////////////////////////////////////////////////////////////

@@ -55,27 +55,6 @@ void to_json(nlohmann::json& json, const command_move_to_config& object);
 void from_json(const nlohmann::json& json, command_move_to_config& object);
 
 
-/**
- *************************************************************************
- *
- * @class command_move_to_config
- *
- * Commands the robot to move to given config.
- *
- ************************************************************************/
-struct command_move_to_config_with_offset
-{
-	using response_type = command_generic_response;
-	static constexpr char type[] = "move.config";
-
-	std::array<double, 7> target_joint_config;
-	std::array<double, 16> offset_position;
-	std::array<double, 6> offset_force;
-};
-
-void to_json(nlohmann::json& json, const command_move_to_config_with_offset& object);
-void from_json(const nlohmann::json& json, command_move_to_config_with_offset& object);
-
 
 /**
  *************************************************************************

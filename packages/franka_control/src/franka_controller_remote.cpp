@@ -13,6 +13,7 @@
 #include "franka_controller_remote.hpp"
 
 #include <franka_proxy_client/franka_remote_interface.hpp>
+#include "franka_proxy_share/franka_proxy_util.hpp"
 
 
 namespace franka_control
@@ -151,7 +152,6 @@ void franka_controller_remote::move_sequence(
 	const std::array<double,16> offset_cartesian,
 	const std::array<double,6> offset_force)
 {
-	
 	std::vector<std::array<double, 7>> joints;
 	std::vector<std::array<double, 6>> forces;
 	std::vector<std::array<double, 6>> selection;
@@ -163,29 +163,57 @@ void franka_controller_remote::move_sequence(
 	std::for_each(std::execution::par, q_sequence.begin(), q_sequence.end(),
 		[&joints, &q_sequence](const auto& datum) {
 			size_t idx = &datum - &q_sequence[0];
-			joints[idx] = std::array<double, 7>{
+			/*joints[idx] = std::array<double, 7>{
 				datum(0), datum(1), datum(2), datum(3),
 					datum(4), datum(5), datum(6)
-			};
+			};*/
+			// Reinterpret the Eigen::Matrix as std::array directly instead of copying
+			joints[idx] = *reinterpret_cast<std::array<double, 7>*>(&datum);
 		});
 
 	std::for_each(std::execution::par, f_sequence.begin(), f_sequence.end(),
 		[&forces, &f_sequence](const auto& datum) {
 			size_t idx = &datum - &f_sequence[0];
-			forces[idx] = std::array<double, 6>{
+			/*forces[idx] = std::array<double, 6>{
 				datum(0), datum(1), datum(2),
 					datum(3), datum(4), datum(5)
-			};
+			};*/
+			// Reinterpret the Eigen::Matrix as std::array directly instead of copying
+			forces[idx] = *reinterpret_cast<std::array<double, 6>*>(&datum);
 		});
 
 	std::for_each(std::execution::par, selection_vector_sequence.begin(), selection_vector_sequence.end(),
 		[&selection, &selection_vector_sequence](const auto& datum) {
 			size_t idx = &datum - &selection_vector_sequence[0];
-			selection[idx] = std::array<double, 6>{
+			/*selection[idx] = std::array<double, 6>{
 				datum(0), datum(1), datum(2),
 					datum(3), datum(4), datum(5)
-			};
+			};*/
+			// Reinterpret the Eigen::Matrix as std::array directly instead of copying
+			selection[idx] = *reinterpret_cast<std::array<double, 6>*>(&datum);
 		});
+
+	//apply offset for front()
+	Eigen::Affine3d offset_transform;
+
+	offset_transform.matrix() = Eigen::Map<const Eigen::Matrix4d>(offset_cartesian.data());
+
+	std::vector<Eigen::Affine3d> original_pose = franka_proxy::franka_proxy_util::fk(q_sequence.front());
+
+	Eigen::Affine3d new_pose = offset_transform * original_pose.front();
+
+	robot_config_7dof result = franka_proxy::franka_proxy_util::ik_fast_closest(new_pose, q_sequence.front());
+
+	//apply offset for back()
+	Eigen::Affine3d offset_transform;
+
+	offset_transform.matrix() = Eigen::Map<const Eigen::Matrix4d>(offset_cartesian.data());
+
+	std::vector<Eigen::Affine3d> original_pose = franka_proxy::franka_proxy_util::fk(q_sequence.back());
+
+	Eigen::Affine3d new_pose = offset_transform * original_pose.front();
+
+	robot_config_7dof result = franka_proxy::franka_proxy_util::ik_fast_closest(new_pose, q_sequence.back());
 
 	controller_->move_to(joints.front());
 	controller_->move_sequence(joints, forces, selection,offset_cartesian,offset_force);
@@ -208,30 +236,39 @@ void franka_controller_remote::move_sequence(
 	std::for_each(std::execution::par, q_sequence.begin(), q_sequence.end(),
 		[&joints, &q_sequence](const auto& datum) {
 			size_t idx = &datum - &q_sequence[0];
-			joints[idx] = std::array<double, 7>{
+			/*joints[idx] = std::array<double, 7>{
 				datum(0), datum(1), datum(2), datum(3),
 					datum(4), datum(5), datum(6)
-			};
+			};*/
+			// Reinterpret the Eigen::Matrix as std::array directly instead of copying
+			joints[idx] = *reinterpret_cast<std::array<double, 7>*>(&datum);
 		});
 
 	std::for_each(std::execution::par, f_sequence.begin(), f_sequence.end(),
 		[&forces, &f_sequence](const auto& datum) {
 			size_t idx = &datum - &f_sequence[0];
-			forces[idx] = std::array<double, 6>{
+			/*forces[idx] = std::array<double, 6>{
 				datum(0), datum(1), datum(2),
 					datum(3), datum(4), datum(5)
-			};
+			};*/
+			// Reinterpret the Eigen::Matrix as std::array directly instead of copying
+			forces[idx] = *reinterpret_cast<std::array<double, 6>*>(&datum);
 		});
 
 	std::for_each(std::execution::par, selection_vector_sequence.begin(), selection_vector_sequence.end(),
 		[&selection, &selection_vector_sequence](const auto& datum) {
 			size_t idx = &datum - &selection_vector_sequence[0];
-			selection[idx] = std::array<double, 6>{
+			/*selection[idx] = std::array<double, 6>{
 				datum(0), datum(1), datum(2),
 					datum(3), datum(4), datum(5)
-			};
+			};*/
+			// Reinterpret the Eigen::Matrix as std::array directly instead of copying
+			selection[idx] = *reinterpret_cast<std::array<double, 6>*>(&datum);
 		});
 
+
+	
+	
 	controller_->move_to(joints.front());
 	controller_->move_sequence(joints, forces, selection);
 	controller_->move_to(joints.back());

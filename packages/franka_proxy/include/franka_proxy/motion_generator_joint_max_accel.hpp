@@ -70,23 +70,6 @@ public:
 		 franka::RobotState& current_state,
 		 const std::atomic_bool& stop_motion_flag,
 		 bool stop_on_contact);
-
-	/**
-	 * Creates a new joint_motion_generator instance for a target q with offset.
-	 *
-	 * @param[in] speed_factor General speed factor in range [0, 1].
-	 * @param[in] q_goal Target joint positions.
-	 * @param[in] offset_position Vectorized 4d-Matrix in column-major as cartesian offset
-	 */
-	franka_joint_motion_generator
-		(double speed_factor, 
-		 std::array<double,7> q_goal, 
-		 const std::array<double,16>& offset_position,
-		 std::mutex& current_state_lock, 
-		 franka::RobotState& current_state, 
-		 const std::atomic_bool& stop_motion_flag,
-		 bool stop_on_contact);
-
 	
 	
 	/**

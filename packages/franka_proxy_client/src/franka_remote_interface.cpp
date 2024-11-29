@@ -51,10 +51,6 @@ void franka_remote_interface::move_to(const robot_config_7dof& target)
 	send_command<command_move_to_config>(target);
 }
 
-void franka_remote_interface::move_to(const robot_config_7dof& target, std::array<double,16> offset_position,std::array<double,6> offset_force)
-{
-	send_command<command_move_to_config_with_offset>(target);
-}
 
 void franka_remote_interface::move_to(const Eigen::Vector<double, 7>& target)
 {

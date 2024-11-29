@@ -63,14 +63,6 @@ namespace franka_proxy
 		 */
 		void move_to(const robot_config_7dof& target);
 
-		/**
-		 * Moves the Panda robot to given target with a given offset.; In case
-		 * of collision, the movement is retried and continued
-		 * after automatic error recovery
-		 */
-		void move_to(const robot_config_7dof& target,
-			const std::array<double, 16>& offset_position,
-			const std::array<double, 6>& offset_force);
 
 		/**
 		 * Moves the Panda robot to given target; In case

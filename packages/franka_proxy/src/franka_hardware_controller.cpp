@@ -450,55 +450,6 @@ namespace franka_proxy
 		set_control_loop_running(false);
 	}
 
-	void franka_hardware_controller::move_to(
-		const robot_config_7dof& target,
-		const std::array<double, 16>& offset_position,
-		const std::array<double, 6>& offset_force) {
-
-		set_default_impedance_and_collision_parameters();
-
-		{
-			std::lock_guard<std::mutex> state_guard(robot_state_lock_);
-		}
-
-		detail::franka_joint_motion_generator motion_generator(
-			speed_factor_, target, offset_position,
-			robot_state_lock_, robot_state_, stop_motion_, false);
-
-		// discuss magic numbers with JHa
-		detail::force_motion_generator force_generator(robot_,0,5,offset_force);
-
-		stop_motion_ = false;
-
-		try {
-			set_control_loop_running(true);
-			{
-				std::lock_guard state_guard(robot_state_lock_);
-			}
-
-			// Use the combined control interface
-			robot_.control(
-				[&force_generator](const franka::RobotState& state, franka::Duration period) {
-					return force_generator.callback(state, period);
-				},
-				motion_generator,
-				true, 100.);
-		}
-		catch (const detail::franka_joint_motion_generator::stop_motion_trigger&) {
-			std::cout << "motion stop triggered\n";
-		}
-		catch (const detail::franka_joint_motion_generator::contact_stop_trigger&) {
-			std::cout << "contact occurred\n";
-		}
-		catch (const franka::Exception& e) {
-			set_control_loop_running(false);
-			std::cout << "Error in move_to control loop: " << e.what() << "\n";
-			throw;
-		}
-
-		set_control_loop_running(false);
-	}
-
 
 	bool franka_hardware_controller::move_to_until_contact
 	(const robot_config_7dof& target)

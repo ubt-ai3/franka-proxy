@@ -44,11 +44,6 @@ public:
 	force_motion_generator
 		(franka::Robot& robot, double mass, double duration);
 
-	force_motion_generator(
-		franka::Robot& robot,
-		double mass,
-		double duration,
-		const std::array<double, 6>& offset_force);
 
 	franka::Torques callback
 		(const franka::RobotState& robot_state,
@@ -68,7 +63,6 @@ private:
 	const double k_i{2.0};
 	const double filter_gain{0.01};
 
-	const std::array<double, 6> force_offset_{};
 
 	// Stiffness & Damping
 	const std::array<double, 7> K_P_ = { {600.0, 600.0, 600.0, 600.0, 250.0, 150.0, 50.0} };
