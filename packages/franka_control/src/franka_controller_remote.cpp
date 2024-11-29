@@ -168,7 +168,7 @@ void franka_controller_remote::move_sequence(
 					datum(4), datum(5), datum(6)
 			};*/
 			// Reinterpret the Eigen::Matrix as std::array directly instead of copying
-			joints[idx] = *reinterpret_cast<std::array<double, 7>*>(&datum);
+			joints[idx] = *reinterpret_cast<const std::array<double, 7>*>(&datum);
 		});
 
 	std::for_each(std::execution::par, f_sequence.begin(), f_sequence.end(),
@@ -179,7 +179,7 @@ void franka_controller_remote::move_sequence(
 					datum(3), datum(4), datum(5)
 			};*/
 			// Reinterpret the Eigen::Matrix as std::array directly instead of copying
-			forces[idx] = *reinterpret_cast<std::array<double, 6>*>(&datum);
+			forces[idx] = *reinterpret_cast<const std::array<double, 6>*>(&datum);
 		});
 
 	std::for_each(std::execution::par, selection_vector_sequence.begin(), selection_vector_sequence.end(),
@@ -190,34 +190,34 @@ void franka_controller_remote::move_sequence(
 					datum(3), datum(4), datum(5)
 			};*/
 			// Reinterpret the Eigen::Matrix as std::array directly instead of copying
-			selection[idx] = *reinterpret_cast<std::array<double, 6>*>(&datum);
+			selection[idx] = *reinterpret_cast<const std::array<double, 6>*>(&datum);
 		});
 
 	//apply offset for front()
-	Eigen::Affine3d offset_transform;
+	Eigen::Affine3d offset_transform_front;
 
-	offset_transform.matrix() = Eigen::Map<const Eigen::Matrix4d>(offset_cartesian.data());
+	offset_transform_front.matrix() = Eigen::Map<const Eigen::Matrix4d>(offset_cartesian.data());
 
-	std::vector<Eigen::Affine3d> original_pose = franka_proxy::franka_proxy_util::fk(q_sequence.front());
+	std::vector<Eigen::Affine3d> original_pose_front= franka_proxy::franka_proxy_util::fk(q_sequence.front());
 
-	Eigen::Affine3d new_pose = offset_transform * original_pose.front();
+	Eigen::Affine3d new_pose_front = offset_transform_front * original_pose_front.front();
 
-	robot_config_7dof result = franka_proxy::franka_proxy_util::ik_fast_closest(new_pose, q_sequence.front());
+	robot_config_7dof result_front = franka_proxy::franka_proxy_util::ik_fast_closest(new_pose_front, q_sequence.front());
 
 	//apply offset for back()
-	Eigen::Affine3d offset_transform;
+	Eigen::Affine3d offset_transform_back;
 
-	offset_transform.matrix() = Eigen::Map<const Eigen::Matrix4d>(offset_cartesian.data());
+	offset_transform_back.matrix() = Eigen::Map<const Eigen::Matrix4d>(offset_cartesian.data());
 
-	std::vector<Eigen::Affine3d> original_pose = franka_proxy::franka_proxy_util::fk(q_sequence.back());
+	std::vector<Eigen::Affine3d> original_pose_back = franka_proxy::franka_proxy_util::fk(q_sequence.back());
 
-	Eigen::Affine3d new_pose = offset_transform * original_pose.front();
+	Eigen::Affine3d new_pose_back = offset_transform_back * original_pose_back.front();
 
-	robot_config_7dof result = franka_proxy::franka_proxy_util::ik_fast_closest(new_pose, q_sequence.back());
+	robot_config_7dof result_back = franka_proxy::franka_proxy_util::ik_fast_closest(new_pose_back, q_sequence.back());
 
-	controller_->move_to(joints.front());
+	controller_->move_to(result_front);
 	controller_->move_sequence(joints, forces, selection,offset_cartesian,offset_force);
-	controller_->move_to(joints.back());
+	controller_->move_to(result_back);
 }
 
 void franka_controller_remote::move_sequence(
@@ -241,7 +241,7 @@ void franka_controller_remote::move_sequence(
 					datum(4), datum(5), datum(6)
 			};*/
 			// Reinterpret the Eigen::Matrix as std::array directly instead of copying
-			joints[idx] = *reinterpret_cast<std::array<double, 7>*>(&datum);
+			joints[idx] = *reinterpret_cast<const std::array<double, 7>*>(&datum);
 		});
 
 	std::for_each(std::execution::par, f_sequence.begin(), f_sequence.end(),
@@ -252,7 +252,7 @@ void franka_controller_remote::move_sequence(
 					datum(3), datum(4), datum(5)
 			};*/
 			// Reinterpret the Eigen::Matrix as std::array directly instead of copying
-			forces[idx] = *reinterpret_cast<std::array<double, 6>*>(&datum);
+			forces[idx] = *reinterpret_cast<const std::array<double, 6>*>(&datum);
 		});
 
 	std::for_each(std::execution::par, selection_vector_sequence.begin(), selection_vector_sequence.end(),
@@ -263,7 +263,7 @@ void franka_controller_remote::move_sequence(
 					datum(3), datum(4), datum(5)
 			};*/
 			// Reinterpret the Eigen::Matrix as std::array directly instead of copying
-			selection[idx] = *reinterpret_cast<std::array<double, 6>*>(&datum);
+			selection[idx] = *reinterpret_cast<const std::array<double, 6>*>(&datum);
 		});
 
 

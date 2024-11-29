@@ -46,16 +46,6 @@ force_motion_generator::force_motion_generator
 	initial_state_ = robot.readOnce();
 }
 
-force_motion_generator::force_motion_generator(franka::Robot& robot, double mass, double duration)
-	: dq_d_({ 0., 0., 0., 0., 0., 0., 0. }),
-	dq_buffer_(dq_filter_size_ * 7, 0),
-	target_mass(mass),
-	duration(duration),
-	model(robot.loadModel())
-{
-	initial_state_ = robot.readOnce();
-}
-
 
 
 franka::Torques force_motion_generator::callback
