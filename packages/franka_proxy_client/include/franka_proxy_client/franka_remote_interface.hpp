@@ -88,8 +88,8 @@ public:
 	(const std::vector<robot_config_7dof>& q_sequence,
 	 const std::vector<std::array<double, 6>>& f_sequence,
 	 const std::vector<std::array<double, 6>>& selection_vector_sequence,
-	 std::array<double, 16> offset_position ,
-	 std::array<double, 6> offset_force );
+	 const std::array<double, 16>& offset_position ,
+	 const std::array<double, 6>& offset_force );
 
 
 	/**

@@ -100,8 +100,8 @@ seq_cart_vel_tau_generator::~seq_cart_vel_tau_generator()
 franka::Torques seq_cart_vel_tau_generator::step
 	(const franka::RobotState& robot_state,
 	 franka::Duration period,
-		std::array<double, 16> offset_position,
-		std::array<double,6> offset_force)
+		const std::array<double, 16>& offset_position,
+		const std::array<double,6>& offset_force)
 {
 	{
 		std::lock_guard<std::mutex> state_guard(current_state_lock_);

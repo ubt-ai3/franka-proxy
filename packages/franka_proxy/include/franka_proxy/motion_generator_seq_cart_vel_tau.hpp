@@ -70,8 +70,8 @@ namespace detail
 		franka::Torques step
 		(const franka::RobotState& robot_state,
 			franka::Duration period,
-			std::array<double, 16> offset_position ,
-			std::array<double, 6> offset_force 
+			const std::array<double, 16>& offset_position ,
+			const std::array<double, 6>& offset_force 
 			);
 
 		/*

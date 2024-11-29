@@ -148,8 +148,8 @@ void franka_controller_remote::move_sequence(
 	const std::vector<robot_config_7dof>& q_sequence,
 	const std::vector<wrench>& f_sequence,
 	const std::vector<selection_diagonal>& selection_vector_sequence,
-	std::array<double,16> offset_cartesian,
-	std::array<double,6> offset_force)
+	const std::array<double,16> offset_cartesian,
+	const std::array<double,6> offset_force)
 {
 	
 	std::vector<std::array<double, 7>> joints;
@@ -187,18 +187,8 @@ void franka_controller_remote::move_sequence(
 			};
 		});
 
-	// Both arrays are zero (default values) -> use move_sequence with no offset/increment
-	if (std::all_of(offset_cartesian.begin(), offset_cartesian.end(), [](double x) { return x == 0.0; }) &&
-		std::all_of(offset_force.begin(), offset_force.end(), [](double x) { return x == 0.0; })) {
-		controller_->move_to(joints.front());
-		controller_->move_sequence(joints, forces, selection);
-		controller_->move_to(joints.back());
-	}
-
-	// TODO maltschik here increment
 	controller_->move_to(joints.front());
 	controller_->move_sequence(joints, forces, selection,offset_cartesian,offset_force);
-	// TODO maltschik here increment
 	controller_->move_to(joints.back());
 }
 

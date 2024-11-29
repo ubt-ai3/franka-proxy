@@ -100,8 +100,8 @@ public:
 		const std::vector<robot_config_7dof>& q_sequence,
 		const std::vector<wrench>& f_sequence,
 		const std::vector<selection_diagonal>& selection_vector_sequence,
-		std::array<double, 16> offset_cartesian,
-		std::array<double, 6> offset_force ) = 0;
+		const std::array<double, 16> offset_cartesian,
+		const std::array<double, 6> offset_force ) = 0;
 	virtual void move_sequence(
 		const std::vector<robot_config_7dof>& q_sequence,
 		const std::vector<wrench>& f_sequence,
