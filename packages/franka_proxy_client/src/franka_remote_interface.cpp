@@ -53,7 +53,8 @@ void franka_remote_interface::move_to(const robot_config_7dof& target)
 
 void franka_remote_interface::move_to(const Eigen::Vector<double, 7>& target)
 {
-	move_to(franka_proxy_util::cvt2stdArray(target));
+	const std::array<double, 7> pos = franka_proxy_util::convert_to_std_array<double, 7>(target);
+	move_to(pos);
 }
 
 

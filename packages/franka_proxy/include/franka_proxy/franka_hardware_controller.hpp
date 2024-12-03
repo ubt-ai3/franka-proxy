@@ -11,6 +11,7 @@
 
 #include <atomic>
 #include <condition_variable>
+#include <list>
 #include <string>
 #include <vector>
 #include <optional>

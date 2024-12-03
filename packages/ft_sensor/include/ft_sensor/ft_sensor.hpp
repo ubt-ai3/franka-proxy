@@ -1,8 +1,11 @@
 #pragma once
 
-#include <functional>
+
 #include <exception>
+#include <mutex>
+
 #include <Eigen/Geometry>
+
 
 namespace franka_proxy
 {
@@ -20,7 +23,8 @@ public:
 
 	ft_sensor_response read() const
 	{
-		auto ret = current_ft_sensor_response_.load();
+		std::lock_guard lock(current_ft_sensor_response_mutex_);
+		auto ret = current_ft_sensor_response_;
 		for (int i = 0; i < 6; i++)
 			ret.data[i] -= bias_(i);
 		return ret;
@@ -28,7 +32,8 @@ public:
 
 	ft_sensor_response read_raw() const
 	{
-		return current_ft_sensor_response_.load();
+		std::lock_guard lock(current_ft_sensor_response_mutex_);
+		return current_ft_sensor_response_;
 	}
 
 	Eigen::Affine3f fts_t_flange() const
@@ -66,14 +71,16 @@ protected:
 	          Eigen::Affine3f affine3_f,
 	          Eigen::Vector<double, 6> bias,
 	          Eigen::Vector3d load_mass)
-		: fts_t_flange_(std::move(transform)),
+		: current_ft_sensor_response_(),
+		  fts_t_flange_(std::move(transform)),
 		  ee_t_fts_(std::move(affine3_f)),
 		  bias_(std::move(bias)),
 		  load_mass_(std::move(load_mass))
 	{
 	}
 
-	std::atomic<ft_sensor_response> current_ft_sensor_response_;
+	ft_sensor_response current_ft_sensor_response_;
+	mutable std::mutex current_ft_sensor_response_mutex_;
 
 	Eigen::Affine3f fts_t_flange_;
 	Eigen::Affine3f ee_t_fts_;
@@ -85,7 +92,7 @@ protected:
 class ft_sensor_connection_exception : public std::exception
 {
 public:
-	const char* what() const override
+	const char* what() const noexcept override
 	{
 		return "no force/torque sensor available";
 	}
