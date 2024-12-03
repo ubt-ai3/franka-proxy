@@ -338,12 +338,12 @@ void franka_controller_emulated::move_sequence(
 		const auto next_timepoint = now +
 			std::chrono::duration_cast<std::chrono::milliseconds>
 			(std::chrono::duration<double>(move_update_rate_));
-		unsigned long long ticks_passed = std::max(
-			std::chrono::duration_cast<std::chrono::milliseconds>(now - start_time).count(), 0ll);
+		unsigned long long ticks_passed = 
+			std::chrono::duration_cast<std::chrono::milliseconds>(now - start_time).count();
 
 
 		//stop after sequence is finished
-		if (ticks_passed >= q_sequence.size())
+		if (ticks_passed < 0 || ticks_passed >= q_sequence.size())
 			break;
 
 		// Copy from process variables to exposed state.
