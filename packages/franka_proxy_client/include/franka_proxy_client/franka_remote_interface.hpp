@@ -1,3 +1,5 @@
+#ifndef INCLUDED__FRANKA_PROXY_CLIENT__FRANKA_REMOTE_INTERFACE_HPP
+#define INCLUDED__FRANKA_PROXY_CLIENT__FRANKA_REMOTE_INTERFACE_HPP
 /**
  *************************************************************************
  *
@@ -7,7 +9,6 @@
  *
  ************************************************************************/
 
-#pragma once
 
 
 #include <array>
@@ -392,3 +393,5 @@ private:
 	static constexpr unsigned short franka_state_port = 4712;
 };
 } /* namespace franka_proxy */
+
+#endif // INCLUDED__FRANKA_PROXY_CLIENT__FRANKA_REMOTE_INTERFACE_HPP

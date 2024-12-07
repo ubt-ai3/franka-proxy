@@ -1,3 +1,5 @@
+#ifndef INCLUDED__FRANKA_PROXY__MOTION_GENERATOR_JOINT_MAX_ACCEL_HPP
+#define INCLUDED__FRANKA_PROXY__MOTION_GENERATOR_JOINT_MAX_ACCEL_HPP
 /**
  *************************************************************************
  *
@@ -8,7 +10,6 @@
  *
  ************************************************************************/
 
-#pragma once
 
 
 #include <atomic>
@@ -131,3 +132,5 @@ private:
 } /* namespace detail */
 } /* namespace franka_proxy */
 
+
+#endif // INCLUDED__FRANKA_PROXY__MOTION_GENERATOR_JOINT_MAX_ACCEL_HPP

@@ -1,3 +1,5 @@
+#ifndef INCLUDED__FRANKA_CONTROL__FRANKA_CONTROLLER_HPP
+#define INCLUDED__FRANKA_CONTROL__FRANKA_CONTROLLER_HPP
 /**
  *************************************************************************
  *
@@ -7,7 +9,6 @@
  *
  ************************************************************************/
 
-#pragma once
 
 
 #include <atomic>
@@ -149,3 +150,5 @@ private:
 	std::atomic_bool terminate_internal_thread_;
 };
 } /* namespace franka_control */
+
+#endif // INCLUDED__FRANKA_CONTROL__FRANKA_CONTROLLER_HPP

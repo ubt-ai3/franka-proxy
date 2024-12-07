@@ -1,3 +1,5 @@
+#ifndef INCLUDED__FRANKA_PROXY_SHARE__EXCEPTION_HPP
+#define INCLUDED__FRANKA_PROXY_SHARE__EXCEPTION_HPP
 /**
  *************************************************************************
  *
@@ -7,7 +9,6 @@
  *
  ************************************************************************/
 
-#pragma once
 
 
 #include <exception>
@@ -104,3 +105,5 @@ public:
 	}
 };
 } /* namespace franka_control */
+
+#endif // INCLUDED__FRANKA_PROXY_SHARE__EXCEPTION_HPP

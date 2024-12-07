@@ -1,3 +1,5 @@
+#ifndef INCLUDED__FRANKA_PROXY__MOTION_GENERATOR_ADMITTANCE_HPP
+#define INCLUDED__FRANKA_PROXY__MOTION_GENERATOR_ADMITTANCE_HPP
 /**
  *************************************************************************
  *
@@ -7,7 +9,6 @@
  *
  ************************************************************************/
 
-#pragma once
 
 
 #include <vector>
@@ -134,3 +135,5 @@ namespace franka_proxy
 
 	} /* namespace detail */
 } /* namespace franka_proxy */
+
+#endif // INCLUDED__FRANKA_PROXY__MOTION_GENERATOR_ADMITTANCE_HPP

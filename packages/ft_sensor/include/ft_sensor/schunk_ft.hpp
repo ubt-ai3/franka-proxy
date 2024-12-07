@@ -1,4 +1,5 @@
-#pragma once
+#ifndef INCLUDED__FT_SENSOR__SCHUNK_FT_HPP
+#define INCLUDED__FT_SENSOR__SCHUNK_FT_HPP
 
 #include <mutex>
 
@@ -87,3 +88,5 @@ private:
 	Eigen::Vector3d load_mass_from_config(std::string config_file) const;
 };
 } /* namespace franka_proxy */
+
+#endif // INCLUDED__FT_SENSOR__SCHUNK_FT_HPP

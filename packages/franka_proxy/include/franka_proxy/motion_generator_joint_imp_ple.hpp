@@ -1,3 +1,5 @@
+#ifndef INCLUDED__FRANKA_PROXY__MOTION_GENERATOR_JOINT_IMP_PLE_HPP
+#define INCLUDED__FRANKA_PROXY__MOTION_GENERATOR_JOINT_IMP_PLE_HPP
 /**
  *************************************************************************
  *
@@ -11,7 +13,6 @@
  *
  ************************************************************************/
 
-#pragma once
 
 
 #include <vector>
@@ -115,3 +116,4 @@ namespace franka_proxy
 		};
 	} /* namespace detail */
 } /* namespace franka_proxy */
+#endif // INCLUDED__FRANKA_PROXY__MOTION_GENERATOR_JOINT_IMP_PLE_HPP

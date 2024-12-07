@@ -1,4 +1,5 @@
-#pragma once
+#ifndef INCLUDED__FT_SENSOR__FT_SENSOR_HPP
+#define INCLUDED__FT_SENSOR__FT_SENSOR_HPP
 
 #include <functional>
 #include <exception>
@@ -91,3 +92,5 @@ public:
 	}
 };
 } /* namespace franka_proxy */
+
+#endif // INCLUDED__FT_SENSOR__FT_SENSOR_HPP

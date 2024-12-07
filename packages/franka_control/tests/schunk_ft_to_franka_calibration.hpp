@@ -1,4 +1,5 @@
-#pragma once
+#ifndef INCLUDED__TESTS__SCHUNK_FT_TO_FRANKA_CALIBRATION_HPP
+#define INCLUDED__TESTS__SCHUNK_FT_TO_FRANKA_CALIBRATION_HPP
 
 #include <array>
 
@@ -37,3 +38,5 @@ private:
 	static Eigen::Matrix3d get_axis_aligned_orientation(
 		const Eigen::Vector3d& up, const Eigen::Vector3d& front);
 };
+
+#endif // INCLUDED__TESTS__SCHUNK_FT_TO_FRANKA_CALIBRATION_HPP

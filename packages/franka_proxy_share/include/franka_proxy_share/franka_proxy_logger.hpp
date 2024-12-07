@@ -1,3 +1,5 @@
+#ifndef INCLUDED__FRANKA_PROXY_SHARE__FRANKA_PROXY_LOGGER_HPP
+#define INCLUDED__FRANKA_PROXY_SHARE__FRANKA_PROXY_LOGGER_HPP
 /**
  *************************************************************************
  *
@@ -8,7 +10,6 @@
  ************************************************************************/
 
 
-#pragma once
 
 
 #include <array>
@@ -160,3 +161,5 @@ private:
 };
 
 }
+
+#endif // INCLUDED__FRANKA_PROXY_SHARE__FRANKA_PROXY_LOGGER_HPP

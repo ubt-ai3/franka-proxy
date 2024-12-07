@@ -1,3 +1,5 @@
+#ifndef INCLUDED__FRANKA_PROXY_SHARE__IKFAST_H
+#define INCLUDED__FRANKA_PROXY_SHARE__IKFAST_H
 // -*- coding: utf-8 -*-
 // Copyright (C) 2012-2014 Rosen Diankov <rosen.diankov@gmail.com>
 //
@@ -333,3 +335,4 @@ IKFAST_API const char* GetKinematicsHash();
 #endif
 
 #endif // IKFAST_HAS_LIBRARY
+#endif // INCLUDED__FRANKA_PROXY_SHARE__IKFAST_H

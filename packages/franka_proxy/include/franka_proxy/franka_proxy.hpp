@@ -1,3 +1,5 @@
+#ifndef INCLUDED__FRANKA_PROXY__FRANKA_PROXY_HPP
+#define INCLUDED__FRANKA_PROXY__FRANKA_PROXY_HPP
 /**
  *************************************************************************
  *
@@ -7,7 +9,6 @@
  *
  ************************************************************************/
 
-#pragma once
 
 #include "franka_hardware_controller.hpp"
 #include "franka_network_control_server.hpp"
@@ -41,3 +42,5 @@ private:
 	static constexpr unsigned short franka_state_port = 4712;
 };
 } /* namespace franka_proxy */
+
+#endif // INCLUDED__FRANKA_PROXY__FRANKA_PROXY_HPP

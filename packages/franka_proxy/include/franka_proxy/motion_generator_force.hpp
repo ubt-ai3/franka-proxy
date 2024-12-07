@@ -1,3 +1,5 @@
+#ifndef INCLUDED__FRANKA_PROXY__MOTION_GENERATOR_FORCE_HPP
+#define INCLUDED__FRANKA_PROXY__MOTION_GENERATOR_FORCE_HPP
 /**
  *************************************************************************
  *
@@ -7,7 +9,6 @@
  *
  ************************************************************************/
 
-#pragma once
 
 
 #include <vector>
@@ -185,3 +186,5 @@ private:
 
 } /* namespace detail */
 } /* namespace franka_proxy */
+
+#endif // INCLUDED__FRANKA_PROXY__MOTION_GENERATOR_FORCE_HPP

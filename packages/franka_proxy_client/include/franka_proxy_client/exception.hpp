@@ -1,3 +1,5 @@
+#ifndef INCLUDED__FRANKA_PROXY_CLIENT__EXCEPTION_HPP
+#define INCLUDED__FRANKA_PROXY_CLIENT__EXCEPTION_HPP
 /**
  *************************************************************************
  *
@@ -7,7 +9,6 @@
  *
  ************************************************************************/
 
-#pragma once
 
 
 #include <exception>
@@ -222,3 +223,5 @@ public:
 	}
 };
 } /* namespace franka_proxy */
+
+#endif // INCLUDED__FRANKA_PROXY_CLIENT__EXCEPTION_HPP

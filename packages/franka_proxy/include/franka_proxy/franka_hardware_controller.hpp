@@ -1,3 +1,5 @@
+#ifndef INCLUDED__FRANKA_PROXY__FRANKA_HARDWARE_CONTROLLER_HPP
+#define INCLUDED__FRANKA_PROXY__FRANKA_HARDWARE_CONTROLLER_HPP
 /**
  *************************************************************************
  *
@@ -7,7 +9,6 @@
  *
  ************************************************************************/
 
-#pragma once
 
 #include <atomic>
 #include <condition_variable>
@@ -257,3 +258,5 @@ namespace franka_proxy
 		std::thread gripper_state_thread_;
 	};
 }
+
+#endif // INCLUDED__FRANKA_PROXY__FRANKA_HARDWARE_CONTROLLER_HPP

@@ -1,3 +1,5 @@
+#ifndef INCLUDED__FRANKA_PROXY_SHARE__FRANKA_PROXY_UTIL_HPP
+#define INCLUDED__FRANKA_PROXY_SHARE__FRANKA_PROXY_UTIL_HPP
 /*********************************
 * 
 * @file franka_proxy_util.hpp
@@ -6,7 +8,6 @@
 * 
 *********************************/
 
-#pragma once
 
 #include <vector>
 #include <numbers>
@@ -97,3 +98,4 @@ namespace franka_proxy
 	};
 }
 /* namespace franka_proxy*/
+#endif // INCLUDED__FRANKA_PROXY_SHARE__FRANKA_PROXY_UTIL_HPP

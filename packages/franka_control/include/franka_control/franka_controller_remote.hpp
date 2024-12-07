@@ -1,3 +1,5 @@
+#ifndef INCLUDED__FRANKA_CONTROL__FRANKA_CONTROLLER_REMOTE_HPP
+#define INCLUDED__FRANKA_CONTROL__FRANKA_CONTROLLER_REMOTE_HPP
 /**
  *************************************************************************
  *
@@ -7,7 +9,6 @@
  *
  ************************************************************************/
 
-#pragma once
 
 
 #include <mutex>
@@ -90,3 +91,5 @@ private:
 	double speed_factor_;
 };
 } /* namespace franka_control */
+
+#endif // INCLUDED__FRANKA_CONTROL__FRANKA_CONTROLLER_REMOTE_HPP

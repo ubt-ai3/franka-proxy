@@ -1,3 +1,5 @@
+#ifndef INCLUDED__FRANKA_PROXY_SHARE__FRANKA_PROXY_COMMANDS_HPP
+#define INCLUDED__FRANKA_PROXY_SHARE__FRANKA_PROXY_COMMANDS_HPP
 /**
  *************************************************************************
  *
@@ -7,7 +9,6 @@
  *
  ************************************************************************/
 
-#pragma once
 
 
 #include <array>
@@ -712,3 +713,5 @@ void from_json(const nlohmann::json& json, command_get_config_response& object);
 
 
 } /* namespace franka_proxy */
+
+#endif // INCLUDED__FRANKA_PROXY_SHARE__FRANKA_PROXY_COMMANDS_HPP

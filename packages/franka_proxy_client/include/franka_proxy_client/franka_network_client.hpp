@@ -1,4 +1,6 @@
-﻿/**
+#ifndef INCLUDED__FRANKA_PROXY_CLIENT__FRANKA_NETWORK_CLIENT_HPP
+#define INCLUDED__FRANKA_PROXY_CLIENT__FRANKA_NETWORK_CLIENT_HPP
+/**
  *************************************************************************
  *
  * @file franka_network_client.hpp
@@ -6,9 +8,6 @@
  * Network communication with a Franka Emika Panda robot.
  *
  ************************************************************************/
-
-#pragma once
-
 
 #include <list>
 #include <memory>
@@ -121,3 +120,5 @@ private:
 	std::unique_ptr<asio_tcp_socket> connection_;
 };
 } /* namespace franka_proxy */
+
+#endif // INCLUDED__FRANKA_PROXY_CLIENT__FRANKA_NETWORK_CLIENT_HPP

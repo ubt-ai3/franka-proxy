@@ -1,3 +1,5 @@
+#ifndef INCLUDED__FRANKA_PROXY_CLIENT__FORWARD_HPP
+#define INCLUDED__FRANKA_PROXY_CLIENT__FORWARD_HPP
 /**
  *************************************************************************
  *
@@ -7,7 +9,6 @@
  *
  ************************************************************************/
 
-#pragma once
 
 
 #include <array>
@@ -26,3 +27,5 @@ class franka_remote_controller;
 
 
 } /* namespace franka_proxy 
+
+#endif // INCLUDED__FRANKA_PROXY_CLIENT__FORWARD_HPP

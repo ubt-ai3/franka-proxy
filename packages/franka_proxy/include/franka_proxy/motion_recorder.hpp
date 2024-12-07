@@ -1,3 +1,5 @@
+#ifndef INCLUDED__FRANKA_PROXY__MOTION_RECORDER_HPP
+#define INCLUDED__FRANKA_PROXY__MOTION_RECORDER_HPP
 /**
  *************************************************************************
  *
@@ -7,7 +9,6 @@
  *
  ************************************************************************/
 
-#pragma once
 
 
 #include <array>
@@ -69,3 +70,5 @@ private:
 };
 } /* namespace detail */
 } /* namespace franka_proxy */
+
+#endif // INCLUDED__FRANKA_PROXY__MOTION_RECORDER_HPP

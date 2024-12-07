@@ -1,3 +1,5 @@
+#ifndef INCLUDED__FRANKA_PROXY__MOTION_GENERATOR_SEQ_CART_VEL_TAU_HPP
+#define INCLUDED__FRANKA_PROXY__MOTION_GENERATOR_SEQ_CART_VEL_TAU_HPP
 /**
  *************************************************************************
  *
@@ -7,7 +9,6 @@
  *
  ************************************************************************/
 
-#pragma once
 
 
 #include <atomic>
@@ -254,3 +255,4 @@ private:
 
 } /* namespace detail */
 } /* namespace franka_proxy */
+#endif // INCLUDED__FRANKA_PROXY__MOTION_GENERATOR_SEQ_CART_VEL_TAU_HPP
