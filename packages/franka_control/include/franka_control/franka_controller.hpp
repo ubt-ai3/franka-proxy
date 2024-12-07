@@ -10,11 +10,11 @@
  ************************************************************************/
 
 
-
 #include <atomic>
+#include <chrono>
+#include <optional>
 #include <thread>
 #include <vector>
-#include <optional>
 
 #include <Eigen/Geometry>
 
@@ -47,15 +47,25 @@ class franka_controller
 {
 public:
 	franka_controller();
-
 	virtual ~franka_controller() noexcept;
+
+	/**
+	 * Fetch current state from the back-end robot.
+	 * Call regularly to avoid overflow in network buffers,
+	 * e.g. through a robot_controller_task.
+	 */
+	virtual void update() = 0;
+
+
+	/**
+	 * todo doc
+	 */
+	virtual void automatic_error_recovery() = 0;
 
 
 	virtual void move(const robot_config_7dof& target) = 0;
-	virtual void move_with_force(
-		const robot_config_7dof& target,
-		const wrench& target_force_torques) = 0;
 	void move(const Eigen::Affine3d& target_world_T_tcp);
+
 
 	/**
 	 * Moves the robot to given target. If target is reached, returns true;
@@ -70,14 +80,17 @@ public:
 	virtual void grasp_gripper(double speed = 0.025, double force = 0.05) = 0;
 	virtual bool gripper_grasped() const = 0;
 
-	virtual double speed_factor() const = 0;
+
+	/**
+	 * todo doc
+	 */
+	virtual void set_guiding_mode(
+		bool x, bool y, bool z, 
+		bool rx, bool ry, bool rz, bool elbow) const = 0;
 	virtual void set_speed_factor(double speed_factor) = 0;
 
-	virtual void set_guiding_mode(bool x, bool y, bool z, bool rx, bool ry, bool rz, bool elbow) const = 0;
 
-	virtual void automatic_error_recovery() = 0;
-
-
+	virtual double speed_factor() const = 0;
 	virtual robot_config_7dof current_config() const = 0;
 	virtual wrench current_force_torque() const = 0;
 	virtual int current_gripper_pos() const = 0; // in [mm]
@@ -89,24 +102,25 @@ public:
 
 
 	/**
-	 * Fetch current state from the back-end robot.
-	 * Call regularly to avoid overflow in network buffers,
-	 * e.g. through a robot_controller_task.
+	 * todo doc
 	 */
-	virtual void update() = 0;
-
 	virtual void start_recording(std::optional<std::string> log_file_path = std::nullopt) = 0;
 	virtual std::pair<std::vector<robot_config_7dof>, std::vector<wrench>> stop_recording() = 0;
-	virtual void move_sequence(
-		const std::vector<robot_config_7dof>& q_sequence,
-		const std::vector<wrench>& f_sequence,
-		const std::vector<selection_diagonal>& selection_vector_sequence,
-		const std::array<double, 16> offset_cartesian,
-		const std::array<double, 6> offset_force ) = 0;
+
+
+	/**
+	 * todo doc
+	 */
 	virtual void move_sequence(
 		const std::vector<robot_config_7dof>& q_sequence,
 		const std::vector<wrench>& f_sequence,
 		const std::vector<selection_diagonal>& selection_vector_sequence) = 0;
+	virtual void move_sequence(
+		const std::vector<robot_config_7dof>& q_sequence,
+		const std::vector<wrench>& f_sequence,
+		const std::vector<selection_diagonal>& selection_vector_sequence,
+		std::array<double, 16> offset_cartesian,
+		std::array<double, 6> offset_force) = 0;
 
 
 	const Eigen::Affine3d j7_T_flange;
@@ -143,11 +157,12 @@ public:
 private:
 	void task_main();
 
-	static const double update_time_step_secs_;
 	franka_controller& controller_;
 
 	std::thread internal_thread_;
 	std::atomic_bool terminate_internal_thread_;
+
+	static constexpr auto step_duration = std::chrono::milliseconds(20);
 };
 } /* namespace franka_control */
 

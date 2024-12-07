@@ -9,8 +9,6 @@
 
 #include "franka_controller_emulated.hpp"
 
-#include <iostream>
-
 
 namespace franka_control
 {
@@ -140,67 +138,6 @@ void franka_controller_emulated::move(const robot_config_7dof& target)
 		{
 			std::lock_guard<std::mutex> lk(controller_mutex_);
 			state_joint_values_ = current_joint_values;
-		}
-
-		std::this_thread::sleep_until(next_timepoint);
-	}
-}
-
-void franka_controller_emulated::move_with_force(const robot_config_7dof& target,
-                                                 const wrench& target_force_torques)
-{
-	robot_config_7dof current_joint_values = current_config();
-	wrench current_force_torque_values = current_force_torque();
-
-	auto last_time = std::chrono::steady_clock::now();
-
-	while (!almost_equal(target, current_joint_values))
-	{
-		auto next_timepoint =
-			std::chrono::steady_clock::now() +
-			std::chrono::duration_cast<std::chrono::milliseconds>
-			(std::chrono::duration<double>(move_update_rate_));
-
-		// Determine joint-space length each joint has moved
-		// since the last iteration.
-		auto now = std::chrono::steady_clock::now();
-		double seconds_passed =
-			std::chrono::duration_cast<std::chrono::duration<double>>
-			(now - last_time).count();
-		double move_length =
-			seconds_passed *
-			speed_factor() *
-			max_speed_length_per_sec_;
-
-		last_time = now;
-
-		// Move robot joints by given length.
-		double length_to_next =
-			length(target - current_joint_values);
-
-		if (length_to_next < move_length)
-		{
-			// If the next waymark is in reach, move there.
-			current_joint_values = target;
-			current_force_torque_values = target_force_torques;
-		}
-		else
-		{
-			// Move into the direction of the next waymark,
-			// but don't actually reach it.
-			current_joint_values = current_joint_values +
-				(target - current_joint_values) *
-				(move_length / length_to_next);
-			current_force_torque_values = current_force_torque_values +
-				(target_force_torques - current_force_torque_values) *
-				(move_length / length_to_next);
-		}
-
-		// Copy from process variables to exposed state.
-		{
-			std::lock_guard<std::mutex> lk(controller_mutex_);
-			state_joint_values_ = current_joint_values;
-			state_force_torque_values_ = current_force_torque_values;
 		}
 
 		std::this_thread::sleep_until(next_timepoint);

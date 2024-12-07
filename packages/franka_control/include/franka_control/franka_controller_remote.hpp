@@ -10,7 +10,6 @@
  ************************************************************************/
 
 
-
 #include <mutex>
 #include <optional>
 
@@ -35,17 +34,15 @@ namespace franka_control
  * Control a franka emika panda robot via the franka_proxy server.
  *
  ************************************************************************/
-class franka_controller_remote : public franka_controller
+class franka_controller_remote final
+	: public franka_controller
 {
 public:
-	franka_controller_remote
-	(const std::string& ip);
+	franka_controller_remote(const std::string& ip);
 	~franka_controller_remote() noexcept override;
 
 
 	void move(const robot_config_7dof& target) override;
-	void move_with_force(const robot_config_7dof& target,
-	                     const wrench& target_force_torques) override;
 	bool move_until_contact(const robot_config_7dof& target) override;
 
 	void open_gripper() override;
@@ -65,14 +62,15 @@ public:
 	void update() override;
 
 
-	void start_recording(std::optional<std::string> log_file_path = std::nullopt) override;
+	void start_recording(
+		std::optional<std::string> log_file_path = std::nullopt) override;
 	std::pair<std::vector<robot_config_7dof>, std::vector<wrench>> stop_recording() override;
 	void move_sequence(
 		const std::vector<robot_config_7dof>& q_sequence,
 		const std::vector<wrench>& f_sequence,
 		const std::vector<selection_diagonal>& selection_vector_sequence,
-		const std::array<double, 16> offset_cartesian = {0},
-		const std::array<double, 6> offset_force = {0}) override;
+		std::array<double, 16> offset_cartesian = {0},
+		std::array<double, 6> offset_force = {0}) override;
 
 	void move_sequence(
 		const std::vector<robot_config_7dof>& q_sequence,
@@ -82,8 +80,10 @@ public:
 	void set_fts_bias(const wrench& bias);
 	void set_fts_load_mass(const Eigen::Vector3d& load_mass);
 
-	void set_guiding_mode(bool x, bool y, bool z, bool rx, bool ry, bool rz, bool elbow) const override;
-	
+	void set_guiding_mode(
+		bool x, bool y, bool z,
+		bool rx, bool ry, bool rz, bool elbow) const override;
+
 private:
 	std::unique_ptr<franka_proxy::franka_remote_interface> controller_;
 

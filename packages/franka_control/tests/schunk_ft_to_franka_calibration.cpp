@@ -194,7 +194,8 @@ Eigen::Vector3d schunk_ft_sensor_to_franka_calibration::calibrate_load(
 std::array<Eigen::Affine3d, 24> schunk_ft_sensor_to_franka_calibration::calibration_poses_bias()
 {
 	const franka_control::robot_config_7dof initial_position{
-		1.88336, 0.0335908, -1.86277, -1.26855, 0.0206543, 1.34875, 0.706602 };
+		1.88336, 0.0335908, -1.86277, -1.26855, 0.0206543, 1.34875, 0.706602
+	};
 
 	// Prepare 24 poses with fixed end-effector position.
 	std::array<Eigen::Affine3d, 24> poses;
@@ -217,9 +218,9 @@ std::array<Eigen::Affine3d, 24> schunk_ft_sensor_to_franka_calibration::calibrat
 		// Set four poses with "up" orientation.
 		poses[start_idx].linear() = get_axis_aligned_orientation(up, front);
 		for (int i = 1; i < poses_per_axis / 2; ++i)
-			poses[start_idx + i].linear() = (poses[start_idx + i - 1] * 
+			poses[start_idx + i].linear() = (poses[start_idx + i - 1] *
 				Eigen::Affine3d(Eigen::AngleAxis(0.5 * std::numbers::pi, up))).linear();
-		
+
 		// Set four poses with "-up" orientation.
 		poses[start_idx + poses_per_axis / 2].linear() = get_axis_aligned_orientation(-up, front);
 		for (int i = 1; i < poses_per_axis / 2; ++i)
@@ -234,7 +235,8 @@ std::array<Eigen::Affine3d, 24> schunk_ft_sensor_to_franka_calibration::calibrat
 std::array<Eigen::Affine3d, 5> schunk_ft_sensor_to_franka_calibration::calibration_poses_load()
 {
 	const franka_control::robot_config_7dof initial_position{
-		-1.31589, 0.305587, 1.48077, -1.818, -0.309624, 1.87622, 0.835527};
+		-1.31589, 0.305587, 1.48077, -1.818, -0.309624, 1.87622, 0.835527
+	};
 
 	// Set 5 likely robot orientations for force/torque controlled motions.
 	std::array<Eigen::Affine3d, 5> poses;

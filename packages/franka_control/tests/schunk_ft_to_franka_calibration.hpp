@@ -11,7 +11,7 @@ class schunk_ft_sensor_to_franka_calibration
 {
 public:
 	// calculates and sets the bias of the kms used by franka
-	// @return the current bias of the kms (depends on temperature & how mcuh the screws were tightened),
+	// @return the current bias of the kms (depends on temperature & how much the screws were tightened),
 	// e. g. (-0.556029, -3.17169, 0.895239, -0.051808, -0.0642001, -0.0869519)
 	// reads and writes from/to config_file if exists @TODO JHa this is not really the intended behaviour
 	static franka_control::wrench calibrate_bias(
@@ -32,7 +32,6 @@ public:
 		const std::string& config_file = "./assets/fts-config.json");
 
 private:
-
 	static std::array<Eigen::Affine3d, 24> calibration_poses_bias();
 	static std::array<Eigen::Affine3d, 5> calibration_poses_load();
 	static Eigen::Matrix3d get_axis_aligned_orientation(

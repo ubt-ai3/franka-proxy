@@ -9,8 +9,8 @@
 
 #include "franka_controller.hpp"
 
-#include <vector>
 #include <iostream>
+#include <vector>
 
 #include <franka_proxy_share/franka_proxy_util.hpp>
 
@@ -103,8 +103,8 @@ Eigen::Affine3d franka_controller::build_tcp_T_j7()
 //////////////////////////////////////////////////////////////////////////
 
 
-franka_update_task::franka_update_task
-(franka_controller& controller)
+franka_update_task::franka_update_task(
+	franka_controller& controller)
 	: controller_(controller),
 	  terminate_internal_thread_(false)
 {
@@ -126,9 +126,6 @@ franka_update_task::~franka_update_task() noexcept
 
 void franka_update_task::task_main()
 {
-	const auto step_duration = std::chrono::duration_cast<std::chrono::microseconds>
-		(std::chrono::duration<double>(update_time_step_secs_));
-
 	while (!terminate_internal_thread_)
 	{
 		auto next_time_point = std::chrono::steady_clock::now() + step_duration;
@@ -138,7 +135,4 @@ void franka_update_task::task_main()
 		std::this_thread::sleep_until(next_time_point);
 	}
 }
-
-
-const double franka_update_task::update_time_step_secs_ = 0.01667;
 } /* namespace franka_control */

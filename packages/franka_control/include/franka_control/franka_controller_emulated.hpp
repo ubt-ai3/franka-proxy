@@ -10,7 +10,6 @@
  ************************************************************************/
 
 
-
 #include <mutex>
 #include <optional>
 
@@ -31,36 +30,39 @@ namespace franka_control
  *		and uses an implementation-specific maximum speed.
  *
  ************************************************************************/
-class franka_controller_emulated : public franka_controller
+class franka_controller_emulated final
+	: public franka_controller
 {
 public:
 	franka_controller_emulated();
 	~franka_controller_emulated() noexcept override;
 
+	void update() override;
+
+	void automatic_error_recovery() override;
 
 	void move(const robot_config_7dof& target) override;
-	void move_with_force(const robot_config_7dof& target,
-	                     const wrench& target_force_torques) override;
 	bool move_until_contact(const robot_config_7dof& target) override;
+
 
 	void open_gripper() override;
 	void close_gripper() override;
 	void grasp_gripper(double speed = 0.025, double force = 0.05) override;
 	bool gripper_grasped() const override;
 
+
 	double speed_factor() const override;
 	void set_speed_factor(double speed_factor) override;
+	void set_guiding_mode(
+		bool x, bool y, bool z,
+		bool rx, bool ry, bool rz, bool elbow) const override;
 
-	void set_guiding_mode(bool x, bool y, bool z, bool rx, bool ry, bool rz,bool elbow) const override;
-
-	void automatic_error_recovery() override;
 
 	robot_config_7dof current_config() const override;
 	wrench current_force_torque() const override;
 	int current_gripper_pos() const override;
 	int max_gripper_pos() const override;
 
-	void update() override;
 
 	void start_recording(std::optional<std::string> log_file_path = std::nullopt) override;
 
@@ -80,8 +82,8 @@ public:
 		const std::vector<robot_config_7dof>& q_sequence,
 		const std::vector<wrench>& f_sequence,
 		const std::vector<selection_diagonal>& selection_vector_sequence,
-		const std::array<double, 16> offset_cartesian = {0},
-		const std::array<double, 6> offset_force ={0}) override;
+		std::array<double, 16> offset_cartesian = {0},
+		std::array<double, 6> offset_force = {0}) override;
 
 	/**
 	* Simulates a playback movement, but ignores force and selection values.
@@ -90,6 +92,7 @@ public:
 		const std::vector<robot_config_7dof>& q_sequence,
 		const std::vector<wrench>& f_sequence,
 		const std::vector<selection_diagonal>& selection_vector_sequence) override;
+
 private:
 	std::chrono::time_point<std::chrono::steady_clock> recording_start_;
 
