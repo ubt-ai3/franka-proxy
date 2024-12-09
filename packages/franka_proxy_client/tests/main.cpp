@@ -23,8 +23,14 @@ constexpr franka_proxy::robot_config_7dof starting_pos
 
 void franka_proxy_client_test(const std::string& ip, test_mode test, const std::vector<std::string>& params);
 
-void ple_motion_record_test(
-	franka_proxy::franka_remote_interface& robot, double speed, double duration, bool log, std::string file);
+
+void print_status(const franka_proxy::franka_remote_interface& robot);
+template <class Function> void execute_retry(
+	Function&& f, franka_proxy::franka_remote_interface& robot);
+double calculate_pose_error(const franka_proxy::robot_config_7dof& pose_d, const franka_proxy::robot_config_7dof& pose_c);
+
+
+void ple_motion_record_test(franka_proxy::franka_remote_interface& robot, double speed, double duration, bool log, std::string file);
 void ptp_test(franka_proxy::franka_remote_interface& robot, double margin, bool log, std::string& file);
 void gripper_test(franka_proxy::franka_remote_interface& robot, double margin, bool grasp);
 void playback_test(franka_proxy::franka_remote_interface& robot, bool log, std::string& file);

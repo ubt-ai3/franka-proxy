@@ -33,13 +33,13 @@ namespace franka_proxy
 			std::optional<std::string> log_file_path)
 			:
 			model_(robot.loadModel()),
-			sensor_(placeholder_, placeholder_),
 			state_lock_(state_lock),
 			state_(robot_state),
 			duration_(duration),
 			desired_speed_(speed),
-			logger_(log_file_path.value_or("none"), 0, 1, 1, 1, 3),
-			logging_(log_file_path.has_value())
+			logging_(log_file_path.has_value()),
+			sensor_(placeholder_, placeholder_),
+			logger_(log_file_path.value_or("none"), 0, 1, 1, 1, 3)
 		{
 			sensor_.set_load_mass(no_mass_);
 			init_ple_motion_generator(robot, state_lock, robot_state);
@@ -70,7 +70,7 @@ namespace franka_proxy
 		franka::Torques ple_motion_generator::callback
 		(const franka::RobotState& robot_state,
 			franka::Duration period,
-			std::function<Eigen::Matrix<double, 7, 1>(const double)> get_joint_position_error)
+			const std::function<Eigen::Matrix<double, 7, 1>(const double)>& get_joint_position_error)
 		{
 			{
 				std::lock_guard<std::mutex> state_guard(state_lock_);

@@ -5,6 +5,7 @@
 
 #include <asio/io_service.hpp>
 #include <asio/ip/udp.hpp>
+
 #include <Eigen/Geometry>
 
 #include "ft_sensor.hpp"
@@ -16,18 +17,20 @@ class schunk_ft_sensor final
 	: public ft_sensor
 {
 public:
-	schunk_ft_sensor(const Eigen::Affine3f& kms_T_flange,
-	                 const Eigen::Affine3f& EE_T_kms,
-	                 const Eigen::Vector<double, 6>& bias,
-	                 const Eigen::Vector3d& load_mass);
+	schunk_ft_sensor(
+		const Eigen::Affine3f& kms_T_flange,
+		const Eigen::Affine3f& EE_T_kms,
+		const Eigen::Vector<double, 6>& bias,
+		const Eigen::Vector3d& load_mass);
 
-	schunk_ft_sensor(const Eigen::Affine3f& kms_T_flange,
-	                 const Eigen::Affine3f& EE_T_kms,
-	                 std::string config_file = "../franka_proxy_share/assets/fts-config.json");
+	schunk_ft_sensor(
+		const Eigen::Affine3f& kms_T_flange,
+		const Eigen::Affine3f& EE_T_kms,
+		const std::string& = "../franka_proxy_share/assets/fts-config.json");
 
 	~schunk_ft_sensor() override;
 
-	void update_calibration(std::string config_file = "../franka_proxy_share/assets/fts-config.json");
+	void update_calibration(const std::string& config_file = "../franka_proxy_share/assets/fts-config.json");
 
 private:
 	void set_response_handler(const std::function<void(const ft_sensor_response&)>& functor);
@@ -84,8 +87,8 @@ private:
 		return msg;
 	}();
 
-	Eigen::Vector<double, 6> bias_from_config(std::string config_file) const;
-	Eigen::Vector3d load_mass_from_config(std::string config_file) const;
+	Eigen::Vector<double, 6> bias_from_config(const std::string& config_file) const;
+	Eigen::Vector3d load_mass_from_config(const std::string& config_file) const;
 };
 } /* namespace franka_proxy */
 

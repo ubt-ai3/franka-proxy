@@ -703,7 +703,7 @@ namespace franka_proxy
 
 
 	std::pair<std::vector<robot_config_7dof>, std::vector<wrench>>
-		franka_hardware_controller::start_recording(float seconds, std::optional<std::string> log_file_path)
+		franka_hardware_controller::recording_for(float seconds, std::optional<std::string> log_file_path)
 	{
 		set_control_loop_running(true);
 		{

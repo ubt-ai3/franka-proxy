@@ -120,8 +120,9 @@ namespace franka_proxy
 		 */
 		void start_recording(std::optional<std::string> log_file_path = std::nullopt);
 		std::pair<std::vector<robot_config_7dof>, std::vector<wrench>> stop_recording();
-		std::pair<std::vector<robot_config_7dof>, std::vector<wrench>> start_recording(
-			float seconds, std::optional<std::string> log_file_path = std::nullopt);
+		std::pair<std::vector<robot_config_7dof>, std::vector<wrench>> recording_for(
+			float seconds, 
+			std::optional<std::string> log_file_path = std::nullopt);
 
 		/**
 		 * Moves the Panda robot along a given sequence.

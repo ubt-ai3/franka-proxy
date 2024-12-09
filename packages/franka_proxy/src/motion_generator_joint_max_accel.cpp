@@ -16,9 +16,7 @@
 #include <algorithm>
 
 #include <Eigen/Dense>
-
 #include <franka/model.h>
-
 #include <franka/exception.h>
 
 #include "franka_proxy_share/franka_proxy_util.hpp"
@@ -41,12 +39,13 @@ bool JointMovement::isMotionFinished() const
 //////////////////////////////////////////////////////////////////////////
 
 
-franka_joint_motion_generator::franka_joint_motion_generator
-	(double speed_factor, const std::array<double, 7> q_goal,
-	 std::mutex& current_state_lock,
-	 franka::RobotState& current_state,
-	 const std::atomic_bool& stop_motion_flag,
-	 bool stop_on_contact)
+franka_joint_motion_generator::franka_joint_motion_generator(
+	double speed_factor,
+	const std::array<double, 7>& q_goal, 
+	std::mutex& current_state_lock, 
+	franka::RobotState& current_state,
+	const std::atomic_bool& stop_motion_flag, 
+	bool stop_on_contact)
 	:
 	q_goal_(q_goal.data()),
 

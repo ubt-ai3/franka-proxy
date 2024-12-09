@@ -99,7 +99,9 @@ std::pair<std::vector<std::array<double, 7>>, std::vector<std::array<double, 6>>
 }
 
 
-std::pair<std::vector<std::array<double, 7>>, std::vector<std::array<double, 6>>> motion_recorder::start(float seconds, std::optional<std::string> log_file_path)
+std::pair<std::vector<std::array<double, 7>>, std::vector<std::array<double, 6>>> motion_recorder::start(
+	float seconds, 
+	std::optional<std::string> log_file_path)
 {
 	start(log_file_path);
 	std::this_thread::sleep_for(std::chrono::duration<float>(seconds));

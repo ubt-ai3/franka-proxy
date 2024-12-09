@@ -15,10 +15,11 @@
 
 namespace franka_proxy
 {
-schunk_ft_sensor::schunk_ft_sensor(const Eigen::Affine3f& kms_T_flange,
-                                   const Eigen::Affine3f& EE_T_kms,
-                                   const Eigen::Vector<double, 6>& bias,
-                                   const Eigen::Vector3d& load_mass)
+schunk_ft_sensor::schunk_ft_sensor(
+	const Eigen::Affine3f& kms_T_flange,
+	const Eigen::Affine3f& EE_T_kms,
+	const Eigen::Vector<double, 6>& bias,
+	const Eigen::Vector3d& load_mass)
 	: ft_sensor(kms_T_flange, EE_T_kms, bias, load_mass),
 	  socket_(io_service_),
 	  receiver_endpoint_(asio::ip::make_address(ip_), port_)
@@ -26,9 +27,10 @@ schunk_ft_sensor::schunk_ft_sensor(const Eigen::Affine3f& kms_T_flange,
 	setup_connection();
 }
 
-schunk_ft_sensor::schunk_ft_sensor(const Eigen::Affine3f& kms_T_flange,
-                                   const Eigen::Affine3f& EE_T_kms,
-                                   const std::string config_file)
+schunk_ft_sensor::schunk_ft_sensor(
+	const Eigen::Affine3f& kms_T_flange,
+	const Eigen::Affine3f& EE_T_kms,
+	const std::string& config_file)
 	: ft_sensor(kms_T_flange, EE_T_kms, bias_from_config(config_file), load_mass_from_config(config_file)),
 	  socket_(io_service_),
 	  receiver_endpoint_(asio::ip::make_address(ip_), port_)
@@ -59,7 +61,7 @@ schunk_ft_sensor::~schunk_ft_sensor()
 	}
 }
 
-void schunk_ft_sensor::update_calibration(const std::string config_file)
+void schunk_ft_sensor::update_calibration(const std::string& config_file)
 {
 	bias_ = bias_from_config(config_file);
 	load_mass_ = load_mass_from_config(config_file);
@@ -153,7 +155,7 @@ void schunk_ft_sensor::setup_connection()
 	worker_ = std::thread(&schunk_ft_sensor::run, this);
 }
 
-Eigen::Vector<double, 6> schunk_ft_sensor::bias_from_config(const std::string config_file) const
+Eigen::Vector<double, 6> schunk_ft_sensor::bias_from_config(const std::string& config_file) const
 {
 	std::ifstream in_stream(config_file);
 	nlohmann::json config = nlohmann::json::parse(in_stream);
@@ -165,7 +167,7 @@ Eigen::Vector<double, 6> schunk_ft_sensor::bias_from_config(const std::string co
 	return bias;
 }
 
-Eigen::Vector3d schunk_ft_sensor::load_mass_from_config(const std::string config_file) const
+Eigen::Vector3d schunk_ft_sensor::load_mass_from_config(const std::string& config_file) const
 {
 	std::ifstream in_stream(config_file);
 	nlohmann::json config = nlohmann::json::parse(in_stream);

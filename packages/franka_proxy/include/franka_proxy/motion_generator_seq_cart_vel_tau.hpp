@@ -243,6 +243,7 @@ private:
 	double pre_error_fz_{ 0.0 };
 
 
+	// todo add a useful logging behaviour here
 	bool log_ = true;
 	std::vector<Eigen::Affine3d> pose_log_;
 	std::vector<Eigen::Affine3d> pose_d_log_;
