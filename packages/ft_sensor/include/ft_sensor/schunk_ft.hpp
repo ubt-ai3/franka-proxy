@@ -2,6 +2,7 @@
 #define INCLUDED__FT_SENSOR__SCHUNK_FT_HPP
 
 #include <mutex>
+#include <thread>
 
 #include <asio/io_service.hpp>
 #include <asio/ip/udp.hpp>

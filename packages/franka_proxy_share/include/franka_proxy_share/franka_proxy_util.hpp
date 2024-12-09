@@ -62,14 +62,14 @@ namespace franka_proxy
 			double step_size = 0.174533);
 
 		template<typename T, size_t N>
-		static Eigen::Vector<T, N> cvt2Eigen(const std::array<T, N>& std_array)
+		static Eigen::Vector<T, N> convert_to_eigen(const std::array<T, N>& std_array)
 		{
 			Eigen::Vector<T, N> out = Eigen::Map<const Eigen::Vector<T, N>>(std_array.data());
 			return out;
 		}
 
 		template<typename T, size_t N>
-		static std::array<T, N> cvt2stdArray(const Eigen::Vector<T, N>& eigen_array)
+		static std::array<T, N> convert_to_std_array(const Eigen::Vector<T, N>& eigen_array)
 		{
 			std::array<T, N> out;
 			for (int i = 0; i < N; i++)

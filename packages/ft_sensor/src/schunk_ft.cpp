@@ -93,7 +93,7 @@ void schunk_ft_sensor::run()
 			size_t len = socket_.receive_from(
 				asio::buffer(recv_buf), sender_endpoint);
 
-			ft_sensor_response resp;
+			ft_sensor_response resp{};
 
 			// meta data
 			//resp.sequence_number = ntohl(*reinterpret_cast<uint32_t*>(&recv_buf[0]));		// sequence number, counting send packages
@@ -132,7 +132,7 @@ void schunk_ft_sensor::setup_connection()
 	                           });
 	std::this_thread::sleep_for(std::chrono::milliseconds(10));
 
-	ft_sensor_response resp;
+	ft_sensor_response resp{};
 
 	// meta data
 	//resp.sequence_number = ntohl(*reinterpret_cast<uint32_t*>(&recv_buf[0]));		// sequence number, counting send packages
@@ -149,9 +149,14 @@ void schunk_ft_sensor::setup_connection()
 	if (resp.ft_sequence_number == 0)
 		throw ft_sensor_connection_exception();
 
-	current_ft_sensor_response_.store(resp);
+	
+	std::lock_guard lock(current_ft_sensor_response_mutex_);
+	current_ft_sensor_response_ = resp;
 
-	set_response_handler([&](const ft_sensor_response& response) { current_ft_sensor_response_.store(response); });
+	set_response_handler([&](const ft_sensor_response& response){
+		std::lock_guard lock(current_ft_sensor_response_mutex_);
+		current_ft_sensor_response_ = resp;
+	});
 	worker_ = std::thread(&schunk_ft_sensor::run, this);
 }
 
