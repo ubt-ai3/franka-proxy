@@ -155,7 +155,7 @@ void schunk_ft_sensor::setup_connection()
 
 	set_response_handler([&](const ft_sensor_response& response){
 		std::lock_guard lock(current_ft_sensor_response_mutex_);
-		current_ft_sensor_response_ = resp;
+		current_ft_sensor_response_ = response;
 	});
 	worker_ = std::thread(&schunk_ft_sensor::run, this);
 }
