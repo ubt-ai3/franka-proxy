@@ -7,3 +7,4 @@
 /.vs
 /Folder.DotSettings
 /vcpkg_installed
+/CMakePresets.json
