@@ -85,7 +85,7 @@ public:
 	 * todo doc
 	 */
 	virtual void set_guiding_mode(
-		bool x, bool y, bool z, 
+		bool x, bool y, bool z,
 		bool rx, bool ry, bool rz, bool elbow) const = 0;
 	virtual void set_speed_factor(double speed_factor) = 0;
 

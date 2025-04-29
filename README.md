@@ -17,8 +17,8 @@ Server and client are only compatible if you use the same port, so make sure to 
 Use the AI3 vcpkg ( https://resy-gitlab.inf.uni-bayreuth.de/tools/vcpkg.git ):
 
 ```sh
-./bootstrap-vcpkg.bat
-vcpkg install --triplet=x64-windows asio argparse eigen3 franka nlohmann-json poco
+./bootstrap-vcpkg.sh
+./vcpkg install asio argparse eigen3 franka nlohmann-json poco
 ```
 
 If building using the CMakePresets, copy tools/CMakePresets.json in root directory next to CMakeLists.txt.

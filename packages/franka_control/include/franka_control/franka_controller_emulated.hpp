@@ -76,22 +76,23 @@ public:
 	stop_recording() override;
 
 	/**
-	* Simulates a playback movement with increment, but ignores force and selection values.
-	**/
-	void move_sequence(
-		const std::vector<robot_config_7dof>& q_sequence,
-		const std::vector<wrench>& f_sequence,
-		const std::vector<selection_diagonal>& selection_vector_sequence,
-		std::array<double, 16> offset_cartesian = {0},
-		std::array<double, 6> offset_force = {0}) override;
-
-	/**
 	* Simulates a playback movement, but ignores force and selection values.
 	**/
 	void move_sequence(
 		const std::vector<robot_config_7dof>& q_sequence,
 		const std::vector<wrench>& f_sequence,
 		const std::vector<selection_diagonal>& selection_vector_sequence) override;
+
+	/**
+	* Simulates a playback movement with increment, but ignores force and selection values.
+	* TODO maltschik offsets are not used atm
+	**/
+	void move_sequence(
+		const std::vector<robot_config_7dof>& q_sequence,
+		const std::vector<wrench>& f_sequence,
+		const std::vector<selection_diagonal>& selection_vector_sequence,
+		std::array<double, 16> offset_cartesian,
+		std::array<double, 6> offset_force) override;
 
 private:
 	std::chrono::time_point<std::chrono::steady_clock> recording_start_;

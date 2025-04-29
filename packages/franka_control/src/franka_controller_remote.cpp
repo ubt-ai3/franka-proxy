@@ -179,7 +179,7 @@ void franka_controller_remote::move_sequence(
 	std::for_each(std::execution::par, q_sequence.begin(), q_sequence.end(),
 	              [&joints, &q_sequence](const auto& datum)
 	              {
-		              size_t idx = &datum - &q_sequence[0];
+		              size_t idx = &datum - q_sequence.data();
 		              /*joints[idx] = std::array<double, 7>{
 			              datum(0), datum(1), datum(2), datum(3),
 				              datum(4), datum(5), datum(6)
@@ -191,7 +191,7 @@ void franka_controller_remote::move_sequence(
 	std::for_each(std::execution::par, f_sequence.begin(), f_sequence.end(),
 	              [&forces, &f_sequence](const auto& datum)
 	              {
-		              size_t idx = &datum - &f_sequence[0];
+		              size_t idx = &datum - f_sequence.data();
 		              /*forces[idx] = std::array<double, 6>{
 			              datum(0), datum(1), datum(2),
 				              datum(3), datum(4), datum(5)
@@ -203,7 +203,7 @@ void franka_controller_remote::move_sequence(
 	std::for_each(std::execution::par, selection_vector_sequence.begin(), selection_vector_sequence.end(),
 	              [&selection, &selection_vector_sequence](const auto& datum)
 	              {
-		              size_t idx = &datum - &selection_vector_sequence[0];
+		              size_t idx = &datum - selection_vector_sequence.data();
 		              /*selection[idx] = std::array<double, 6>{
 			              datum(0), datum(1), datum(2),
 				              datum(3), datum(4), datum(5)
@@ -256,7 +256,7 @@ void franka_controller_remote::move_sequence(
 	std::for_each(std::execution::par, q_sequence.begin(), q_sequence.end(),
 	              [&joints, &q_sequence](const auto& datum)
 	              {
-		              size_t idx = &datum - &q_sequence[0];
+		              size_t idx = &datum - q_sequence.data();
 		              /*joints[idx] = std::array<double, 7>{
 			              datum(0), datum(1), datum(2), datum(3),
 				              datum(4), datum(5), datum(6)
@@ -268,7 +268,7 @@ void franka_controller_remote::move_sequence(
 	std::for_each(std::execution::par, f_sequence.begin(), f_sequence.end(),
 	              [&forces, &f_sequence](const auto& datum)
 	              {
-		              size_t idx = &datum - &f_sequence[0];
+		              size_t idx = &datum - f_sequence.data();
 		              /*forces[idx] = std::array<double, 6>{
 			              datum(0), datum(1), datum(2),
 				              datum(3), datum(4), datum(5)
@@ -280,7 +280,7 @@ void franka_controller_remote::move_sequence(
 	std::for_each(std::execution::par, selection_vector_sequence.begin(), selection_vector_sequence.end(),
 	              [&selection, &selection_vector_sequence](const auto& datum)
 	              {
-		              size_t idx = &datum - &selection_vector_sequence[0];
+		              size_t idx = &datum - selection_vector_sequence.data();
 		              /*selection[idx] = std::array<double, 6>{
 			              datum(0), datum(1), datum(2),
 				              datum(3), datum(4), datum(5)
