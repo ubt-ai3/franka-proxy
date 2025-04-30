@@ -6,14 +6,14 @@
     "patch": 0
   },
   "configurePresets": [
+    // Windows Presets
     {
       "name": "common-config",
       "hidden": true,
       "binaryDir": "${sourceDir}/build/${presetName}",
       "cacheVariables": {
         "CMAKE_TOOLCHAIN_FILE": "C:/code/vcpkg/scripts/buildsystems/vcpkg.cmake",
-        "CMAKE_CXX_COMPILER": "cl.exe",
-        "Qt5_DIR": "C:/code/qt/5.15.2/msvc2019_64/lib/cmake/Qt5"
+        "CMAKE_CXX_COMPILER": "cl.exe"
       }
     },
     {
@@ -25,18 +25,35 @@
       }
     },
     {
-      "name": "Release-with-Debug-info",
-      "inherits": "common-config",
-      "hidden": false,
-      "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "RelWithDebInfo"
-      }
-    },
-    {
       "name": "Release",
       "inherits": "common-config",
       "hidden": false,
       "installDir": "${sourceDir}/install/",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release"
+      }
+    },
+    // Windows WSL2 presets
+    {
+      "name": "wsl2-common-config",
+      "hidden": true,
+      "binaryDir": "${sourceDir}/build/${presetName}",
+      "cacheVariables": {
+        "CMAKE_TOOLCHAIN_FILE": "/mnt/c/wsl-code/vcpkg/scripts/buildsystems/vcpkg.cmake"
+      }
+    },
+    {
+      "name": "Debug-wsl2",
+      "inherits": "wsl2-common-config",
+      "generator": "Ninja",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug"
+      }
+    },
+    {
+      "name": "Release-wsl2",
+      "inherits": "wsl2-common-config",
+      "generator": "Ninja",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Release"
       }
@@ -48,12 +65,16 @@
       "configurePreset": "Debug"
     },
     {
-      "name": "Release-with-Debug-info",
-      "configurePreset": "Release-with-Debug-info"
-    },
-    {
       "name": "Release",
       "configurePreset": "Release"
+    },
+    {
+      "name": "Debug-wsl2",
+      "configurePreset": "Debug-wsl2"
+    },
+    {
+      "name": "Release-wsl2",
+      "configurePreset": "Release-wsl2"
     }
   ]
 }
