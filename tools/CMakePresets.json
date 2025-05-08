@@ -10,7 +10,7 @@
     {
       "name": "common-config",
       "hidden": true,
-      "binaryDir": "${sourceDir}/build/${presetName}",
+      "binaryDir": "${sourceDir}/out/Windows/${presetName}",
       "cacheVariables": {
         "CMAKE_TOOLCHAIN_FILE": "C:/code/vcpkg/scripts/buildsystems/vcpkg.cmake",
         "CMAKE_CXX_COMPILER": "cl.exe"
@@ -37,9 +37,9 @@
     {
       "name": "wsl2-common-config",
       "hidden": true,
-      "binaryDir": "${sourceDir}/build/${presetName}",
+      "binaryDir": "${sourceDir}/out/Ubuntu/${presetName}",
       "cacheVariables": {
-        "CMAKE_TOOLCHAIN_FILE": "/mnt/c/wsl-code/vcpkg/scripts/buildsystems/vcpkg.cmake"
+        "CMAKE_TOOLCHAIN_FILE": "~/code/vcpkg/scripts/buildsystems/vcpkg.cmake"
       }
     },
     {
