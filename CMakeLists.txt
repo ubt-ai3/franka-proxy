@@ -7,6 +7,7 @@ include(GNUInstallDirs)
 
 option(BUILD_SERVER "Build franka_proxy executable" ON)
 option(BUILD_TESTS "Build franka_proxy tests" ON)
+option(BUILD_PYTHON_CONTROLLER "Build franka_control python bindings" ON)
 
 
 if(BUILD_SERVER)
@@ -17,6 +18,7 @@ endif()
 if(BUILD_SERVER OR BUILD_TESTS)
     find_package(argparse CONFIG REQUIRED)
 endif()
+
 
 find_package(asio CONFIG REQUIRED)
 find_package(Eigen3 CONFIG REQUIRED)
@@ -37,10 +39,12 @@ set(PROXY_TARGETS
 	ft_sensor
 )
 
+
 add_subdirectory(packages/franka_proxy_share)
 add_subdirectory(packages/franka_proxy_client)
 add_subdirectory(packages/franka_control)
 add_subdirectory(packages/ft_sensor)
+
 
 if(BUILD_SERVER)
     add_subdirectory(packages/franka_proxy)
@@ -53,7 +57,12 @@ if(BUILD_TESTS)
 		franka_control_test)
 endif()
 
-# Generate Config file
+if(BUILD_PYTHON_CONTROLLER)
+	add_subdirectory(python)
+endif()
+
+
+# Generate Config file TODO JHa
 set(BUILD_SERVER_CODE "")
 set(BUILD_TESTS_CODE "")
 

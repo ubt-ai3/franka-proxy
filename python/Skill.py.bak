@@ -1,0 +1,8 @@
+import build.Release.simple_module as m
+
+print("Result:" , m.somple_cpp_fn(10,20))
+
+#cmake -S. -Bbuild -Ax64
+#cmake --build build -j
+#cmake -S. -Bbuild -Ax64 -DCMAKE_PREFIX_PATH="C:\vcpkg\installed\x64-windows\share\poco" 
+#cmake -S. -Bbuild -Ax64 -DCMAKE_PREFIX_PATH="C:\vcpkg\installed\x64-windows\share\franka"
