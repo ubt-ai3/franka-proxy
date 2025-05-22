@@ -62,7 +62,6 @@ if(BUILD_PYTHON_CONTROLLER)
 endif()
 
 
-
 configure_file(${CMAKE_SOURCE_DIR}/cmake/franka-proxyConfig.cmake.in
                ${CMAKE_BINARY_DIR}/cmake/franka-proxyConfig.cmake @ONLY)
 
