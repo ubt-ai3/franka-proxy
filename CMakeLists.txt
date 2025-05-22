@@ -62,20 +62,6 @@ if(BUILD_PYTHON_CONTROLLER)
 endif()
 
 
-# Generate Config file TODO JHa
-set(BUILD_SERVER_CODE "")
-set(BUILD_TESTS_CODE "")
-
-if (BUILD_SERVER)
-    set(BUILD_SERVER_CODE "
-find_package(Franka CONFIG REQUIRED)
-find_package(Poco COMPONENTS Net Foundation REQUIRED)")
-endif()
-
-if (BUILD_SERVER OR BUILD_TESTS)
-    set(BUILD_TESTS_CODE "
-find_package(argparse CONFIG REQUIRED)")
-endif()
 
 configure_file(${CMAKE_SOURCE_DIR}/cmake/franka-proxyConfig.cmake.in
                ${CMAKE_BINARY_DIR}/cmake/franka-proxyConfig.cmake @ONLY)
