@@ -1,29 +1,12 @@
-set(MODULE_NAME franka_control_module)
+set(MODULE_NAME franka_control_python_module)
 
-# Development component is required, else we get an error: https://github.com/pybind/pybind11/issues/3996
+# Development component is required (see https://github.com/pybind/pybind11/issues/3996)
 find_package(Python3 REQUIRED COMPONENTS Interpreter Development)
-
-execute_process(
-    COMMAND ${Python3_EXECUTABLE} -m pybind11 --cmakedir
-    OUTPUT_VARIABLE PYBIND11_CMAKE_DIR
-    OUTPUT_STRIP_TRAILING_WHITESPACE
-)
-
-# Find pybind11 via Python module
-execute_process(
-    COMMAND ${Python3_EXECUTABLE} -m pybind11 --cmakedir
-    OUTPUT_VARIABLE PYBIND11_CMAKE_DIR
-    OUTPUT_STRIP_TRAILING_WHITESPACE
-)
-set(pybind11_DIR ${PYBIND11_CMAKE_DIR})
 find_package(pybind11 REQUIRED)
-
-message(STATUS "Using pybind11 found at: ${pybind11_DIR}")
 
 # Define the module
 pybind11_add_module(${MODULE_NAME} SHARED
-    test.cpp
-    ../packages/franka_control/src/franka_controller.cpp
+    python_bindings.cpp
 )
 target_compile_features(${MODULE_NAME} PUBLIC cxx_std_20)
 
@@ -32,13 +15,13 @@ target_include_directories(${MODULE_NAME} PRIVATE
     ${ALL_INCLUDE_DIRECTORIES}
     ${EIGEN3_INCLUDE_DIR}
     ${Python3_INCLUDE_DIRS}
-    ${CMAKE_SOURCE_DIR}/packages/franka_proxy/include
-    ${CMAKE_SOURCE_DIR}/packages/franka_proxy/include/franka_proxy
 )
 
 # Link libraries
 target_link_libraries(${MODULE_NAME} PRIVATE
     ${Python3_LIBRARIES}
+    franka_proxy_share
+    franka_proxy_client
     franka_control
 )
 

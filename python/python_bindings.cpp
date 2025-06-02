@@ -10,27 +10,16 @@
 #include <pybind11/numpy.h>
 
 #include <franka_control/franka_controller_remote.hpp>
-#include "franka_proxy_commands.hpp"
-#include "franka_network_control_server.hpp"
-#include "franka_network_state_server.hpp"
-#include "franka_proxy.hpp"
-#include "motion_generator_admittance.hpp"
-#include "motion_generator_force.hpp"
-#include "motion_generator_joint_impedance.hpp"
-#include "motion_generator_joint_max_accel.hpp"
-#include "motion_generator_seq_cart_vel_tau.hpp"
-#include "motion_recorder.hpp"
-//#include "exception.hpp"
+#include <franka_proxy_commands.hpp>
 #include <franka_proxy_client/exception.hpp>
-#include "franka_network_client.hpp"
-#include "franka_remote_interface.hpp"
-#include "franka_proxy_util.hpp"
-#include <ft_sensor/schunk_ft.hpp>
+#include <franka_network_client.hpp>
+#include <franka_remote_interface.hpp>
+#include <franka_proxy_util.hpp>
 
 /**
  *************************************************************************
  *
- * @file Test.cpp
+ * @file python_bindings.cpp
  *
  * Bindings for basically all classes in the franka_proxy project
  * Abstract classes need so called trampoline classes if you want to override them from python. It was also necessary because the file wouldnt compile otherwise
@@ -102,10 +91,6 @@ class py_franka_controller : public franka_control::franka_controller {
 
 		void move(const robot_config_7dof& target) override {
         	PYBIND11_OVERRIDE_PURE(void, franka_controller, move, target);
-    	}
-
-    	void move_with_force(const robot_config_7dof& target, const wrench& target_force_torques) override {
-       		PYBIND11_OVERRIDE_PURE(void, franka_controller, move_with_force, target, target_force_torques);
     	}
 
 		bool move_until_contact(const robot_config_7dof& target) override {
@@ -194,7 +179,6 @@ PYBIND11_MODULE(franka_proxy_module, m){
 		.def(py::init<>())
         //.def("move", py::overload_cast<const robot_config_7dof&>(&franka_control::franka_controller::move))
 		.def("move", static_cast<void (franka_control::franka_controller::*)(const Eigen::Matrix<double, 7, 1>&)>(&franka_control::franka_controller::move))
-                .def("move_with_force", &franka_control::franka_controller::move_with_force)
                 .def("move_until_contact", static_cast<bool (franka_control::franka_controller::*)(const Eigen::Matrix<double, 7, 1>&)>(&franka_control::franka_controller::move_until_contact))
                 .def("open_gripper", &franka_control::franka_controller::open_gripper)
                 .def("close_gripper", &franka_control::franka_controller::close_gripper)
@@ -226,7 +210,6 @@ PYBIND11_MODULE(franka_proxy_module, m){
 	py::class_<franka_control::franka_controller_remote, franka_control::franka_controller>(m, "franka_controller_remote")
 		.def(py::init<const std::string &>())
                 .def("move", &franka_control::franka_controller_remote::move)
-                .def("move_with_force", &franka_control::franka_controller_remote::move_with_force)
                 .def("move_until_contact", &franka_control::franka_controller_remote::move_until_contact)
                 .def("open_gripper", &franka_control::franka_controller_remote::open_gripper)
                 .def("close_gripper", &franka_control::franka_controller_remote::close_gripper)
@@ -248,37 +231,6 @@ PYBIND11_MODULE(franka_proxy_module, m){
                 .def("set_fts_bias", &franka_control::franka_controller_remote::set_fts_bias)
                 .def("set_fts_load_mass", &franka_control::franka_controller_remote::set_fts_load_mass)
                 .def("set_guiding_mode", &franka_control::franka_controller_remote::set_guiding_mode);
-
-	py::class_<franka_proxy::franka_hardware_controller>(m, "FrankaHardwareController")
-                .def(py::init<const std::string&, bool>(), py::arg("controller_ip"), py::arg("enforce_realtime") = false)
-                .def("automatic_error_recovery", &franka_proxy::franka_hardware_controller::automatic_error_recovery)
-                .def("move_to", &franka_proxy::franka_hardware_controller::move_to)
-                .def("move_to_until_contact", &franka_proxy::franka_hardware_controller::move_to_until_contact)
-                .def("stop_movement", &franka_proxy::franka_hardware_controller::stop_movement)
-                .def("set_speed_factor", &franka_proxy::franka_hardware_controller::set_speed_factor)
-                .def("set_bias", &franka_proxy::franka_hardware_controller::set_bias)
-                .def("set_load_mass", &franka_proxy::franka_hardware_controller::set_load_mass)
-                .def("set_guiding_mode", &franka_proxy::franka_hardware_controller::set_guiding_mode)
-                .def("robot_state", &franka_proxy::franka_hardware_controller::robot_state)
-                .def("open_gripper", &franka_proxy::franka_hardware_controller::open_gripper, py::arg("speed") = franka_proxy::franka_hardware_controller::default_gripper_speed)
-                .def("close_gripper", &franka_proxy::franka_hardware_controller::close_gripper, py::arg("speed") = franka_proxy::franka_hardware_controller::default_gripper_speed)
-                .def("grasp_gripper", &franka_proxy::franka_hardware_controller::grasp_gripper)
-                .def("gripper_state", &franka_proxy::franka_hardware_controller::gripper_state)
-                .def("vacuum_gripper_drop", &franka_proxy::franka_hardware_controller::vacuum_gripper_drop, py::arg("timeout") = std::chrono::milliseconds(100))
-                .def("vacuum_gripper_vacuum", &franka_proxy::franka_hardware_controller::vacuum_gripper_vacuum, py::arg("vacuum_strength"), py::arg("timeout") = std::chrono::milliseconds(100))
-                .def("vacuum_gripper_stop", &franka_proxy::franka_hardware_controller::vacuum_gripper_stop)
-                .def("vacuum_gripper_state", &franka_proxy::franka_hardware_controller::vacuum_gripper_state)
-                .def("apply_z_force", &franka_proxy::franka_hardware_controller::apply_z_force)
-                .def("start_recording", static_cast<void (franka_proxy::franka_hardware_controller::*)(std::optional<std::string>)>(&franka_proxy::franka_hardware_controller::start_recording), py::arg("log_file_path") = std::nullopt)
-                .def("stop_recording", &franka_proxy::franka_hardware_controller::stop_recording)
-                .def("move_sequence", py::overload_cast<const std::vector<franka_proxy::robot_config_7dof>&>(&franka_proxy::franka_hardware_controller::move_sequence))
-                .def("move_sequence_with_force", py::overload_cast<const std::vector<franka_proxy::robot_config_7dof>&, const std::vector<franka_proxy::wrench>&, const std::vector<franka_proxy::selection_diagonal>&>(&franka_proxy::franka_hardware_controller::move_sequence))
-                .def("apply_admittance", &franka_proxy::franka_hardware_controller::apply_admittance)
-                .def("cartesian_impedance_hold_pose", &franka_proxy::franka_hardware_controller::cartesian_impedance_hold_pose)
-                .def("cartesian_impedance_poses", &franka_proxy::franka_hardware_controller::cartesian_impedance_poses)
-                .def("joint_impedance_hold_position", &franka_proxy::franka_hardware_controller::joint_impedance_hold_position)
-                .def("joint_impedance_positions", &franka_proxy::franka_hardware_controller::joint_impedance_positions)
-                .def("run_payload_estimation", &franka_proxy::franka_hardware_controller::run_payload_estimation);
 
         py::class_<franka_proxy::command_move_to_config>(m, "command_move_to_config")
                 .def(py::init<>())
@@ -576,127 +528,6 @@ PYBIND11_MODULE(franka_proxy_module, m){
         m.def("from_json", &from_json_wrapper<franka_proxy::command_get_config>, py::arg("object"));
         m.def("from_json", &from_json_wrapper<franka_proxy::command_get_config_response>, py::arg("object"));
 
-        py::class_<franka_proxy::franka_control_server>(m, "franka_control_server")
-                .def(py::init<std::uint16_t, franka_proxy::franka_hardware_controller&>(), py::arg("controll_port"), py::arg("controller"));
-
-        py::class_<franka_proxy::franka_state_server>(m, "franka_state_server")
-                .def(py::init<std::uint16_t, franka_proxy::franka_hardware_controller&>(), py::arg("state_port"), py::arg("controller"));
-
-        py::class_<franka_proxy::franka_proxy>(m, "franka_proxy")
-                .def(py::init<const std::string&, bool>(), py::arg("ip"), py::arg("enforce_realtime"));
-
-        py::class_<franka_proxy::detail::admittance_motion_generator>(m, "admittance_motion_generator")
-                .def(py::init<franka::Robot&, std::mutex&, franka::RobotState&, double, std::optional<std::string>>(),
-                     py::arg("robot"), py::arg("state_lock"), py::arg("robot_state"), py::arg("duration"), py::arg("log_file_path"))
-                .def("callback", &franka_proxy::detail::admittance_motion_generator::callback, py::arg("robot_state"), py::arg("period"))
-                .def("set_admittance_rotational_stiffness", &franka_proxy::detail::admittance_motion_generator::set_admittance_rotational_stiffness,
-                     py::arg("rotational_stiffness"))
-                .def("set_admittance_translational_stiffness", &franka_proxy::detail::admittance_motion_generator::set_admittance_translational_stiffness,
-                     py::arg("translational_stiffness"))
-                .def("set_impedance_rotational_stiffness", &franka_proxy::detail::admittance_motion_generator::set_impedance_rotational_stiffness,
-                     py::arg("rotational_stiffness"))
-                .def("set_impedance_translational_stiffness", &franka_proxy::detail::admittance_motion_generator::set_impedance_translational_stiffness,
-                     py::arg("translational_stiffness"))
-                .def("get_admittance_rotational_stiffness", &franka_proxy::detail::admittance_motion_generator::get_admittance_rotational_stiffness)
-                .def("get_admittance_translational_stiffness", &franka_proxy::detail::admittance_motion_generator::get_admittance_translational_stiffness)
-                .def("get_impedance_rotational_stiffness", &franka_proxy::detail::admittance_motion_generator::get_impedance_rotational_stiffness)
-                .def("get_impedance_translational_stiffness", &franka_proxy::detail::admittance_motion_generator::get_impedance_translational_stiffness);
-                
-        py::class_<franka_proxy::detail::cartesian_impedance_motion_generator>(m, "cartesian_impedance_motion_generator")
-                .def(py::init<franka::Robot&, std::mutex&, franka::RobotState&, double, bool, std::optional<std::string>>(),
-                     py::arg("robot"), py::arg("state_lock"), py::arg("robot_state"), py::arg("duration"), 
-                     py::arg("use_online_parameter_calc"), py::arg("log_file_path"))
-                .def(py::init<franka::Robot&, std::mutex&, franka::RobotState&, std::list<std::array<double, 16>>, 
-                     double, bool, std::optional<std::string>>(), py::arg("robot"), py::arg("state_lock"), py::arg("robot_state"), 
-                     py::arg("poses"), py::arg("duration"), py::arg("use_online_parameter_calc"), py::arg("log_file_path"))
-                .def("callback", &franka_proxy::detail::cartesian_impedance_motion_generator::callback, 
-                     py::arg("robot_state"), py::arg("period"), py::arg("get_position_error"))
-                .def("calculate_position_error", &franka_proxy::detail::cartesian_impedance_motion_generator::calculate_position_error,
-                     py::arg("robot_state"), py::arg("time"))
-                .def("set_rotational_stiffness", &franka_proxy::detail::cartesian_impedance_motion_generator::set_rotational_stiffness,
-                     py::arg("rotational_stiffness"))
-                .def("set_translational_stiffness", &franka_proxy::detail::cartesian_impedance_motion_generator::set_translational_stiffness,
-                     py::arg("translational_stiffness"))
-                .def("get_rotational_stiffness", &franka_proxy::detail::cartesian_impedance_motion_generator::get_rotational_stiffness)
-                .def("get_translational_stiffness", &franka_proxy::detail::cartesian_impedance_motion_generator::get_translational_stiffness);
-
-        py::class_<franka_proxy::detail::force_motion_generator>(m, "force_motion_generator")
-                .def(py::init<franka::Robot&, double, double>(), py::arg("robot"), py::arg("mass"), py::arg("duration"))
-                .def("callback", &franka_proxy::detail::force_motion_generator::callback)
-                .def("give_forces", &franka_proxy::detail::force_motion_generator::give_forces)
-                .def("give_desired_mass", &franka_proxy::detail::force_motion_generator::give_desired_mass);
-
-        // // py::class_<franka_proxy::detail::ple_motion_generator>(m, "ple_motion_generator")
-        // //         .def(py::init<franka::Robot&, std::mutex&, franka::RobotState, double, double, std::optional<std::string>>(),
-        // //              py::arg("robot"), py::arg("state_lock"), py::arg("robot_state"), py::arg("spped"), py::arg("duration"),
-        // //              py::arg("log_file_path"))
-        // //         .def("callback", &franka_proxy::detail::ple_motion_generator::callback, py::arg("robot_state"),
-        // //              py::arg("period"), py::arg("get_joint_position_error"))
-        // //         .def("calculate_ple_motion", &franka_proxy::detail::ple_motion_generator::calculate_ple_motion,
-        // //              py::arg("robot_state"), py::arg("time"))
-        // //         .def("set_stiffness", &franka_proxy::detail::ple_motion_generator::set_stiffness,
-        // //               py::arg("stiffness"))
-        // //         .def("get_stiffness", &franka_proxy::detail::ple_motion_generator::get_stiffness)
-        // //         .def("get_damping", &franka_proxy::detail::ple_motion_generator::get_damping);
-
-        py::class_<franka_proxy::detail::joint_impedance_motion_generator>(m, "joint_impedance_motion_generator")
-                .def(py::init<franka::Robot&, std::mutex&, franka::RobotState&, double, std::optional<std::string>>(),
-                     py::arg("robot"), py::arg("state_lock"),  py::arg("robot_state"), py::arg("duration"), py::arg("log_file_path"))
-                .def(py::init<franka::Robot&, std::mutex&, franka::RobotState&, std::list<std::array<double, 7>>, double, std::optional<std::string>>(),
-                     py::arg("robot"), py::arg("state_lock"),  py::arg("robot_state"), py::arg("joint_positions"), py::arg("duration"), 
-                     py::arg("log_file_path"))
-                .def("callback", &franka_proxy::detail::joint_impedance_motion_generator::callback,
-                     py::arg("robot_state"), py::arg("period"), py::arg("get_joint_position_error"))
-                .def("calculate_joint_position_error", &franka_proxy::detail::joint_impedance_motion_generator::calculate_joint_position_error,
-                     py::arg("robot_state"), py::arg("time"))
-                .def("set_stiffness", &franka_proxy::detail::joint_impedance_motion_generator::set_stiffness, py::arg("stiffness"))
-                .def("get_stiffness", &franka_proxy::detail::joint_impedance_motion_generator::get_stiffness)
-                .def("get_damping", &franka_proxy::detail::joint_impedance_motion_generator::get_damping);
-
-        py::class_<franka_proxy::detail::JointMovement>(m, "JointMovement")
-                .def(py::init<>())
-                .def_readwrite("joint_motion_finished", &franka_proxy::detail::JointMovement::joint_motion_finished)
-                .def_readwrite("delta_q_d", &franka_proxy::detail::JointMovement::delta_q_d)
-                .def("isMotionFinished", &franka_proxy::detail::JointMovement::isMotionFinished);
-
-        py::class_<franka_proxy::detail::franka_joint_motion_generator::stop_motion_trigger>(m, "stop_motion_trigger");
-        
-        py::class_<franka_proxy::detail::franka_joint_motion_generator::contact_stop_trigger>(m, "contact_stop_trigger");
-
-        py::class_<franka_proxy::detail::franka_joint_motion_generator>(m, "franka_joint_motion_generator")
-                .def(py::init<double, std::array<double, 7>, std::mutex&, franka::RobotState&, const std::atomic_bool&, bool>(),
-                     py::arg("speed_factor"), py::arg("q_goal"), py::arg("current_state_lock"), py::arg("current_state"),
-                     py::arg("stop_motion_flag"), py::arg("stop_on_contact"))
-                .def("__call__", &franka_proxy::detail::franka_joint_motion_generator::operator(),
-                     py::arg("robot_state"), py::arg("period"))
-                .def("calculate_desired_values", &franka_proxy::detail::franka_joint_motion_generator::calculateDesiredValues,
-                     py::arg("t"));
-
-        py::class_<franka_proxy::detail::seq_cart_vel_tau_generator>(m, "seq_cart_vel_tau_generator")
-                .def(py::init<std::mutex&, franka::RobotState&, franka::Robot&, const std::atomic_bool&, std::vector<std::array<double, 7>>,
-                     std::vector<std::array<double, 6>>, std::vector<std::array<double, 6>>>(),
-                     py::arg("current_state_lock"), py::arg("current_state"), py::arg("robot"), py::arg("stop_motion_flag"), 
-                     py::arg("q_sequence"), py::arg("f_sequence"), py::arg("selection_vector_sequence"))
-                .def("step", &franka_proxy::detail::seq_cart_vel_tau_generator::step,
-                     py::arg("robot_state"), py::arg("period"));
-
-        py::class_<franka_proxy::detail::seq_cart_vel_tau_generator_wo_fts>(m, "seq_cart_vel_tau_generator_wo_fts")
-                .def(py::init<std::mutex&, franka::RobotState&, franka::Robot&, const std::atomic_bool&, std::vector<std::array<double, 7>>,
-                     std::vector<std::array<double, 6>>, std::vector<std::array<double, 6>>>(),
-                     py::arg("current_state_lock"), py::arg("current_state"), py::arg("robot"), py::arg("stop_motion_flag"), 
-                     py::arg("q_sequence"), py::arg("f_sequence"), py::arg("selection_vector_sequence"))
-                .def("step", &franka_proxy::detail::seq_cart_vel_tau_generator_wo_fts::step,
-                     py::arg("robot_state"), py::arg("period"));
-
-        py::class_<franka_proxy::detail::motion_recorder>(m, "motion_recorder")
-                .def(py::init<franka::Robot&, franka::RobotState&, franka_proxy::ft_sensor*>(),
-                     py::arg("robot"), py::arg("robot_state"), py::arg("fts"))
-                .def("start", py::overload_cast<std::optional<std::string>>(&franka_proxy::detail::motion_recorder::start),
-                     py::arg("log_file_path"))
-                .def("stop", &franka_proxy::detail::motion_recorder::stop)
-                .def("start", py::overload_cast<float, std::optional<std::string>>(&franka_proxy::detail::motion_recorder::start),
-                     py::arg("seconds"), py::arg("log_file_path"));
-        
         py::register_exception<franka_proxy::exception>(m, "exception");
         py::register_exception<franka_proxy::remote_exception>(m, "remote_exception", m.attr("exception").ptr());
         py::register_exception<franka_proxy::model_exception>(m, "model_exception", m.attr("remote_exception").ptr());
@@ -839,43 +670,6 @@ PYBIND11_MODULE(franka_proxy_module, m){
         // // py::register_exception<franka_proxy::not_implemented>(m, "not_implemented", m.attr("exception").ptr());
         // // py::register_exception<franka_proxy::interpolation_error>(m, "interpolation_error", m.attr("exception").ptr());
         // // py::register_exception<franka_proxy::api_call_failed>(m, "api_call_failed", m.attr("exception").ptr());
-
-        py::class_<franka_proxy::logger>(m, "logger")
-                .def(py::init<std::string, int, int ,int, int, int>(), 
-                     py::arg("filename"), py::arg("num_joint_data"), py::arg("num_cart_data"), 
-                     py::arg("num_ft_data"), py::arg("num_single"), py::arg("size_arbitrary"))
-                .def("start_logging", &franka_proxy::logger::start_logging,
-                     py::arg("joint_data_header"), py::arg("cart_data_header"), py::arg("ft_data_header"), 
-                     py::arg("single_header"), py::arg("arbitrary_header"))
-                .def("stop_logging", &franka_proxy::logger::stop_logging)
-                .def("clear_all", &franka_proxy::logger::clear_all)
-                .def("discard_log", &franka_proxy::logger::discard_log)
-                .def("add_joint_data", py::overload_cast<const std::array<double, 7>&>(&franka_proxy::logger::add_joint_data),
-                     py::arg("data"))
-                .def("add_joint_data", py::overload_cast<const  Eigen::Matrix<double, 7, 1>&>(&franka_proxy::logger::add_joint_data),
-                     py::arg("data"))
-                .def("add_joint_data", py::overload_cast<double, double, double, double, double, double, double>(&franka_proxy::logger::add_joint_data),
-                     py::arg("j0"), py::arg("j1"), py::arg("j2"), py::arg("j3"), py::arg("j4"),
-                     py::arg("j5"), py::arg("j6"))
-                .def("add_cart_data", py::overload_cast<const std::array<double, 6>&>(&franka_proxy::logger::add_cart_data),
-                     py::arg("data"))
-                .def("add_cart_data", py::overload_cast<const  Eigen::Matrix<double, 6, 1>&>(&franka_proxy::logger::add_cart_data),
-                     py::arg("data"))
-                .def("add_cart_data", py::overload_cast<double, double, double, double, double, double>(&franka_proxy::logger::add_cart_data),
-                     py::arg("x0"), py::arg("x1"), py::arg("x2"), py::arg("x3"), py::arg("x4"),
-                     py::arg("x5"))
-                .def("add_ft_data", py::overload_cast<const std::array<double, 6>&>(&franka_proxy::logger::add_ft_data),
-                     py::arg("data"))
-                .def("add_ft_data", py::overload_cast<const  Eigen::Matrix<double, 6, 1>&>(&franka_proxy::logger::add_ft_data),
-                     py::arg("data"))
-                .def("add_ft_data", py::overload_cast<double, double, double, double, double, double>(&franka_proxy::logger::add_ft_data),
-                     py::arg("fx"), py::arg("fy"), py::arg("fz"), py::arg("tx"), py::arg("ty"),
-                     py::arg("tz"))
-                .def("add_single_data", &franka_proxy::logger::add_single_data, py::arg("data"))
-                .def("add_arbitrary_data", py::overload_cast<const std::string&>(&franka_proxy::logger::add_arbitrary_data),
-                     py::arg("data"))
-                .def("add_arbitrary_data", py::overload_cast<const  std::vector<std::string>&>(&franka_proxy::logger::add_arbitrary_data),
-                     py::arg("data"));
         
         py::class_<franka_proxy::joint_limit>(m, "joint_limit")
                 .def(py::init<double, double>(), py::arg("min"), py::arg("max"))
@@ -919,31 +713,6 @@ PYBIND11_MODULE(franka_proxy_module, m){
                 .def_static("tool_inertia", &py_franka_proxy_util::tool_inertia)
                 .def_readonly_static("deg_to_rad", &py_franka_proxy_util::deg_to_rad)
                 .def_readonly_static("rad_to_deg", &py_franka_proxy_util::rad_to_deg);
-
-        py::class_<franka_proxy::ft_sensor_response>(m, "ft_sensore_response")
-                .def_readwrite("ft_sequencee_number", &franka_proxy::ft_sensor_response::ft_sequence_number)   
-                .def_readwrite("data", &franka_proxy::ft_sensor_response::data);
-
-        py::class_<franka_proxy::ft_sensor>(m, "ft_sensor")
-                .def("read", &franka_proxy::ft_sensor::read)  
-                .def("read_raw", &franka_proxy::ft_sensor::read_raw)     
-                .def("fts_t_flange", &franka_proxy::ft_sensor::fts_t_flange)     
-                .def("ee_t_kms", &franka_proxy::ft_sensor::ee_t_kms)     
-                .def("load_mass", &franka_proxy::ft_sensor::load_mass)     
-                .def("set_bias", &franka_proxy::ft_sensor::set_bias, py::arg("bias"))     
-                .def("set_load_mass", &franka_proxy::ft_sensor::set_load_mass, py::arg("load_mass"));     
-                // .def(py::init<Eigen::Affine3f, Eigen::Affine3f, Eigen::Vector<double, 6>, Eigen::Vector3d>(),
-                //      py::arg("fts_t_flange"), py::arg("ee_t_fts_"), py::arg("bias_"), py::arg("load_mass_"));                    
-
-        py::register_exception<franka_proxy::ft_sensor_connection_exception>(m, "ft_sensore_connection_exception");
-
-        py::class_<franka_proxy::schunk_ft_sensor, franka_proxy::ft_sensor>(m, "schunk_ft_sensor")
-                .def(py::init<const Eigen::Affine3f&, const Eigen::Affine3f&, const Eigen::Vector<double, 6>&, const Eigen::Vector3d&>(),
-                     py::arg("kms_T_flange"), py::arg("EE_T_kms"), py::arg("bias"), py::arg("load_mass"))
-                .def(py::init<const Eigen::Affine3f&, const Eigen::Affine3f&, std::string>(),
-                     py::arg("kms_T_flange"), py::arg("EE_T_kms"), py::arg("config_file") = "./assets/fts-config.json")
-                .def("update_calibration", &franka_proxy::schunk_ft_sensor::update_calibration, py::arg("config_file") = "./assets/fts-config.json");
-        
         
 }
 // .def("start", py::overload_cast<std::optional<std::string>>(&franka_proxy::detail::motion_recorder::start),
