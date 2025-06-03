@@ -38,6 +38,9 @@ cmake .. "-DCMAKE_TOOLCHAIN_FILE=C:/insert/path/here/tools/vcpkg/scripts/buildsy
 cmake --build .
 ```
 
+## Pythin bindings
+To generate python bindings, TODO describe steps: install pybind11 with vcpkg, add python-subdir in root CMakeLists, build Release, try controller_test.py in build_dir/python.
+
 ## Project structure
 ```mermaid
 classDiagram
