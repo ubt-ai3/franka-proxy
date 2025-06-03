@@ -1,4 +1,4 @@
-set(MODULE_NAME franka_control_python_module)
+set(MODULE_NAME franka_control_python_bindings)
 
 # Development component is required (see https://github.com/pybind/pybind11/issues/3996)
 find_package(Python3 REQUIRED COMPONENTS Interpreter Development)
@@ -6,7 +6,7 @@ find_package(pybind11 REQUIRED)
 
 # Define the module
 pybind11_add_module(${MODULE_NAME} SHARED
-    python_bindings.cpp
+    franka_control_python_bindings.cpp
 )
 target_compile_features(${MODULE_NAME} PUBLIC cxx_std_20)
 
@@ -43,3 +43,10 @@ foreach(config IN ITEMS "" "_DEBUG" "_RELEASE")
     get_target_property(_lib Python3::Python IMPORTED_IMPLIB${config})
     message(STATUS "Python3::Python${config} = ${_lib}")
 endforeach()
+
+add_custom_command(
+    TARGET franka_control_python_bindings POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy
+            ${CMAKE_CURRENT_SOURCE_DIR}/controller_test.py
+            ${CMAKE_CURRENT_BINARY_DIR}/controller_test.py
+)
