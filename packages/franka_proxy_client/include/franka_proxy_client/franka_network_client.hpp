@@ -32,9 +32,9 @@ namespace franka_proxy
 class franka_state_client
 {
 public:
-	franka_state_client
-	(std::string remote_ip,
-	 std::uint16_t remote_port);
+	franka_state_client(
+		std::string remote_ip,
+		std::uint16_t remote_port);
 
 	~franka_state_client() noexcept;
 
@@ -47,8 +47,8 @@ public:
 private:
 	void update_messages_buffer();
 
-	std::unique_ptr<asio_tcp_socket> connect
-	(const std::string& ip, std::uint16_t port);
+	std::unique_ptr<asio_tcp_socket> connect(
+		const std::string& ip, std::uint16_t port);
 
 
 	static constexpr std::size_t receive_buffer_size_ = 1024;
@@ -61,7 +61,6 @@ private:
 	std::unique_ptr<asio_tcp_socket> connection_;
 
 	std::string messages_buffer_;
-	std::list<std::string> messages_;
 	std::list<command_get_config_response> states_;
 };
 
@@ -77,9 +76,9 @@ private:
 class franka_control_client
 {
 public:
-	franka_control_client
-	(std::string remote_ip,
-	 std::uint16_t remote_port);
+	franka_control_client(
+		std::string remote_ip,
+		std::uint16_t remote_port);
 
 	~franka_control_client() noexcept;
 
@@ -106,11 +105,10 @@ public:
 private:
 	nlohmann::json send_json(
 		const nlohmann::json& json,
-		float timeout_seconds = 1.f
-	);
+		float timeout_seconds = 1.f);
 
-	std::unique_ptr<asio_tcp_socket> connect
-	(const std::string& ip, std::uint16_t port);
+	std::unique_ptr<asio_tcp_socket> connect(
+		const std::string& ip, std::uint16_t port);
 
 	std::unique_ptr<asio::io_context> io_context_;
 

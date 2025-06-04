@@ -256,15 +256,20 @@ void franka_remote_interface::update()
 	while (socket_state_->states().empty())
 		socket_state_->update_messages();
 
+	// TODO only use latest state?
+	//const auto& state = socket_state_->states().back();
 	for (const auto& state : socket_state_->states())
 	{
 		std::lock_guard lck(state_lock_);
+		// robot config
 		current_config_ = state.joint_configuration;
+
+		// jaw gripper
 		current_gripper_pos_ = state.width;
 		max_gripper_pos_ = state.max_width;
 		gripper_grasped_ = state.is_grasped;
 
-		//vacuum gripper
+		// vacuum gripper
 		vacuum_gripper_state_.actual_power_ = state.actual_power;
 		vacuum_gripper_state_.vacuum_level = state.vacuum;
 		vacuum_gripper_state_.part_detached_ = state.part_detached;
