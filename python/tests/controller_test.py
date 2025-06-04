@@ -1,4 +1,4 @@
-import franka_control_python_bindings as franka
+import py_franka_control as pyfranka
 import time
 
 class UpdateThread:
@@ -28,7 +28,7 @@ class UpdateThread:
 def test_remote_controller():
     print("Testing remote python franka controller:")
     robot_ip = "127.0.0.1"
-    controller = franka.FrankaControllerRemote(robot_ip)
+    controller = pyfranka.FrankaControllerRemote(robot_ip)
  
     updater = UpdateThread(controller)
     updater.start()
@@ -59,7 +59,7 @@ def test_remote_controller():
     
 def test_emulated_controller():
     print("Testing emulated python franka controller:")
-    controller = franka.FrankaControllerEmulated()
+    controller = pyfranka.FrankaControllerEmulated()
 
     print("Initial joint config:")
     print(controller.current_config())

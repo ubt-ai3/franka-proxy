@@ -3,14 +3,14 @@
 #include <pybind11/stl.h>
 #include <optional>
 
-#include "franka_controller.hpp"
-#include "franka_controller_remote.hpp"
-#include "franka_controller_emulated.hpp"
+#include <franka_controller.hpp>
+#include <franka_controller_remote.hpp>
+#include <franka_controller_emulated.hpp>
 
 namespace py = pybind11;
 namespace fc = franka_control;
 
-PYBIND11_MODULE(franka_control_python_bindings, m)
+PYBIND11_MODULE(py_franka_control, m)
 {
 	py::class_<fc::franka_controller, std::shared_ptr<fc::franka_controller>>(m, "FrankaController")
 		// Base class methods not overridden in derived classes (remote and emulated controllers)
