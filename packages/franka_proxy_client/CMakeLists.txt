@@ -1,6 +1,7 @@
 set(LIB_NAME franka_proxy_client)
 
 add_library(${LIB_NAME} STATIC)
+set_target_properties(${LIB_NAME} PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
 set(INCLUDE_DIR include/${LIB_NAME})
 
