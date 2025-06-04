@@ -10,7 +10,9 @@
 
 #include "franka_network_state_server.hpp"
 
+#include <chrono>
 #include <string>
+#include <thread>
 #include <iostream>
 
 #include <asio/write.hpp>
@@ -65,6 +67,7 @@ void franka_state_server::task_main()
 {
 	while (!terminate_internal_thread_)
 	{
+		const auto iteration_start_time = std::chrono::system_clock::now();
 		// Possibly accept new connection
 		// and drop preceding connection.
 		std::error_code error;
@@ -76,8 +79,8 @@ void franka_state_server::task_main()
 
 		if (!connection_)
 		{
-			std::this_thread::sleep_for
-				(std::chrono::duration<double>(sleep_seconds_disconnected_));
+			std::this_thread::sleep_for(
+				std::chrono::duration<float>(sleep_seconds_disconnected_));
 
 			continue;
 		}
@@ -89,64 +92,67 @@ void franka_state_server::task_main()
 			const franka::GripperState gripper_state = controller_.gripper_state();
 			const franka::VacuumGripperState vacuum_gripper_state_ = controller_.vacuum_gripper_state();
 
-			{	
-				//DEBUG
-				static bool object_present = false;
-				if (vacuum_gripper_state_.part_present != object_present)
-				{
-					if (vacuum_gripper_state_.part_present)
-						std::cout << "object attached\n";
-					else
-						std::cout << "object detached\n";
+			//Debug Code from Axel Wimmer, TODO just delete?
+			//{	
+			//	//DEBUG
+			//	static bool object_present = false;
+			//	if (vacuum_gripper_state_.part_present != object_present)
+			//	{
+			//		if (vacuum_gripper_state_.part_present)
+			//			std::cout << "object attached\n";
+			//		else
+			//			std::cout << "object detached\n";
 
-				}
-				object_present = vacuum_gripper_state_.part_present;
+			//	}
+			//	object_present = vacuum_gripper_state_.part_present;
 
-				/*static bool part_detached = false;
-				if (vacuum_gripper_state_.part_detached != part_detached)
-				{
-					if (vacuum_gripper_state_.part_detached)
-						std::cout << "detached\n";
-					else
-						std::cout << "un-detached\n";
-				}
-				part_detached = vacuum_gripper_state_.part_detached;*/
+			//	/*static bool part_detached = false;
+			//	if (vacuum_gripper_state_.part_detached != part_detached)
+			//	{
+			//		if (vacuum_gripper_state_.part_detached)
+			//			std::cout << "detached\n";
+			//		else
+			//			std::cout << "un-detached\n";
+			//	}
+			//	part_detached = vacuum_gripper_state_.part_detached;*/
 
 
 
-				if (robot_state.last_motion_errors)
-				{
-					//these error flags are quite often set, i dont know why 
-					//to avoid spamming console comment out
-					
-					/*auto errors = robot_state.last_motion_errors;
-					if (errors.self_collision_avoidance_violation == false)
-						std::cout << "no self collision, thats rare!\n";
+			//	if (robot_state.last_motion_errors)
+			//	{
+			//		//these error flags are quite often set, i dont know why 
+			//		//to avoid spamming console comment out
+			//		
+			//		/*auto errors = robot_state.last_motion_errors;
+			//		if (errors.self_collision_avoidance_violation == false)
+			//			std::cout << "no self collision, thats rare!\n";
 
-					std::string error_description = (std::string)errors;
-					if (error_description != "[\"self_collision_avoidance_violation\"]");
-						std::cout << error_description<<"\n";*/
+			//		std::string error_description = (std::string)errors;
+			//		if (error_description != "[\"self_collision_avoidance_violation\"]");
+			//			std::cout << error_description<<"\n";*/
 
-					//controller_.automatic_error_recovery();
-				}
-				bool collision = false;
-				for (int i = 0; i < 7; i++)
-				{
-					if (robot_state.joint_collision[i])
-					{
-						std::cout << "Collision at joint " << i << "detected\n";
-						collision = true;
-					}
-					if(robot_state.joint_contact[i])
-						std::cout << "Contact at joint " << i << "detected\n";
-				}
-				if (collision)
-					controller_.automatic_error_recovery();
+			//		//controller_.automatic_error_recovery();
+			//	}
+			//	bool collision = false;
+			//	for (int i = 0; i < 7; i++)
+			//	{
+			//		if (robot_state.joint_collision[i])
+			//		{
+			//			std::cout << "Collision at joint " << i << "detected\n";
+			//			collision = true;
+			//		}
+			//		if(robot_state.joint_contact[i])
+			//			std::cout << "Contact at joint " << i << "detected\n";
+			//	}
+			//	if (collision)
+			//		controller_.automatic_error_recovery();
 
-				//if (robot_state.control_command_success_rate  && robot_state.control_command_success_rate < 100)
-				//	std::cout << "Command success rate: " << robot_state.control_command_success_rate << "\n";
-				
-			}
+			//	//if (robot_state.control_command_success_rate  && robot_state.control_command_success_rate < 100)
+			//	//	std::cout << "Command success rate: " << robot_state.control_command_success_rate << "\n";
+			//	
+			//}
+			
+
 			command_get_config_response response{};
 			response.joint_configuration = robot_state.q;
 			response.width = gripper_state.width;
@@ -165,27 +171,27 @@ void franka_state_server::task_main()
 			asio::write(*connection_, asio::buffer(&content_length, sizeof(std::uint64_t)));
 			asio::write(*connection_, asio::buffer(content));
 		}
-
-		catch (const asio::system_error& exc)
+		catch (const asio::system_error& e)
 		{
 			std::cout << "franka_state_server::task_main(): ";
-			if (exc.code() == asio::error::connection_reset)
-				std::cout << " The connection was reset by the client. Dropping stream and stopping robot." << '\n';
-			else if (exc.code() == asio::error::connection_aborted)
-				std::cout << " The connection was aborted. Dropping stream and stopping robot." << '\n';
-			else if (exc.code() == asio::error::timed_out)
-				std::cout << " The connection timed out. Dropping stream and stopping robot." << '\n';
+			if (e.code() == asio::error::connection_reset)
+				std::cout << "The connection was reset by the client. Dropping stream and stopping robot." << '\n';
+			else if (e.code() == asio::error::connection_aborted)
+				std::cout << "The connection was aborted. Dropping stream and stopping robot." << '\n';
+			else if (e.code() == asio::error::timed_out)
+				std::cout << "The connection timed out. Dropping stream and stopping robot." << '\n';
 			else
 				std::cout << "Unknown connection error. Dropping stream and stopping robot." << '\n';
 
 			controller_.stop_movement();
 			connection_.reset();
 		}
-		catch (const std::exception& exc)
+		catch (const std::exception& e)
 		{
 			std::cerr << "franka_state_server::task_main(): " <<
-				"An exception occurred while processing requests, dropping stream and stopping robot. " <<
-				'\n' << "Exception message: " << exc.what() << '\n';
+				"An exception occurred while processing requests, " <<
+				"dropping stream and stopping robot. \n" <<
+				"Exception message: " << e.what() << '\n';
 
 			controller_.stop_movement();
 			connection_.reset();
@@ -199,8 +205,10 @@ void franka_state_server::task_main()
 			connection_.reset();
 		}
 
-		std::this_thread::sleep_for
-			(std::chrono::duration<double>(sleep_seconds_connected_));
+		auto increment = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::duration<float>(sleep_seconds_connected_));
+		auto iteration_time = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now() - iteration_start_time);
+		if (increment > iteration_time)
+			std::this_thread::sleep_for(increment - iteration_time);
 	}
 }
 
