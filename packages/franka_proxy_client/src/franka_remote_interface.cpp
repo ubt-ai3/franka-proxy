@@ -29,8 +29,8 @@ namespace franka_proxy
 //////////////////////////////////////////////////////////////////////////
 
 
-franka_remote_interface::franka_remote_interface
-(std::string proxy_ip)
+franka_remote_interface::franka_remote_interface(
+	std::string proxy_ip)
 	: franka_ip_(std::move(proxy_ip)),
 	  current_config_(),
 	  current_gripper_pos_(),
@@ -70,23 +70,22 @@ void franka_remote_interface::move_sequence(
 	const std::vector<robot_config_7dof>& q_sequence,
 	const std::vector<std::array<double, 6>>& f_sequence,
 	const std::vector<std::array<double, 6>>& selection_vector_sequence,
-	const std::array<double,16>& offset_position,
-	const std::array<double,6>& offset_force)
+	const std::array<double, 16>& offset_position,
+	const std::array<double, 6>& offset_force)
 {
 	send_command<command_move_hybrid_sequence_with_offset>
-		(q_sequence, f_sequence, selection_vector_sequence,offset_position,offset_force);
+		(q_sequence, f_sequence, selection_vector_sequence, offset_position, offset_force);
 }
 
 void franka_remote_interface::move_sequence(
 	const std::vector<robot_config_7dof>& q_sequence,
 	const std::vector<std::array<double, 6>>& f_sequence,
 	const std::vector<std::array<double, 6>>& selection_vector_sequence
-	)
+)
 {
 	send_command<command_move_hybrid_sequence>
 		(q_sequence, f_sequence, selection_vector_sequence);
 }
-
 
 
 void franka_remote_interface::apply_admittance(
@@ -206,7 +205,9 @@ void franka_remote_interface::automatic_error_recovery()
 
 
 void franka_remote_interface::set_guiding_params(bool x, bool y, bool z, bool rx, bool ry, bool rz, bool elbow)
-	{ send_command<command_set_guiding_params>(std::array<bool, 6>{ x, y, z, rx, ry, rz }, elbow); }
+{
+	send_command<command_set_guiding_params>(std::array<bool, 6>{x, y, z, rx, ry, rz}, elbow);
+}
 
 
 robot_config_7dof franka_remote_interface::current_config() const
@@ -304,7 +305,7 @@ command_result franka_remote_interface::check_response(const command_generic_res
 	case command_result::invalid_operation:
 		throw invalid_operation_exception{response.reason};
 	case command_result::force_torque_sensor_exception:
-		throw ft_sensor_exception{};
+		throw ft_sensor_exception{response.reason};
 	case command_result::unknown_command:
 		throw unknown_command_exception{response.reason};
 	default:
@@ -334,12 +335,12 @@ void franka_remote_interface::shutdown_sockets() noexcept
 
 bool franka_remote_interface::vacuum_gripper_drop(std::chrono::milliseconds timeout)
 {
-	return send_command<command_vacuum_gripper_drop>(timeout)==command_result::success;
+	return send_command<command_vacuum_gripper_drop>(timeout) == command_result::success;
 }
 
 bool franka_remote_interface::vacuum_gripper_vacuum(std::uint8_t vacuum_strength, std::chrono::milliseconds timeout)
 {
-	return send_command<command_vacuum_gripper_vacuum>(vacuum_strength,timeout) == command_result::success;
+	return send_command<command_vacuum_gripper_vacuum>(vacuum_strength, timeout) == command_result::success;
 }
 
 bool franka_remote_interface::vacuum_gripper_stop()
@@ -352,5 +353,4 @@ vacuum_gripper_state franka_remote_interface::get_vacuum_gripper_state() const
 	std::lock_guard<std::mutex> state_guard(state_lock_);
 	return vacuum_gripper_state_;
 }
-
-} /* namespace franka_proxy */
+}

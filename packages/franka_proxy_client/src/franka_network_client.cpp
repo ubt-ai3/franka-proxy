@@ -20,7 +20,6 @@
 #include <asio/read.hpp>
 #include <asio/write.hpp>
 #include <asio/ip/tcp.hpp>
-
 #include <nlohmann/json.hpp>
 
 #include "exception.hpp"
@@ -160,8 +159,8 @@ franka_control_client::~franka_control_client() noexcept
 }
 
 
-nlohmann::json franka_control_client::send_json
-(const nlohmann::json& json, float timeout_seconds)
+nlohmann::json franka_control_client::send_json(
+	const nlohmann::json& json)
 {
 	try
 	{
@@ -170,14 +169,11 @@ nlohmann::json franka_control_client::send_json
 
 		std::string message = json.dump();
 		std::uint64_t content_length = message.size();
-		write
-		(*connection_,
-		 asio::buffer(&content_length, sizeof(std::uint64_t)));
+		write(*connection_, asio::buffer(&content_length, sizeof(std::uint64_t)));
 
 		write(*connection_, asio::buffer(message));
 
-		read
-			(*connection_, asio::buffer(&content_length, sizeof(std::uint64_t)));
+		read(*connection_, asio::buffer(&content_length, sizeof(std::uint64_t)));
 
 		std::string response{};
 		response.resize(content_length);
@@ -200,8 +196,9 @@ nlohmann::json franka_control_client::send_json
 }
 
 
-std::unique_ptr<asio::ip::tcp::socket> franka_control_client::connect
-(const std::string& ip, std::uint16_t port)
+std::unique_ptr<asio::ip::tcp::socket> franka_control_client::connect(
+	const std::string& ip,
+	std::uint16_t port)
 {
 	asio::ip::tcp::resolver resolver(*io_context_);
 	asio::ip::tcp::resolver::results_type endpoints =
@@ -223,4 +220,4 @@ std::unique_ptr<asio::ip::tcp::socket> franka_control_client::connect
 
 	return s;
 }
-} /* namespace franka_proxy */
+}

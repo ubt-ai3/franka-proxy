@@ -10,7 +10,6 @@
  ************************************************************************/
 
 
-
 #include <exception>
 
 
@@ -189,8 +188,8 @@ public:
 class ft_sensor_exception : public remote_exception
 {
 public:
-	explicit ft_sensor_exception() noexcept
-		: remote_exception{""}
+	explicit ft_sensor_exception(const std::string& reason) noexcept
+		: remote_exception{reason}
 	{
 	}
 };
@@ -222,6 +221,6 @@ public:
 		return "Bad response sent by the server.";
 	}
 };
-} /* namespace franka_proxy */
+}
 
 #endif // INCLUDED__FRANKA_PROXY_CLIENT__EXCEPTION_HPP

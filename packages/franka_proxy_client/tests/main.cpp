@@ -5,9 +5,9 @@
 
 #include <argparse/argparse.hpp>
 
+#include <franka_proxy_share/franka_proxy_logger.hpp>
 #include <franka_proxy_client/exception.hpp>
 #include <franka_proxy_client/franka_remote_interface.hpp>
-#include <franka_proxy_share/franka_proxy_logger.hpp>
 
 
 // use this to specify which test to run within the franka_proxy_client_test method
@@ -27,10 +27,12 @@ void franka_proxy_client_test(const std::string& ip, test_mode test, const std::
 void print_status(const franka_proxy::franka_remote_interface& robot);
 template <class Function> void execute_retry(
 	Function&& f, franka_proxy::franka_remote_interface& robot);
-double calculate_pose_error(const franka_proxy::robot_config_7dof& pose_d, const franka_proxy::robot_config_7dof& pose_c);
+double calculate_pose_error(const franka_proxy::robot_config_7dof& pose_d,
+                            const franka_proxy::robot_config_7dof& pose_c);
 
 
-void ple_motion_record_test(franka_proxy::franka_remote_interface& robot, double speed, double duration, bool log, std::string file);
+void ple_motion_record_test(franka_proxy::franka_remote_interface& robot, double speed, double duration, bool log,
+                            std::string file);
 void ptp_test(franka_proxy::franka_remote_interface& robot, double margin, bool log, std::string& file);
 void gripper_test(franka_proxy::franka_remote_interface& robot, double margin, bool grasp);
 void playback_test(franka_proxy::franka_remote_interface& robot, bool log, std::string& file);
@@ -147,7 +149,7 @@ int main(int argc, char* argv[])
 	//std::string ip("132.180.194.112"); // franka1-proxy@resy-lab
 
 
-	test_mode test = test_mode::none;
+	test_mode test = none;
 	std::vector<std::string> params;
 
 	// case distinction for individual tests / subparsers, remember to set "test" to the corresponding mode
@@ -155,7 +157,7 @@ int main(int argc, char* argv[])
 	// note that only one test can be run at the same time, so add new tests with an "else if" block
 	if (program.is_subcommand_used(ple_test))
 	{
-		test = test_mode::ple;
+		test = ple;
 
 		auto speed = ple_test.get<std::string>("speed");
 		auto duration = ple_test.get<std::string>("-d");
@@ -171,7 +173,7 @@ int main(int argc, char* argv[])
 	}
 	else if (program.is_subcommand_used(gripper_test))
 	{
-		test = test_mode::gripper;
+		test = gripper;
 
 		auto margin = gripper_test.get<std::string>("margin");
 		bool grasp_flag = gripper_test.get<bool>("-g");
@@ -183,7 +185,7 @@ int main(int argc, char* argv[])
 	}
 	else if (program.is_subcommand_used(ptp_test))
 	{
-		test = test_mode::ptp;
+		test = ptp;
 
 		auto margin = ptp_test.get<std::string>("margin");
 		bool log_flag = ptp_test.get<bool>("-l");
@@ -197,7 +199,7 @@ int main(int argc, char* argv[])
 	}
 	else if (program.is_subcommand_used(force_test))
 	{
-		test = test_mode::force;
+		test = force;
 
 		auto mass = force_test.get<std::string>("-m");
 		auto duration = force_test.get<std::string>("-d");
@@ -207,7 +209,7 @@ int main(int argc, char* argv[])
 	}
 	else if (program.is_subcommand_used(playback_test))
 	{
-		test = test_mode::playback;
+		test = playback;
 
 		bool log_flag = playback_test.get<bool>("-l");
 		std::string log("false");
@@ -219,7 +221,7 @@ int main(int argc, char* argv[])
 	}
 	else if (program.is_subcommand_used(vacuum_test))
 	{
-		test = test_mode::vacuum;
+		test = vacuum;
 		//TODO::
 	}
 	/*else if (program.is_subcommand_used(ermer_test)) {
@@ -259,7 +261,7 @@ void franka_proxy_client_test(
 
 
 	// --- mandatory status thread with debug output ---
-	int print_every_ith_status = 1; 
+	int print_every_ith_status = 1;
 	std::atomic_bool stop(false);
 	std::thread t([&stop, &robot, print_every_ith_status]()
 	{

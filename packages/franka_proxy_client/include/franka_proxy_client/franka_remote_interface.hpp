@@ -10,12 +10,12 @@
  ************************************************************************/
 
 
-
 #include <array>
 #include <mutex>
-#include <string>
-#include <Eigen/Geometry>
 #include <optional>
+#include <string>
+
+#include <Eigen/Geometry>
 
 #include <franka_proxy_share/franka_proxy_commands.hpp>
 
@@ -58,7 +58,10 @@ public:
 	 */
 	void move_to(const robot_config_7dof& target);
 	void move_to(const Eigen::Vector<double, 7>& target);
-	void move_to(const robot_config_7dof& target, std::array<double, 16> offset_position, std::array<double, 6> offset_force);
+	void move_to(
+		const robot_config_7dof& target,
+		std::array<double, 16> offset_position,
+		std::array<double, 6> offset_force);
 
 
 	/**
@@ -89,8 +92,8 @@ public:
 	(const std::vector<robot_config_7dof>& q_sequence,
 	 const std::vector<std::array<double, 6>>& f_sequence,
 	 const std::vector<std::array<double, 6>>& selection_vector_sequence,
-	 const std::array<double, 16>& offset_position ,
-	 const std::array<double, 6>& offset_force );
+	 const std::array<double, 16>& offset_position,
+	 const std::array<double, 6>& offset_force);
 
 
 	/**
@@ -109,37 +112,47 @@ public:
 	/**
 	 * Admittance controller using desired rotational and translational stiffness within the admittance and the impedance controller
 	*/
-	void apply_admittance(double duration, double adm_rotational_stiffness,
-	                      double adm_translational_stiffness, double imp_rotational_stiffness,
-	                      double imp_translational_stiffness, std::optional<std::string> log_file_path = std::nullopt);
+	void apply_admittance(
+		double duration, double adm_rotational_stiffness,
+		double adm_translational_stiffness, double imp_rotational_stiffness,
+		double imp_translational_stiffness, std::optional<std::string> log_file_path = std::nullopt);
 
 	/**
 	 * Cartesian impedance controller to hold the current pose with desired rotational and translational stiffness
 	*/
-	void cartesian_impedance_hold_pose(double duration, bool use_stiff_damp_online_calc,
-	                                   double rotational_stiffness, double translational_stiffness,
-									   std::optional<std::string> log_file_path = std::nullopt);
+	void cartesian_impedance_hold_pose(
+		double duration, bool use_stiff_damp_online_calc,
+		double rotational_stiffness, double translational_stiffness,
+		std::optional<std::string> log_file_path = std::nullopt);
 
 	/**
 	*  Cartesian impedance controller to follow path of poses with desired rotational and translational stiffness
 	*  Duration parameter: duration to follow the complete path -> Example: 10s duration, 5 poses -> 2s per pose
 	*/
-	void cartesian_impedance_poses(std::list<std::array<double, 16>>& positions, double duration,
-	                               bool use_stiff_damp_online_calc, double rotational_stiffness,
-	                               double translational_stiffness, std::optional<std::string> log_file_path = std::nullopt);
+	void cartesian_impedance_poses(
+		std::list<std::array<double, 16>>& positions,
+		double duration,
+		bool use_stiff_damp_online_calc,
+		double rotational_stiffness,
+		double translational_stiffness,
+		std::optional<std::string> log_file_path = std::nullopt);
 
 	/**
 	 * Joint space impedance controller to hold the current position with desired stiffness matrix parameter
 	*/
-	void joint_impedance_hold_position(double duration, std::array<double, 49> stiffness,
-		                               std::optional<std::string> log_file_path = std::nullopt);
+	void joint_impedance_hold_position(
+		double duration,
+		std::array<double, 49> stiffness,
+		std::optional<std::string> log_file_path = std::nullopt);
 
 	/**
 	*  Joint space impedance controller to follow path of positions with desired stiffness matrix parameter
 	*	Duration parameter: duration to follow the complete path -> Example: 10s duration, 5 positions -> 2s per position
 	*/
-	void joint_impedance_positions(std::list<std::array<double, 7>>& joint_positions, double duration,
-								   std::array<double, 49> stiffness, std::optional<std::string> log_file_path = std::nullopt);
+	void joint_impedance_positions(std::list<std::array<double, 7>>& joint_positions,
+	                               double duration,
+	                               std::array<double, 49> stiffness,
+	                               std::optional<std::string> log_file_path = std::nullopt);
 
 	/**
 	 * Joint space impedance controller for executing a pre-defined motion for payload estimation
@@ -203,42 +216,31 @@ public:
 	bool vacuum_gripper_drop(std::chrono::milliseconds timeout = std::chrono::milliseconds(100));
 
 	/**
- * Creates a vacuum with the vacuum gripper in order to grip objects.
- * Remote function for franka::VacuumGripper::vacuum.
+	 * Creates a vacuum with the vacuum gripper in order to grip objects.
+	 * Remote function for franka::VacuumGripper::vacuum.
 
- *	returns if the vacuum was created successful
- *
- * @TODO: Check exceptions.
- *
- * @throw remote_exception if the movement was unsuccessful.
- * @throw viral_core::network_exception if the connection was lost.
- */
-	bool vacuum_gripper_vacuum(std::uint8_t vacuum_strength, std::chrono::milliseconds timeout = std::chrono::milliseconds(100));
+	 *	returns if the vacuum was created successful
+	 *
+	 * @TODO: Check exceptions.
+	 *
+	 * @throw remote_exception if the movement was unsuccessful.
+	 * @throw viral_core::network_exception if the connection was lost.
+	 */
+	bool vacuum_gripper_vacuum(std::uint8_t vacuum_strength,
+	                           std::chrono::milliseconds timeout = std::chrono::milliseconds(100));
 
 	/**
-* Stops the current vaccum gripper command
-*
-*	remote function for franka::VacuumGripper::stop
-*
-* @TODO: Check exceptions.
-*
-* @throw remote_exception if the movement was unsuccessful.
-* @throw viral_core::network_exception if the connection was lost.
-*/
+	* Stops the current vaccum gripper command
+	*
+	*	remote function for franka::VacuumGripper::stop
+	*
+	* @TODO: Check exceptions.
+	*
+	* @throw remote_exception if the movement was unsuccessful.
+	* @throw viral_core::network_exception if the connection was lost.
+	*/
 
 	bool vacuum_gripper_stop();
-	/**
- * Drops objects by stopping then vacuum
- *
- * Returns if the movement was completed successfully.
- * Throws some remote_exception on failure.
- *
- * @TODO: Check exceptions.
- *
- * @throw remote_exception if the movement was unsuccessful.
- * @throw viral_core::network_exception if the connection was lost.
- */
-
 
 
 	/**
@@ -332,8 +334,7 @@ private:
 	template <typename TCommandType> using TResponseType = std::conditional_t<
 		std::is_same_v<typename TCommandType::response_type, command_generic_response>,
 		command_result,
-		typename TCommandType::response_type
-	>;
+		typename TCommandType::response_type>;
 
 	/**
 	 * Constructs an command in-place with given arguments, and checks the response code,
@@ -366,7 +367,7 @@ private:
 
 	/**
 	 * Checks whether the response indicates that the command was processed successfully.
-	 * Otherwise throws an exception indicated by the result code.
+	 * Otherwise, throws an exception indicated by the result code.
 	 */
 	static command_result check_response(const command_generic_response& response);
 
@@ -389,6 +390,6 @@ private:
 	bool gripper_grasped_{false};
 	vacuum_gripper_state vacuum_gripper_state_;
 };
-} /* namespace franka_proxy */
+}
 
 #endif // INCLUDED__FRANKA_PROXY_CLIENT__FRANKA_REMOTE_INTERFACE_HPP

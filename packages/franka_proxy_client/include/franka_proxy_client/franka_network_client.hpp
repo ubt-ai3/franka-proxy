@@ -13,10 +13,10 @@
 #include <memory>
 #include <string>
 
+#include <nlohmann/json.hpp>
+
 #include <franka_proxy_share/asio_forward.hpp>
 #include <franka_proxy_share/franka_proxy_commands.hpp>
-
-#include <nlohmann/json.hpp>
 
 
 namespace franka_proxy
@@ -93,22 +93,19 @@ public:
 	 *
 	 * Throws network_exception if the command transmission failed.
 	 * Throws bad_response_exception if the response failed to parse.
-	 *
-	 * 
 	 */
 	template <typename TCommandType> typename TCommandType::response_type send_command(
-		const TCommandType& command, float timeout_seconds = 1.f)
+		const TCommandType& command)
 	{
-		return send_json(command, timeout_seconds).template get<typename TCommandType::response_type>();
+		return send_json(command).template get<typename TCommandType::response_type>();
 	}
 
 private:
-	nlohmann::json send_json(
-		const nlohmann::json& json,
-		float timeout_seconds = 1.f);
+	nlohmann::json send_json(const nlohmann::json& json);
 
 	std::unique_ptr<asio_tcp_socket> connect(
-		const std::string& ip, std::uint16_t port);
+		const std::string& ip,
+		std::uint16_t port);
 
 	std::unique_ptr<asio::io_context> io_context_;
 
@@ -117,6 +114,6 @@ private:
 
 	std::unique_ptr<asio_tcp_socket> connection_;
 };
-} /* namespace franka_proxy */
+}
 
 #endif // INCLUDED__FRANKA_PROXY_CLIENT__FRANKA_NETWORK_CLIENT_HPP
