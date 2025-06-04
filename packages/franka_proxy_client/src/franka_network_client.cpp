@@ -66,7 +66,7 @@ void franka_state_client::update_messages()
 	// on any network exception.
 	try
 	{
-		states_.clear();
+		clear_states();
 		update_messages_buffer();
 	}
 	catch (const asio::system_error&)
@@ -106,14 +106,13 @@ void franka_state_client::update_messages_buffer()
 	catch (...)
 	{
 		std::cerr << "franka_state_client::update_messages_buffer(): "
-			<< "State message discarded due to bad JSON."
-			<< '\n';
+			<< "State message discarded due to bad JSON." << std::endl;
 	}
 }
 
 
-std::unique_ptr<asio::ip::tcp::socket> franka_state_client::connect
-(const std::string& ip, std::uint16_t port)
+std::unique_ptr<asio::ip::tcp::socket> franka_state_client::connect(
+	const std::string& ip, std::uint16_t port)
 {
 	asio::ip::tcp::resolver resolver(*io_context_);
 	asio::ip::tcp::resolver::results_type endpoints =

@@ -374,23 +374,20 @@ private:
 	void initialize_sockets();
 	void shutdown_sockets() noexcept;
 
+
 	const std::string franka_ip_;
+	static constexpr unsigned short franka_control_port = 4711;
+	static constexpr unsigned short franka_state_port = 4712;
 
 	std::unique_ptr<franka_control_client> socket_control_;
 	std::unique_ptr<franka_state_client> socket_state_;
-
 
 	mutable std::mutex state_lock_;
 	robot_config_7dof current_config_;
 	double current_gripper_pos_;
 	double max_gripper_pos_;
 	bool gripper_grasped_{false};
-
-	private:
 	vacuum_gripper_state vacuum_gripper_state_;
-
-	static constexpr unsigned short franka_control_port = 4711;
-	static constexpr unsigned short franka_state_port = 4712;
 };
 } /* namespace franka_proxy */
 
