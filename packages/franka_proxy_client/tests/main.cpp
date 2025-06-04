@@ -147,7 +147,7 @@ int main(int argc, char* argv[])
 	//std::string ip("132.180.194.112"); // franka1-proxy@resy-lab
 
 
-	test_mode test = none;
+	test_mode test = test_mode::none;
 	std::vector<std::string> params;
 
 	// case distinction for individual tests / subparsers, remember to set "test" to the corresponding mode
@@ -155,7 +155,7 @@ int main(int argc, char* argv[])
 	// note that only one test can be run at the same time, so add new tests with an "else if" block
 	if (program.is_subcommand_used(ple_test))
 	{
-		test = ple;
+		test = test_mode::ple;
 
 		auto speed = ple_test.get<std::string>("speed");
 		auto duration = ple_test.get<std::string>("-d");
@@ -171,7 +171,7 @@ int main(int argc, char* argv[])
 	}
 	else if (program.is_subcommand_used(gripper_test))
 	{
-		test = gripper;
+		test = test_mode::gripper;
 
 		auto margin = gripper_test.get<std::string>("margin");
 		bool grasp_flag = gripper_test.get<bool>("-g");
@@ -183,7 +183,7 @@ int main(int argc, char* argv[])
 	}
 	else if (program.is_subcommand_used(ptp_test))
 	{
-		test = ptp;
+		test = test_mode::ptp;
 
 		auto margin = ptp_test.get<std::string>("margin");
 		bool log_flag = ptp_test.get<bool>("-l");
@@ -197,7 +197,7 @@ int main(int argc, char* argv[])
 	}
 	else if (program.is_subcommand_used(force_test))
 	{
-		test = force;
+		test = test_mode::force;
 
 		auto mass = force_test.get<std::string>("-m");
 		auto duration = force_test.get<std::string>("-d");
@@ -207,7 +207,7 @@ int main(int argc, char* argv[])
 	}
 	else if (program.is_subcommand_used(playback_test))
 	{
-		test = playback;
+		test = test_mode::playback;
 
 		bool log_flag = playback_test.get<bool>("-l");
 		std::string log("false");
@@ -219,11 +219,11 @@ int main(int argc, char* argv[])
 	}
 	else if (program.is_subcommand_used(vacuum_test))
 	{
-		test = vacuum;
+		test = test_mode::vacuum;
 		//TODO::
 	}
 	/*else if (program.is_subcommand_used(ermer_test)) {
-		test = mode::ermer;
+		test = test_mode::ermer;
 
 		bool log_flag = ermer_test.get<bool>("-l");
 		std::string log = "false";
@@ -259,7 +259,7 @@ void franka_proxy_client_test(
 
 
 	// --- mandatory status thread with debug output ---
-	int print_every_ith_status = 30;
+	int print_every_ith_status = 1; 
 	std::atomic_bool stop(false);
 	std::thread t([&stop, &robot, print_every_ith_status]()
 	{
@@ -269,8 +269,10 @@ void franka_proxy_client_test(
 			robot->update();
 
 			if (print_every_ith_status && i++ % print_every_ith_status == 0)
+			{
+				std::cout << "Status #" << i << ": ";
 				print_status(*robot);
-
+			}
 			using namespace std::chrono_literals;
 			std::this_thread::sleep_for(0.016s);
 		}
@@ -281,7 +283,14 @@ void franka_proxy_client_test(
 
 	// case distinction for individual tests (add new tests with an "else if" block)
 	// parameters for test methods arrive here as a vector of strings, so convert accordingly
-	if (test == ple)
+	if (test == none)
+	{
+		std::cout << "Only testing status socket for 10s."
+			<< " You should get a bit less than 100 states.\n";
+		using namespace std::chrono_literals;
+		std::this_thread::sleep_for(10s);
+	}
+	else if (test == ple)
 	{
 		double speed = stod(params[0]);
 		double duration = stod(params[1]);
