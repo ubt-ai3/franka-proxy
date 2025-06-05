@@ -26,6 +26,9 @@ PYBIND11_MODULE(py_franka_control, m)
 		.def_readonly("tcp_T_j7", &fc::franka_controller::tcp_T_j7)
 		.def_readonly_static("gripper_unit_per_m", &fc::franka_controller::gripper_unit_per_m_);
 
+	py::class_<fc::franka_update_task, std::shared_ptr<fc::franka_update_task>>(m, "FrankaUpdateTask")
+		.def(py::init<fc::franka_controller&>());
+
 	py::class_<fc::franka_controller_remote, fc::franka_controller, std::shared_ptr<fc::franka_controller_remote>>(
 			m, "FrankaControllerRemote")
 		.def(py::init<const std::string&>())
