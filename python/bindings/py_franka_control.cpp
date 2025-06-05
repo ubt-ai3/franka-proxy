@@ -14,11 +14,43 @@
 #include <pybind11/eigen.h>
 #include <pybind11/stl.h>
 
-#include <franka_controller.hpp>
-#include <franka_controller_remote.hpp>
-#include <franka_controller_emulated.hpp>
+#include <franka_proxy_share/franka_proxy_util.hpp>
+#include <franka_control/franka_controller.hpp>
+#include <franka_control/franka_controller_remote.hpp>
+#include <franka_control/franka_controller_emulated.hpp>
 
 
+using robot_config_7dof = Eigen::Matrix<double, 7, 1>;
+using wrench = Eigen::Matrix<double, 6, 1>;
+using selection_diagonal = Eigen::Matrix<double, 6, 1>;
+
+
+class py_franka_proxy_util 
+	: public franka_proxy::franka_proxy_util 
+{
+public:
+
+	static robot_config_7dof ik_fast_closest_wrapper(
+		const Eigen::Matrix4d& target_world_T_j7,
+		robot_config_7dof& current_configuration,
+		double step_size = 0.174533) 
+	{
+		Eigen::Affine3d transfo(target_world_T_j7);
+		return ik_fast_closest(transfo, current_configuration, step_size);
+	}
+};
+
+
+ //////////////////////////////////////////////////////////////////////////
+ //
+ // py_franka_control Python Module
+ // 
+ // ! Caution ! only functionality from the python example is tested.
+ // E.g., python cannot handle all of Eigen's data types. 
+ // For Eigen::Affine3d have to use an Eigen::Matrix4d.
+ // See wrapper classes above
+ // 
+ //////////////////////////////////////////////////////////////////////////
 PYBIND11_MODULE(py_franka_control, m)
 {
 	pybind11::class_<
@@ -111,8 +143,7 @@ PYBIND11_MODULE(py_franka_control, m)
 			     &franka_control::franka_controller_emulated::move_sequence))
 		.def("move_sequence",
 		     pybind11::overload_cast<
-			     const std::vector<franka_control::robot_config_7dof>&,
-			     const std::vector<franka_control::wrench>&,
+			     const std::vector<franka_control::robot_config_7dof>&,			     const std::vector<franka_control::wrench>&,
 			     const std::vector<franka_control::selection_diagonal>&,
 			     std::array<double, 16>,
 			     std::array<double, 6>
