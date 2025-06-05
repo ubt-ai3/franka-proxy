@@ -51,21 +51,21 @@ bool franka_controller::move_until_contact(const Eigen::Affine3d& target_world_T
 }
 
 
-Eigen::Affine3d franka_controller::current_world_T_tcp() const
-{
-	return current_world_T_j7() * j7_T_tcp;
-}
-
-
-Eigen::Affine3d franka_controller::current_world_T_j7() const
+Eigen::Affine3d franka_controller::current_robot_base_T_j7() const
 {
 	return franka_proxy_util::fk(current_config()).at(7);
 }
 
 
-Eigen::Affine3d franka_controller::current_world_T_flange() const
+Eigen::Affine3d franka_controller::current_robot_base_T_flange() const
 {
-	return current_world_T_j7() * j7_T_flange;
+	return current_robot_base_T_j7() * j7_T_flange;
+}
+
+
+Eigen::Affine3d franka_controller::current_robot_base_T_tcp() const
+{
+	return current_robot_base_T_j7() * j7_T_tcp;
 }
 
 
@@ -126,13 +126,15 @@ franka_update_task::~franka_update_task() noexcept
 
 void franka_update_task::task_main()
 {
+	auto next_iteration_time =
+		std::chrono::steady_clock::now();
+
 	while (!terminate_internal_thread_)
 	{
-		auto next_time_point = std::chrono::steady_clock::now() + step_duration;
-
 		controller_.update();
 
-		std::this_thread::sleep_until(next_time_point);
+		next_iteration_time += step_duration;
+		std::this_thread::sleep_until(next_iteration_time);
 	}
 }
 } /* namespace franka_control */

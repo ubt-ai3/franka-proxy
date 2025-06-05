@@ -206,34 +206,34 @@ void franka_remote_interface::automatic_error_recovery()
 
 void franka_remote_interface::set_guiding_params(bool x, bool y, bool z, bool rx, bool ry, bool rz, bool elbow)
 {
-	send_command<command_set_guiding_params>(std::array<bool, 6>{x, y, z, rx, ry, rz}, elbow);
+	send_command<command_set_guiding_params>(std::array{x, y, z, rx, ry, rz}, elbow);
 }
 
 
 robot_config_7dof franka_remote_interface::current_config() const
 {
-	std::lock_guard<std::mutex> state_guard(state_lock_);
+	std::lock_guard state_guard(state_lock_);
 	return current_config_;
 }
 
 
 double franka_remote_interface::current_gripper_pos() const
 {
-	std::lock_guard<std::mutex> state_guard(state_lock_);
+	std::lock_guard state_guard(state_lock_);
 	return current_gripper_pos_;
 }
 
 
 double franka_remote_interface::max_gripper_pos() const
 {
-	std::lock_guard<std::mutex> state_guard(state_lock_);
+	std::lock_guard state_guard(state_lock_);
 	return max_gripper_pos_;
 }
 
 
 bool franka_remote_interface::gripper_grasped() const
 {
-	std::lock_guard<std::mutex> state_guard(state_lock_);
+	std::lock_guard state_guard(state_lock_);
 	return gripper_grasped_;
 }
 
@@ -257,11 +257,10 @@ void franka_remote_interface::update()
 	while (socket_state_->states().empty())
 		socket_state_->update_messages();
 
-	// TODO only use latest state?
-	//const auto& state = socket_state_->states().back();
 	for (const auto& state : socket_state_->states())
 	{
-		std::lock_guard lck(state_lock_);
+		std::lock_guard state_guard(state_lock_);
+
 		// robot config
 		current_config_ = state.joint_configuration;
 
@@ -350,7 +349,7 @@ bool franka_remote_interface::vacuum_gripper_stop()
 
 vacuum_gripper_state franka_remote_interface::get_vacuum_gripper_state() const
 {
-	std::lock_guard<std::mutex> state_guard(state_lock_);
+	std::lock_guard state_guard(state_lock_);
 	return vacuum_gripper_state_;
 }
 }

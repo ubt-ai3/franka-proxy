@@ -230,7 +230,7 @@ void print_status(const franka_control::franka_controller& controller)
 	std::cout << "Current robot joints: "
 		<< controller.current_config().transpose().format(format) << '\n';
 	std::cout << "Current robot tcp pose: " 
-		<< controller.current_world_T_tcp().matrix().format(format) << "--- ends here" << std::endl;
+		<< controller.current_robot_base_T_tcp().matrix().format(format) << "--- ends here" << std::endl;
 }
 
 void franka_fts_calibration(const std::string& ip)

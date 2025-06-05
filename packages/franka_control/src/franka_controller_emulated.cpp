@@ -21,7 +21,6 @@ namespace franka_control
 
 franka_controller_emulated::franka_controller_emulated()
 	: speed_factor_(0.1f),
-	  gripper_open_(false),
 
 	  state_joint_values_
 	  ((Eigen::Matrix<double, 7, 1>() <<
@@ -29,8 +28,7 @@ franka_controller_emulated::franka_controller_emulated()
 	  state_force_torque_values_
 	  ((Eigen::Matrix<double, 6, 1>() <<
 		  0, 0, 0, 0, 0, 0).finished()),
-	  state_gripper_pos_(0),
-	  state_position_in_sequence_(0)
+	  state_gripper_pos_(0)
 {
 }
 

@@ -105,12 +105,10 @@ private:
 
 	mutable std::mutex controller_mutex_;
 	double speed_factor_;
-	bool gripper_open_;
 
 	robot_config_7dof state_joint_values_;
 	wrench state_force_torque_values_;
 	int state_gripper_pos_;
-	int state_position_in_sequence_;
 
 	static constexpr int max_gripper_pos_ = 50;
 	static constexpr double gripper_default_speed_mps_ = 0.025;

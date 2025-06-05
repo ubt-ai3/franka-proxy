@@ -94,7 +94,6 @@ void franka_state_client::update_messages_buffer()
 
 	std::string buffer;
 	buffer.resize(content_length);
-
 	read(*connection_, asio::buffer(buffer));
 
 	try
@@ -111,7 +110,8 @@ void franka_state_client::update_messages_buffer()
 
 
 std::unique_ptr<asio::ip::tcp::socket> franka_state_client::connect(
-	const std::string& ip, std::uint16_t port)
+	const std::string& ip, 
+	std::uint16_t port)
 {
 	asio::ip::tcp::resolver resolver(*io_context_);
 	asio::ip::tcp::resolver::results_type endpoints =

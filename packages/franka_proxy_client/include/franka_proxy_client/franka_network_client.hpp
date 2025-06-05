@@ -48,7 +48,8 @@ private:
 	void update_messages_buffer();
 
 	std::unique_ptr<asio_tcp_socket> connect(
-		const std::string& ip, std::uint16_t port);
+		const std::string& ip, 
+		std::uint16_t port);
 
 
 	static constexpr std::size_t receive_buffer_size_ = 1024;
