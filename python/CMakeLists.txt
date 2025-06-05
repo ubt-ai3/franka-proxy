@@ -1,23 +1,17 @@
 set(MODULE_NAME py_franka_control)
 
-# Development component is required (see https://github.com/pybind/pybind11/issues/3996)
-find_package(Python3 REQUIRED COMPONENTS Interpreter Development)
-find_package(pybind11 REQUIRED)
-
-# Define the module
 pybind11_add_module(${MODULE_NAME} SHARED
     bindings/py_franka_control.cpp
 )
+
 target_compile_features(${MODULE_NAME} PUBLIC cxx_std_20)
 
-# Include directories
 target_include_directories(${MODULE_NAME} PRIVATE
     ${ALL_INCLUDE_DIRECTORIES}
     ${EIGEN3_INCLUDE_DIR}
     ${Python3_INCLUDE_DIRS}
 )
 
-# Link libraries
 target_link_libraries(${MODULE_NAME} PRIVATE
     ${Python3_LIBRARIES}
     franka_proxy_share
@@ -25,7 +19,7 @@ target_link_libraries(${MODULE_NAME} PRIVATE
     franka_control
 )
 
-# Post-build: copy module to binary directory
+# Copy module to binary dir
 add_custom_command(TARGET ${MODULE_NAME} POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy
             $<TARGET_FILE:${MODULE_NAME}>
@@ -38,6 +32,7 @@ if(NOT EXISTS ${INIT_PY})
     file(WRITE ${INIT_PY} "")
 endif()
 
+# Copy python example to binary dir
 add_custom_command(
     TARGET ${MODULE_NAME} POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy

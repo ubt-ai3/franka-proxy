@@ -10,6 +10,11 @@ option(BUILD_TESTS "Build franka_proxy tests" ON)
 option(BUILD_PYTHON_CONTROLLER "Build franka_control python bindings" ON)
 
 
+find_package(asio CONFIG REQUIRED)
+find_package(Eigen3 CONFIG REQUIRED)
+find_package(nlohmann_json REQUIRED)
+find_package(Threads REQUIRED)
+
 if(BUILD_SERVER)
 	find_package(Franka CONFIG REQUIRED)
     find_package(Poco COMPONENTS Net Foundation REQUIRED)
@@ -19,11 +24,10 @@ if(BUILD_SERVER OR BUILD_TESTS)
     find_package(argparse CONFIG REQUIRED)
 endif()
 
-
-find_package(asio CONFIG REQUIRED)
-find_package(Eigen3 CONFIG REQUIRED)
-find_package(nlohmann_json REQUIRED)
-find_package(Threads REQUIRED)
+if(BUILD_PYTHON_CONTROLLER)
+    find_package(Python3 REQUIRED COMPONENTS Interpreter Development)
+    find_package(pybind11 REQUIRED)
+endif()
 
 
 if (WIN32)
@@ -59,6 +63,7 @@ endif()
 
 if(BUILD_PYTHON_CONTROLLER)
 	add_subdirectory(python)
+    list(APPEND PROXY_TARGETS py_franka_control)
 endif()
 
 
