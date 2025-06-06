@@ -21,13 +21,10 @@ namespace franka_control
 
 franka_controller_emulated::franka_controller_emulated()
 	: speed_factor_(0.1f),
-
-	  state_joint_values_
-	  ((Eigen::Matrix<double, 7, 1>() <<
-		  0, 0, 0, -0.0698, 0, 0, 0).finished()),
-	  state_force_torque_values_
-	  ((Eigen::Matrix<double, 6, 1>() <<
-		  0, 0, 0, 0, 0, 0).finished()),
+	  state_joint_values_(
+		  (robot_config_7dof() << 0, 0, 0, -0.0698, 0, 0, 0).finished()),
+	  state_force_torque_values_(
+		  (wrench() << 0, 0, 0, 0, 0, 0).finished()),
 	  state_gripper_pos_(0)
 {
 }

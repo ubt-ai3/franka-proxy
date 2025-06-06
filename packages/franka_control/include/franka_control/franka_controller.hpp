@@ -18,6 +18,8 @@
 
 #include <Eigen/Geometry>
 
+#include "forward.hpp" // included for IDE visibility of the forward header
+
 namespace franka_control
 {
 
@@ -87,7 +89,7 @@ public:
 	virtual void start_recording(
 		std::optional<std::string> log_file_path = std::nullopt) = 0;
 	virtual std::pair<std::vector<robot_config_7dof>, std::vector<wrench>>
-		stop_recording() = 0;
+	stop_recording() = 0;
 
 
 	/**
@@ -132,7 +134,6 @@ public:
 	const Eigen::Affine3d tcp_T_j7;
 
 private:
-
 	static Eigen::Affine3d build_j7_T_flange();
 	static Eigen::Affine3d build_flange_T_tcp();
 	static Eigen::Affine3d build_j7_T_tcp();
@@ -163,8 +164,8 @@ private:
 	std::atomic_bool terminate_internal_thread_;
 
 	// This results in double the frequency of the sender.
-	static constexpr auto step_duration = 
-		std::chrono::milliseconds(50); 
+	static constexpr auto step_duration =
+		std::chrono::milliseconds(50);
 };
 } /* namespace franka_control */
 
