@@ -68,6 +68,11 @@ PYBIND11_MODULE(py_franka_control, m)
 	//////////////////////////////////////////////////////////////////////////
 	//
 	// pybind11 FrankaController
+    //
+	// Again ! Caution ! only functionality from the python example is tested.
+	// E.g., python cannot handle all of Eigen's data types.
+	// For Eigen::Affine3d have to use an Eigen::Matrix4d.
+	// See py_ * wrapper classes.
 	//
 	//////////////////////////////////////////////////////////////////////////
 	pybind11::class_<
