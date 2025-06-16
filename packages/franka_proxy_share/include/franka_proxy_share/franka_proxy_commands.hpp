@@ -10,7 +10,6 @@
  ************************************************************************/
 
 
-
 #include <array>
 #include <cstdint>
 #include <list>
@@ -24,16 +23,12 @@
 
 namespace franka_proxy
 {
-
-
 struct command_stop_recording_response;
 
 struct command_generic_response;
 enum class command_result : std::uint8_t;
 
 struct command_get_config_response;
-
-
 
 
 /**
@@ -44,7 +39,7 @@ struct command_get_config_response;
  * Commands the robot to move to given config.
  *
  ************************************************************************/
-struct command_move_to_config 
+struct command_move_to_config
 {
 	using response_type = command_generic_response;
 	static constexpr char type[] = "move.config";
@@ -54,7 +49,6 @@ struct command_move_to_config
 
 void to_json(nlohmann::json& json, const command_move_to_config& object);
 void from_json(const nlohmann::json& json, command_move_to_config& object);
-
 
 
 /**
@@ -72,13 +66,10 @@ struct command_move_until_contact
 	static constexpr char type[] = "move.contact";
 
 	std::array<double, 7> target_joint_config;
-	
 };
 
 void to_json(nlohmann::json& json, const command_move_until_contact& object);
 void from_json(const nlohmann::json& json, command_move_until_contact& object);
-
-
 
 
 /**
@@ -86,17 +77,18 @@ void from_json(const nlohmann::json& json, command_move_until_contact& object);
  *
  * @class command_move_hybrid_sequence
  *
- * Commands the robot to move following the given hybrid sequence with a given position and force offset.
+ * Commands the robot to move following the given hybrid sequence
+ * with a given position and force offset.
  *
  ************************************************************************/
 struct command_move_hybrid_sequence_with_offset
 {
 	using response_type = command_generic_response;
-	static constexpr char	type[] = "move.hybrid-sequence-with-offset";
+	static constexpr char type[] = "move.hybrid-sequence-with-offset";
 
-	std::vector<std::array<double, 7>>	joint_config_sequence;
-	std::vector<std::array<double, 6>>	force_sequence;
-	std::vector<std::array<double, 6>>	selection_sequence;
+	std::vector<std::array<double, 7>> joint_config_sequence;
+	std::vector<std::array<double, 6>> force_sequence;
+	std::vector<std::array<double, 6>> selection_sequence;
 	std::array<double, 16> offset_position;
 	std::array<double, 6> offset_force;
 };
@@ -116,11 +108,11 @@ void from_json(const nlohmann::json& json, command_move_hybrid_sequence_with_off
 struct command_move_hybrid_sequence
 {
 	using response_type = command_generic_response;
-	static constexpr char	type[] = "move.hybrid-sequence";
+	static constexpr char type[] = "move.hybrid-sequence";
 
-	std::vector<std::array<double, 7>>	joint_config_sequence;
-	std::vector<std::array<double, 6>>	force_sequence;
-	std::vector<std::array<double, 6>>	selection_sequence;
+	std::vector<std::array<double, 7>> joint_config_sequence;
+	std::vector<std::array<double, 6>> force_sequence;
+	std::vector<std::array<double, 6>> selection_sequence;
 };
 
 void to_json(nlohmann::json& json, const command_move_hybrid_sequence& object);
@@ -179,9 +171,6 @@ void to_json(nlohmann::json&, const command_cartesian_impedance_hold_pose_desire
 void from_json(const nlohmann::json& json, command_cartesian_impedance_hold_pose_desired_stiffness& object);
 
 
-
-
-
 /**
  *************************************************************************
  *
@@ -209,8 +198,6 @@ void to_json(nlohmann::json&, const command_cartesian_impedance_poses_desired_st
 void from_json(const nlohmann::json& json, command_cartesian_impedance_poses_desired_stiffness& object);
 
 
-
-
 /**
  *************************************************************************
  *
@@ -233,8 +220,6 @@ struct command_joint_impedance_hold_position_desired_stiffness
 
 void to_json(nlohmann::json&, const command_joint_impedance_hold_position_desired_stiffness& object);
 void from_json(const nlohmann::json& json, command_joint_impedance_hold_position_desired_stiffness& object);
-
-
 
 
 /**
@@ -262,8 +247,6 @@ void to_json(nlohmann::json&, const command_joint_impedance_positions_desired_st
 void from_json(const nlohmann::json& json, command_joint_impedance_positions_desired_stiffness& object);
 
 
-
-
 /**
  *************************************************************************
  *
@@ -287,16 +270,13 @@ void to_json(nlohmann::json&, const command_ple_motion& object);
 void from_json(const nlohmann::json& json, command_ple_motion& object);
 
 
-
-
-
 /**
  *************************************************************************
  *
  * @class command_force_z
  *
  * Commands the robot to apply a force of given `mass` for `duration`
- * seconds along the endeffectors Z-axis. 
+ * seconds along the end effectors z-axis. 
  *
  ************************************************************************/
 struct command_force_z
@@ -310,8 +290,6 @@ struct command_force_z
 
 void to_json(nlohmann::json&, const command_force_z& object);
 void from_json(const nlohmann::json& json, command_force_z& object);
-
-
 
 
 /**
@@ -334,8 +312,6 @@ void to_json(nlohmann::json& json, const command_open_gripper& object);
 void from_json(const nlohmann::json& json, command_open_gripper& object);
 
 
-
-
 /**
  *************************************************************************
  *
@@ -356,8 +332,6 @@ void to_json(nlohmann::json& json, const command_close_gripper& object);
 void from_json(const nlohmann::json& json, command_close_gripper& object);
 
 
-
-
 /**
  *************************************************************************
  *
@@ -369,8 +343,8 @@ void from_json(const nlohmann::json& json, command_close_gripper& object);
 struct command_grasp_gripper
 {
 	using response_type = command_generic_response;
-	static constexpr char type[] = "gripper.grasp";	
-	
+	static constexpr char type[] = "gripper.grasp";
+
 	double speed;
 	double force;
 };
@@ -412,6 +386,7 @@ struct command_vacuum_gripper_vacuum
 	std::uint8_t vacuum_strength;
 	std::chrono::milliseconds timeout;
 };
+
 void to_json(nlohmann::json& json, const command_vacuum_gripper_vacuum& object);
 void from_json(const nlohmann::json& json, command_vacuum_gripper_vacuum& object);
 /**
@@ -427,6 +402,7 @@ struct command_vacuum_gripper_stop
 	using response_type = command_generic_response;
 	static constexpr char type[] = "vacuum_gripper.stop";
 };
+
 void to_json(nlohmann::json& json, const command_vacuum_gripper_stop& object);
 void from_json(const nlohmann::json& json, command_vacuum_gripper_stop& object);
 
@@ -450,8 +426,6 @@ void to_json(nlohmann::json& json, const command_start_recording& object);
 void from_json(const nlohmann::json& json, command_start_recording& object);
 
 
-
-
 /**
  *************************************************************************
  *
@@ -460,7 +434,7 @@ void from_json(const nlohmann::json& json, command_start_recording& object);
  * Commands the server to stop recording the robot's state and to 
  * reply with the recorded data.
  *
- ************************************************************************/	
+ ************************************************************************/
 struct command_stop_recording
 {
 	using response_type = command_stop_recording_response;
@@ -469,8 +443,6 @@ struct command_stop_recording
 
 void to_json(nlohmann::json& json, const command_stop_recording& object);
 void from_json(const nlohmann::json& json, command_stop_recording& object);
-
-
 
 
 /**
@@ -494,8 +466,6 @@ void to_json(nlohmann::json& json, const command_stop_recording_response& object
 void from_json(const nlohmann::json& json, command_stop_recording_response& object);
 
 
-
-
 /**
  *************************************************************************
  *
@@ -508,7 +478,7 @@ struct command_set_speed
 {
 	using response_type = command_generic_response;
 	static constexpr char type[] = "set.speed";
-	
+
 	double speed;
 };
 
@@ -530,6 +500,7 @@ struct command_set_fts_bias
 
 	std::array<double, 6> bias;
 };
+
 void to_json(nlohmann::json& json, const command_set_fts_bias& object);
 void from_json(const nlohmann::json& json, command_set_fts_bias& object);
 
@@ -548,6 +519,7 @@ struct command_set_fts_load_mass
 
 	std::array<double, 3> load_mass;
 };
+
 void to_json(nlohmann::json& json, const command_set_fts_load_mass& object);
 void from_json(const nlohmann::json& json, command_set_fts_load_mass& object);
 
@@ -591,8 +563,6 @@ void to_json(nlohmann::json& json, const command_recover_from_errors& object);
 void from_json(const nlohmann::json& json, command_recover_from_errors& object);
 
 
-
-
 /**
  *************************************************************************
  *
@@ -619,8 +589,6 @@ enum class command_result : std::uint8_t
 };
 
 
-
-
 /**
  *************************************************************************
  *
@@ -636,27 +604,27 @@ struct command_generic_response
 	std::string reason;
 
 	command_generic_response() noexcept
-	: result{command_result::success}
-	, reason{}
-	{}
+		: result{command_result::success}
+		  , reason{}
+	{
+	}
 
 	command_generic_response(command_result result) noexcept
-	: result{result}
-	, reason{}
-	{}
+		: result{result}
+		  , reason{}
+	{
+	}
 
 	command_generic_response(command_result result, std::string reason)
-	: result{result}
-	, reason{std::move(reason)}
-	{}
-	
+		: result{result}
+		  , reason{std::move(reason)}
+	{
+	}
 };
 
 
 void to_json(nlohmann::json& json, const command_generic_response& object);
 void from_json(const nlohmann::json& json, command_generic_response& object);
-
-
 
 
 /**
@@ -679,8 +647,6 @@ void to_json(nlohmann::json& json, const command_get_config& object);
 void from_json(const nlohmann::json& json, command_get_config& object);
 
 
-
-	
 /**
  *************************************************************************
  *
@@ -694,6 +660,7 @@ struct command_get_config_response
 	static constexpr char type[] = "response.config";
 
 	std::array<double, 7> joint_configuration;
+	std::array<double, 6> end_effector_wrench;
 
 	//jaw gripper
 	double width;
@@ -706,12 +673,10 @@ struct command_get_config_response
 	bool part_detached;
 	bool part_present;
 	bool in_control_range;
-};	
+};
 
 void to_json(nlohmann::json& json, const command_get_config_response& object);
 void from_json(const nlohmann::json& json, command_get_config_response& object);
-
-
 } /* namespace franka_proxy */
 
 #endif // INCLUDED__FRANKA_PROXY_SHARE__FRANKA_PROXY_COMMANDS_HPP
