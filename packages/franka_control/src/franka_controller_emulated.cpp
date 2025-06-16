@@ -122,7 +122,8 @@ void franka_controller_emulated::close_gripper()
 }
 
 
-void franka_controller_emulated::grasp_gripper(double speed, double force)
+void franka_controller_emulated::grasp_gripper(
+	double speed, double force)
 {
 	move_gripper(0, speed);
 }
@@ -141,7 +142,8 @@ double franka_controller_emulated::speed_factor() const
 }
 
 
-void franka_controller_emulated::set_speed_factor(double speed_factor)
+void franka_controller_emulated::set_speed_factor(
+	double speed_factor)
 {
 	std::lock_guard lk(controller_mutex_);
 	speed_factor_ = speed_factor;
@@ -150,7 +152,7 @@ void franka_controller_emulated::set_speed_factor(double speed_factor)
 void franka_controller_emulated::set_guiding_mode(
 	bool x, bool y, bool z,
 	bool rx, bool ry, bool rz,
-	bool elbow) 
+	bool elbow)
 {
 }
 
@@ -244,7 +246,8 @@ void franka_controller_emulated::move_sequence(
 		// Copy from process variables to exposed state.
 		{
 			std::lock_guard lk(controller_mutex_);
-			state_joint_values_ = Eigen::Map<const Eigen::Matrix<double, 7, 1>>(q_sequence[ticks_passed].data());
+			state_joint_values_ =
+				Eigen::Map<const Eigen::Matrix<double, 7, 1>>(q_sequence[ticks_passed].data());
 			state_force_torque_values_ = Eigen::Map<const Eigen::Matrix<double, 6, 1>>(
 				f_sequence[ticks_passed].data());
 		}
@@ -253,8 +256,10 @@ void franka_controller_emulated::move_sequence(
 	}
 
 	std::lock_guard lk(controller_mutex_);
-	state_joint_values_ = Eigen::Map<const Eigen::Matrix<double, 7, 1>>(q_sequence.back().data());
-	state_force_torque_values_ = Eigen::Map<const Eigen::Matrix<double, 6, 1>>(f_sequence.back().data());
+	state_joint_values_ =
+		Eigen::Map<const Eigen::Matrix<double, 7, 1>>(q_sequence.back().data());
+	state_force_torque_values_ =
+		Eigen::Map<const Eigen::Matrix<double, 6, 1>>(f_sequence.back().data());
 }
 
 void franka_controller_emulated::move_sequence(
