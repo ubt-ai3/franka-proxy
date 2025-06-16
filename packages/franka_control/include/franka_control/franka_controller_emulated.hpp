@@ -41,6 +41,9 @@ public:
 
 	void automatic_error_recovery() override;
 
+	/**
+	 * Emulated moves only do a linear interpolation using the speed.
+	 */
 	void move(const robot_config_7dof& target) override;
 	bool move_until_contact(const robot_config_7dof& target) override;
 
@@ -55,7 +58,7 @@ public:
 	void set_speed_factor(double speed_factor) override;
 	void set_guiding_mode(
 		bool x, bool y, bool z,
-		bool rx, bool ry, bool rz, bool elbow) const override;
+		bool rx, bool ry, bool rz, bool elbow) override;
 
 
 	robot_config_7dof current_config() const override;
@@ -67,13 +70,12 @@ public:
 	void start_recording(std::optional<std::string> log_file_path = std::nullopt) override;
 
 	/**
-	* Stop recording playback data, assumes that start_recording() has been called bevore.
+	* Stop recording playback data, assumes that start_recording() has been called before.
 	* 
 	* This returns a motion sampled at 1kHz, but the robot always remains in the position
 	* it was in when stop_playback() was called.
 	**/
-	std::pair<std::vector<robot_config_7dof>, std::vector<wrench>>
-	stop_recording() override;
+	std::pair<std::vector<robot_config_7dof>, std::vector<wrench>> stop_recording() override;
 
 	/**
 	* Simulates a playback movement, but ignores force and selection values.
@@ -82,11 +84,6 @@ public:
 		const std::vector<robot_config_7dof>& q_sequence,
 		const std::vector<wrench>& f_sequence,
 		const std::vector<selection_diagonal>& selection_vector_sequence) override;
-
-	/**
-	* Simulates a playback movement with increment, but ignores force and selection values.
-	* TODO maltschik offsets are not used atm
-	**/
 	void move_sequence(
 		const std::vector<robot_config_7dof>& q_sequence,
 		const std::vector<wrench>& f_sequence,
@@ -95,10 +92,9 @@ public:
 		std::array<double, 6> offset_force) override;
 
 private:
-	std::chrono::time_point<std::chrono::steady_clock> recording_start_;
-
 	void move_gripper(int target, double speed_mps);
 
+	std::chrono::time_point<std::chrono::steady_clock> recording_start_;
 
 	static constexpr double max_speed_length_per_sec_ = 3.5; // ~200 deg
 	static constexpr float move_update_rate_ = 0.01f;

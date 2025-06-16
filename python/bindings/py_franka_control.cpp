@@ -68,7 +68,7 @@ PYBIND11_MODULE(py_franka_control, m)
 	//////////////////////////////////////////////////////////////////////////
 	//
 	// pybind11 FrankaController
-    //
+	//
 	// Again ! Caution ! only functionality from the python example is tested.
 	// E.g., python cannot handle all of Eigen's data types.
 	// For Eigen::Affine3d have to use an Eigen::Matrix4d.
@@ -84,10 +84,11 @@ PYBIND11_MODULE(py_franka_control, m)
 		.def("current_robot_base_T_tcp", &franka_control::franka_controller::current_robot_base_T_tcp)
 		.def("current_robot_base_T_j7", &franka_control::franka_controller::current_robot_base_T_j7)
 		.def("current_robot_base_T_flange", &franka_control::franka_controller::current_robot_base_T_flange)
-		.def_readonly("j7_T_flange", &franka_control::franka_controller::j7_T_flange)
-		.def_readonly("flange_T_tcp", &franka_control::franka_controller::flange_T_tcp)
-		.def_readonly("j7_T_tcp", &franka_control::franka_controller::j7_T_tcp)
-		.def_readonly("tcp_T_j7", &franka_control::franka_controller::tcp_T_j7)
+		.def("j7_T_flange", &franka_control::franka_controller::j7_T_flange)
+		.def("flange_T_tcp", &franka_control::franka_controller::flange_T_tcp)
+		.def("j7_T_tcp", &franka_control::franka_controller::j7_T_tcp)
+		.def("tcp_T_j7", &franka_control::franka_controller::tcp_T_j7)
+		.def("set_flange_T_tcp", &franka_control::franka_controller::set_flange_T_tcp)
 		.def_readonly_static("gripper_unit_per_m", &franka_control::franka_controller::gripper_unit_per_m_);
 
 	pybind11::class_<
