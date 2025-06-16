@@ -21,7 +21,10 @@ constexpr franka_proxy::robot_config_7dof starting_pos
 	{0.0346044, -0.0666144, -0.0398886, -2.04985, -0.0229875, 1.99782, 0.778461};
 
 
-void franka_proxy_client_test(const std::string& ip, test_mode test, const std::vector<std::string>& params);
+void franka_proxy_client_test(
+	const std::string& ip,
+	test_mode test,
+	const std::vector<std::string>& params);
 
 
 void print_status(const franka_proxy::franka_remote_interface& robot);
@@ -351,10 +354,16 @@ void print_status(const franka_proxy::franka_remote_interface& robot)
 {
 	const auto config = robot.current_config();
 
-	std::cout << "Current robot joints: ";
-	for (int i = 0; i < 6; ++i)
-		std::cout << config[i] << ", ";
-	std::cout << config[6] << '\n';
+	std::cout << "Current robot joints: [ ";
+	for (int i = 0; i < config.size(); ++i)
+	{
+		std::cout << std::fixed << std::setprecision(4)
+			<< std::setw(7) << std::setfill(' ')
+			<< config[i];
+		if (i != config.size() - 1)
+			std::cout << ", ";
+	}
+	std::cout << " ]\n";
 }
 
 

@@ -104,15 +104,23 @@ robot_config_7dof franka_controller_remote::current_config() const
 	robot_config_7dof result;
 	const franka_proxy::robot_config_7dof config =
 		controller_->current_config();
-	for (int i = 0; i < 7; ++i)
-		result(i) = config[i];
+
+	for (int i = 0; i < config.size(); ++i)
+		result[i] = config[i];
+
 	return result;
 }
 
 wrench franka_controller_remote::current_force_torque() const
 {
-	//controller_->current_
-	return {};
+	wrench result;
+	const std::array<double, 6> wrench =
+		controller_->current_end_effector_wrench();
+
+	for (int i = 0; i < wrench.size(); ++i)
+		result[i] = wrench[i];
+
+	return result;
 }
 
 int franka_controller_remote::current_gripper_pos() const
@@ -140,19 +148,20 @@ void franka_controller_remote::start_recording(std::optional<std::string> log_fi
 std::pair<std::vector<robot_config_7dof>, std::vector<wrench>> franka_controller_remote::stop_recording()
 {
 	std::vector<robot_config_7dof> joints;
-	std::vector<wrench> forces;
+	std::vector<wrench> force_torque;
 
-	auto [recorded_joints, recorded_forces] = controller_->stop_recording();
+	auto [recorded_joints, recorded_forces] =
+		controller_->stop_recording();
 
 	joints.reserve(recorded_joints.size());
 	for (auto datum : recorded_joints)
 		joints.emplace_back(datum.data());
 
-	forces.reserve(recorded_forces.size());
+	force_torque.reserve(recorded_forces.size());
 	for (auto datum : recorded_forces)
-		forces.emplace_back(datum.data());
+		force_torque.emplace_back(datum.data());
 
-	return {joints, forces};
+	return {joints, force_torque};
 }
 
 

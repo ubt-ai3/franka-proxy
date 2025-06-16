@@ -27,8 +27,6 @@
 
 namespace franka_proxy
 {
-
-
 //////////////////////////////////////////////////////////////////////////
 //
 // franka_state_server
@@ -36,18 +34,17 @@ namespace franka_proxy
 //////////////////////////////////////////////////////////////////////////
 
 
-franka_state_server::franka_state_server
-	(std::uint16_t state_port,
-	 franka_hardware_controller& controller)
-	:
-	controller_(controller),
+franka_state_server::franka_state_server(
+	std::uint16_t state_port,
+	franka_hardware_controller& controller)
+	: controller_(controller),
 
-	state_port_(state_port),
-	server_(create_server(state_port_)),
+	  state_port_(state_port),
+	  server_(create_server(state_port_)),
 
-	terminate_internal_thread_(false)
+	  terminate_internal_thread_(false)
 {
-	internal_thread_ = std::thread([this]{task_main();});
+	internal_thread_ = std::thread([this] { task_main(); });
 }
 
 
@@ -75,7 +72,7 @@ void franka_state_server::task_main()
 		auto connection =
 			std::make_unique<asio::ip::tcp::socket>(server_.accept(error));
 
-		if(!error)
+		if (!error)
 			connection_ = std::move(connection);
 
 		if (!connection_)
@@ -89,11 +86,14 @@ void franka_state_server::task_main()
 		try
 		{
 			const franka::RobotState robot_state = controller_.robot_state();
+			const ft_sensor_response fts_state = controller_.fts_state();
 			const franka::GripperState gripper_state = controller_.gripper_state();
 			const franka::VacuumGripperState vacuum_gripper_state = controller_.vacuum_gripper_state();
 
 			command_get_config_response response{};
 			response.joint_configuration = robot_state.q;
+			response.end_effector_wrench = fts_state.data;
+
 			response.width = gripper_state.width;
 			response.max_width = gripper_state.max_width;
 			response.is_grasped = gripper_state.is_grasped;
@@ -166,8 +166,4 @@ asio::ip::tcp::acceptor franka_state_server::create_server(std::uint16_t control
 
 	return acceptor;
 }
-
-
-
-
 } /* namespace franka_proxy */

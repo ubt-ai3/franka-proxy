@@ -149,11 +149,14 @@ void schunk_ft_sensor::setup_connection()
 	if (resp.ft_sequence_number == 0)
 		throw ft_sensor_connection_exception();
 
-	
-	std::lock_guard lock(current_ft_sensor_response_mutex_);
-	current_ft_sensor_response_ = resp;
+	// Set first value here by hand.
+	{
+		std::lock_guard lock(current_ft_sensor_response_mutex_);
+		current_ft_sensor_response_ = resp;
+	}
 
-	set_response_handler([&](const ft_sensor_response& response){
+	set_response_handler([&](const ft_sensor_response& response)
+	{
 		std::lock_guard lock(current_ft_sensor_response_mutex_);
 		current_ft_sensor_response_ = response;
 	});

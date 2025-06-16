@@ -230,9 +230,9 @@ void franka_controller_emulated::move_sequence(
 
 	while (true)
 	{
-		// Calculate timepoint in sequence
+		// Calculate time_point in sequence
 		auto now = std::chrono::steady_clock::now();
-		const auto next_timepoint = now +
+		const auto next_time_point = now +
 			std::chrono::duration_cast<std::chrono::milliseconds>
 			(std::chrono::duration<double>(move_update_rate_));
 		unsigned long long ticks_passed =
@@ -252,7 +252,7 @@ void franka_controller_emulated::move_sequence(
 				f_sequence[ticks_passed].data());
 		}
 
-		std::this_thread::sleep_until(next_timepoint);
+		std::this_thread::sleep_until(next_time_point);
 	}
 
 	std::lock_guard lk(controller_mutex_);

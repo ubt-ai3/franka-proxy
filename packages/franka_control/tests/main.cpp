@@ -224,13 +224,33 @@ void franka_controller_emulated_test()
 	std::cout << "result unknown." << '\n'; // todo: design a useful test function
 }
 
+namespace
+{
+template <typename D> void print_fixed_format(
+	const std::string& label,
+	const Eigen::MatrixBase<D>& vec)
+{
+	std::cout << label << "[ ";
+	for (int i = 0; i < vec.size(); ++i)
+	{
+		std::cout << std::fixed << std::setprecision(4)
+			<< std::setw(7) << std::setfill(' ')
+			<< vec(i);
+		if (i != vec.size() - 1)
+			std::cout << ", ";
+	}
+	std::cout << " ]\n";
+}
+}
+
 void print_status(const franka_control::franka_controller& controller)
 {
-	const Eigen::IOFormat format(3, 0, ", ", "\n", "[ ", " ]");
-	std::cout << "Current robot joints: "
-		<< controller.current_config().transpose().format(format) << '\n';
-	std::cout << "Current robot tcp pose: " 
-		<< controller.current_robot_base_T_tcp().matrix().format(format) << "--- ends here" << std::endl;
+	print_fixed_format("Current robot joints: ", controller.current_config().transpose());
+	print_fixed_format("Current wrench: ", controller.current_force_torque().transpose());
+
+	//const Eigen::IOFormat format(3, 0, ", ", "\n", "[ ", " ]");
+	//std::cout << "Current robot tcp pose: " 
+	//	<< controller.current_robot_base_T_tcp().matrix().format(format) << "--- ends here.\n";
 }
 
 void franka_fts_calibration(const std::string& ip)

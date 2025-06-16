@@ -26,7 +26,7 @@ namespace franka_proxy
 {
 using robot_config_7dof = std::array<double, 7>;
 
-//values correspond to libfranka::VacuumGripperState
+// Corresponds to libfranka::VacuumGripperState.
 struct vacuum_gripper_state
 {
 	uint16_t actual_power_;
@@ -39,8 +39,7 @@ struct vacuum_gripper_state
 class franka_remote_interface
 {
 public:
-	explicit franka_remote_interface
-	(std::string proxy_ip);
+	explicit franka_remote_interface(std::string proxy_ip);
 
 	~franka_remote_interface() noexcept;
 
@@ -58,10 +57,6 @@ public:
 	 */
 	void move_to(const robot_config_7dof& target);
 	void move_to(const Eigen::Vector<double, 7>& target);
-	void move_to(
-		const robot_config_7dof& target,
-		std::array<double, 16> offset_position,
-		std::array<double, 6> offset_force);
 
 
 	/**
@@ -88,12 +83,12 @@ public:
 	 * @throw remote_exception if the movement was unsuccessful.
 	 * @throw viral_core::network_exception if the connection was lost.
 	 */
-	void move_sequence
-	(const std::vector<robot_config_7dof>& q_sequence,
-	 const std::vector<std::array<double, 6>>& f_sequence,
-	 const std::vector<std::array<double, 6>>& selection_vector_sequence,
-	 const std::array<double, 16>& offset_position,
-	 const std::array<double, 6>& offset_force);
+	void move_sequence(
+		const std::vector<robot_config_7dof>& q_sequence,
+		const std::vector<std::array<double, 6>>& f_sequence,
+		const std::vector<std::array<double, 6>>& selection_vector_sequence,
+		const std::array<double, 16>& offset_position,
+		const std::array<double, 6>& offset_force);
 
 
 	/**
@@ -106,8 +101,7 @@ public:
 	void move_sequence(
 		const std::vector<robot_config_7dof>& q_sequence,
 		const std::vector<std::array<double, 6>>& f_sequence,
-		const std::vector<std::array<double, 6>>& selection_vector_sequence
-	);
+		const std::vector<std::array<double, 6>>& selection_vector_sequence);
 
 	/**
 	 * Admittance controller using desired rotational and translational stiffness within the admittance and the impedance controller
@@ -213,7 +207,8 @@ public:
 	 * @throw remote_exception if the movement was unsuccessful.
 	 * @throw viral_core::network_exception if the connection was lost.
 	 */
-	bool vacuum_gripper_drop(std::chrono::milliseconds timeout = std::chrono::milliseconds(100));
+	bool vacuum_gripper_drop(
+		std::chrono::milliseconds timeout = std::chrono::milliseconds(100));
 
 	/**
 	 * Creates a vacuum with the vacuum gripper in order to grip objects.
@@ -226,8 +221,9 @@ public:
 	 * @throw remote_exception if the movement was unsuccessful.
 	 * @throw viral_core::network_exception if the connection was lost.
 	 */
-	bool vacuum_gripper_vacuum(std::uint8_t vacuum_strength,
-	                           std::chrono::milliseconds timeout = std::chrono::milliseconds(100));
+	bool vacuum_gripper_vacuum(
+		std::uint8_t vacuum_strength,
+		std::chrono::milliseconds timeout = std::chrono::milliseconds(100));
 
 	/**
 	* Stops the current vaccum gripper command
@@ -247,10 +243,6 @@ public:
 	 * todo docu
 	 */
 	void start_recording(std::optional<std::string> log_file_path = std::nullopt);
-
-	/**
-	 * todo docu
-	 */
 	std::pair<std::vector<std::array<double, 7>>, std::vector<std::array<double, 6>>> stop_recording();
 
 
@@ -307,9 +299,12 @@ public:
 	* @param[in] vector with bool values for every DOF; true equals mobile and false equals immobile
 	* 
 	*/
-	void set_guiding_params(bool x, bool y, bool z, bool rx, bool ry, bool rz, bool elbow);
+	void set_guiding_params(
+		bool x, bool y, bool z,
+		bool rx, bool ry, bool rz, bool elbow);
 
 	robot_config_7dof current_config() const;
+	std::array<double, 6> current_end_effector_wrench() const;
 	double current_gripper_pos() const;
 	double max_gripper_pos() const;
 	bool gripper_grasped() const;
@@ -385,6 +380,7 @@ private:
 
 	mutable std::mutex state_lock_;
 	robot_config_7dof current_config_;
+	std::array<double, 6> current_end_effector_wrench_;
 	double current_gripper_pos_;
 	double max_gripper_pos_;
 	bool gripper_grasped_{false};
