@@ -204,7 +204,9 @@ void franka_remote_interface::automatic_error_recovery()
 }
 
 
-void franka_remote_interface::set_guiding_params(bool x, bool y, bool z, bool rx, bool ry, bool rz, bool elbow)
+void franka_remote_interface::set_guiding_params(
+	bool x, bool y, bool z,
+	bool rx, bool ry, bool rz, bool elbow)
 {
 	send_command<command_set_guiding_params>(std::array{x, y, z, rx, ry, rz}, elbow);
 }
@@ -214,6 +216,13 @@ robot_config_7dof franka_remote_interface::current_config() const
 {
 	std::lock_guard state_guard(state_lock_);
 	return current_config_;
+}
+
+
+std::array<double, 6> franka_remote_interface::current_end_effector_wrench() const
+{
+	std::lock_guard state_guard(state_lock_);
+	return current_end_effector_wrench_;
 }
 
 
@@ -257,12 +266,13 @@ void franka_remote_interface::update()
 	while (socket_state_->states().empty())
 		socket_state_->update_messages();
 
-	for (const auto& state : socket_state_->states())
+	for (const command_get_config_response& state : socket_state_->states())
 	{
 		std::lock_guard state_guard(state_lock_);
 
 		// robot config
 		current_config_ = state.joint_configuration;
+		current_end_effector_wrench_ = state.end_effector_wrench;
 
 		// jaw gripper
 		current_gripper_pos_ = state.width;

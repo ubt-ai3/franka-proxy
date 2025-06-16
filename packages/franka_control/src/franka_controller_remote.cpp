@@ -25,10 +25,9 @@ namespace franka_control
 //////////////////////////////////////////////////////////////////////////
 
 
-franka_controller_remote::franka_controller_remote
-(const std::string& ip)
+franka_controller_remote::franka_controller_remote(
+	const std::string& ip)
 	: controller_(new franka_proxy::franka_remote_interface(ip)),
-
 	  speed_factor_(0.1)
 {
 	controller_->set_speed_factor(speed_factor_);
@@ -40,24 +39,18 @@ franka_controller_remote::~franka_controller_remote() noexcept = default;
 
 void franka_controller_remote::move(const robot_config_7dof& target)
 {
-	controller_->move_to
-	(franka_proxy::robot_config_7dof
-		{
-			target[0], target[1], target[2],
-			target[3], target[4], target[5], target[6]
-		});
+	franka_proxy::robot_config_7dof array;
+	Eigen::VectorXd::Map(array.data(), array.size()) = target;
+	controller_->move_to(array);
 }
 
 
-bool franka_controller_remote::move_until_contact
-(const robot_config_7dof& target)
+bool franka_controller_remote::move_until_contact(
+	const robot_config_7dof& target)
 {
-	return controller_->move_to_until_contact
-	(franka_proxy::robot_config_7dof
-		{
-			target[0], target[1], target[2],
-			target[3], target[4], target[5], target[6]
-		});
+	franka_proxy::robot_config_7dof array;
+	Eigen::VectorXd::Map(array.data(), array.size()) = target;
+	return controller_->move_to_until_contact(array);
 }
 
 
@@ -85,7 +78,7 @@ bool franka_controller_remote::gripper_grasped() const
 
 double franka_controller_remote::speed_factor() const
 {
-	std::lock_guard<std::mutex> l(state_lock_);
+	std::lock_guard l(state_lock_);
 	return speed_factor_;
 }
 
@@ -93,7 +86,7 @@ double franka_controller_remote::speed_factor() const
 void franka_controller_remote::set_speed_factor(double speed_factor)
 {
 	{
-		std::lock_guard<std::mutex> l(state_lock_);
+		std::lock_guard l(state_lock_);
 		speed_factor_ = speed_factor;
 	}
 	controller_->set_speed_factor(speed_factor_);
@@ -108,16 +101,26 @@ void franka_controller_remote::automatic_error_recovery()
 
 robot_config_7dof franka_controller_remote::current_config() const
 {
-	robot_config_7dof ret;
-	franka_proxy::robot_config_7dof config = controller_->current_config();
-	for (int i = 0; i < 7; ++i)
-		ret[i] = config[i];
-	return ret;
+	robot_config_7dof result;
+	const franka_proxy::robot_config_7dof config =
+		controller_->current_config();
+
+	for (int i = 0; i < config.size(); ++i)
+		result[i] = config[i];
+
+	return result;
 }
 
 wrench franka_controller_remote::current_force_torque() const
 {
-	return wrench();
+	wrench result;
+	const std::array<double, 6> wrench =
+		controller_->current_end_effector_wrench();
+
+	for (int i = 0; i < wrench.size(); ++i)
+		result[i] = wrench[i];
+
+	return result;
 }
 
 int franka_controller_remote::current_gripper_pos() const
@@ -145,19 +148,20 @@ void franka_controller_remote::start_recording(std::optional<std::string> log_fi
 std::pair<std::vector<robot_config_7dof>, std::vector<wrench>> franka_controller_remote::stop_recording()
 {
 	std::vector<robot_config_7dof> joints;
-	std::vector<wrench> forces;
+	std::vector<wrench> force_torque;
 
-	auto [recorded_joints, recorded_forces] = controller_->stop_recording();
+	auto [recorded_joints, recorded_forces] =
+		controller_->stop_recording();
 
 	joints.reserve(recorded_joints.size());
 	for (auto datum : recorded_joints)
 		joints.emplace_back(datum.data());
 
-	forces.reserve(recorded_forces.size());
+	force_torque.reserve(recorded_forces.size());
 	for (auto datum : recorded_forces)
-		forces.emplace_back(datum.data());
+		force_torque.emplace_back(datum.data());
 
-	return {joints, forces};
+	return {joints, force_torque};
 }
 
 
@@ -296,17 +300,21 @@ void franka_controller_remote::move_sequence(
 }
 
 
-void franka_controller_remote::set_fts_bias(const wrench& bias)
+void franka_controller_remote::set_fts_bias(
+	const wrench& bias)
 {
 	controller_->set_fts_bias({bias[0], bias[1], bias[2], bias[3], bias[4], bias[5]});
 }
 
-void franka_controller_remote::set_fts_load_mass(const Eigen::Vector3d& load_mass)
+void franka_controller_remote::set_fts_load_mass(
+	const Eigen::Vector3d& load_mass)
 {
 	controller_->set_fts_load_mass({load_mass[0], load_mass[1], load_mass[2]});
 }
 
-void franka_controller_remote::set_guiding_mode(bool x, bool y, bool z, bool rx, bool ry, bool rz, bool elbow) const
+void franka_controller_remote::set_guiding_mode(
+	bool x, bool y, bool z,
+	bool rx, bool ry, bool rz, bool elbow)
 {
 	controller_->set_guiding_params(x, y, z, rx, ry, rz, elbow);
 }

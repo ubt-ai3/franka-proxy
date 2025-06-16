@@ -18,6 +18,8 @@
 
 #include <Eigen/Geometry>
 
+#include "forward.hpp" // included for IDE visibility of the forward header
+
 namespace franka_control
 {
 
@@ -58,22 +60,20 @@ public:
 	virtual void update() = 0;
 
 
-	/**
-	 * todo doc
-	 */
 	virtual void automatic_error_recovery() = 0;
 
 
 	virtual void move(const robot_config_7dof& target) = 0;
-	void move(const Eigen::Affine3d& target_world_T_tcp);
+	void move(const Eigen::Affine3d& target_robot_base_T_tcp);
 
 
 	/**
-	 * Moves the robot to given target. If target is reached, returns true;
+	 * Moves the robot to given target.
+	 * If target is reached, returns true;
 	 * In case of contact, the movement is aborted and returns false.
 	 */
 	virtual bool move_until_contact(const robot_config_7dof& target) = 0;
-	bool move_until_contact(const Eigen::Affine3d& target_world_T_tcp);
+	bool move_until_contact(const Eigen::Affine3d& target_robot_base_T_tcp);
 
 
 	virtual void open_gripper() = 0;
@@ -81,18 +81,14 @@ public:
 	virtual void grasp_gripper(double speed = 0.025, double force = 0.05) = 0;
 	virtual bool gripper_grasped() const = 0;
 
+
 	/**
-	 * todo doc
+	 * Functionality for a "hybrid-controlled"
+	 * playback (demonstration and reproduction) setup.
 	 */
 	virtual void start_recording(
 		std::optional<std::string> log_file_path = std::nullopt) = 0;
-	virtual std::pair<std::vector<robot_config_7dof>, std::vector<wrench>>
-		stop_recording() = 0;
-
-
-	/**
-	 * todo doc
-	 */
+	virtual std::pair<std::vector<robot_config_7dof>, std::vector<wrench>> stop_recording() = 0;
 	virtual void move_sequence(
 		const std::vector<robot_config_7dof>& q_sequence,
 		const std::vector<wrench>& f_sequence,
@@ -104,34 +100,41 @@ public:
 		std::array<double, 16> offset_cartesian,
 		std::array<double, 6> offset_force) = 0;
 
-	/**
-	 * todo doc
-	 */
+
 	virtual void set_guiding_mode(
 		bool x, bool y, bool z,
-		bool rx, bool ry, bool rz, bool elbow) const = 0;
-	virtual void set_speed_factor(double speed_factor) = 0;
+		bool rx, bool ry, bool rz, bool elbow) = 0;
 
 
 	virtual double speed_factor() const = 0;
+	virtual void set_speed_factor(double speed_factor) = 0;
+
 	virtual robot_config_7dof current_config() const = 0;
 	virtual wrench current_force_torque() const = 0;
 	virtual int current_gripper_pos() const = 0; // in [mm]
 	virtual int max_gripper_pos() const = 0; // in [mm]
 
+
 	Eigen::Affine3d current_robot_base_T_j7() const;
 	Eigen::Affine3d current_robot_base_T_flange() const;
 	Eigen::Affine3d current_robot_base_T_tcp() const;
 
-	// used to convert internal double gripper width in meters into an int
+	const Eigen::Affine3d& j7_T_flange() const;
+	const Eigen::Affine3d& flange_T_tcp() const;
+	const Eigen::Affine3d& j7_T_tcp() const;
+	const Eigen::Affine3d& tcp_T_j7() const;
+
+	// flange_T_tcp setter for non-standard gripper setup.
+	void set_flange_T_tcp(const Eigen::Affine3d& value);
+
+	// Used to convert internal double gripper width in meters into an int
 	static constexpr double gripper_unit_per_m_ = 1000.0;
 
-	const Eigen::Affine3d j7_T_flange;
-	const Eigen::Affine3d flange_T_tcp;
-	const Eigen::Affine3d j7_T_tcp;
-	const Eigen::Affine3d tcp_T_j7;
-
 private:
+	Eigen::Affine3d j7_T_flange_;
+	Eigen::Affine3d flange_T_tcp_;
+	Eigen::Affine3d j7_T_tcp_;
+	Eigen::Affine3d tcp_T_j7_;
 
 	static Eigen::Affine3d build_j7_T_flange();
 	static Eigen::Affine3d build_flange_T_tcp();
@@ -162,9 +165,9 @@ private:
 	std::thread internal_thread_;
 	std::atomic_bool terminate_internal_thread_;
 
-	// This results in double the frequency of the sender.
-	static constexpr auto step_duration = 
-		std::chrono::milliseconds(50); 
+	// This is atm double the frequency of the sender.
+	static constexpr auto step_duration =
+		std::chrono::milliseconds(50);
 };
 } /* namespace franka_control */
 

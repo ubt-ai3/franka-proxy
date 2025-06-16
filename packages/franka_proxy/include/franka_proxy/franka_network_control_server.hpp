@@ -10,13 +10,10 @@
  ************************************************************************/
 
 
-
 #include <map>
 
 #include <asio/ip/tcp.hpp>
-
 #include <nlohmann/json.hpp>
-//#include <nlohmann/json_fwd.hpp>
 
 #include <franka_proxy_share/franka_proxy_commands.hpp>
 
@@ -25,8 +22,6 @@
 
 namespace franka_proxy
 {
-
-
 /**
  *************************************************************************
  *
@@ -38,30 +33,26 @@ namespace franka_proxy
 class franka_control_server
 {
 public:
-
-	franka_control_server
-		(std::uint16_t control_port,
-		 franka_hardware_controller& controller);
+	franka_control_server(
+		std::uint16_t control_port,
+		franka_hardware_controller& controller);
 
 	~franka_control_server() noexcept;
 
-
 private:
-
 	using command_handler = nlohmann::json(*)(franka_control_server* self, const nlohmann::json&);
 
-	template<class TCommandType>
-		void register_command_handler()
+	template <class TCommandType> void register_command_handler()
 	{
-		std::string_view type{ TCommandType::type };
+		std::string_view type{TCommandType::type};
 		command_handler handler =
 			[](franka_control_server* self, const nlohmann::json& json) -> nlohmann::json
 		{
 			static_assert
-				(std::is_same_v
-					<decltype(self->process_command(std::declval<TCommandType>())),
-					 typename TCommandType::response_type>,
-				 "A command handler's return type must match the response type associated with the command.");
+			(std::is_same_v
+			 <decltype(self->process_command(std::declval<TCommandType>())),
+			  typename TCommandType::response_type>,
+			 "A command handler's return type must match the response type associated with the command.");
 
 			return self->process_command(json.get<TCommandType>());
 		};
@@ -105,7 +96,7 @@ private:
 	asio::io_context io_context_;
 	asio::ip::tcp::acceptor server_;
 	std::unique_ptr<asio::ip::tcp::socket> connection_;
-	
+
 	std::string messages_buffer_;
 
 	std::thread internal_thread_;
@@ -117,10 +108,6 @@ private:
 	static constexpr float sleep_seconds_connected_ = 0.002f; // todo <16ms?
 	static constexpr std::size_t receive_buffer_size_ = 1000;
 };
-
-
-
-
 } /* namespace franka_proxy */
 
 

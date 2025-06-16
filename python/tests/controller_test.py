@@ -43,20 +43,27 @@ def test_remote_controller():
     
     
 def test_emulated_controller():
+    target = np.array([-0.60258097, -0.43091224, 0.65565041, -2.32016194, 0.3065638, 2.03325975, 0.56172062])
+
+    # Testing fk-ik 
+    print("Target config: ", target)
+    fk_array = pyfranka.FrankaProxyUtil.fk(target)
+    print("First fk result: ", fk_array[-1])
+    ik_result = pyfranka.FrankaProxyUtil.ik_fast_closest(fk_array[-1], target)
+    print("Resulting ik config: ", ik_result)
+    fk_array = pyfranka.FrankaProxyUtil.fk(ik_result)
+    print("Second fk result: ", fk_array[-1])
+  
     print("Testing emulated python franka controller:")
     controller = pyfranka.FrankaControllerEmulated()
 
-    print("Initial joint config:")
-    print(controller.current_config())
-
-    target = [0.5] * 7
-    print("Moving to:", target)
+    print("Initial joint config:", controller.current_config())
+    
+    print("Emulated move to:", target)
     controller.move(target)
-
     # No need to controller.update() for emulated use.
+    print("New joint config:", controller.current_config())
 
-    print("New joint config:")
-    print(controller.current_config())
 
 
 if __name__ == "__main__":

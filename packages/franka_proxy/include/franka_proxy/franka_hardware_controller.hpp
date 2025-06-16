@@ -42,8 +42,6 @@ namespace franka_proxy
 	 *
 	 * @class franka_hardware_controller
 	 *
-	 * todo
-	 *
 	 ************************************************************************/
 	class franka_hardware_controller
 	{
@@ -180,14 +178,20 @@ namespace franka_proxy
 		 * to follow path of multiple joint positions using desired stiffness matrix parameter.
 		*/
 		void joint_impedance_positions(
-			const std::list<std::array<double, 7>>& joint_positions, double duration,
-			std::array<double, 49> stiffness, std::optional<std::string> log_file_path = std::nullopt);
+			const std::list<std::array<double, 7>>& joint_positions, 
+			double duration,
+			std::array<double, 49> stiffness, 
+			std::optional<std::string> log_file_path = std::nullopt);
 
 		/**
 		 *  Runs the pre-defined motion for payload estimation
 		*/
-		void run_payload_estimation(double speed, double duration,
+		void run_payload_estimation(
+			double speed,
+			double duration,
 		                            std::optional<std::string> log_file_path = std::nullopt);
+
+		ft_sensor_response fts_state() const;
 
 	private:
 		/**
@@ -238,9 +242,7 @@ namespace franka_proxy
 
 		// fts
 		mutable std::unique_ptr<ft_sensor> ft_sensor_;
-
 		std::unique_ptr<detail::motion_recorder> motion_recorder_;
-
 
 		// control/state management
 		void set_control_loop_running(bool running);

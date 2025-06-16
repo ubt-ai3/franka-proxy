@@ -12,6 +12,23 @@
 
 namespace franka_control
 {
+namespace
+{
+// Helper function in anonymous namespace
+bool almost_equal(
+	const robot_config_7dof& xes,
+	const robot_config_7dof& other)
+{
+	for (int i = 0; i < 7; ++i)
+	{
+		if (abs(xes[i] - other[i]) >= 0.001)
+			return false;
+	}
+
+	return true;
+}
+}
+
 //////////////////////////////////////////////////////////////////////////
 //
 // franka_controller_emulated
@@ -21,82 +38,24 @@ namespace franka_control
 
 franka_controller_emulated::franka_controller_emulated()
 	: speed_factor_(0.1f),
-
-	  state_joint_values_
-	  ((Eigen::Matrix<double, 7, 1>() <<
-		  0, 0, 0, -0.0698, 0, 0, 0).finished()),
-	  state_force_torque_values_
-	  ((Eigen::Matrix<double, 6, 1>() <<
-		  0, 0, 0, 0, 0, 0).finished()),
+	  state_joint_values_(
+		  (robot_config_7dof() << 0, 0, 0, -0.0698, 0, 0, 0).finished()),
+	  state_force_torque_values_(
+		  (wrench() << 0, 0, 0, 0, 0, 0).finished()),
 	  state_gripper_pos_(0)
 {
 }
 
-
 franka_controller_emulated::~franka_controller_emulated() noexcept = default;
-
-
-bool almost_equal(const robot_config_7dof& xes, const robot_config_7dof& array)
-{
-	for (int i = 0; i < 7; ++i)
-	{
-		if (abs(xes[i] - array[i]) >= 0.001)
-			return false;
-	}
-
-	return true;
-}
-
-
-robot_config_7dof operator+
-(const robot_config_7dof& xes, const robot_config_7dof& rhs)
-{
-	robot_config_7dof ret;
-	for (int i = 0; i < 7; ++i)
-		ret[i] = xes[i] + rhs[i];
-	return ret;
-}
-
-
-robot_config_7dof operator-
-(const robot_config_7dof& xes, const robot_config_7dof& rhs)
-{
-	robot_config_7dof ret;
-	for (int i = 0; i < 7; ++i)
-		ret[i] = xes[i] - rhs[i];
-	return ret;
-}
-
-
-double length(const robot_config_7dof& xes)
-{
-	double len = 0;
-
-	for (int i = 0; i < 7; ++i)
-		len += xes[i] * xes[i];
-
-	return sqrt(len);
-}
-
-
-robot_config_7dof operator*(const robot_config_7dof& xes, double rhs)
-{
-	robot_config_7dof ret;
-	for (int i = 0; i < 7; ++i)
-		ret[i] = xes[i] * rhs;
-	return ret;
-}
-
 
 void franka_controller_emulated::move(const robot_config_7dof& target)
 {
 	robot_config_7dof current_joint_values = current_config();
-
 	auto last_time = std::chrono::steady_clock::now();
 
 	while (!almost_equal(target, current_joint_values))
 	{
-		auto next_timepoint =
+		auto next_time_point =
 			std::chrono::steady_clock::now() +
 			std::chrono::duration_cast<std::chrono::milliseconds>
 			(std::chrono::duration<double>(move_update_rate_));
@@ -116,16 +75,16 @@ void franka_controller_emulated::move(const robot_config_7dof& target)
 
 		// Move robot joints by given length.
 		double length_to_next =
-			length(target - current_joint_values);
+			(target - current_joint_values).norm();
 
 		if (length_to_next < move_length)
 		{
-			// If the next waymark is in reach, move there.
+			// If the target is in reach, move there.
 			current_joint_values = target;
 		}
 		else
 		{
-			// Move into the direction of the next waymark,
+			// Move into the direction of the target,
 			// but don't actually reach it.
 			current_joint_values = current_joint_values +
 				(target - current_joint_values) *
@@ -134,17 +93,17 @@ void franka_controller_emulated::move(const robot_config_7dof& target)
 
 		// Copy from process variables to exposed state.
 		{
-			std::lock_guard<std::mutex> lk(controller_mutex_);
+			std::lock_guard lk(controller_mutex_);
 			state_joint_values_ = current_joint_values;
 		}
 
-		std::this_thread::sleep_until(next_timepoint);
+		std::this_thread::sleep_until(next_time_point);
 	}
 }
 
 
-bool franka_controller_emulated::move_until_contact
-(const robot_config_7dof& target)
+bool franka_controller_emulated::move_until_contact(
+	const robot_config_7dof& target)
 {
 	move(target);
 	return true;
@@ -163,7 +122,8 @@ void franka_controller_emulated::close_gripper()
 }
 
 
-void franka_controller_emulated::grasp_gripper(double speed, double force)
+void franka_controller_emulated::grasp_gripper(
+	double speed, double force)
 {
 	move_gripper(0, speed);
 }
@@ -177,21 +137,22 @@ bool franka_controller_emulated::gripper_grasped() const
 
 double franka_controller_emulated::speed_factor() const
 {
-	std::lock_guard<std::mutex> lk(controller_mutex_);
+	std::lock_guard lk(controller_mutex_);
 	return speed_factor_;
 }
 
 
-void franka_controller_emulated::set_speed_factor(double speed_factor)
+void franka_controller_emulated::set_speed_factor(
+	double speed_factor)
 {
-	std::lock_guard<std::mutex> lk(controller_mutex_);
+	std::lock_guard lk(controller_mutex_);
 	speed_factor_ = speed_factor;
 }
 
 void franka_controller_emulated::set_guiding_mode(
 	bool x, bool y, bool z,
 	bool rx, bool ry, bool rz,
-	bool elbow) const
+	bool elbow)
 {
 }
 
@@ -214,7 +175,7 @@ wrench franka_controller_emulated::current_force_torque() const
 
 int franka_controller_emulated::current_gripper_pos() const
 {
-	std::lock_guard<std::mutex> lk(controller_mutex_);
+	std::lock_guard lk(controller_mutex_);
 	return state_gripper_pos_;
 }
 
@@ -230,9 +191,10 @@ void franka_controller_emulated::update()
 }
 
 
-void franka_controller_emulated::start_recording(std::optional<std::string> log_file_path)
+void franka_controller_emulated::start_recording(
+	std::optional<std::string> log_file_path)
 {
-	std::lock_guard<std::mutex> lk(controller_mutex_);
+	std::lock_guard lk(controller_mutex_);
 	recording_start_ = std::chrono::steady_clock::now();
 }
 
@@ -240,7 +202,7 @@ void franka_controller_emulated::start_recording(std::optional<std::string> log_
 std::pair<std::vector<robot_config_7dof>, std::vector<wrench>>
 franka_controller_emulated::stop_recording()
 {
-	std::unique_lock<std::mutex> lk(controller_mutex_);
+	std::unique_lock lk(controller_mutex_);
 	const auto recording_start = recording_start_;
 	const auto jc = state_joint_values_;
 	lk.unlock();
@@ -268,9 +230,9 @@ void franka_controller_emulated::move_sequence(
 
 	while (true)
 	{
-		// Calculate timepoint in sequence
+		// Calculate time_point in sequence
 		auto now = std::chrono::steady_clock::now();
-		const auto next_timepoint = now +
+		const auto next_time_point = now +
 			std::chrono::duration_cast<std::chrono::milliseconds>
 			(std::chrono::duration<double>(move_update_rate_));
 		unsigned long long ticks_passed =
@@ -283,18 +245,21 @@ void franka_controller_emulated::move_sequence(
 
 		// Copy from process variables to exposed state.
 		{
-			std::lock_guard<std::mutex> lk(controller_mutex_);
-			state_joint_values_ = Eigen::Map<const Eigen::Matrix<double, 7, 1>>(q_sequence[ticks_passed].data());
+			std::lock_guard lk(controller_mutex_);
+			state_joint_values_ =
+				Eigen::Map<const Eigen::Matrix<double, 7, 1>>(q_sequence[ticks_passed].data());
 			state_force_torque_values_ = Eigen::Map<const Eigen::Matrix<double, 6, 1>>(
 				f_sequence[ticks_passed].data());
 		}
 
-		std::this_thread::sleep_until(next_timepoint);
+		std::this_thread::sleep_until(next_time_point);
 	}
 
-	std::lock_guard<std::mutex> lk(controller_mutex_);
-	state_joint_values_ = Eigen::Map<const Eigen::Matrix<double, 7, 1>>(q_sequence.back().data());
-	state_force_torque_values_ = Eigen::Map<const Eigen::Matrix<double, 6, 1>>(f_sequence.back().data());
+	std::lock_guard lk(controller_mutex_);
+	state_joint_values_ =
+		Eigen::Map<const Eigen::Matrix<double, 7, 1>>(q_sequence.back().data());
+	state_force_torque_values_ =
+		Eigen::Map<const Eigen::Matrix<double, 6, 1>>(f_sequence.back().data());
 }
 
 void franka_controller_emulated::move_sequence(
@@ -315,7 +280,7 @@ void franka_controller_emulated::move_gripper(int target, double speed_mps)
 
 	while (abs(current_pos - target) > 0.001)
 	{
-		auto next_timepoint =
+		auto next_time_point =
 			std::chrono::steady_clock::now() +
 			std::chrono::duration_cast<std::chrono::milliseconds>
 			(std::chrono::duration<double>(move_update_rate_));
@@ -347,14 +312,14 @@ void franka_controller_emulated::move_gripper(int target, double speed_mps)
 
 		// Copy from process variables to exposed state.
 		{
-			std::lock_guard<std::mutex> lk(controller_mutex_);
+			std::lock_guard lk(controller_mutex_);
 			state_gripper_pos_ = static_cast<int>(current_pos);
 		}
 
-		std::this_thread::sleep_until(next_timepoint);
+		std::this_thread::sleep_until(next_time_point);
 	}
 
-	std::lock_guard<std::mutex> lk(controller_mutex_);
+	std::lock_guard lk(controller_mutex_);
 	state_gripper_pos_ = target;
 }
 } /* namespace franka_control */

@@ -16,8 +16,6 @@
 
 #include <asio/read.hpp>
 #include <franka/exception.h>
-#include <franka/robot_state.h>
-
 #include <nlohmann/json.hpp>
 
 
@@ -28,7 +26,9 @@ using namespace franka_proxy;
 /**
  * Executes a given functor with given arguments and decays exceptions to meaningful responses.
  */
-template <typename TFunctor, typename... TArgs> nlohmann::json execute_safe(TFunctor functor, TArgs... args)
+template <typename TFunctor, typename... TArgs> nlohmann::json execute_safe(
+	TFunctor functor,
+	TArgs... args)
 {
 	try
 	{
@@ -74,7 +74,7 @@ template <typename TFunctor, typename... TArgs> nlohmann::json execute_safe(TFun
 	{
 		std::cout << "franka_control_server::receive_requests(): " << "Encountered invalid oparation exception." <<
 			'\n';
-		return command_generic_response{ command_result::invalid_operation, exc.what() };
+		return command_generic_response{command_result::invalid_operation, exc.what()};
 	}
 	catch (const franka::Exception& exc)
 	{
@@ -95,9 +95,9 @@ namespace franka_proxy
 //////////////////////////////////////////////////////////////////////////
 
 
-franka_control_server::franka_control_server
-(std::uint16_t control_port,
- franka_hardware_controller& controller)
+franka_control_server::franka_control_server(
+	std::uint16_t control_port,
+	franka_hardware_controller& controller)
 	: controller_(controller),
 	  server_(create_server(control_port)),
 	  terminate_internal_thread_(false)
@@ -226,8 +226,8 @@ asio::ip::tcp::acceptor franka_control_server::create_server
 void franka_control_server::receive_requests()
 {
 	std::uint64_t content_length;
-	read
-		(*connection_, asio::buffer(&content_length, sizeof(std::uint64_t)));
+	read(*connection_,
+	     asio::buffer(&content_length, sizeof(std::uint64_t)));
 
 	std::string content{};
 	content.resize(content_length);
@@ -237,9 +237,9 @@ void franka_control_server::receive_requests()
 		[&](const nlohmann::json& response)
 	{
 		const std::string dump = response.dump();
-		const std::uint64_t content_length = dump.size();
+		const std::uint64_t response_length = dump.size();
 
-		connection_->send(asio::buffer(&content_length, sizeof(std::uint64_t)));
+		connection_->send(asio::buffer(&response_length, sizeof(std::uint64_t)));
 		connection_->send(asio::buffer(dump));
 	};
 
@@ -256,38 +256,40 @@ void franka_control_server::receive_requests()
 		send_response(response);
 		return;
 	}
-	
+
 	const auto response = execute_safe(fit->second, this, message);
 	send_response(response);
 }
 
 
-command_generic_response franka_control_server::process_command
-(const command_move_to_config& cmd)
+command_generic_response franka_control_server::process_command(
+	const command_move_to_config& cmd)
 {
 	controller_.move_to(cmd.target_joint_config);
 	return command_result::success;
 }
 
 
-command_generic_response franka_control_server::process_command
-(const command_move_hybrid_sequence_with_offset& cmd)
+command_generic_response franka_control_server::process_command(
+	const command_move_hybrid_sequence_with_offset& cmd)
 {
 	controller_.move_sequence
-		(cmd.joint_config_sequence, cmd.force_sequence, cmd.selection_sequence,cmd.offset_position,cmd.offset_force);
+	(cmd.joint_config_sequence, cmd.force_sequence,
+	 cmd.selection_sequence, cmd.offset_position, cmd.offset_force);
 	return command_result::success;
 }
 
-command_generic_response franka_control_server::process_command(const command_move_hybrid_sequence& cmd)
+command_generic_response franka_control_server::process_command(
+	const command_move_hybrid_sequence& cmd)
 {
 	controller_.move_sequence
-	(cmd.joint_config_sequence, cmd.force_sequence, cmd.selection_sequence);
+		(cmd.joint_config_sequence, cmd.force_sequence, cmd.selection_sequence);
 	return command_result::success;
 }
 
 
-command_generic_response franka_control_server::process_command
-(const command_move_until_contact& cmd)
+command_generic_response franka_control_server::process_command(
+	const command_move_until_contact& cmd)
 {
 	return controller_.move_to_until_contact(cmd.target_joint_config)
 		       ? command_result::success
@@ -295,29 +297,32 @@ command_generic_response franka_control_server::process_command
 }
 
 
-command_generic_response franka_control_server::process_command
-(const command_apply_admittance_adm_imp_desired_stiffness& cmd)
+command_generic_response franka_control_server::process_command(
+	const command_apply_admittance_adm_imp_desired_stiffness& cmd)
 {
-	controller_.apply_admittance(cmd.duration, cmd.adm_rotational_stiffness, cmd.adm_translational_stiffness,
-	                             cmd.imp_rotational_stiffness, cmd.imp_translational_stiffness, cmd.log_file_path);
+	controller_.apply_admittance(
+		cmd.duration, cmd.adm_rotational_stiffness, cmd.adm_translational_stiffness,
+		cmd.imp_rotational_stiffness, cmd.imp_translational_stiffness, cmd.log_file_path);
 	return command_result::success;
 }
 
 
-command_generic_response franka_control_server::process_command
-(const command_cartesian_impedance_hold_pose_desired_stiffness& cmd)
+command_generic_response franka_control_server::process_command(
+	const command_cartesian_impedance_hold_pose_desired_stiffness& cmd)
 {
-	controller_.cartesian_impedance_hold_pose(cmd.duration, cmd.use_stiff_damp_online_calc,
-	                                          cmd.rotational_stiffness, cmd.translational_stiffness, cmd.log_file_path);
+	controller_.cartesian_impedance_hold_pose(
+		cmd.duration, cmd.use_stiff_damp_online_calc,
+		cmd.rotational_stiffness, cmd.translational_stiffness, cmd.log_file_path);
 	return command_result::success;
 }
 
 
-command_generic_response franka_control_server::process_command
-(const command_cartesian_impedance_poses_desired_stiffness& cmd)
+command_generic_response franka_control_server::process_command(
+	const command_cartesian_impedance_poses_desired_stiffness& cmd)
 {
-	controller_.cartesian_impedance_poses(cmd.poses, cmd.duration, cmd.use_stiff_damp_online_calc,
-	                                      cmd.rotational_stiffness, cmd.translational_stiffness, cmd.log_file_path);
+	controller_.cartesian_impedance_poses(
+		cmd.poses, cmd.duration, cmd.use_stiff_damp_online_calc,
+		cmd.rotational_stiffness, cmd.translational_stiffness, cmd.log_file_path);
 	return command_result::success;
 }
 
@@ -325,34 +330,38 @@ command_generic_response franka_control_server::process_command
 command_generic_response franka_control_server::process_command
 (const command_joint_impedance_hold_position_desired_stiffness& cmd)
 {
-	controller_.joint_impedance_hold_position(cmd.duration, cmd.stiffness, cmd.log_file_path);
+	controller_.joint_impedance_hold_position(
+		cmd.duration, cmd.stiffness, cmd.log_file_path);
 	return command_result::success;
 }
 
-command_generic_response franka_control_server::process_command
-(const command_joint_impedance_positions_desired_stiffness& cmd)
+command_generic_response franka_control_server::process_command(
+	const command_joint_impedance_positions_desired_stiffness& cmd)
 {
-	controller_.joint_impedance_positions(cmd.joint_positions, cmd.duration, cmd.stiffness, cmd.log_file_path);
+	controller_.joint_impedance_positions(
+		cmd.joint_positions, cmd.duration, cmd.stiffness, cmd.log_file_path);
 	return command_result::success;
 }
 
-command_generic_response franka_control_server::process_command(const command_ple_motion& cmd)
+command_generic_response franka_control_server::process_command(
+	const command_ple_motion& cmd)
 {
-	controller_.run_payload_estimation(cmd.speed, cmd.duration, cmd.log_file_path);
+	controller_.run_payload_estimation(
+		cmd.speed, cmd.duration, cmd.log_file_path);
 	return command_generic_response();
 }
 
 
-command_generic_response franka_control_server::process_command
-(const command_force_z& cmd)
+command_generic_response franka_control_server::process_command(
+	const command_force_z& cmd)
 {
 	controller_.apply_z_force(cmd.mass, cmd.duration);
 	return command_result::success;
 }
 
 
-command_generic_response franka_control_server::process_command
-(const command_open_gripper& cmd)
+command_generic_response franka_control_server::process_command(
+	const command_open_gripper& cmd)
 {
 	controller_.open_gripper
 		(cmd.speed ? cmd.speed : franka_hardware_controller::default_gripper_speed);
@@ -360,8 +369,8 @@ command_generic_response franka_control_server::process_command
 }
 
 
-command_generic_response franka_control_server::process_command
-(const command_close_gripper& cmd)
+command_generic_response franka_control_server::process_command(
+	const command_close_gripper& cmd)
 {
 	controller_.close_gripper
 		(cmd.speed ? cmd.speed : franka_hardware_controller::default_gripper_speed);
@@ -369,41 +378,41 @@ command_generic_response franka_control_server::process_command
 }
 
 
-command_generic_response franka_control_server::process_command
-(const command_grasp_gripper& cmd)
+command_generic_response franka_control_server::process_command(
+	const command_grasp_gripper& cmd)
 {
 	return controller_.grasp_gripper(cmd.speed, cmd.force)
 		       ? command_result::success
 		       : command_result::success_command_failed;
 }
 
-command_generic_response franka_control_server::process_command
-	(const command_vacuum_gripper_drop& cmd)
+command_generic_response franka_control_server::process_command(
+	const command_vacuum_gripper_drop& cmd)
 {
 	return controller_.vacuum_gripper_drop(cmd.timeout)
-		? command_result::success
-		: command_result::success_command_failed;
+		       ? command_result::success
+		       : command_result::success_command_failed;
 }
 
 //TODO debug return correct response
-command_generic_response franka_control_server::process_command
-(const command_vacuum_gripper_vacuum& cmd)
+command_generic_response franka_control_server::process_command(
+	const command_vacuum_gripper_vacuum& cmd)
 {
-	return controller_.vacuum_gripper_vacuum(cmd.vacuum_strength, cmd.timeout) ?
-		command_result::success
-		: command_result::success_command_failed;
+	return controller_.vacuum_gripper_vacuum(cmd.vacuum_strength, cmd.timeout)
+		       ? command_result::success
+		       : command_result::success_command_failed;
 }
 
-command_generic_response franka_control_server::process_command
-(const command_vacuum_gripper_stop&)
+command_generic_response franka_control_server::process_command(
+	const command_vacuum_gripper_stop&)
 {
 	return controller_.vacuum_gripper_stop()
-		? command_result::success
-		: command_result::success_command_failed;
+		       ? command_result::success
+		       : command_result::success_command_failed;
 }
 
-command_generic_response franka_control_server::process_command
-(const command_start_recording& cmd)
+command_generic_response franka_control_server::process_command(
+	const command_start_recording& cmd)
 {
 	try
 	{
@@ -418,11 +427,12 @@ command_generic_response franka_control_server::process_command
 }
 
 
-command_stop_recording_response franka_control_server::process_command
-(const command_stop_recording&)
+command_stop_recording_response franka_control_server::process_command(
+	const command_stop_recording&)
 {
-	const auto& [q_seq, f_seq] = controller_.stop_recording();
-	return {q_seq, f_seq};
+	const auto& [q_seq, f_seq] =
+		controller_.stop_recording();
+	return {.joint_config_sequence = q_seq, .force_sequence = f_seq};
 }
 
 
@@ -433,7 +443,8 @@ command_generic_response franka_control_server::process_command
 	return command_result::success;
 }
 
-command_generic_response franka_control_server::process_command(const command_set_fts_bias& cmd)
+command_generic_response franka_control_server::process_command(
+	const command_set_fts_bias& cmd)
 {
 	try
 	{
@@ -446,7 +457,8 @@ command_generic_response franka_control_server::process_command(const command_se
 	}
 }
 
-command_generic_response franka_control_server::process_command(const command_set_fts_load_mass& cmd)
+command_generic_response franka_control_server::process_command(
+	const command_set_fts_load_mass& cmd)
 {
 	try
 	{
@@ -460,21 +472,17 @@ command_generic_response franka_control_server::process_command(const command_se
 }
 
 
-command_generic_response franka_control_server::process_command
-(const command_recover_from_errors&)
+command_generic_response franka_control_server::process_command(
+	const command_recover_from_errors&)
 {
 	controller_.automatic_error_recovery();
 	return command_result::success;
 }
 
-command_generic_response franka_control_server::process_command(const command_set_guiding_params& cmd)
+command_generic_response franka_control_server::process_command(
+	const command_set_guiding_params& cmd)
 {
 	controller_.set_guiding_mode(cmd.guiding_config, cmd.elbow);
-
 	return command_result::success;
 }
-
-
-
-
 } /* namespace franka_proxy */

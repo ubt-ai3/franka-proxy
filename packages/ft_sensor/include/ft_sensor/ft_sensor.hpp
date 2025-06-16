@@ -25,10 +25,10 @@ public:
 	ft_sensor_response read() const
 	{
 		std::lock_guard lock(current_ft_sensor_response_mutex_);
-		auto ret = current_ft_sensor_response_;
+		auto result = current_ft_sensor_response_;
 		for (int i = 0; i < 6; i++)
-			ret.data[i] -= bias_(i);
-		return ret;
+			result.data[i] -= bias_(i);
+		return result;
 	}
 
 	ft_sensor_response read_raw() const
@@ -39,7 +39,7 @@ public:
 
 	Eigen::Affine3f fts_t_flange() const
 	{
-		return fts_t_flange_;
+		return fts_T_flange_;
 	}
 
 	Eigen::Affine3f ee_t_kms() const
@@ -68,34 +68,37 @@ public:
 	}
 
 protected:
-	ft_sensor(Eigen::Affine3f transform,
-	          Eigen::Affine3f affine3_f,
-	          Eigen::Vector<double, 6> bias,
-	          Eigen::Vector3d load_mass)
+	ft_sensor(
+		Eigen::Affine3f transform,
+		Eigen::Affine3f affine3_f,
+		Eigen::Vector<double, 6> bias,
+		Eigen::Vector3d load_mass)
 		: current_ft_sensor_response_(),
-		  fts_t_flange_(std::move(transform)),
+		  fts_T_flange_(std::move(transform)),
 		  ee_t_fts_(std::move(affine3_f)),
 		  bias_(std::move(bias)),
 		  load_mass_(std::move(load_mass))
 	{
 	}
 
-	ft_sensor_response current_ft_sensor_response_;
 	mutable std::mutex current_ft_sensor_response_mutex_;
+	ft_sensor_response current_ft_sensor_response_;
 
-	Eigen::Affine3f fts_t_flange_;
+	Eigen::Affine3f fts_T_flange_;
 	Eigen::Affine3f ee_t_fts_;
 	Eigen::Vector<double, 6> bias_; //[fx, fy, fz, tx, ty, tz]
 	Eigen::Vector3d load_mass_;
 	Eigen::Matrix3d load_inertia_;
 };
 
-class ft_sensor_connection_exception : public std::exception
+
+class ft_sensor_connection_exception
+	: public std::exception
 {
 public:
 	const char* what() const noexcept override
 	{
-		return "no force/torque sensor available";
+		return "No force/torque sensor is available.";
 	}
 };
 } /* namespace franka_proxy */

@@ -82,7 +82,7 @@ public:
 
 	void set_guiding_mode(
 		bool x, bool y, bool z,
-		bool rx, bool ry, bool rz, bool elbow) const override;
+		bool rx, bool ry, bool rz, bool elbow) override;
 
 private:
 	std::unique_ptr<franka_proxy::franka_remote_interface> controller_;

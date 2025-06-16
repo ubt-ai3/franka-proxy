@@ -26,10 +26,10 @@ namespace franka_control
 
 
 franka_controller::franka_controller()
-	: j7_T_flange(build_j7_T_flange()),
-	  flange_T_tcp(build_flange_T_tcp()),
-	  j7_T_tcp(build_j7_T_tcp()),
-	  tcp_T_j7(build_tcp_T_j7())
+	: j7_T_flange_(build_j7_T_flange()),
+	  flange_T_tcp_(build_flange_T_tcp()),
+	  j7_T_tcp_(build_j7_T_tcp()),
+	  tcp_T_j7_(build_tcp_T_j7())
 {
 }
 
@@ -37,17 +37,19 @@ franka_controller::franka_controller()
 franka_controller::~franka_controller() noexcept = default;
 
 
-void franka_controller::move(const Eigen::Affine3d& target_world_T_tcp)
+void franka_controller::move(
+	const Eigen::Affine3d& target_robot_base_T_tcp)
 {
 	move(franka_proxy_util::ik_fast_closest(
-		target_world_T_tcp * tcp_T_j7, current_config()));
+		target_robot_base_T_tcp * tcp_T_j7_, current_config()));
 }
 
 
-bool franka_controller::move_until_contact(const Eigen::Affine3d& target_world_T_tcp)
+bool franka_controller::move_until_contact(
+	const Eigen::Affine3d& target_robot_base_T_tcp)
 {
 	return move_until_contact(franka_proxy_util::ik_fast_closest(
-		target_world_T_tcp * tcp_T_j7, current_config()));
+		target_robot_base_T_tcp * tcp_T_j7_, current_config()));
 }
 
 
@@ -59,15 +61,42 @@ Eigen::Affine3d franka_controller::current_robot_base_T_j7() const
 
 Eigen::Affine3d franka_controller::current_robot_base_T_flange() const
 {
-	return current_robot_base_T_j7() * j7_T_flange;
+	return current_robot_base_T_j7() * j7_T_flange_;
 }
 
 
 Eigen::Affine3d franka_controller::current_robot_base_T_tcp() const
 {
-	return current_robot_base_T_j7() * j7_T_tcp;
+	return current_robot_base_T_j7() * j7_T_tcp_;
 }
 
+const Eigen::Affine3d& franka_controller::j7_T_flange() const
+{
+	return j7_T_flange_;
+}
+
+const Eigen::Affine3d& franka_controller::flange_T_tcp() const
+{
+	return flange_T_tcp_;
+}
+
+const Eigen::Affine3d& franka_controller::j7_T_tcp() const
+{
+	return j7_T_tcp_;
+}
+
+const Eigen::Affine3d& franka_controller::tcp_T_j7() const
+{
+	return tcp_T_j7_;
+}
+
+
+void franka_controller::set_flange_T_tcp(const Eigen::Affine3d& value)
+{
+	flange_T_tcp_ = value;
+	j7_T_tcp_ = j7_T_flange_ * flange_T_tcp_;
+	tcp_T_j7_ = j7_T_tcp_.inverse();
+}
 
 Eigen::Affine3d franka_controller::build_j7_T_flange()
 {

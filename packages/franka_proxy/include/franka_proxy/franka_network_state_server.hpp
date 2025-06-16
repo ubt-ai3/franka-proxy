@@ -10,7 +10,6 @@
  ************************************************************************/
 
 
-
 #include <asio/ip/tcp.hpp>
 
 #include "franka_hardware_controller.hpp"
@@ -18,8 +17,6 @@
 
 namespace franka_proxy
 {
-
-
 /**
  *************************************************************************
  *
@@ -31,16 +28,13 @@ namespace franka_proxy
 class franka_state_server
 {
 public:
-
-	franka_state_server
-		(std::uint16_t state_port,
-		 franka_hardware_controller& controller);
+	franka_state_server(
+		std::uint16_t state_port,
+		franka_hardware_controller& controller);
 
 	~franka_state_server() noexcept;
 
-
 private:
-
 	void task_main();
 
 	asio::ip::tcp::acceptor create_server(std::uint16_t control_port);
@@ -57,13 +51,11 @@ private:
 	std::thread internal_thread_;
 	std::atomic_bool terminate_internal_thread_;
 
-	static constexpr auto step_duration_disconnected = 
+	static constexpr auto step_duration_disconnected =
 		std::chrono::milliseconds(33);
-	static constexpr auto step_duration_connected = 
+	static constexpr auto step_duration_connected =
 		std::chrono::milliseconds(100);
 };
-
-
 } /* namespace franka_proxy */
 
 #endif // INCLUDED__FRANKA_PROXY__FRANKA_NETWORK_STATE_SERVER_HPP

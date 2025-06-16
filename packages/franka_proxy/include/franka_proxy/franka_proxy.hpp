@@ -4,8 +4,6 @@
  *************************************************************************
  *
  * @file franka_proxy.hpp
- * 
- * todo
  *
  ************************************************************************/
 
@@ -22,14 +20,14 @@ namespace franka_proxy
  *
  * @class franka_proxy
  *
- * todo
- *
  ************************************************************************/
 
 class franka_proxy
 {
 public:
-	franka_proxy(const std::string& ip, bool enforce_realtime);
+	franka_proxy(
+		const std::string& ip,
+		bool enforce_realtime);
 
 private:
 	franka_hardware_controller controller_;
