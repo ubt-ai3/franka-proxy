@@ -5,9 +5,10 @@
 
 #include <argparse/argparse.hpp>
 
+#include <franka_proxy_share/franka_proxy_util.hpp>
+#include <franka_control/forward.hpp> // included for IDE visibility of the forward header
 #include <franka_control/franka_controller_emulated.hpp>
 #include <franka_control/franka_controller_remote.hpp>
-#include <franka_proxy_share/franka_proxy_util.hpp>
 
 // todo: this sensor calibration should not be used from here
 #include "schunk_ft_to_franka_calibration.hpp"

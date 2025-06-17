@@ -18,8 +18,6 @@
 
 #include <Eigen/Geometry>
 
-#include "forward.hpp" // included for IDE visibility of the forward header
-
 namespace franka_control
 {
 
