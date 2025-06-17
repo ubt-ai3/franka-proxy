@@ -10,7 +10,6 @@
 
 #include "franka_remote_interface.hpp"
 
-#include <iostream>
 #include <list>
 #include <utility>
 
@@ -32,9 +31,13 @@ namespace franka_proxy
 franka_remote_interface::franka_remote_interface(
 	std::string proxy_ip)
 	: franka_ip_(std::move(proxy_ip)),
+	  socket_control_(nullptr),
+	  socket_state_(nullptr),
 	  current_config_(),
+	  current_end_effector_wrench_(),
 	  current_gripper_pos_(),
-	  max_gripper_pos_()
+	  max_gripper_pos_(),
+	  current_vacuum_gripper_state_()
 {
 	initialize_sockets();
 }
@@ -54,7 +57,8 @@ void franka_remote_interface::move_to(const robot_config_7dof& target)
 
 void franka_remote_interface::move_to(const Eigen::Vector<double, 7>& target)
 {
-	const std::array<double, 7> pos = franka_proxy_util::convert_to_std_array<double, 7>(target);
+	const std::array<double, 7> pos =
+		franka_proxy_util::convert_to_std_array<double, 7>(target);
 	move_to(pos);
 }
 
@@ -62,7 +66,19 @@ void franka_remote_interface::move_to(const Eigen::Vector<double, 7>& target)
 bool franka_remote_interface::move_to_until_contact
 (const robot_config_7dof& target)
 {
-	return send_command<command_move_until_contact>(target) == command_result::success;
+	return
+		send_command<command_move_until_contact>(target) == command_result::success;
+}
+
+
+void franka_remote_interface::move_sequence(
+	const std::vector<robot_config_7dof>& q_sequence,
+	const std::vector<std::array<double, 6>>& f_sequence,
+	const std::vector<std::array<double, 6>>& selection_vector_sequence
+)
+{
+	send_command<command_move_hybrid_sequence>(
+		q_sequence, f_sequence, selection_vector_sequence);
 }
 
 
@@ -73,18 +89,8 @@ void franka_remote_interface::move_sequence(
 	const std::array<double, 16>& offset_position,
 	const std::array<double, 6>& offset_force)
 {
-	send_command<command_move_hybrid_sequence_with_offset>
-		(q_sequence, f_sequence, selection_vector_sequence, offset_position, offset_force);
-}
-
-void franka_remote_interface::move_sequence(
-	const std::vector<robot_config_7dof>& q_sequence,
-	const std::vector<std::array<double, 6>>& f_sequence,
-	const std::vector<std::array<double, 6>>& selection_vector_sequence
-)
-{
-	send_command<command_move_hybrid_sequence>
-		(q_sequence, f_sequence, selection_vector_sequence);
+	send_command<command_move_hybrid_sequence_with_offset>(
+		q_sequence, f_sequence, selection_vector_sequence, offset_position, offset_force);
 }
 
 
@@ -152,7 +158,10 @@ void franka_remote_interface::joint_impedance_positions(
 		joint_positions, duration, stiffness, log_file_path);
 }
 
-void franka_remote_interface::ple_motion(double speed, double duration, std::optional<std::string> log_file_path)
+void franka_remote_interface::ple_motion(
+	double speed,
+	double duration,
+	std::optional<std::string> log_file_path)
 {
 	send_command<command_ple_motion>(speed, duration, log_file_path);
 }
@@ -176,7 +185,8 @@ void franka_remote_interface::close_gripper(double speed)
 
 bool franka_remote_interface::grasp_gripper(double speed, double force)
 {
-	return send_command<command_grasp_gripper>(speed, force) == command_result::success;
+	return
+		send_command<command_grasp_gripper>(speed, force) == command_result::success;
 }
 
 
@@ -270,27 +280,29 @@ void franka_remote_interface::update()
 	{
 		std::lock_guard state_guard(state_lock_);
 
-		// robot config
+		// Robot config
 		current_config_ = state.joint_configuration;
 		current_end_effector_wrench_ = state.end_effector_wrench;
 
-		// jaw gripper
+		// Jaw gripper
 		current_gripper_pos_ = state.width;
 		max_gripper_pos_ = state.max_width;
 		gripper_grasped_ = state.is_grasped;
 
-		// vacuum gripper
-		vacuum_gripper_state_.actual_power_ = state.actual_power;
-		vacuum_gripper_state_.vacuum_level = state.vacuum;
-		vacuum_gripper_state_.part_detached_ = state.part_detached;
-		vacuum_gripper_state_.part_present_ = state.part_present;
-		vacuum_gripper_state_.in_control_range_ = state.in_control_range;
+		// Vacuum gripper
+		current_vacuum_gripper_state_.actual_power_ = state.actual_power;
+		current_vacuum_gripper_state_.vacuum_level = state.vacuum;
+		current_vacuum_gripper_state_.part_detached_ = state.part_detached;
+		current_vacuum_gripper_state_.part_present_ = state.part_present;
+		current_vacuum_gripper_state_.in_control_range_ = state.in_control_range;
 	}
 
 	socket_state_->clear_states();
 }
 
-command_result franka_remote_interface::check_response(const command_generic_response& response)
+
+command_result franka_remote_interface::check_response(
+	const command_generic_response& response)
 {
 	switch (response.result)
 	{
@@ -325,14 +337,10 @@ command_result franka_remote_interface::check_response(const command_generic_res
 
 void franka_remote_interface::initialize_sockets()
 {
-	std::cout << "franka_remote_interface::initialize_sockets(): " <<
-		"Creating network connections.\n";
-
-	socket_control_.reset
-		(new franka_control_client(franka_ip_, franka_control_port));
-
-	socket_state_.reset
-		(new franka_state_client(franka_ip_, franka_state_port));
+	socket_control_ =
+		std::make_unique<franka_control_client>(franka_ip_, franka_control_port);
+	socket_state_ =
+		std::make_unique<franka_state_client>(franka_ip_, franka_state_port);
 }
 
 
@@ -342,24 +350,30 @@ void franka_remote_interface::shutdown_sockets() noexcept
 	socket_state_.reset();
 }
 
-bool franka_remote_interface::vacuum_gripper_drop(std::chrono::milliseconds timeout)
+bool franka_remote_interface::vacuum_gripper_drop(
+	std::chrono::milliseconds timeout)
 {
-	return send_command<command_vacuum_gripper_drop>(timeout) == command_result::success;
+	return
+		send_command<command_vacuum_gripper_drop>(timeout) == command_result::success;
 }
 
-bool franka_remote_interface::vacuum_gripper_vacuum(std::uint8_t vacuum_strength, std::chrono::milliseconds timeout)
+bool franka_remote_interface::vacuum_gripper_vacuum(
+	std::uint8_t vacuum_strength,
+	std::chrono::milliseconds timeout)
 {
-	return send_command<command_vacuum_gripper_vacuum>(vacuum_strength, timeout) == command_result::success;
+	return send_command<command_vacuum_gripper_vacuum>(
+		vacuum_strength, timeout) == command_result::success;
 }
 
 bool franka_remote_interface::vacuum_gripper_stop()
 {
-	return send_command<command_vacuum_gripper_stop>() == command_result::success;
+	return
+		send_command<command_vacuum_gripper_stop>() == command_result::success;
 }
 
 vacuum_gripper_state franka_remote_interface::get_vacuum_gripper_state() const
 {
 	std::lock_guard state_guard(state_lock_);
-	return vacuum_gripper_state_;
+	return current_vacuum_gripper_state_;
 }
-}
+} /* namespace franka_proxy */

@@ -96,6 +96,5 @@ namespace franka_proxy
 
 		static Eigen::Matrix3d a_tilde(const Eigen::Vector3d& a);
 	};
-}
-/* namespace franka_proxy*/
+} /* namespace franka_proxy */
 #endif // INCLUDED__FRANKA_PROXY_SHARE__FRANKA_PROXY_UTIL_HPP

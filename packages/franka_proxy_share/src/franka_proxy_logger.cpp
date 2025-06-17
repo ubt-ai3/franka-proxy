@@ -331,4 +331,4 @@ void logger::check_data()
 			"Log will contain padding with zero values or none entries." << '\n';
 }
 
-}
+} /* namespace franka_proxy */

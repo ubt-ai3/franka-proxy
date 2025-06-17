@@ -10,8 +10,6 @@
  ************************************************************************/
 
 
-
-
 #include <array>
 #include <fstream>
 #include <vector>
@@ -159,7 +157,6 @@ private:
 	//adds padding if necessary and prints warnings for too many / too few entries
 	void check_data();
 };
-
-}
+} /* namespace franka_proxy */
 
 #endif // INCLUDED__FRANKA_PROXY_SHARE__FRANKA_PROXY_LOGGER_HPP

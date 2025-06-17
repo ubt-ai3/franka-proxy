@@ -23,6 +23,9 @@
 
 namespace franka_proxy
 {
+using robot_config_7dof = std::array<double, 7>;
+
+
 struct command_stop_recording_response;
 
 struct command_generic_response;
@@ -571,7 +574,8 @@ void from_json(const nlohmann::json& json, command_recover_from_errors& object);
  * Result code sent in `command_generic_response`.
  *
  ************************************************************************/
-enum class command_result : std::uint8_t
+enum class command_result
+	: std::uint8_t
 {
 	success,
 	success_command_failed,
@@ -605,13 +609,11 @@ struct command_generic_response
 
 	command_generic_response() noexcept
 		: result{command_result::success}
-		  , reason{}
 	{
 	}
 
 	command_generic_response(command_result result) noexcept
 		: result{result}
-		  , reason{}
 	{
 	}
 

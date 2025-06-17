@@ -41,14 +41,15 @@ public:
 
 	void update_messages();
 
-	const std::list<command_get_config_response>& states() const noexcept;
+	[[nodiscard]] const std::list<command_get_config_response>& states() const noexcept;
+
 	void clear_states() noexcept;
 
 private:
 	void update_messages_buffer();
 
 	std::unique_ptr<asio_tcp_socket> connect(
-		const std::string& ip, 
+		const std::string& ip,
 		std::uint16_t port);
 
 
@@ -115,6 +116,6 @@ private:
 
 	std::unique_ptr<asio_tcp_socket> connection_;
 };
-}
+} /* namespace franka_proxy */
 
 #endif // INCLUDED__FRANKA_PROXY_CLIENT__FRANKA_NETWORK_CLIENT_HPP

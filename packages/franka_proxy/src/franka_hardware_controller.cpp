@@ -548,14 +548,16 @@ void franka_hardware_controller::set_bias(const std::array<double, 6>& bias)
 {
 	if (ft_sensor_)
 		ft_sensor_->set_bias(Eigen::Vector<double, 6>(bias.data()));
-	else throw ft_sensor_connection_exception();
+	else 
+		throw ft_sensor_connection_exception();
 }
 
 void franka_hardware_controller::set_load_mass(const std::array<double, 3>& load_mass)
 {
 	if (ft_sensor_)
 		ft_sensor_->set_load_mass(Eigen::Vector3d(load_mass.data()));
-	else throw ft_sensor_connection_exception();
+	else 
+		throw ft_sensor_connection_exception();
 }
 
 void franka_hardware_controller::set_guiding_mode(const std::array<bool, 6>& guiding_mode, const bool elbow)
@@ -698,9 +700,8 @@ franka::VacuumGripperState franka_hardware_controller::vacuum_gripper_state() co
 void franka_hardware_controller::start_recording(std::optional<std::string> log_file_path)
 {
 	if (!ft_sensor_)
-	{
 		throw ft_sensor_connection_exception();
-	}
+
 	set_control_loop_running(true);
 	{
 		// Lock the current_state_lock_ to wait for state_thread_ to finish.

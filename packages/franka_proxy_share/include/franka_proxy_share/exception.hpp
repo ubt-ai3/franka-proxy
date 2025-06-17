@@ -104,6 +104,6 @@ public:
 		return "API call failed.";
 	}
 };
-} /* namespace franka_control */
+} /* namespace franka_proxy */
 
 #endif // INCLUDED__FRANKA_PROXY_SHARE__EXCEPTION_HPP

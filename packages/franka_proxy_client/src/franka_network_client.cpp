@@ -10,7 +10,6 @@
 
 #include "franka_network_client.hpp"
 
-#include <array>
 #include <iostream>
 #include <string>
 #include <thread>
@@ -98,19 +97,20 @@ void franka_state_client::update_messages_buffer()
 
 	try
 	{
-		const auto state = nlohmann::json::parse(buffer).get<command_get_config_response>();
-		states_.push_back(state);
+		auto state = 
+			nlohmann::json::parse(buffer).get<command_get_config_response>();
+		states_.emplace_back(state);
 	}
 	catch (...)
 	{
 		std::cerr << "franka_state_client::update_messages_buffer(): "
-			<< "State message discarded due to bad JSON." << std::endl;
+			<< "State message discarded due to bad JSON.\n";
 	}
 }
 
 
 std::unique_ptr<asio::ip::tcp::socket> franka_state_client::connect(
-	const std::string& ip, 
+	const std::string& ip,
 	std::uint16_t port)
 {
 	asio::ip::tcp::resolver resolver(*io_context_);
@@ -220,4 +220,4 @@ std::unique_ptr<asio::ip::tcp::socket> franka_control_client::connect(
 
 	return s;
 }
-}
+} /* namespace franka_proxy */
