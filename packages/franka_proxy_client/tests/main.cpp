@@ -244,7 +244,7 @@ void franka_proxy_client_test(
 
 
 	// Mandatory status thread with debug output
-	int print_every_ith_status = 1;
+	int print_every_ith_status = 10;
 	std::atomic_bool stop(false);
 	std::thread t([&stop, &robot, print_every_ith_status]()
 	{
@@ -253,13 +253,15 @@ void franka_proxy_client_test(
 		{
 			robot->update();
 
-			if (print_every_ith_status && i++ % print_every_ith_status == 0)
+			if (print_every_ith_status && i % print_every_ith_status == 0)
 			{
 				std::cout << "Status #" << i << ": ";
 				print_status(*robot);
 			}
 			using namespace std::chrono_literals;
 			std::this_thread::sleep_for(0.016s);
+
+			++i;
 		}
 	});
 
@@ -270,10 +272,11 @@ void franka_proxy_client_test(
 	// parameters for test methods arrive here as a vector of strings, so convert accordingly
 	if (test == none)
 	{
-		std::cout << "Only testing status socket for 10s."
-			<< " You should get a bit less than 100 states.\n";
 		using namespace std::chrono_literals;
-		std::this_thread::sleep_for(10s);
+		std::chrono::duration duration(10s);
+		std::cout << "Only testing status socket for "
+			<< duration << ".\n";
+		std::this_thread::sleep_for(duration);
 	}
 	else if (test == ple)
 	{
@@ -328,7 +331,7 @@ void print_status(const franka_proxy::franka_remote_interface& robot)
 {
 	const auto config = robot.current_config();
 
-	std::cout << "Current robot joints: [ ";
+	std::cout << " [ ";
 	for (int i = 0; i < config.size(); ++i)
 	{
 		std::cout << std::fixed << std::setprecision(4)
@@ -401,11 +404,11 @@ void playback_test(
 	std::optional<std::string> log_file_path = std::nullopt;
 	if (log) log_file_path = file;
 
-	std::cout << ("--- press to start in 3s (lights white) ---") << '\n';
+	std::cout << ("--- press to start in 3s (must light white) ---") << '\n';
 	std::cin.get();
 	std::this_thread::sleep_for(std::chrono::seconds(3));
 
-	std::cout << ("--- starting demonstration ---") << '\n';
+	std::cout << ("--- starting demonstration for 10s ---") << '\n';
 	robot.start_recording(log_file_path);
 	std::this_thread::sleep_for(std::chrono::seconds(10));
 
@@ -413,7 +416,7 @@ void playback_test(
 	const std::pair record(robot.stop_recording());
 
 
-	std::cout << ("--- press to start reproduction in 3s (lights blue) ---") << '\n';
+	std::cout << ("--- press to start reproduction in 3s (must light blue) ---") << '\n';
 	std::cin.get();
 
 	std::this_thread::sleep_for(std::chrono::seconds(3));

@@ -155,15 +155,13 @@ franka_update_task::~franka_update_task() noexcept
 
 void franka_update_task::task_main()
 {
-	auto next_iteration_time =
+	auto start_tp =
 		std::chrono::steady_clock::now();
 
 	while (!terminate_internal_thread_)
 	{
 		controller_.update();
-
-		next_iteration_time += step_duration;
-		std::this_thread::sleep_until(next_iteration_time);
+		std::this_thread::sleep_until(start_tp + step_duration);
 	}
 }
 } /* namespace franka_control */

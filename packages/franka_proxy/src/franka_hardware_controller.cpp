@@ -67,8 +67,8 @@ franka_hardware_controller::franka_hardware_controller(
 	catch (const std::exception& e)
 	{
 		std::cout << "franka_proxy::franka_hardware_controller(const std::string & controller_ip): "
-			"Connection to force/torque sensor could not be established:" << '\n' <<
-			e.what() << '\n';
+			<< "Connection to force/torque sensor could not be established:" << '\n' 
+			<< e.what() << '\n';
 	}
 
 	try
@@ -80,8 +80,9 @@ franka_hardware_controller::franka_hardware_controller(
 	catch (const std::exception& e)
 	{
 		std::cout << "franka_proxy::franka_hardware_controller(const std::string & controller_ip): "
-			<< "Connection to gripper could not be established." <<
-			e.what() << '\n';
+			<< "Connection to gripper could not be established\n"
+			<< "Either, it is not attached or: " 
+			<< e.what() << '\n';
 	}
 
 	try
@@ -92,8 +93,9 @@ franka_hardware_controller::franka_hardware_controller(
 	catch (const std::exception& e)
 	{
 		std::cout << "franka_proxy::franka_hardware_controller(const std::string & controller_ip): "
-			<< "Connection to vacuum gripper could not be established." <<
-			e.what() << '\n';
+			<< "Connection to vacuum gripper could not be established.\n"
+			<< "Either, it is not attached or: " 
+			<< e.what() << '\n';
 	}
 
 	set_guiding_mode({{true, true, true, true, true, true}}, false);
