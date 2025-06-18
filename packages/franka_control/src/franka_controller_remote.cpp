@@ -31,6 +31,7 @@ franka_controller_remote::franka_controller_remote(
 	  speed_factor_(0.1)
 {
 	controller_->set_speed_factor(speed_factor_);
+	controller_->update();
 }
 
 
