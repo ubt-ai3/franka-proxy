@@ -46,7 +46,9 @@ franka_controller_emulated::franka_controller_emulated()
 {
 }
 
+
 franka_controller_emulated::~franka_controller_emulated() noexcept = default;
+
 
 void franka_controller_emulated::move(const robot_config_7dof& target)
 {
@@ -149,6 +151,7 @@ void franka_controller_emulated::set_speed_factor(
 	speed_factor_ = speed_factor;
 }
 
+
 void franka_controller_emulated::set_guiding_mode(
 	bool x, bool y, bool z,
 	bool rx, bool ry, bool rz,
@@ -166,6 +169,7 @@ robot_config_7dof franka_controller_emulated::current_config() const
 {
 	return state_joint_values_;
 }
+
 
 wrench franka_controller_emulated::current_force_torque() const
 {
@@ -221,6 +225,7 @@ franka_controller_emulated::stop_recording()
 	return result;
 }
 
+
 void franka_controller_emulated::move_sequence(
 	const std::vector<robot_config_7dof>& q_sequence,
 	const std::vector<wrench>& f_sequence,
@@ -262,6 +267,7 @@ void franka_controller_emulated::move_sequence(
 		Eigen::Map<const Eigen::Matrix<double, 6, 1>>(f_sequence.back().data());
 }
 
+
 void franka_controller_emulated::move_sequence(
 	const std::vector<robot_config_7dof>& q_sequence,
 	const std::vector<wrench>& f_sequence,
@@ -271,6 +277,7 @@ void franka_controller_emulated::move_sequence(
 {
 	move_sequence(q_sequence, f_sequence, selection_vector_sequence);
 }
+
 
 void franka_controller_emulated::move_gripper(int target, double speed_mps)
 {

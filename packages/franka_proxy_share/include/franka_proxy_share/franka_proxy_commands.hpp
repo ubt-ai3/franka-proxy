@@ -607,15 +607,18 @@ struct command_generic_response
 	command_result result;
 	std::string reason;
 
+
 	command_generic_response() noexcept
 		: result{command_result::success}
 	{
 	}
 
+
 	command_generic_response(command_result result) noexcept
 		: result{result}
 	{
 	}
+
 
 	command_generic_response(command_result result, std::string reason)
 		: result{result}

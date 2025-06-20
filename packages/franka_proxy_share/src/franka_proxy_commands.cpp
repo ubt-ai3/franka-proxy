@@ -382,6 +382,7 @@ void to_json(nlohmann::json& json, const command_vacuum_gripper_drop& object)
 	json["timeout"] = object.timeout.count();
 }
 
+
 void from_json(const nlohmann::json& json, command_vacuum_gripper_drop& object)
 {
 	long long tick_count{};
@@ -403,6 +404,7 @@ void to_json(nlohmann::json& json, const command_vacuum_gripper_vacuum& object)
 	json["vacuum"] = object.vacuum_strength;
 }
 
+
 void from_json(const nlohmann::json& json, command_vacuum_gripper_vacuum& object)
 {
 	long long tick_count{};
@@ -422,6 +424,7 @@ void to_json(nlohmann::json& json, const command_vacuum_gripper_stop& object)
 {
 	json["type"] = command_vacuum_gripper_stop::type;
 }
+
 
 void from_json(const nlohmann::json& json, command_vacuum_gripper_stop& object)
 {
@@ -481,6 +484,7 @@ void to_json(nlohmann::json& json, const command_stop_recording_response& object
 	json["joint_config_sequence"] = object.joint_config_sequence;
 	json["force_sequence"] = object.force_sequence;
 }
+
 
 void from_json(const nlohmann::json& json, command_stop_recording_response& object)
 {
@@ -568,6 +572,7 @@ void to_json(nlohmann::json& json, const command_set_guiding_params& object)
 	json["guiding_config"] = object.guiding_config;
 	json["elbow"] = object.elbow;
 }
+
 
 void from_json(const nlohmann::json& json, command_set_guiding_params& object)
 {

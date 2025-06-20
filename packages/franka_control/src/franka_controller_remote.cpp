@@ -60,10 +60,12 @@ void franka_controller_remote::open_gripper()
 	controller_->open_gripper();
 }
 
+
 void franka_controller_remote::close_gripper()
 {
 	controller_->close_gripper();
 }
+
 
 void franka_controller_remote::grasp_gripper(double speed, double force)
 {
@@ -112,6 +114,7 @@ robot_config_7dof franka_controller_remote::current_config() const
 	return result;
 }
 
+
 wrench franka_controller_remote::current_force_torque() const
 {
 	wrench result;
@@ -124,15 +127,18 @@ wrench franka_controller_remote::current_force_torque() const
 	return result;
 }
 
+
 int franka_controller_remote::current_gripper_pos() const
 {
 	return static_cast<int>(controller_->current_gripper_pos() * gripper_unit_per_m_);
 }
 
+
 int franka_controller_remote::max_gripper_pos() const
 {
 	return static_cast<int>(controller_->max_gripper_pos() * gripper_unit_per_m_);
 }
+
 
 void franka_controller_remote::update()
 {
@@ -245,6 +251,7 @@ void franka_controller_remote::move_sequence(
 	controller_->move_to(result_back);
 }
 
+
 void franka_controller_remote::move_sequence(
 	const std::vector<robot_config_7dof>& q_sequence,
 	const std::vector<wrench>& f_sequence,
@@ -307,11 +314,13 @@ void franka_controller_remote::set_fts_bias(
 	controller_->set_fts_bias({bias[0], bias[1], bias[2], bias[3], bias[4], bias[5]});
 }
 
+
 void franka_controller_remote::set_fts_load_mass(
 	const Eigen::Vector3d& load_mass)
 {
 	controller_->set_fts_load_mass({load_mass[0], load_mass[1], load_mass[2]});
 }
+
 
 void franka_controller_remote::set_guiding_mode(
 	bool x, bool y, bool z,

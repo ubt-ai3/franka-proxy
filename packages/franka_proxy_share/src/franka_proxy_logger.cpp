@@ -1,3 +1,11 @@
+/**
+ *************************************************************************
+ *
+ * @file franka_proxy_logger.cpp
+ *
+ * Small logger for franka motions
+ *
+ ************************************************************************/
 #include "franka_proxy_logger.hpp"
 
 #include <iostream>
@@ -38,7 +46,6 @@ logger::~logger()
 }
 
 
-
 // LOGGING METHODS
 
 void logger::start_logging(
@@ -59,29 +66,35 @@ void logger::start_logging(
 	bool bad = false;
 	std::string baddies;
 
-	if (num_joint_data_ && (!joint_data_header || static_cast<int>(joint_data_header->size()) != (num_joint_data_ * 7))){
+	if (num_joint_data_ && (!joint_data_header || static_cast<int>(joint_data_header->size()) != (num_joint_data_ * 7)))
+	{
 		bad = true;
 		baddies.append(" joints");
 	}
-	if (num_cart_data_ && (!cart_data_header || static_cast<int>(cart_data_header->size()) != (num_cart_data_ * 6))){
+	if (num_cart_data_ && (!cart_data_header || static_cast<int>(cart_data_header->size()) != (num_cart_data_ * 6)))
+	{
 		bad = true;
 		baddies.append(" cartesian");
 	}
-	if (num_ft_data_ && (!ft_data_header || static_cast<int>(ft_data_header->size()) != (num_ft_data_ * 6))){
+	if (num_ft_data_ && (!ft_data_header || static_cast<int>(ft_data_header->size()) != (num_ft_data_ * 6)))
+	{
 		bad = true;
 		baddies.append(" forces_torques");
 	}
-	if (num_single_ && (!single_header || static_cast<int>(single_header->size()) != num_single_)) {
+	if (num_single_ && (!single_header || static_cast<int>(single_header->size()) != num_single_))
+	{
 		bad = true;
 		baddies.append(" single_values");
 	}
-	if (size_arbitrary_ && (!arbitrary_header || static_cast<int>(arbitrary_header->size()) != size_arbitrary_)){
+	if (size_arbitrary_ && (!arbitrary_header || static_cast<int>(arbitrary_header->size()) != size_arbitrary_))
+	{
 		bad = true;
 		baddies.append(" arbitrary_data");
 	}
 
-	if (bad) throw std::runtime_error(
-					"LOGGER ERROR: Header mismatches specified number of elements in the following categories: " + baddies);
+	if (bad)
+		throw std::runtime_error(
+			"LOGGER ERROR: Header mismatches specified number of elements in the following categories: " + baddies);
 
 
 	// build header and write it into the buffer
@@ -137,12 +150,15 @@ void logger::log()
 		size_arbitrary_
 	);
 
-	for (int i = 0; i < num_joint_data_; i++) for (int j = 0; j < 7; j++)
-		line.emplace_back(std::to_string(joint_data_[i][j]));
-	for (int i = 0; i < num_cart_data_; i++) for (int j = 0; j < 6; j++)
-		line.emplace_back(std::to_string(cart_data_[i][j]));
-	for (int i = 0; i < num_ft_data_; i++) for (int j = 0; j < 6; j++)
-		line.emplace_back(std::to_string(ft_data_[i][j]));
+	for (int i = 0; i < num_joint_data_; i++)
+		for (int j = 0; j < 7; j++)
+			line.emplace_back(std::to_string(joint_data_[i][j]));
+	for (int i = 0; i < num_cart_data_; i++)
+		for (int j = 0; j < 6; j++)
+			line.emplace_back(std::to_string(cart_data_[i][j]));
+	for (int i = 0; i < num_ft_data_; i++)
+		for (int j = 0; j < 6; j++)
+			line.emplace_back(std::to_string(ft_data_[i][j]));
 	for (int i = 0; i < num_single_; i++)
 		line.emplace_back(std::to_string(single_data_[i]));
 	for (int i = 0; i < size_arbitrary_; i++)
@@ -171,7 +187,6 @@ void logger::discard_log()
 }
 
 
-
 // METHODS FOR ADDING DATA
 
 void logger::add_joint_data(const std::array<double, 7>& data)
@@ -179,10 +194,12 @@ void logger::add_joint_data(const std::array<double, 7>& data)
 	joint_data_.push_back(data);
 }
 
+
 void logger::add_joint_data(const Eigen::Matrix<double, 7, 1>& data)
 {
 	add_joint_data(std::array<double, 7>{data(0), data(1), data(2), data(3), data(4), data(5), data(6)});
 }
+
 
 void logger::add_joint_data(
 	const double j0, const double j1, const double j2, const double j3,
@@ -197,10 +214,12 @@ void logger::add_cart_data(const std::array<double, 6>& data)
 	cart_data_.push_back(data);
 }
 
+
 void logger::add_cart_data(const Eigen::Matrix<double, 6, 1>& data)
 {
 	add_cart_data(std::array<double, 6>{data(0), data(1), data(2), data(3), data(4), data(5)});
 }
+
 
 void logger::add_cart_data(
 	const double x0, const double x1, const double x2,
@@ -215,10 +234,12 @@ void logger::add_ft_data(const std::array<double, 6>& data)
 	ft_data_.push_back(data);
 }
 
+
 void logger::add_ft_data(const Eigen::Matrix<double, 6, 1>& data)
 {
 	add_ft_data(std::array<double, 6>{data(0), data(1), data(2), data(3), data(4), data(5)});
 }
+
 
 void logger::add_ft_data(
 	const double fx, const double fy, const double fz,
@@ -239,6 +260,7 @@ void logger::add_arbitrary_data(const std::string& data)
 	arbitrary_data_.push_back(data);
 }
 
+
 void logger::add_arbitrary_data(const std::vector<std::string>& data)
 {
 	for (const auto& i : data)
@@ -246,12 +268,12 @@ void logger::add_arbitrary_data(const std::vector<std::string>& data)
 }
 
 
-
 // UTILITY METHODS
 
 void logger::write_line(std::vector<std::string>& data)
 {
-	for (size_t i = 0; i < data.size(); i++) {
+	for (size_t i = 0; i < data.size(); i++)
+	{
 		log_ << data[i];
 		if (i < (data.size() - 1)) log_ << ",";
 	}
@@ -272,63 +294,72 @@ void logger::check_data()
 	std::string excess;
 
 
-	if (j_pad < 0) {
+	if (j_pad < 0)
+	{
 		over = true;
 		excess.append(" joints");
 	}
-	else if (j_pad > 0) {
+	else if (j_pad > 0)
+	{
 		miss = true;
 		misses.append(" joints");
-		for (int i = 0; i < j_pad; i++) joint_data_.push_back({ 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 });
+		for (int i = 0; i < j_pad; i++) joint_data_.push_back({0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0});
 	}
 
-	if (c_pad < 0) {
+	if (c_pad < 0)
+	{
 		over = true;
 		excess.append(" cartesian");
 	}
-	else if (c_pad > 0) {
+	else if (c_pad > 0)
+	{
 		miss = true;
 		misses.append(" cartesian");
-		for (int i = 0; i < c_pad; i++) cart_data_.push_back({ 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 });
+		for (int i = 0; i < c_pad; i++) cart_data_.push_back({0.0, 0.0, 0.0, 0.0, 0.0, 0.0});
 	}
 
-	if (f_pad < 0) {
+	if (f_pad < 0)
+	{
 		over = true;
 		excess.append(" forces_torques");
 	}
-	else if (f_pad > 0) {
+	else if (f_pad > 0)
+	{
 		miss = true;
 		misses.append(" forces_torques");
-		for (int i = 0; i < f_pad; i++) ft_data_.push_back({ 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 });
+		for (int i = 0; i < f_pad; i++) ft_data_.push_back({0.0, 0.0, 0.0, 0.0, 0.0, 0.0});
 	}
 
-	if (s_pad < 0) {
+	if (s_pad < 0)
+	{
 		over = true;
 		excess.append(" single_values");
 	}
-	else if (s_pad > 0) {
+	else if (s_pad > 0)
+	{
 		miss = true;
 		misses.append(" single_values");
 		for (int i = 0; i < s_pad; i++) single_data_.emplace_back(0.0);
 	}
 
-	if (a_pad < 0) {
+	if (a_pad < 0)
+	{
 		over = true;
 		excess.append(" arbitrary_data");
 	}
-	else if (a_pad > 0) {
+	else if (a_pad > 0)
+	{
 		miss = true;
 		misses.append(" arbitrary_data");
 		for (int i = 0; i < a_pad; i++) arbitrary_data_.emplace_back("none");
 	}
-	
+
 
 	if (over)
-		std::cout << "LOGGER WARNING: Too many elements in the following categories: " + excess << '\n' <<
-			"Excess entries will be ignored, log will only contain entries up to specified numbers." << '\n';
+		std::cout << "LOGGER WARNING: Too many elements in the following categories: " + excess << '\n'
+			<< "Excess entries will be ignored, log will only contain entries up to specified numbers." << '\n';
 	if (miss)
-		std::cout << "LOGGER WARNING: Missing elements in the following categories: " + misses << '\n' <<
-			"Log will contain padding with zero values or none entries." << '\n';
+		std::cout << "LOGGER WARNING: Missing elements in the following categories: " + misses << '\n'
+			<< "Log will contain padding with zero values or none entries." << '\n';
 }
-
 } /* namespace franka_proxy */

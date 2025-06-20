@@ -165,6 +165,7 @@ void franka_controller_remote_test(const std::string& ip)
 	std::cout << "result unknown." << '\n'; // todo: design a useful test function
 }
 
+
 void franka_controller_emulated_test()
 {
 	std::unique_ptr<franka_control::franka_controller> robot =
@@ -202,12 +203,12 @@ void franka_controller_emulated_test()
 		0.707107, -0.707107, 0,
 		0, 0, -1;
 
-	const auto ik_solution_joints = 
+	const auto ik_solution_joints =
 		franka_proxy::franka_proxy_util::ik_fast_closest(
-		pose, franka_control::robot_config_7dof(joints_test));
+			pose, franka_control::robot_config_7dof(joints_test));
 	robot->move(ik_solution_joints);
 	// todo: design a useful test function
-	std::cout << "result needs to be checked manually." << '\n'; 
+	std::cout << "result needs to be checked manually." << '\n';
 
 
 	std::cout << "Gripper tests: ... ";
@@ -226,6 +227,7 @@ void franka_controller_emulated_test()
 	// todo: design a useful test function
 	std::cout << "result needs to be checked manually." << '\n';
 }
+
 
 namespace
 {
@@ -246,6 +248,7 @@ template <typename D> void print_fixed_format(
 }
 }
 
+
 void print_status(const franka_control::franka_controller& controller)
 {
 	print_fixed_format("Current robot joints: ", controller.current_config().transpose());
@@ -256,12 +259,14 @@ void print_status(const franka_control::franka_controller& controller)
 	//	<< controller.current_robot_base_T_tcp().matrix().format(format) << "--- ends here.\n";
 }
 
+
 void franka_fts_calibration(const std::string& ip)
 {
 	franka_control::franka_controller_remote controller(ip);
 	schunk_ft_sensor_to_franka_calibration::calibrate_bias(controller);
 	schunk_ft_sensor_to_franka_calibration::calibrate_load(controller);
 }
+
 
 void guiding_mode_test(const std::string& ip)
 {
@@ -301,6 +306,7 @@ void guiding_mode_test(const std::string& ip)
 	robot->set_guiding_mode(true, true, true, true, true, true, false);
 	std::cout << "Finished guiding mode test." << '\n';
 }
+
 
 void generic_test_function(const std::string& ip)
 {

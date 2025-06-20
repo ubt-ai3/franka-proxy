@@ -20,7 +20,6 @@
 
 namespace franka_control
 {
-
 using robot_config_7dof = Eigen::Matrix<double, 7, 1>;
 using wrench = Eigen::Matrix<double, 6, 1>;
 using selection_diagonal = Eigen::Matrix<double, 6, 1>;

@@ -70,20 +70,24 @@ Eigen::Affine3d franka_controller::current_robot_base_T_tcp() const
 	return current_robot_base_T_j7() * j7_T_tcp_;
 }
 
+
 const Eigen::Affine3d& franka_controller::j7_T_flange() const
 {
 	return j7_T_flange_;
 }
+
 
 const Eigen::Affine3d& franka_controller::flange_T_tcp() const
 {
 	return flange_T_tcp_;
 }
 
+
 const Eigen::Affine3d& franka_controller::j7_T_tcp() const
 {
 	return j7_T_tcp_;
 }
+
 
 const Eigen::Affine3d& franka_controller::tcp_T_j7() const
 {
@@ -97,6 +101,7 @@ void franka_controller::set_flange_T_tcp(const Eigen::Affine3d& value)
 	j7_T_tcp_ = j7_T_flange_ * flange_T_tcp_;
 	tcp_T_j7_ = j7_T_tcp_.inverse();
 }
+
 
 Eigen::Affine3d franka_controller::build_j7_T_flange()
 {
