@@ -5,7 +5,6 @@
  *
  * Python bindings to control a franka emika panda robot.
  *
- *
  * ! Caution ! only functionality from the python example is tested.
  * E.g., python cannot handle all of Eigen's data types.
  * For Eigen::Affine3d have to use an Eigen::Matrix4d.
@@ -23,11 +22,6 @@
 #include <franka_control/franka_controller.hpp>
 #include <franka_control/franka_controller_remote.hpp>
 #include <franka_control/franka_controller_emulated.hpp>
-
-
-using robot_config_7dof = Eigen::Matrix<double, 7, 1>;
-using wrench = Eigen::Matrix<double, 6, 1>;
-using selection_diagonal = Eigen::Matrix<double, 6, 1>;
 
 
 //////////////////////////////////////////////////////////////////////////
@@ -81,9 +75,9 @@ public:
 
 
 	void move_sequence_wrapper(
-		const std::vector<robot_config_7dof>& q_sequence,
-		const std::vector<wrench>& f_sequence,
-		const std::vector<selection_diagonal>& selection_sequence,
+		const std::vector<franka_control::robot_config_7dof>& q_sequence,
+		const std::vector<franka_control::wrench>& f_sequence,
+		const std::vector<franka_control::selection_diagonal>& selection_sequence,
 		pybind11::object offset_cartesian_obj = pybind11::none(),
 		pybind11::object offset_force_obj = pybind11::none())
 	{
@@ -111,9 +105,9 @@ class py_franka_controller_emulated
 {
 public:
 	void move_sequence_wrapper(
-		const std::vector<robot_config_7dof>& q_sequence,
-		const std::vector<wrench>& f_sequence,
-		const std::vector<selection_diagonal>& selection_sequence,
+		const std::vector<franka_control::robot_config_7dof>& q_sequence,
+		const std::vector<franka_control::wrench>& f_sequence,
+		const std::vector<franka_control::selection_diagonal>& selection_sequence,
 		pybind11::object offset_cartesian_obj = pybind11::none(),
 		pybind11::object offset_force_obj = pybind11::none())
 	{
