@@ -284,7 +284,7 @@ franka::JointPositions franka_joint_motion_generator::operator()
 	time_ += period.toSec();
 
 	{
-		std::lock_guard<std::mutex> state_guard(current_state_lock_);
+		std::lock_guard state_guard(current_state_lock_);
 		current_state_ = robot_state;
 	}
 

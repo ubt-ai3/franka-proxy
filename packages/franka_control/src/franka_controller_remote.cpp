@@ -79,6 +79,24 @@ bool franka_controller_remote::gripper_grasped() const
 }
 
 
+bool franka_controller_remote::vacuum_gripper_vacuum(std::uint8_t vacuum_strength, std::chrono::milliseconds timeout)
+{
+	return controller_->vacuum_gripper_vacuum(vacuum_strength, timeout);
+}
+
+
+bool franka_controller_remote::vacuum_gripper_drop(std::chrono::milliseconds timeout)
+{
+	return controller_->vacuum_gripper_drop(timeout);
+}
+
+
+bool franka_controller_remote::vacuum_gripper_stop()
+{
+	return controller_->vacuum_gripper_stop();
+}
+
+
 double franka_controller_remote::speed_factor() const
 {
 	std::lock_guard l(state_lock_);
@@ -175,136 +193,47 @@ std::pair<std::vector<robot_config_7dof>, std::vector<wrench>> franka_controller
 void franka_controller_remote::move_sequence(
 	const std::vector<robot_config_7dof>& q_sequence,
 	const std::vector<wrench>& f_sequence,
-	const std::vector<selection_diagonal>& selection_vector_sequence,
-	const std::array<double, 16> offset_cartesian,
-	const std::array<double, 6> offset_force)
+	const std::vector<selection_diagonal>& selection_sequence,
+	const std::optional<std::array<double, 16>>& offset_cartesian,
+	const std::optional<std::array<double, 6>>& offset_force)
 {
-	std::vector<std::array<double, 7>> joints;
-	std::vector<std::array<double, 6>> forces;
-	std::vector<std::array<double, 6>> selection;
+	std::vector<std::array<double, 7>> joints(q_sequence.size());
+	std::vector<std::array<double, 6>> forces(f_sequence.size());
+	std::vector<std::array<double, 6>> selections(selection_sequence.size());
 
-	joints.resize(q_sequence.size());
-	forces.resize(f_sequence.size());
-	selection.resize(selection_vector_sequence.size());
+	std::transform(std::execution::par, q_sequence.begin(), q_sequence.end(), joints.begin(),
+		[](const auto& datum) { return franka_proxy::franka_proxy_util::convert_to_std_array<double, 7>(datum); });
 
-	std::for_each(std::execution::par, q_sequence.begin(), q_sequence.end(),
-	              [&joints, &q_sequence](const auto& datum)
-	              {
-		              size_t idx = &datum - q_sequence.data();
-		              /*joints[idx] = std::array<double, 7>{
-			              datum(0), datum(1), datum(2), datum(3),
-				              datum(4), datum(5), datum(6)
-		              };*/
-		              // Reinterpret the Eigen::Matrix as std::array directly instead of copying
-		              joints[idx] = *reinterpret_cast<const std::array<double, 7>*>(&datum);
-	              });
+	std::transform(std::execution::par, f_sequence.begin(), f_sequence.end(), forces.begin(),
+		[](const auto& datum) { return franka_proxy::franka_proxy_util::convert_to_std_array<double, 6>(datum); });
 
-	std::for_each(std::execution::par, f_sequence.begin(), f_sequence.end(),
-	              [&forces, &f_sequence](const auto& datum)
-	              {
-		              size_t idx = &datum - f_sequence.data();
-		              /*forces[idx] = std::array<double, 6>{
-			              datum(0), datum(1), datum(2),
-				              datum(3), datum(4), datum(5)
-		              };*/
-		              // Reinterpret the Eigen::Matrix as std::array directly instead of copying
-		              forces[idx] = *reinterpret_cast<const std::array<double, 6>*>(&datum);
-	              });
+	std::transform(std::execution::par, selection_sequence.begin(), selection_sequence.end(), selections.begin(),
+		[](const auto& datum) { return franka_proxy::franka_proxy_util::convert_to_std_array<double, 6>(datum); });
 
-	std::for_each(std::execution::par, selection_vector_sequence.begin(), selection_vector_sequence.end(),
-	              [&selection, &selection_vector_sequence](const auto& datum)
-	              {
-		              size_t idx = &datum - selection_vector_sequence.data();
-		              /*selection[idx] = std::array<double, 6>{
-			              datum(0), datum(1), datum(2),
-				              datum(3), datum(4), datum(5)
-		              };*/
-		              // Reinterpret the Eigen::Matrix as std::array directly instead of copying
-		              selection[idx] = *reinterpret_cast<const std::array<double, 6>*>(&datum);
-	              });
+	if (offset_cartesian && offset_force)
+	{
+		const Eigen::Matrix4d offset_matrix = Eigen::Map<const Eigen::Matrix4d>(offset_cartesian->data());
+		const Eigen::Affine3d offset_transform(offset_matrix);
 
-	//apply offset for front()
-	Eigen::Affine3d offset_transform_front;
+		auto apply_offset = [&](const robot_config_7dof& q) -> robot_config_7dof {
+			const Eigen::Affine3d original_pose = franka_proxy::franka_proxy_util::fk(q).front();
+			const Eigen::Affine3d new_pose = offset_transform * original_pose;
+			return franka_proxy::franka_proxy_util::ik_fast_closest(new_pose, q);
+			};
 
-	offset_transform_front.matrix() = Eigen::Map<const Eigen::Matrix4d>(offset_cartesian.data());
+		const robot_config_7dof result_front = apply_offset(q_sequence.front());
+		const robot_config_7dof result_back = apply_offset(q_sequence.back());
 
-	std::vector<Eigen::Affine3d> original_pose_front = franka_proxy::franka_proxy_util::fk(q_sequence.front());
-
-	Eigen::Affine3d new_pose_front = offset_transform_front * original_pose_front.front();
-
-	robot_config_7dof result_front = franka_proxy::franka_proxy_util::ik_fast_closest(
-		new_pose_front, q_sequence.front());
-
-	//apply offset for back()
-	Eigen::Affine3d offset_transform_back;
-
-	offset_transform_back.matrix() = Eigen::Map<const Eigen::Matrix4d>(offset_cartesian.data());
-
-	std::vector<Eigen::Affine3d> original_pose_back = franka_proxy::franka_proxy_util::fk(q_sequence.back());
-
-	Eigen::Affine3d new_pose_back = offset_transform_back * original_pose_back.front();
-
-	robot_config_7dof result_back = franka_proxy::franka_proxy_util::ik_fast_closest(new_pose_back, q_sequence.back());
-
-	controller_->move_to(result_front);
-	controller_->move_sequence(joints, forces, selection, offset_cartesian, offset_force);
-	controller_->move_to(result_back);
-}
-
-
-void franka_controller_remote::move_sequence(
-	const std::vector<robot_config_7dof>& q_sequence,
-	const std::vector<wrench>& f_sequence,
-	const std::vector<selection_diagonal>& selection_vector_sequence)
-{
-	std::vector<std::array<double, 7>> joints;
-	std::vector<std::array<double, 6>> forces;
-	std::vector<std::array<double, 6>> selection;
-
-	joints.resize(q_sequence.size());
-	forces.resize(f_sequence.size());
-	selection.resize(selection_vector_sequence.size());
-
-	std::for_each(std::execution::par, q_sequence.begin(), q_sequence.end(),
-	              [&joints, &q_sequence](const auto& datum)
-	              {
-		              size_t idx = &datum - q_sequence.data();
-		              /*joints[idx] = std::array<double, 7>{
-			              datum(0), datum(1), datum(2), datum(3),
-				              datum(4), datum(5), datum(6)
-		              };*/
-		              // Reinterpret the Eigen::Matrix as std::array directly instead of copying
-		              joints[idx] = *reinterpret_cast<const std::array<double, 7>*>(&datum);
-	              });
-
-	std::for_each(std::execution::par, f_sequence.begin(), f_sequence.end(),
-	              [&forces, &f_sequence](const auto& datum)
-	              {
-		              size_t idx = &datum - f_sequence.data();
-		              /*forces[idx] = std::array<double, 6>{
-			              datum(0), datum(1), datum(2),
-				              datum(3), datum(4), datum(5)
-		              };*/
-		              // Reinterpret the Eigen::Matrix as std::array directly instead of copying
-		              forces[idx] = *reinterpret_cast<const std::array<double, 6>*>(&datum);
-	              });
-
-	std::for_each(std::execution::par, selection_vector_sequence.begin(), selection_vector_sequence.end(),
-	              [&selection, &selection_vector_sequence](const auto& datum)
-	              {
-		              size_t idx = &datum - selection_vector_sequence.data();
-		              /*selection[idx] = std::array<double, 6>{
-			              datum(0), datum(1), datum(2),
-				              datum(3), datum(4), datum(5)
-		              };*/
-		              // Reinterpret the Eigen::Matrix as std::array directly instead of copying
-		              selection[idx] = *reinterpret_cast<const std::array<double, 6>*>(&datum);
-	              });
-
-
-	controller_->move_to(joints.front());
-	controller_->move_sequence(joints, forces, selection);
-	controller_->move_to(joints.back());
+		controller_->move_to(result_front);
+		controller_->move_sequence(joints, forces, selections, *offset_cartesian, *offset_force);
+		controller_->move_to(result_back);
+	}
+	else
+	{
+		controller_->move_to(joints.front());
+		controller_->move_sequence(joints, forces, selections);
+		controller_->move_to(joints.back());
+	}
 }
 
 

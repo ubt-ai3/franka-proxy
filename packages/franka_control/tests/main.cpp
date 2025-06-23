@@ -253,10 +253,6 @@ void print_status(const franka_control::franka_controller& controller)
 {
 	print_fixed_format("Current robot joints: ", controller.current_config().transpose());
 	print_fixed_format("Current wrench: ", controller.current_force_torque().transpose());
-
-	//const Eigen::IOFormat format(3, 0, ", ", "\n", "[ ", " ]");
-	//std::cout << "Current robot tcp pose: " 
-	//	<< controller.current_robot_base_T_tcp().matrix().format(format) << "--- ends here.\n";
 }
 
 

@@ -26,7 +26,8 @@ using namespace franka_proxy;
 /**
  * Executes a given functor with given arguments and decays exceptions to meaningful responses.
  */
-template <typename TFunctor, typename... TArgs> nlohmann::json execute_safe(
+template <typename TFunctor, typename... TArgs>
+nlohmann::json execute_safe(
 	TFunctor functor,
 	TArgs... args)
 {
@@ -394,7 +395,6 @@ command_generic_response franka_control_server::process_command(
 		       : command_result::success_command_failed;
 }
 
-//TODO debug return correct response
 command_generic_response franka_control_server::process_command(
 	const command_vacuum_gripper_vacuum& cmd)
 {

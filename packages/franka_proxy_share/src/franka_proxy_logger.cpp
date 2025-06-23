@@ -277,7 +277,7 @@ void logger::write_line(std::vector<std::string>& data)
 		log_ << data[i];
 		if (i < (data.size() - 1)) log_ << ",";
 	}
-	log_ << "\n";
+	log_ << '\n';
 }
 
 

@@ -113,7 +113,8 @@ void schunk_ft_sensor::run()
 	}
 	catch (const std::exception& e)
 	{
-		std::cerr << e.what() << "\n";
+		std::cerr << "schunk_ft_sensor::run"
+		<< e.what() << '\n';
 	}
 }
 

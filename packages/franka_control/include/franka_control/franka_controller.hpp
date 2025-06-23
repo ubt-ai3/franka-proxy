@@ -21,6 +21,7 @@
 namespace franka_control
 {
 using robot_config_7dof = Eigen::Matrix<double, 7, 1>;
+using twist = Eigen::Matrix<double, 6, 1>;
 using wrench = Eigen::Matrix<double, 6, 1>;
 using selection_diagonal = Eigen::Matrix<double, 6, 1>;
 
@@ -79,6 +80,14 @@ public:
 	virtual bool gripper_grasped() const = 0;
 
 
+	virtual bool vacuum_gripper_vacuum(
+		std::uint8_t vacuum_strength,
+		std::chrono::milliseconds timeout = std::chrono::milliseconds(100)) = 0;
+	virtual bool vacuum_gripper_drop(
+		std::chrono::milliseconds timeout = std::chrono::milliseconds(100)) = 0;
+	virtual bool vacuum_gripper_stop() = 0;
+
+
 	/**
 	 * Functionality for a "hybrid-controlled"
 	 * playback (demonstration and reproduction) setup.
@@ -86,17 +95,13 @@ public:
 	virtual void start_recording(
 		std::optional<std::string> log_file_path = std::nullopt) = 0;
 	virtual std::pair<std::vector<robot_config_7dof>, std::vector<wrench>> stop_recording() = 0;
-	virtual void move_sequence(
-		const std::vector<robot_config_7dof>& q_sequence,
-		const std::vector<wrench>& f_sequence,
-		const std::vector<selection_diagonal>& selection_vector_sequence) = 0;
-	virtual void move_sequence(
-		const std::vector<robot_config_7dof>& q_sequence,
-		const std::vector<wrench>& f_sequence,
-		const std::vector<selection_diagonal>& selection_vector_sequence,
-		std::array<double, 16> offset_cartesian,
-		std::array<double, 6> offset_force) = 0;
 
+	virtual void move_sequence(
+		const std::vector<robot_config_7dof>& q_sequence,
+		const std::vector<wrench>& f_sequence,
+		const std::vector<selection_diagonal>& selection_sequence,
+		const std::optional<std::array<double, 16>>& offset_cartesian = std::nullopt,
+		const std::optional<std::array<double, 6>>& offset_force = std::nullopt) = 0;
 
 	virtual void set_guiding_mode(
 		bool x, bool y, bool z,

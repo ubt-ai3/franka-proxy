@@ -177,6 +177,7 @@ public:
 	 */
 	bool grasp_gripper(double speed = 0.025, double force = 0.05);
 
+
 	/**
 	 * Drops objects by stopping then vacuum.
 	 * Remote function for franka::VacuumGripper::drop

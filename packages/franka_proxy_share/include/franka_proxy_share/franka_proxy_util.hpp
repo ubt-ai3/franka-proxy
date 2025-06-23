@@ -23,6 +23,7 @@ struct joint_limit
 	double max;
 };
 
+
 class franka_proxy_util
 {
 public:
@@ -61,19 +62,20 @@ public:
 		double step_size = 0.174533);
 
 
-	template <typename T, size_t N> static Eigen::Vector<T, N> convert_to_eigen(const std::array<T, N>& std_array)
+	template <typename T, size_t N>
+	static Eigen::Vector<T, N> convert_to_eigen(const std::array<T, N>& std_array)
 	{
-		Eigen::Vector<T, N> out = Eigen::Map<const Eigen::Vector<T, N>>(std_array.data());
-		return out;
+		return Eigen::Map<const Eigen::Vector<T, N>>(std_array.data());
 	}
 
 
-	template <typename T, size_t N> static std::array<T, N> convert_to_std_array(const Eigen::Vector<T, N>& eigen_array)
+	template <typename T, size_t N>
+	static std::array<T, N> convert_to_std_array(
+		const Eigen::Vector<T, N>& eigen_vector)
 	{
 		std::array<T, N> out;
 		for (int i = 0; i < N; i++)
-			out[i] = eigen_array(i, 0);
-
+			out[i] = eigen_vector(i);
 		return out;
 	}
 
@@ -96,4 +98,5 @@ private:
 	static Eigen::Matrix3d a_tilde(const Eigen::Vector3d& a);
 };
 } /* namespace franka_proxy */
+
 #endif // INCLUDED__FRANKA_PROXY_SHARE__FRANKA_PROXY_UTIL_HPP

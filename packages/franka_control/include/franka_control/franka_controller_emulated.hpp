@@ -30,7 +30,7 @@ namespace franka_control
  *		and uses an implementation-specific maximum speed.
  *
  ************************************************************************/
-class franka_controller_emulated final
+class franka_controller_emulated
 	: public franka_controller
 {
 public:
@@ -52,6 +52,10 @@ public:
 	void close_gripper() override;
 	void grasp_gripper(double speed = 0.025, double force = 0.05) override;
 	bool gripper_grasped() const override;
+
+	bool vacuum_gripper_vacuum(std::uint8_t vacuum_strength, std::chrono::milliseconds timeout) override;
+	bool vacuum_gripper_drop(std::chrono::milliseconds timeout) override;
+	bool vacuum_gripper_stop() override;
 
 
 	double speed_factor() const override;
@@ -83,13 +87,9 @@ public:
 	void move_sequence(
 		const std::vector<robot_config_7dof>& q_sequence,
 		const std::vector<wrench>& f_sequence,
-		const std::vector<selection_diagonal>& selection_vector_sequence) override;
-	void move_sequence(
-		const std::vector<robot_config_7dof>& q_sequence,
-		const std::vector<wrench>& f_sequence,
-		const std::vector<selection_diagonal>& selection_vector_sequence,
-		std::array<double, 16> offset_cartesian,
-		std::array<double, 6> offset_force) override;
+		const std::vector<selection_diagonal>& selection_sequence,
+		const std::optional<std::array<double, 16>>& offset_cartesian = std::nullopt,
+		const std::optional<std::array<double, 6>>& offset_force = std::nullopt) override;
 
 private:
 	void move_gripper(int target, double speed_mps);

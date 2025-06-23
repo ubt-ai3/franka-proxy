@@ -29,6 +29,7 @@ using robot_config_7dof = Eigen::Matrix<double, 7, 1>;
 using wrench = Eigen::Matrix<double, 6, 1>;
 using selection_diagonal = Eigen::Matrix<double, 6, 1>;
 
+
 //////////////////////////////////////////////////////////////////////////
 //
 // py_franka_proxy_util
@@ -51,6 +52,7 @@ public:
 		return fk_matrix4d;
 	}
 
+
 	static robot_config_7dof ik_fast_closest_wrapper(
 		const Eigen::Matrix4d& target_robot_base_T_j7,
 		const robot_config_7dof& current_configuration,
@@ -62,6 +64,71 @@ public:
 	}
 };
 
+
+//////////////////////////////////////////////////////////////////////////
+//
+// py_franka_controller_remote
+//
+//////////////////////////////////////////////////////////////////////////
+class py_franka_controller_remote
+	: public franka_control::franka_controller_remote
+{
+public:
+	explicit py_franka_controller_remote(const std::string& ip)
+		: franka_controller_remote(ip)
+	{
+	}
+
+
+	void move_sequence_wrapper(
+		const std::vector<robot_config_7dof>& q_sequence,
+		const std::vector<wrench>& f_sequence,
+		const std::vector<selection_diagonal>& selection_sequence,
+		pybind11::object offset_cartesian_obj = pybind11::none(),
+		pybind11::object offset_force_obj = pybind11::none())
+	{
+		std::optional<std::array<double, 16>> offset_cartesian;
+		std::optional<std::array<double, 6>> offset_force;
+
+		if (!offset_cartesian_obj.is_none())
+			offset_cartesian = offset_cartesian_obj.cast<std::array<double, 16>>();
+
+		if (!offset_force_obj.is_none())
+			offset_force = offset_force_obj.cast<std::array<double, 6>>();
+
+		move_sequence(q_sequence, f_sequence, selection_sequence, offset_cartesian, offset_force);
+	}
+};
+
+
+//////////////////////////////////////////////////////////////////////////
+//
+// py_franka_controller_emulated
+//
+//////////////////////////////////////////////////////////////////////////
+class py_franka_controller_emulated
+	: public franka_control::franka_controller_emulated
+{
+public:
+	void move_sequence_wrapper(
+		const std::vector<robot_config_7dof>& q_sequence,
+		const std::vector<wrench>& f_sequence,
+		const std::vector<selection_diagonal>& selection_sequence,
+		pybind11::object offset_cartesian_obj = pybind11::none(),
+		pybind11::object offset_force_obj = pybind11::none())
+	{
+		std::optional<std::array<double, 16>> offset_cartesian;
+		std::optional<std::array<double, 6>> offset_force;
+
+		if (!offset_cartesian_obj.is_none())
+			offset_cartesian = offset_cartesian_obj.cast<std::array<double, 16>>();
+
+		if (!offset_force_obj.is_none())
+			offset_force = offset_force_obj.cast<std::array<double, 6>>();
+
+		move_sequence(q_sequence, f_sequence, selection_sequence, offset_cartesian, offset_force);
+	}
+};
 
 PYBIND11_MODULE(py_franka_control, m)
 {
@@ -97,8 +164,9 @@ PYBIND11_MODULE(py_franka_control, m)
 		.def(pybind11::init<franka_control::franka_controller&>());
 
 	pybind11::class_<
+			py_franka_controller_remote,
 			franka_control::franka_controller_remote, franka_control::franka_controller,
-			std::shared_ptr<franka_control::franka_controller_remote>>(m, "FrankaControllerRemote")
+			std::shared_ptr<py_franka_controller_remote>>(m, "FrankaControllerRemote")
 		.def(pybind11::init<const std::string&>())
 		.def("move", &franka_control::franka_controller_remote::move)
 		.def("move_until_contact", &franka_control::franka_controller_remote::move_until_contact)
@@ -119,27 +187,20 @@ PYBIND11_MODULE(py_franka_control, m)
 		.def("start_recording", &franka_control::franka_controller_remote::start_recording,
 		     pybind11::arg("log_file_path") = std::nullopt)
 		.def("stop_recording", &franka_control::franka_controller_remote::stop_recording)
-		.def("move_sequence",
-		     pybind11::overload_cast<
-			     const std::vector<franka_control::robot_config_7dof>&,
-			     const std::vector<franka_control::wrench>&,
-			     const std::vector<franka_control::selection_diagonal>&>(
-			     &franka_control::franka_controller_remote::move_sequence))
-		.def("move_sequence",
-		     pybind11::overload_cast<
-			     const std::vector<franka_control::robot_config_7dof>&,
-			     const std::vector<franka_control::wrench>&,
-			     const std::vector<franka_control::selection_diagonal>&,
-			     std::array<double, 16>,
-			     std::array<double, 6>
-		     >(&franka_control::franka_controller_remote::move_sequence))
+		.def("move_sequence", &py_franka_controller_remote::move_sequence_wrapper,
+		     pybind11::arg("q_sequence"),
+		     pybind11::arg("f_sequence"),
+		     pybind11::arg("selection_sequence"),
+		     pybind11::arg("offset_cartesian") = pybind11::none(),
+		     pybind11::arg("offset_force") = pybind11::none())
 		.def("set_fts_bias", &franka_control::franka_controller_remote::set_fts_bias)
 		.def("set_fts_load_mass", &franka_control::franka_controller_remote::set_fts_load_mass)
 		.def("set_guiding_mode", &franka_control::franka_controller_remote::set_guiding_mode);
 
 	pybind11::class_<
+			py_franka_controller_emulated,
 			franka_control::franka_controller_emulated, franka_control::franka_controller,
-			std::shared_ptr<franka_control::franka_controller_emulated>>(m, "FrankaControllerEmulated")
+			std::shared_ptr<py_franka_controller_emulated>>(m, "FrankaControllerEmulated")
 		.def(pybind11::init<>())
 		.def("update", &franka_control::franka_controller_emulated::update)
 		.def("automatic_error_recovery", &franka_control::franka_controller_emulated::automatic_error_recovery)
@@ -160,20 +221,12 @@ PYBIND11_MODULE(py_franka_control, m)
 		.def("max_gripper_pos", &franka_control::franka_controller_emulated::max_gripper_pos)
 		.def("start_recording", &franka_control::franka_controller_emulated::start_recording)
 		.def("stop_recording", &franka_control::franka_controller_emulated::stop_recording)
-		.def("move_sequence",
-		     pybind11::overload_cast<
-			     const std::vector<franka_control::robot_config_7dof>&,
-			     const std::vector<franka_control::wrench>&,
-			     const std::vector<franka_control::selection_diagonal>&>(
-			     &franka_control::franka_controller_emulated::move_sequence))
-		.def("move_sequence",
-		     pybind11::overload_cast<
-			     const std::vector<franka_control::robot_config_7dof>&,
-			     const std::vector<franka_control::wrench>&,
-			     const std::vector<franka_control::selection_diagonal>&,
-			     std::array<double, 16>,
-			     std::array<double, 6>
-		     >(&franka_control::franka_controller_emulated::move_sequence));
+		.def("move_sequence", &py_franka_controller_emulated::move_sequence_wrapper,
+		     pybind11::arg("q_sequence"),
+		     pybind11::arg("f_sequence"),
+		     pybind11::arg("selection_sequence"),
+		     pybind11::arg("offset_cartesian") = pybind11::none(),
+		     pybind11::arg("offset_force") = pybind11::none());
 
 
 	//////////////////////////////////////////////////////////////////////////

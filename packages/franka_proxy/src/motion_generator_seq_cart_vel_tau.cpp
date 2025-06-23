@@ -86,7 +86,7 @@ seq_cart_vel_tau_generator::~seq_cart_vel_tau_generator()
 					<< error_log_[i][2] << ","
 					<< error_log_[i][3] << ","
 					<< error_log_[i][4] << ","
-					<< error_log_[i][5] << "\n";
+					<< error_log_[i][5] << '\n';
 			
 			std::cout << "did logging" << '\n';
 		}
@@ -104,7 +104,7 @@ franka::Torques seq_cart_vel_tau_generator::step
 		const std::array<double,6>& offset_force)
 {
 	{
-		std::lock_guard<std::mutex> state_guard(current_state_lock_);
+		std::lock_guard state_guard(current_state_lock_);
 		current_state_ = robot_state;
 	}
 
@@ -324,7 +324,7 @@ franka::Torques seq_cart_vel_tau_generator::step
 	franka::Duration period)
 {
 	{
-		std::lock_guard<std::mutex> state_guard(current_state_lock_);
+		std::lock_guard state_guard(current_state_lock_);
 		current_state_ = robot_state;
 	}
 
@@ -687,7 +687,7 @@ franka::Torques seq_cart_vel_tau_generator_wo_fts::step
 	franka::Duration period)
 {
 	{
-		std::lock_guard<std::mutex> state_guard(current_state_lock_);
+		std::lock_guard state_guard(current_state_lock_);
 		current_state_ = robot_state;
 	}
 

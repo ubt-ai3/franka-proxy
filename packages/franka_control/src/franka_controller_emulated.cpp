@@ -137,6 +137,27 @@ bool franka_controller_emulated::gripper_grasped() const
 }
 
 
+bool franka_controller_emulated::vacuum_gripper_vacuum(
+	std::uint8_t vacuum_strength, 
+	std::chrono::milliseconds timeout)
+{
+	return false;
+}
+
+
+bool franka_controller_emulated::vacuum_gripper_drop(
+	std::chrono::milliseconds timeout)
+{
+	return false;
+}
+
+
+bool franka_controller_emulated::vacuum_gripper_stop()
+{
+	return false;
+}
+
+
 double franka_controller_emulated::speed_factor() const
 {
 	std::lock_guard lk(controller_mutex_);
@@ -229,7 +250,9 @@ franka_controller_emulated::stop_recording()
 void franka_controller_emulated::move_sequence(
 	const std::vector<robot_config_7dof>& q_sequence,
 	const std::vector<wrench>& f_sequence,
-	const std::vector<selection_diagonal>& selection_vector_sequence)
+	const std::vector<selection_diagonal>& selection_sequence,
+	const std::optional<std::array<double, 16>>& offset_cartesian,
+	const std::optional<std::array<double, 6>>& offset_force)
 {
 	const auto start_time = std::chrono::steady_clock::now();
 
@@ -265,17 +288,6 @@ void franka_controller_emulated::move_sequence(
 		Eigen::Map<const Eigen::Matrix<double, 7, 1>>(q_sequence.back().data());
 	state_force_torque_values_ =
 		Eigen::Map<const Eigen::Matrix<double, 6, 1>>(f_sequence.back().data());
-}
-
-
-void franka_controller_emulated::move_sequence(
-	const std::vector<robot_config_7dof>& q_sequence,
-	const std::vector<wrench>& f_sequence,
-	const std::vector<selection_diagonal>& selection_vector_sequence,
-	const std::array<double, 16> offset_cartesian,
-	const std::array<double, 6> offset_force)
-{
-	move_sequence(q_sequence, f_sequence, selection_vector_sequence);
 }
 
 

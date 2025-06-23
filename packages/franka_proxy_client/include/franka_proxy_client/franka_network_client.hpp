@@ -96,7 +96,8 @@ public:
 	 * Throws network_exception if the command transmission failed.
 	 * Throws bad_response_exception if the response failed to parse.
 	 */
-	template <typename TCommandType> typename TCommandType::response_type send_command(
+	template <typename TCommandType>
+	typename TCommandType::response_type send_command(
 		const TCommandType& command)
 	{
 		return send_json(command).template get<typename TCommandType::response_type>();

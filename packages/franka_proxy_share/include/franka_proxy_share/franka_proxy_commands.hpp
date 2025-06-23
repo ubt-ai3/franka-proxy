@@ -374,6 +374,7 @@ struct command_vacuum_gripper_drop
 void to_json(nlohmann::json& json, const command_vacuum_gripper_drop& object);
 void from_json(const nlohmann::json& json, command_vacuum_gripper_drop& object);
 
+
 /**
  *************************************************************************
  *
@@ -392,6 +393,8 @@ struct command_vacuum_gripper_vacuum
 
 void to_json(nlohmann::json& json, const command_vacuum_gripper_vacuum& object);
 void from_json(const nlohmann::json& json, command_vacuum_gripper_vacuum& object);
+
+
 /**
  *************************************************************************
  *
@@ -408,6 +411,7 @@ struct command_vacuum_gripper_stop
 
 void to_json(nlohmann::json& json, const command_vacuum_gripper_stop& object);
 void from_json(const nlohmann::json& json, command_vacuum_gripper_stop& object);
+
 
 /**
  *************************************************************************

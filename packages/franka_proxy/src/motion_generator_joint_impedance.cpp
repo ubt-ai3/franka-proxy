@@ -39,7 +39,7 @@ namespace franka_proxy
 			std::mutex& state_lock,
 			franka::RobotState& robot_state,
 			double duration,
-			std::optional<std::string> log_file_path)
+			const std::optional<std::string>& log_file_path)
 			:
 			model_(robot.loadModel()),
 			state_lock_(state_lock),
@@ -64,7 +64,7 @@ namespace franka_proxy
 			franka::RobotState& robot_state,
 			const std::list<std::array<double, 7>>& joint_positions,
 			double duration,
-			std::optional<std::string> log_file_path)
+			const std::optional<std::string>& log_file_path)
 			:
 			model_(robot.loadModel()),
 			state_lock_(state_lock),
@@ -91,7 +91,7 @@ namespace franka_proxy
 
 		void joint_impedance_motion_generator::init_impedance_motion_generator(franka::Robot& robot, std::mutex& state_lock, franka::RobotState& robot_state) {
 			{
-				std::lock_guard<std::mutex> state_guard(state_lock_);
+				std::lock_guard state_guard(state_lock_);
 				state_ = robot_state;
 			}
 
@@ -116,7 +116,7 @@ namespace franka_proxy
 			const std::function<Eigen::Matrix<double, 7, 1>(const double)>& get_joint_position_error)
 		{
 			{
-				std::lock_guard<std::mutex> state_guard(state_lock_);
+				std::lock_guard state_guard(state_lock_);
 				state_ = robot_state;
 			}
 
@@ -195,7 +195,7 @@ namespace franka_proxy
 				timestamps_.pop_front();
 			}
 
-			Eigen::Matrix<double, 7, 1> joint_position_error(get_joint_position_error(time_));
+			Eigen::Matrix joint_position_error(get_joint_position_error(time_));
 
 			// calculate torque - without gravity as the robot handles it itself
 			Eigen::VectorXd tau_d = coriolis - (stiffness_matrix_ * joint_position_error + damping_matrix_ * joint_velocity);
@@ -217,7 +217,7 @@ namespace franka_proxy
 
 		Eigen::Matrix<double, 7, 1> joint_impedance_motion_generator::calculate_joint_position_error(const franka::RobotState& robot_state, double time) {
 			{
-				std::lock_guard<std::mutex> state_guard(state_lock_);
+				std::lock_guard state_guard(state_lock_);
 				state_ = robot_state;
 			}
 

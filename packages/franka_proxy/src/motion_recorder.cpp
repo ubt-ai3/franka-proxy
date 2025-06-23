@@ -9,9 +9,11 @@
 
 #include "ft_sensor/ft_sensor.hpp"
 
-#include "motion_recorder.hpp"
+#include <utility>
 
 #include <franka_proxy_share/franka_proxy_logger.hpp>
+
+#include "motion_recorder.hpp"
 
 
 namespace franka_proxy
@@ -103,7 +105,7 @@ std::pair<std::vector<std::array<double, 7>>, std::vector<std::array<double, 6>>
 	float seconds, 
 	std::optional<std::string> log_file_path)
 {
-	start(log_file_path);
+	start(std::move(log_file_path));
 	std::this_thread::sleep_for(std::chrono::duration<float>(seconds));
 	return stop();
 }
