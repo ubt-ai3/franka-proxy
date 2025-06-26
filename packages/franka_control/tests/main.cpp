@@ -18,7 +18,7 @@ void franka_controller_remote_test(const std::string& ip);
 void franka_controller_emulated_test();
 void franka_fts_calibration(const std::string& ip);
 void guiding_mode_test(const std::string& ip);
-void generic_test_function(const std::string& ip);
+void test_generic_function(const std::string& ip);
 
 void print_status(const franka_control::franka_controller& controller);
 
@@ -101,7 +101,7 @@ int main(int argc, char* argv[])
 		std::cout <<
 			"--------------------------------------------------------------------------------\n"
 			"Executing generic test: " << std::endl;
-		generic_test_function(ip);
+		test_generic_function(ip);
 	}
 	std::cout << "\nPress Enter to end test exe." << std::endl;
 	std::cin.get();
@@ -302,7 +302,7 @@ void guiding_mode_test(const std::string& ip)
 }
 
 
-void generic_test_function(const std::string& ip)
+void test_generic_function(const std::string& ip)
 {
 	std::unique_ptr<franka_control::franka_controller> robot;
 	try
