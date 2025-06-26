@@ -77,7 +77,6 @@ int main(int argc, char* argv[])
 		std::cout <<
 			"--------------------------------------------------------------------------------\n"
 			"Executing franka controller remote test with IP " << ip << ": " << '\n';
-		//std::string ip("132.180.194.112"); // franka1-proxy@resy-lab
 		franka_controller_remote_test(ip);
 	}
 	if (program.is_used("--calibrate-fts"))
@@ -86,7 +85,6 @@ int main(int argc, char* argv[])
 		std::cout <<
 			"--------------------------------------------------------------------------------\n"
 			"Executing franka-schunk-fts calibration with IP " << ip << ": " << '\n';
-		//std::string ip("132.180.194.112"); // franka1-proxy@resy-lab
 		franka_fts_calibration(ip);
 	}
 	if (program.is_used("-g"))
@@ -131,7 +129,7 @@ void franka_controller_remote_test(const std::string& ip)
 		<< 1.08615, 0.044619, 0.227112, -2.26678, -0.059792, 2.27532, 0.605723).finished());
 
 
-	std::cout << "Status tests: 5 seconds.\n"; // todo: design a useful test function
+	std::cout << "Status tests: 5 seconds.\n";
 	std::atomic_bool stop(false);
 	std::thread t
 	([&stop, &robot]()
@@ -162,7 +160,7 @@ void franka_controller_remote_test(const std::string& ip)
 		pose, franka_control::robot_config_7dof(joints_test));
 	robot->move(ik_solution);
 
-	std::cout << "result unknown." << '\n'; // todo: design a useful test function
+	std::cout << "result unknown." << '\n';
 }
 
 
@@ -320,22 +318,26 @@ void generic_test_function(const std::string& ip)
 	}
 	franka_control::franka_update_task update_task(*robot);
 
-	std::chrono::seconds duration(10);
+	std::chrono::minutes duration(1);
 	std::cout << "Generic tests called: The status test runs for "
 		<< duration << ".\n";
 	std::atomic_bool stop(false);
+	std::vector<franka_control::wrench> ft_values;
 	std::thread t
-	([&stop, &robot]()
+	([&stop, &robot, &ft_values]()
 	{
 		while (!stop)
 		{
-			print_status(*robot);
+			ft_values.emplace_back(robot->current_force_torque());
 			std::this_thread::sleep_for(
-				std::chrono::duration<double>(0.1));
+				std::chrono::seconds(1));
 		}
 	});
 
 	std::this_thread::sleep_for(duration);
 	stop = true;
 	t.join();
+
+	for (const auto& value : ft_values)
+		print_fixed_format("Wrench: ", value.transpose());
 }

@@ -138,7 +138,6 @@ int main(int argc, char* argv[])
 	std::cout <<
 		"--------------------------------------------------------------------------------\n"
 		"Executing franka client test with IP " << ip << ": " << '\n';
-	//std::string ip("132.180.194.112"); // franka2@resy-lab
 
 
 	test_mode test = none;
