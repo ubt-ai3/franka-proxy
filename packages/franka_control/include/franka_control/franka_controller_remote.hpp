@@ -59,7 +59,7 @@ public:
 	void automatic_error_recovery() override;
 
 	robot_config_7dof current_config() const override;
-	wrench current_force_torque() const override;
+	wrench current_force_torque() const override; // is read from fts not (franka model estimation is not used)
 	int current_gripper_pos() const override;
 	int max_gripper_pos() const override;
 

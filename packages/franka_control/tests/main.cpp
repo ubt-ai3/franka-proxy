@@ -1,7 +1,10 @@
 #include <atomic>
-#include <iostream>
-#include <thread>
 #include <chrono>
+#include <fstream> 
+#include <iomanip>
+#include <iostream>
+#include <string>
+#include <thread>
 
 #include <argparse/argparse.hpp>
 
@@ -301,6 +304,35 @@ void guiding_mode_test(const std::string& ip)
 	std::cout << "Finished guiding mode test." << '\n';
 }
 
+void write_wrenches_to_csv(
+	const std::vector<franka_control::wrench>& ft_values, 
+	const std::string& filename) 
+{
+	std::ofstream out(filename);
+
+	if (!out.is_open()) 
+	{
+		std::cerr << "Error: Could not open file " << filename 
+			<< " for writing." << std::endl;
+		return;
+	}
+
+	out << "fx,fy,fz,tx,ty,tz\n";
+	out << std::fixed << std::setprecision(6);
+
+	for (const auto& wrench : ft_values) 
+	{
+		for (int i = 0; i < 6; ++i) 
+		{
+			out << wrench[i];
+			if (i < 5) 
+				out << ",";	
+		}
+		out << "\n";
+	}
+	out.close();
+}
+
 
 void test_generic_function(const std::string& ip)
 {
@@ -340,4 +372,10 @@ void test_generic_function(const std::string& ip)
 
 	for (const auto& value : ft_values)
 		print_fixed_format("Wrench: ", value.transpose());
+
+	// Specify the output filename
+	std::string output_filename = "ft_values.csv";
+
+	// Call the function to write the data
+	write_wrenches_to_csv(ft_values, output_filename);
 }
