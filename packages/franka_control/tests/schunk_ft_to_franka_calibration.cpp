@@ -17,9 +17,17 @@ franka_control::wrench schunk_ft_sensor_to_franka_calibration::calibrate_bias(
 {
 	std::cout << "Starting bias calibration." << '\n';
 
-	std::ifstream in_stream(config_file);
-	nlohmann::json config_json = nlohmann::json::parse(in_stream);
-
+	std::ifstream in_stream(config_file); 
+	nlohmann::json config_json;
+	try
+	{
+		config_json = nlohmann::json::parse(in_stream);
+	}
+	catch (const std::exception& e)
+	{
+		std::cerr << "Could not read fts config file: " << config_file
+			<< " with " << e.what() << "\n";
+	}
 	franka.set_fts_bias({0, 0, 0, 0, 0, 0});
 	std::array<Eigen::Affine3d, 24> poses = calibration_poses_bias();
 
@@ -85,7 +93,7 @@ franka_control::wrench schunk_ft_sensor_to_franka_calibration::calibrate_bias(
 		biases[ft_idx] = biases[ft_idx] / ft_avgs.size();
 		config_json["bias"].at(ft_idx) = biases[ft_idx];
 	}
-	std::ofstream out_stream(config_file);
+	std::ofstream out_stream("./current_fts_config.json");
 	out_stream << std::setw(4) << config_json << '\n';
 	franka.set_fts_bias(biases);
 
@@ -103,7 +111,16 @@ Eigen::Vector3d schunk_ft_sensor_to_franka_calibration::calibrate_load(
 	std::cout << "Starting load calibration." << '\n';
 
 	std::ifstream in_stream(config_file);
-	nlohmann::json config = nlohmann::json::parse(in_stream);
+	nlohmann::json config_json;
+	try
+	{
+		config_json = nlohmann::json::parse(in_stream);
+	}
+	catch (const std::exception& e)
+	{
+		std::cerr << "Could not read fts config file: " << config_file
+			<< " with " << e.what() << "\n";
+	}
 
 	std::array<Eigen::Affine3d, 5> poses = calibration_poses_load();
 
@@ -178,12 +195,12 @@ Eigen::Vector3d schunk_ft_sensor_to_franka_calibration::calibrate_load(
 
 	load = load / force_world_avgs.size();
 
-	config["load_mass"].clear();
+	config_json["load_mass"].clear();
 	for (double& value : load)
-		config["load_mass"].push_back(value);
+		config_json["load_mass"].push_back(value);
 
-	std::ofstream out_stream(config_file);
-	out_stream << std::setw(4) << config << '\n';
+	std::ofstream out_stream("./current_fts_config.json");
+	out_stream << std::setw(4) << config_json << '\n';
 
 	franka.set_fts_load_mass(load);
 	std::cout << "calibrated load: " << load.transpose() << '\n';
