@@ -423,7 +423,10 @@ void franka_hardware_controller::run_payload_estimation(
 
 ft_sensor_response franka_hardware_controller::fts_state() const
 {
-	return ft_sensor_->read();
+	if (ft_sensor_)
+		return ft_sensor_->read();
+	else
+		return ft_sensor_response{};
 }
 
 

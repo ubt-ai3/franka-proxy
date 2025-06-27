@@ -64,15 +64,18 @@ int main(int argc, char* argv[])
 		ip = program.get<std::string>("--ip");
 
 	const bool enforce_realtime = program["--enforce-realtime"] == true;
-	std::cout << "Starting franka-proxy with ip: " << ip << '\n';
 
+	std::cout << "Starting franka-proxy with ip: " << ip << ".\n";
 	if (enforce_realtime)
 		std::cout << "Enabled realtime control loops. "
-			"(This will only work on a realtime linux system "
-			"or on Windows with administrator privileges)" << '\n';
+			<< "(This will only work on a realtime linux system "
+			<< "- or more or less - using process priority on " 
+			<< "windows with admin priviliges)." << '\n';
 
 	try
 	{
+		std::cout << '\n';
+
 		franka_proxy::franka_proxy proxy(ip, enforce_realtime);
 
 		std::cout << "\nPress Enter to stop proxy." << '\n';

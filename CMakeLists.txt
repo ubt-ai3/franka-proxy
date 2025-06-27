@@ -7,7 +7,7 @@ include(GNUInstallDirs)
 
 option(BUILD_SERVER "Build franka_proxy executable" ON)
 option(BUILD_TESTS "Build franka_proxy tests" ON)
-option(BUILD_PYTHON_CONTROLLER "Build franka_control python bindings" ON)
+option(BUILD_PYTHON_CONTROLLER "Build franka_control python bindings" OFF)
 
 
 find_package(asio CONFIG REQUIRED)

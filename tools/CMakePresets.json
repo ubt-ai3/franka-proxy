@@ -8,73 +8,59 @@
   "configurePresets": [
     // Windows Presets
     {
-      "name": "common-config",
+      "name": "windows-common",
       "hidden": true,
-      "binaryDir": "${sourceDir}/out/Windows/${presetName}",
+      "binaryDir": "${sourceDir}/out/build/${presetName}",
       "cacheVariables": {
-        "CMAKE_TOOLCHAIN_FILE": "C:/code/vcpkg/scripts/buildsystems/vcpkg.cmake",
-        "CMAKE_CXX_COMPILER": "cl.exe"
+        "CMAKE_TOOLCHAIN_FILE": "C:/code/vcpkg/scripts/buildsystems/vcpkg.cmake"
       }
     },
     {
-      "name": "Debug",
-      "inherits": "common-config",
-      "hidden": false,
+      "name": "windows-debug",
+      "inherits": "windows-common",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Debug"
       }
     },
     {
-      "name": "Release",
-      "inherits": "common-config",
-      "hidden": false,
-      "installDir": "${sourceDir}/install/",
+      "name": "windows-release",
+      "inherits": "windows-common",
+      "installDir": "${sourceDir}/out/install/windows-release",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Release"
       }
     },
+
     // Windows WSL2 presets
     {
-      "name": "wsl2-common-config",
+      "name": "wsl-common",
       "hidden": true,
-      "binaryDir": "${sourceDir}/out/Ubuntu/${presetName}",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/out/build/${presetName}",
       "cacheVariables": {
-        "CMAKE_TOOLCHAIN_FILE": "~/code/vcpkg/scripts/buildsystems/vcpkg.cmake"
+        "CMAKE_TOOLCHAIN_FILE": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake"
       }
     },
     {
-      "name": "Debug-wsl2",
-      "inherits": "wsl2-common-config",
-      "generator": "Ninja",
+      "name": "wsl-debug",
+      "inherits": "wsl-common",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Debug"
       }
     },
     {
-      "name": "Release-wsl2",
-      "inherits": "wsl2-common-config",
-      "generator": "Ninja",
+      "name": "wsl-release",
+      "inherits": "wsl-common",
+      "installDir": "${sourceDir}/out/install/wsl-release",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Release"
       }
     }
   ],
   "buildPresets": [
-    {
-      "name": "Debug",
-      "configurePreset": "Debug"
-    },
-    {
-      "name": "Release",
-      "configurePreset": "Release"
-    },
-    {
-      "name": "Debug-wsl2",
-      "configurePreset": "Debug-wsl2"
-    },
-    {
-      "name": "Release-wsl2",
-      "configurePreset": "Release-wsl2"
-    }
+    { "name": "windows-debug", "configurePreset": "windows-debug" },
+    { "name": "windows-release", "configurePreset": "windows-release" },
+    { "name": "wsl-debug", "configurePreset": "wsl-debug" },
+    { "name": "wsl-release", "configurePreset": "wsl-release" }
   ]
 }

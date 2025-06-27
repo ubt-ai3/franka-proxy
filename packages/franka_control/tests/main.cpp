@@ -1,7 +1,10 @@
 #include <atomic>
-#include <iostream>
-#include <thread>
 #include <chrono>
+#include <fstream> 
+#include <iomanip>
+#include <iostream>
+#include <string>
+#include <thread>
 
 #include <argparse/argparse.hpp>
 
@@ -10,18 +13,40 @@
 #include <franka_control/franka_controller_emulated.hpp>
 #include <franka_control/franka_controller_remote.hpp>
 
-// todo: this sensor calibration should not be used from here
 #include "schunk_ft_to_franka_calibration.hpp"
 
 
 void franka_controller_remote_test(const std::string& ip);
 void franka_controller_emulated_test();
 void franka_fts_calibration(const std::string& ip);
-void guiding_mode_test(const std::string& ip);
-void generic_test_function(const std::string& ip);
+void test_generic_function(const std::string& ip); // for quick custom tests
 
-void print_status(const franka_control::franka_controller& controller);
 
+namespace
+{
+template <typename D> void print_fixed_format(
+	const std::string& label,
+	const Eigen::MatrixBase<D>& vec)
+{
+	std::cout << label << "[ ";
+	for (int i = 0; i < vec.size(); ++i)
+	{
+		std::cout << std::fixed << std::setprecision(4)
+			<< std::setw(7) << std::setfill(' ')
+			<< vec(i);
+		if (i != vec.size() - 1)
+			std::cout << ", ";
+	}
+	std::cout << " ]\n";
+}
+
+
+void print_status(const franka_control::franka_controller& controller)
+{
+	print_fixed_format("Current robot joints: ", controller.current_config().transpose());
+	print_fixed_format("Current wrench: ", controller.current_force_torque().transpose());
+}
+}
 
 int main(int argc, char* argv[])
 {
@@ -30,27 +55,19 @@ int main(int argc, char* argv[])
 	program.add_argument("-e", "--emulate")
 	       .help("execute the emulate controller test")
 	       .flag();
-
 	program.add_argument("-r", "--remote")
 	       .help("specify ip for franka-proxy remote connection")
 	       .default_value(std::string{"127.0.0.1"})
 	       .metavar("IP");
-
-	// todo: this sensor calibration should not be here
 	program.add_argument("-c", "--calibrate-fts")
 	       .help("specify ip for franka-proxy connection to calibrate schunk net-box fts")
 	       .default_value(std::string{"127.0.0.1"})
 	       .metavar("IP");
-
-	program.add_argument("-g", "--guiding-mode")
-	       .help("guiding mode test")
-	       .default_value(std::string("127.0.0.1"))
-	       .metavar("IP");
-
 	program.add_argument("-t", "--test-generic")
 	       .help("generic test function")
 	       .default_value(std::string("127.0.0.1"))
 	       .metavar("IP");
+
 
 	try
 	{
@@ -77,25 +94,15 @@ int main(int argc, char* argv[])
 		std::cout <<
 			"--------------------------------------------------------------------------------\n"
 			"Executing franka controller remote test with IP " << ip << ": " << '\n';
-		//std::string ip("132.180.194.112"); // franka1-proxy@resy-lab
 		franka_controller_remote_test(ip);
 	}
-	if (program.is_used("--calibrate-fts"))
+	if (program.is_used("-c"))
 	{
-		const auto ip = program.get<std::string>("-r");
+		const auto ip = program.get<std::string>("-c");
 		std::cout <<
 			"--------------------------------------------------------------------------------\n"
 			"Executing franka-schunk-fts calibration with IP " << ip << ": " << '\n';
-		//std::string ip("132.180.194.112"); // franka1-proxy@resy-lab
 		franka_fts_calibration(ip);
-	}
-	if (program.is_used("-g"))
-	{
-		const auto ip = program.get<std::string>("-g");
-		std::cout <<
-			"--------------------------------------------------------------------------------\n"
-			"Executing guiding mode test: " << '\n';
-		guiding_mode_test(ip);
 	}
 	if (program.is_used("-t"))
 	{
@@ -103,8 +110,10 @@ int main(int argc, char* argv[])
 		std::cout <<
 			"--------------------------------------------------------------------------------\n"
 			"Executing generic test: " << std::endl;
-		generic_test_function(ip);
+		test_generic_function(ip);
 	}
+
+
 	std::cout << "\nPress Enter to end test exe." << std::endl;
 	std::cin.get();
 	return 0;
@@ -131,7 +140,7 @@ void franka_controller_remote_test(const std::string& ip)
 		<< 1.08615, 0.044619, 0.227112, -2.26678, -0.059792, 2.27532, 0.605723).finished());
 
 
-	std::cout << "Status tests: 5 seconds.\n"; // todo: design a useful test function
+	std::cout << "Status tests: 5 seconds.\n";
 	std::atomic_bool stop(false);
 	std::thread t
 	([&stop, &robot]()
@@ -162,7 +171,7 @@ void franka_controller_remote_test(const std::string& ip)
 		pose, franka_control::robot_config_7dof(joints_test));
 	robot->move(ik_solution);
 
-	std::cout << "result unknown." << '\n'; // todo: design a useful test function
+	std::cout << "result unknown." << '\n';
 }
 
 
@@ -229,33 +238,6 @@ void franka_controller_emulated_test()
 }
 
 
-namespace
-{
-template <typename D> void print_fixed_format(
-	const std::string& label,
-	const Eigen::MatrixBase<D>& vec)
-{
-	std::cout << label << "[ ";
-	for (int i = 0; i < vec.size(); ++i)
-	{
-		std::cout << std::fixed << std::setprecision(4)
-			<< std::setw(7) << std::setfill(' ')
-			<< vec(i);
-		if (i != vec.size() - 1)
-			std::cout << ", ";
-	}
-	std::cout << " ]\n";
-}
-}
-
-
-void print_status(const franka_control::franka_controller& controller)
-{
-	print_fixed_format("Current robot joints: ", controller.current_config().transpose());
-	print_fixed_format("Current wrench: ", controller.current_force_torque().transpose());
-}
-
-
 void franka_fts_calibration(const std::string& ip)
 {
 	franka_control::franka_controller_remote controller(ip);
@@ -264,47 +246,7 @@ void franka_fts_calibration(const std::string& ip)
 }
 
 
-void guiding_mode_test(const std::string& ip)
-{
-	std::unique_ptr<franka_control::franka_controller> robot;
-	try
-	{
-		robot =
-			std::make_unique<franka_control::franka_controller_remote>(ip);
-	}
-	catch (const std::exception&)
-	{
-		std::cerr << "Could not connect to franka-proxy with IP " << ip << "." << '\n';
-		return;
-	}
-	franka_control::franka_update_task update_task(*robot);
-
-	std::chrono::seconds duration(10);
-	//set to default before test
-	robot->set_guiding_mode(true, true, true, true, true, true, false);
-
-	std::cout << "Robot is now for " << duration
-		<< " in guiding mode with guidable DOF (1,1,1,0,0,0) and elbow is false" << '\n';
-	robot->set_guiding_mode(true, true, true, false, false, false, false);
-	std::this_thread::sleep_for(duration);
-
-	std::cout << "Robot is now for " << duration
-		<< " in default guiding mode" << '\n';
-	robot->set_guiding_mode(true, true, true, true, true, true, false);
-	std::this_thread::sleep_for(duration);
-
-	std::cout << "Robot is now for " << duration
-		<< "  in guiding mode with guidable DOF (1,1,0,1,1,0) and elbow is false" << '\n';
-	robot->set_guiding_mode(true, true, false, true, true, false, false);
-	std::this_thread::sleep_for(duration);
-
-	//set back to default after test
-	robot->set_guiding_mode(true, true, true, true, true, true, false);
-	std::cout << "Finished guiding mode test." << '\n';
-}
-
-
-void generic_test_function(const std::string& ip)
+void test_generic_function(const std::string& ip)
 {
 	std::unique_ptr<franka_control::franka_controller> robot;
 	try
@@ -320,22 +262,54 @@ void generic_test_function(const std::string& ip)
 	}
 	franka_control::franka_update_task update_task(*robot);
 
-	std::chrono::seconds duration(10);
+	std::chrono::hours duration(12);
 	std::cout << "Generic tests called: The status test runs for "
 		<< duration << ".\n";
 	std::atomic_bool stop(false);
+	std::vector<franka_control::wrench> ft_values;
 	std::thread t
-	([&stop, &robot]()
+	([&stop, &robot, &ft_values]()
 	{
 		while (!stop)
 		{
-			print_status(*robot);
+			std::time_t result = std::time(nullptr);
+			std::cout << std::asctime(std::localtime(&result));
+			print_fixed_format("Current wrench: ", robot->current_force_torque());
+
+			ft_values.emplace_back(robot->current_force_torque());
+			
 			std::this_thread::sleep_for(
-				std::chrono::duration<double>(0.1));
+				std::chrono::minutes(1));
 		}
 	});
 
 	std::this_thread::sleep_for(duration);
 	stop = true;
 	t.join();
+
+	// Write wrenches to *.csv.
+	std::string out_filename = "ft_values.csv";
+	std::ofstream out_stream(out_filename);
+
+	if (!out_stream.is_open())
+	{
+		std::cerr << "Error: Could not open file " << out_filename
+			<< " for writing." << std::endl;
+		return;
+	}
+
+	out_stream << "fx,fy,fz,tx,ty,tz\n";
+	out_stream << std::fixed << std::setprecision(6);
+
+	for (const auto& wrench : ft_values)
+	{
+		for (int i = 0; i < 6; ++i)
+		{
+			out_stream << wrench[i];
+			if (i < 5)
+				out_stream << ",";
+		}
+		out_stream << "\n";
+	}
+	out_stream.close();
 }
