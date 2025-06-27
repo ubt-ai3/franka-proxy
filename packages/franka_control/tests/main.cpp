@@ -1,6 +1,6 @@
 #include <atomic>
 #include <chrono>
-#include <fstream> 
+#include <fstream>
 #include <iomanip>
 #include <iostream>
 #include <string>
@@ -16,10 +16,10 @@
 #include "schunk_ft_to_franka_calibration.hpp"
 
 
-void franka_controller_remote_test(const std::string& ip);
-void franka_controller_emulated_test();
-void franka_fts_calibration(const std::string& ip);
-void test_generic_function(const std::string& ip); // for quick custom tests
+static void franka_controller_remote_test(const std::string& ip);
+static void franka_controller_emulated_test();
+static void franka_fts_calibration(const std::string& ip);
+static void test_generic_function(const std::string& ip); // for quick custom tests
 
 
 namespace
@@ -48,6 +48,7 @@ void print_status(const franka_control::franka_controller& controller)
 }
 }
 
+
 int main(int argc, char* argv[])
 {
 	argparse::ArgumentParser program("franka_control_test");
@@ -67,7 +68,6 @@ int main(int argc, char* argv[])
 	       .help("generic test function")
 	       .default_value(std::string("127.0.0.1"))
 	       .metavar("IP");
-
 
 	try
 	{
@@ -109,13 +109,14 @@ int main(int argc, char* argv[])
 		const auto ip = program.get<std::string>("-t");
 		std::cout <<
 			"--------------------------------------------------------------------------------\n"
-			"Executing generic test: " << std::endl;
+			"Executing generic test: \n";
 		test_generic_function(ip);
 	}
 
 
-	std::cout << "\nPress Enter to end test exe." << std::endl;
+	std::cout << "\nPress Enter to end test exe.\n";
 	std::cin.get();
+
 	return 0;
 }
 
@@ -135,7 +136,6 @@ void franka_controller_remote_test(const std::string& ip)
 	}
 	franka_control::franka_update_task update_task(*robot);
 
-	// todo: this config (and IK pose) needs to be tested on real robot
 	const auto joints_test((franka_control::robot_config_7dof()
 		<< 1.08615, 0.044619, 0.227112, -2.26678, -0.059792, 2.27532, 0.605723).finished());
 
@@ -216,7 +216,6 @@ void franka_controller_emulated_test()
 		franka_proxy::franka_proxy_util::ik_fast_closest(
 			pose, franka_control::robot_config_7dof(joints_test));
 	robot->move(ik_solution_joints);
-	// todo: design a useful test function
 	std::cout << "result needs to be checked manually." << '\n';
 
 
@@ -224,16 +223,14 @@ void franka_controller_emulated_test()
 	robot->close_gripper();
 	robot->open_gripper();
 	robot->grasp_gripper();
-	[[maybe_unused]] bool gripper_grasped = robot->gripper_grasped();
+	bool gripper_grasped = robot->gripper_grasped();
 	robot->open_gripper();
-	// todo: design a useful test function
 	std::cout << "result needs to be checked manually." << '\n';
 
 
 	std::cout << "Speed tests: ... ";
 	robot->set_speed_factor(0.1);
-	[[maybe_unused]] double speed = robot->speed_factor();
-	// todo: design a useful test function
+	double speed = robot->speed_factor();
 	std::cout << "result needs to be checked manually." << '\n';
 }
 
@@ -272,12 +269,13 @@ void test_generic_function(const std::string& ip)
 	{
 		while (!stop)
 		{
-			std::time_t result = std::time(nullptr);
-			std::cout << std::asctime(std::localtime(&result));
+			auto zoned_time = 
+				std::chrono::current_zone()->to_local(std::chrono::system_clock::now());
+			std::cout << std::format("{:%a %b %d %H:%M:%S %Y}\n", zoned_time);
 			print_fixed_format("Current wrench: ", robot->current_force_torque());
 
 			ft_values.emplace_back(robot->current_force_torque());
-			
+
 			std::this_thread::sleep_for(
 				std::chrono::minutes(1));
 		}
@@ -293,8 +291,8 @@ void test_generic_function(const std::string& ip)
 
 	if (!out_stream.is_open())
 	{
-		std::cerr << "Error: Could not open file " << out_filename
-			<< " for writing." << std::endl;
+		std::cerr << "Error: Could not open file "
+			<< out_filename << " for writing.\n";
 		return;
 	}
 
