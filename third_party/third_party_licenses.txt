@@ -1,0 +1,43 @@
+// ----------------------------------------------------------------------
+// Third-Party Library Licenses Used in This Project
+// ----------------------------------------------------------------------
+
+/*
+Copies of all license notices are located in:
+  ./<library-name>/copyright
+
+These files are retrieved from (if not stated otherwise):
+  vcpkg/installed/<triplet>/share/<library-name>/copyright
+*/
+
+Library: argparse  
+License: MIT License  
+URL: https://opensource.org/licenses/MIT
+
+Library: asio  
+License: Boost Software License 1.0  
+URL: https://www.boost.org/LICENSE_1_0.txt
+
+Library: Eigen3  
+License: Mozilla Public License 2.0 (MPL-2.0)  
+URL: https://www.mozilla.org/en-US/MPL/2.0/
+
+Library: IKFast (copied from the resulting header)  
+License: Apache License 2.0  
+URL: https://www.apache.org/licenses/LICENSE-2.0
+
+Library: libfranka  
+License: Apache License 2.0  
+URL: https://www.apache.org/licenses/LICENSE-2.0
+
+Library: nlohmann_json  
+License: MIT License  
+URL: https://opensource.org/licenses/MIT
+
+Library: Poco  
+License: Boost Software License 1.0  
+URL: https://www.boost.org/LICENSE_1_0.txt
+
+Library: pybind11  
+License: BSD 2-Clause License  
+URL: https://opensource.org/licenses/BSD-2-Clause
