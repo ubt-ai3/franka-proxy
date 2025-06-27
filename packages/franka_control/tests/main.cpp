@@ -98,7 +98,7 @@ int main(int argc, char* argv[])
 	}
 	if (program.is_used("-c"))
 	{
-		const auto ip = program.get<std::string>("-r");
+		const auto ip = program.get<std::string>("-c");
 		std::cout <<
 			"--------------------------------------------------------------------------------\n"
 			"Executing franka-schunk-fts calibration with IP " << ip << ": " << '\n';
