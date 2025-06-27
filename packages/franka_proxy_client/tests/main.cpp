@@ -30,18 +30,24 @@ void franka_proxy_client_test(
 
 void print_status(const franka_proxy::franka_remote_interface& robot);
 template <class Function> void execute_retry(
-	Function f, franka_proxy::franka_remote_interface& robot);
-double calculate_pose_error(const franka_proxy::robot_config_7dof& pose_d,
-                            const franka_proxy::robot_config_7dof& pose_c);
+	Function f, 
+	franka_proxy::franka_remote_interface& robot);
 
 
-void ple_motion_record_test(franka_proxy::franka_remote_interface& robot, double speed, double duration, bool log,
-                            const std::string& file);
-void ptp_test(franka_proxy::franka_remote_interface& robot, double margin, bool log, const std::string& file);
-void gripper_test(franka_proxy::franka_remote_interface& robot, double margin, bool grasp);
-void playback_test(franka_proxy::franka_remote_interface& robot, bool log, const std::string& file);
-void force_test(franka_proxy::franka_remote_interface& robot, double mass, double duration);
-void vacuum_test(franka_proxy::franka_remote_interface& robot);
+void ple_motion_record_test(
+	franka_proxy::franka_remote_interface& robot, double speed, double duration, bool log, const std::string& file);
+void ptp_test(
+	franka_proxy::franka_remote_interface& robot, double margin, bool log, const std::string& file);
+void gripper_test(
+	franka_proxy::franka_remote_interface& robot, double margin, bool grasp);
+void playback_test(
+	franka_proxy::franka_remote_interface& robot, bool log, const std::string& file);
+void force_test(
+	franka_proxy::franka_remote_interface& robot, double mass, double duration);
+void vacuum_test(
+	franka_proxy::franka_remote_interface& robot);
+void guiding_test(
+	franka_proxy::franka_remote_interface& robot);
 
 
 double relative_config_error(
@@ -496,15 +502,6 @@ void gripper_test(
 	std::cout << "Finished Gripper Test." << '\n';
 }
 
-void vacuum_test(franka_proxy::franka_remote_interface& robot)
-{
-	execute_retry([&] { robot.vacuum_gripper_stop(); }, robot);
-	std::this_thread::sleep_for(std::chrono::seconds(10));
-	execute_retry([&] { robot.vacuum_gripper_vacuum(100, std::chrono::milliseconds(1000)); }, robot);
-	std::cout << "pause\n";
-	std::this_thread::sleep_for(std::chrono::seconds(10));
-	execute_retry([&] { robot.vacuum_gripper_stop(); }, robot);
-}
 
 void ptp_test(
 	franka_proxy::franka_remote_interface& robot,
@@ -700,6 +697,44 @@ void force_test(
 	execute_retry([&] { robot.move_to(starting_pos); }, robot);
 
 	std::cout << "Finished Force Test." << '\n';
+}
+
+
+void vacuum_test(franka_proxy::franka_remote_interface& robot)
+{
+	execute_retry([&] { robot.vacuum_gripper_stop(); }, robot);
+	std::this_thread::sleep_for(std::chrono::seconds(10));
+	execute_retry([&] { robot.vacuum_gripper_vacuum(100, std::chrono::milliseconds(1000)); }, robot);
+	std::cout << "pause\n";
+	std::this_thread::sleep_for(std::chrono::seconds(10));
+	execute_retry([&] { robot.vacuum_gripper_stop(); }, robot);
+}
+
+
+void guiding_test(franka_proxy::franka_remote_interface& robot)
+{
+	std::chrono::seconds duration(10);
+	//set to default before test
+	robot.set_guiding_params(true, true, true, true, true, true, false);
+
+	std::cout << "Robot is now for " << duration
+		<< " in guiding mode with guidable DOF (1,1,1,0,0,0) and elbow is false" << '\n';
+	robot.set_guiding_params(true, true, true, false, false, false, false);
+	std::this_thread::sleep_for(duration);
+
+	std::cout << "Robot is now for " << duration
+		<< " in default guiding mode" << '\n';
+	robot.set_guiding_params(true, true, true, true, true, true, false);
+	std::this_thread::sleep_for(duration);
+
+	std::cout << "Robot is now for " << duration
+		<< "  in guiding mode with guidable DOF (1,1,0,1,1,0) and elbow is false" << '\n';
+	robot.set_guiding_params(true, true, false, true, true, false, false);
+	std::this_thread::sleep_for(duration);
+
+	//set back to default after test
+	robot.set_guiding_params(true, true, true, true, true, true, false);
+	std::cout << "Finished guiding mode test." << '\n';
 }
 
 
