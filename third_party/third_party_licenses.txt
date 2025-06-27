@@ -26,7 +26,7 @@ Library: IKFast (copied from the resulting header)
 License: Apache License 2.0  
 URL: https://www.apache.org/licenses/LICENSE-2.0
 
-Library: libfranka  
+Library: libfranka (copied from git repository)
 License: Apache License 2.0  
 URL: https://www.apache.org/licenses/LICENSE-2.0
 
