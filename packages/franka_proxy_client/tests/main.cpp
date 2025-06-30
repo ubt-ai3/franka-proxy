@@ -15,15 +15,11 @@
 #include <franka_proxy_client/franka_remote_interface.hpp>
 
 
-enum test_mode : std::uint8_t
+enum class test_mode
 {
 	none, ple, playback, gripper, ptp, force, vacuum, guiding
 };
 
-// General purpose starting position, centered above table with some good space in all directions.
-constexpr franka_proxy::robot_config_7dof starting_pos{
-	0.0346044, -0.0666144, -0.0398886, -2.04985, -0.0229875, 1.99782, 0.778461
-};
 
 namespace time_test_constants
 {
@@ -43,6 +39,13 @@ void franka_proxy_client_test(
 
 namespace
 {
+
+// General purpose starting position, 
+// centered above table with some good space in all directions.
+constexpr franka_proxy::robot_config_7dof starting_pos{
+	0.0346044, -0.0666144, -0.0398886, -2.04985, -0.0229875, 1.99782, 0.778461
+};
+
 template <std::size_t D>
 void print_fixed_format(const std::string& label, const std::array<double, D>& vec)
 {
@@ -171,12 +174,12 @@ int main(int argc, char* argv[])
 	std::cout << "--------------------------------------------------------------------------------\n"
 		<< "Executing Franka client test with IP " << ip << ": \n";
 
-	test_mode selected_test = none;
+	test_mode selected_test = test_mode::none;
 	std::vector<std::string> params;
 
 	if (program.is_subcommand_used(ple_test_parser))
 	{
-		selected_test = ple;
+		selected_test = test_mode::ple;
 		params.emplace_back(ple_test_parser.get<std::string>("speed"));
 		params.emplace_back(ple_test_parser.get<std::string>("-d"));
 		params.emplace_back(ple_test_parser.get<bool>("-l") ? "true" : "false");
@@ -184,36 +187,36 @@ int main(int argc, char* argv[])
 	}
 	else if (program.is_subcommand_used(gripper_test_parser))
 	{
-		selected_test = gripper;
+		selected_test = test_mode::gripper;
 		params.emplace_back(gripper_test_parser.get<std::string>("margin"));
 		params.emplace_back(gripper_test_parser.get<bool>("-g") ? "true" : "false");
 	}
 	else if (program.is_subcommand_used(ptp_test_parser))
 	{
-		selected_test = ptp;
+		selected_test = test_mode::ptp;
 		params.emplace_back(ptp_test_parser.get<std::string>("margin"));
 		params.emplace_back(ptp_test_parser.get<bool>("-l") ? "true" : "false");
 		params.emplace_back(ptp_test_parser.get<std::string>("-f"));
 	}
 	else if (program.is_subcommand_used(force_test_parser))
 	{
-		selected_test = force;
+		selected_test = test_mode::force;
 		params.emplace_back(force_test_parser.get<std::string>("-m"));
 		params.emplace_back(force_test_parser.get<std::string>("-d"));
 	}
 	else if (program.is_subcommand_used(playback_test_parser))
 	{
-		selected_test = playback;
+		selected_test = test_mode::playback;
 		params.emplace_back(playback_test_parser.get<bool>("-l") ? "true" : "false");
 		params.emplace_back(playback_test_parser.get<std::string>("-f"));
 	}
 	else if (program.is_subcommand_used(vacuum_test_parser))
 	{
-		selected_test = vacuum;
+		selected_test = test_mode::vacuum;
 	}
 	else if (program.is_subcommand_used(guiding_test_parser))
 	{
-		selected_test = guiding;
+		selected_test = test_mode::guiding;
 	}
 
 
@@ -264,13 +267,13 @@ void franka_proxy_client_test(
 
 	// Franka motion tests - only one test can be run at a time.
 	// Parameters for test methods arrive here as a vector of strings, so convert accordingly.
-	if (test == none)
+	if (test == test_mode::none)
 	{
 		std::cout << "No specific test selected. Only testing status socket for "
 			<< time_test_constants::long_delay.count() << " seconds.\n";
 		std::this_thread::sleep_for(time_test_constants::long_delay);
 	}
-	else if (test == ple)
+	else if (test == test_mode::ple)
 	{
 		double speed = std::stod(params[0]);
 		double duration = std::stod(params[1]);
@@ -278,36 +281,36 @@ void franka_proxy_client_test(
 		const std::string& file = params[3];
 		ple_motion_record_test(*robot, speed, duration, log, file);
 	}
-	else if (test == gripper)
+	else if (test == test_mode::gripper)
 	{
 		double margin = std::stod(params[0]);
 		bool grasp = (params[1] == "true");
 		gripper_test(*robot, margin, grasp);
 	}
-	else if (test == ptp)
+	else if (test == test_mode::ptp)
 	{
 		double margin = std::stod(params[0]);
 		bool log = (params[1] == "true");
 		const std::string& file = params[2];
 		ptp_test(*robot, margin, log, file);
 	}
-	else if (test == force)
+	else if (test == test_mode::force)
 	{
 		double mass = std::stod(params[0]);
 		double duration = std::stod(params[1]);
 		force_test(*robot, mass, duration);
 	}
-	else if (test == playback)
+	else if (test == test_mode::playback)
 	{
 		bool log = (params[0] == "true");
 		const std::string& file = params[1];
 		playback_test(*robot, log, file);
 	}
-	else if (test == vacuum)
+	else if (test == test_mode::vacuum)
 	{
 		vacuum_test(*robot);
 	}
-	else if (test == guiding)
+	else if (test == test_mode::guiding)
 	{
 		guiding_test(*robot);
 	}
