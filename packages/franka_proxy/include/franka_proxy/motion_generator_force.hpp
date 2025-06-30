@@ -5,10 +5,9 @@
  *
  * @file motion_generator_force.hpp
  * 
- * todo
+ * inspired by franka emika example code
  *
  ************************************************************************/
-
 
 
 #include <vector>
@@ -19,14 +18,8 @@
 #include <franka/model.h>
 
 
-
-namespace franka_proxy
+namespace franka_proxy::detail
 {
-namespace detail
-{
-
-
-
 /**
  *************************************************************************
  *
@@ -37,37 +30,31 @@ namespace detail
  ************************************************************************/
 class force_motion_generator
 {
-
-	
-
 public:
-		
-	force_motion_generator
-		(franka::Robot& robot, double mass, double duration);
+	force_motion_generator(
+		franka::Robot& robot, double mass, double duration);
 
+	franka::Torques callback(
+		const franka::RobotState& robot_state,
+		franka::Duration period);
 
-	franka::Torques callback
-		(const franka::RobotState& robot_state,
-		 franka::Duration period);
-
-	std::vector<double> give_forces();
-	std::vector<double> give_desired_mass();
+	std::vector<double> get_resulting_forces_z_log();
+	std::vector<double> get_desired_forces_log();
 
 private:
-
 	void update_dq_filter(const franka::RobotState& robot_state);
-	[[nodiscard]] double compute_dq_filtered(int j) const;
+	double compute_dq_filtered(int j) const;
 
 	double time_{0.0};
 	double desired_mass{0.0};
-	const double k_p{1.0};
-	const double k_i{2.0};
+	const double k_p_{1.0};
+	const double k_i_{2.0};
 	const double filter_gain{0.01};
 
 
 	// Stiffness & Damping
-	const std::array<double, 7> K_P_ = { {600.0, 600.0, 600.0, 600.0, 250.0, 150.0, 50.0} };
-	const std::array<double, 7> K_D_ = { {50.0, 50.0, 50.0, 50.0, 30.0, 25.0, 15.0} };
+	const std::array<double, 7> K_P_ = {{600.0, 600.0, 600.0, 600.0, 250.0, 150.0, 50.0}};
+	const std::array<double, 7> K_D_ = {{50.0, 50.0, 50.0, 50.0, 30.0, 25.0, 15.0}};
 
 
 	size_t dq_current_filter_position_ = 0;
@@ -86,13 +73,13 @@ private:
 
 	franka::RobotState initial_state_;
 
-	std::vector<double> forces_z{}; // debug purpose
-	std::vector<double> des_mass{}; //debug purpose
+	std::vector<double> resulting_forces_z_{}; // debug purposes
+	std::vector<double> desired_forces_{}; // debug purposes
 };
 
 
-	// @todo work of Laurin Hecken
-	/*
+// @todo work of Laurin Hecken
+/*
 // ----------- HYBRID CONTROL MOTION GENERATOR CLASS ------------
 class hybrid_control_motion_generator
 {
@@ -101,7 +88,7 @@ public:
 	hybrid_control_motion_generator
 	(franka::Robot& robot,
 		std::vector<Eigen::Vector3d> desired_positions,
-		std::vector<Eigen::Matrix<double, 6, 1>> desired_forces, 
+		std::vector<Eigen::Matrix<double, 6, 1>> desired_forces_, 
 		std::vector<Eigen::Quaterniond> desired_orientations,
 		std::array<std::array<double, 6>, 6> control_parameters,
 		csv_data &data);
@@ -183,8 +170,6 @@ private:
 	csv_data &data_;
 };
 */
-
-} /* namespace detail */
-} /* namespace franka_proxy */
+}
 
 #endif // INCLUDED__FRANKA_PROXY__MOTION_GENERATOR_FORCE_HPP

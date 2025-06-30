@@ -155,7 +155,7 @@ public:
 		double adm_translational_stiffness, 
 		double imp_rotational_stiffness,
 		double imp_translational_stiffness,
-		std::optional<std::string> log_file_path = std::nullopt);
+		const std::optional<std::string>& log_file_path = std::nullopt);
 
 	/**
 	 * Cartesian impedance controller to hold the current pose

@@ -3,65 +3,49 @@
  *
  * @file motion_generator_force.cpp
  *
- * ..., implementation.
- *
  ************************************************************************/
 
-
 #include "motion_generator_force.hpp"
-
-#include <utility>
-#include <iostream>
-#include <fstream>
 
 #include <Eigen/Dense>
 
 #include <franka/model.h>
 
 
-namespace franka_proxy
+namespace franka_proxy::detail
 {
-namespace detail
-{
-
-
 //////////////////////////////////////////////////////////////////////////
 //
 // force_motion_generator
 //
 //////////////////////////////////////////////////////////////////////////
-
-
-force_motion_generator::force_motion_generator
-	(franka::Robot& robot,
-	 double mass,
-	 double duration)
-	:
-	dq_d_({0., 0., 0., 0., 0., 0., 0.}),
-	dq_buffer_(dq_filter_size_ * 7, 0),
-	target_mass(mass),
-	duration(duration),
-	model(robot.loadModel())
+force_motion_generator::force_motion_generator(
+	franka::Robot& robot,
+	double mass,
+	double duration)
+	: dq_d_({0., 0., 0., 0., 0., 0., 0.}),
+	  dq_buffer_(dq_filter_size_ * 7, 0),
+	  target_mass(mass),
+	  duration(duration),
+	  model(robot.loadModel())
 {
 	initial_state_ = robot.readOnce();
 }
 
 
-
-franka::Torques force_motion_generator::callback
-	(const franka::RobotState& robot_state,
-	 franka::Duration period)
+franka::Torques force_motion_generator::callback(
+	const franka::RobotState& robot_state,
+	franka::Duration period)
 {
 	time_ += period.toSec();
 
 	if (time_ > duration)
 	{
-		// todo this may be wrong!
+		// todo this may not be clean
 		franka::Torques current_torques(robot_state.tau_J);
 		current_torques.motion_finished = true;
 		return current_torques;
 	}
-
 
 	Eigen::Map<const Eigen::Matrix<double, 7, 1>> tau_measured(robot_state.tau_J.data());
 
@@ -74,19 +58,16 @@ franka::Torques force_motion_generator::callback
 	std::array<double, 42> jacobian_array = model.zeroJacobian(franka::Frame::kEndEffector, robot_state);
 	Eigen::Map<const Eigen::Matrix<double, 6, 7>> jacobian(jacobian_array.data());
 
-
 	Eigen::VectorXd desired_force_torque(6), tau_existing(7), tau_desired(7), tau_command(7), tau_J_d(7);
-
 
 	desired_force_torque.setZero();
 	desired_force_torque(2) = desired_mass * -9.81;
-
 
 	tau_existing = tau_measured - gravity;
 	tau_desired = jacobian.transpose() * desired_force_torque;
 	tau_error_integral += period.toSec() * (tau_desired - tau_existing);
 	// FF + PI control
-	tau_command = tau_desired + k_p * (tau_desired - tau_existing) + k_i * tau_error_integral;
+	tau_command = tau_desired + k_p_ * (tau_desired - tau_existing) + k_i_ * tau_error_integral;
 
 	// Smoothly update the mass to reach the desired target value.
 	desired_mass = filter_gain * target_mass + (1 - filter_gain) * desired_mass;
@@ -105,19 +86,22 @@ franka::Torques force_motion_generator::callback
 	std::array<double, 7> tau_d_array{};
 	Eigen::VectorXd::Map(tau_d_array.data(), 7) = (tau_command + tau_J_d) * 0.5;
 
-
-	forces_z.push_back(robot_state.O_F_ext_hat_K[2]);
-	des_mass.push_back(desired_mass * -9.81);
-
+	resulting_forces_z_.push_back(robot_state.O_F_ext_hat_K[2]);
+	desired_forces_.push_back(desired_mass * -9.81);
 
 	return tau_d_array;
 }
 
-std::vector<double> force_motion_generator::give_forces() {
-	return forces_z;
+
+std::vector<double> force_motion_generator::get_resulting_forces_z_log()
+{
+	return resulting_forces_z_;
 }
-std::vector<double> force_motion_generator::give_desired_mass() {
-	return des_mass;
+
+
+std::vector<double> force_motion_generator::get_desired_forces_log()
+{
+	return desired_forces_;
 }
 
 
@@ -140,8 +124,8 @@ double force_motion_generator::compute_dq_filtered(int j) const
 }
 
 
-// @todo work of Laurin Hecken
-	/*
+// @todo work of LHe
+/*
 //-------------------------------------------------------------------------------------------------
 //------------------Class Hybrid Control Motion Generator---------------------------------------
 //-------------------------------------------------------------------------------------------------
@@ -150,7 +134,7 @@ double force_motion_generator::compute_dq_filtered(int j) const
 hybrid_control_motion_generator::hybrid_control_motion_generator
 (franka::Robot& robot,
 	std::vector<Eigen::Vector3d> desired_positions,
-	std::vector<Eigen::Matrix<double, 6, 1>> desired_forces,
+	std::vector<Eigen::Matrix<double, 6, 1>> desired_forces_,
 	std::vector<Eigen::Quaterniond> desired_orientations,
 	std::array<std::array<double, 6>, 6> control_parameters,
 	csv_data& data)
@@ -161,7 +145,7 @@ hybrid_control_motion_generator::hybrid_control_motion_generator
 	model_(robot.loadModel()),
 	dq_buffer_(dq_filter_size_, eigen_vector7d::Zero()),
 	desired_positions_(desired_positions),
-	desired_forces_(desired_forces),
+	desired_forces_(desired_forces_),
 	desired_orientations_(desired_orientations),
 	k_p_p_(control_parameters[0]),
 	k_i_p_(control_parameters[1]),
@@ -470,6 +454,4 @@ double detail::hybrid_control_motion_generator::compute_position_error_diff_filt
 	return (value / position_error_diff_filter_size_);
 }
 */
-
-} /* namespace detail */
-} /* namespace franka_proxy */
+}

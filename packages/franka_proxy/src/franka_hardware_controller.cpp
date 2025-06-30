@@ -160,21 +160,18 @@ void franka_hardware_controller::apply_z_force(
 
 
 void franka_hardware_controller::apply_admittance(
-	const double duration,
-	const double adm_rotational_stiffness,
-	const double adm_translational_stiffness,
-	const double imp_rotational_stiffness,
-	const double imp_translational_stiffness,
-	std::optional<std::string> log_file_path)
+	double duration,
+	double adm_rotational_stiffness,
+	double adm_translational_stiffness,
+	double imp_rotational_stiffness,
+	double imp_translational_stiffness,
+	const std::optional<std::string>& log_file_path)
 {
 	detail::admittance_motion_generator motion_generator(
-		robot_, robot_state_lock_, robot_state_, duration, std::move(log_file_path));
-
-	motion_generator.set_admittance_rotational_stiffness(adm_rotational_stiffness);
-	motion_generator.set_admittance_translational_stiffness(adm_translational_stiffness);
-
-	motion_generator.set_impedance_rotational_stiffness(imp_rotational_stiffness);
-	motion_generator.set_impedance_translational_stiffness(imp_translational_stiffness);
+		robot_, robot_state_lock_, robot_state_, duration,
+		adm_rotational_stiffness, adm_translational_stiffness,
+		imp_rotational_stiffness, imp_translational_stiffness,
+		log_file_path);
 
 	try
 	{
@@ -856,14 +853,14 @@ void franka_hardware_controller::move_sequence(
 	// todo work of Laurin Hecken
 	//void franka_hardware_controller::hybrid_control
 	//(csv_data & data, std::vector<Eigen::Vector3d> desired_positions,
-	//	std::vector<Eigen::Matrix<double, 6, 1>> desired_forces, std::vector<Eigen::Quaterniond> desired_orientations,
+	//	std::vector<Eigen::Matrix<double, 6, 1>> desired_forces_, std::vector<Eigen::Quaterniond> desired_orientations,
 	//	std::array<std::array<double, 6>, 6> control_parameters)
 	//{
 	//initialize_parameters();
 
 	//try
 	//{
-	//	detail::hybrid_control_motion_generator fmg(robot_, desired_positions, desired_forces, desired_orientations, control_parameters, data);
+	//	detail::hybrid_control_motion_generator fmg(robot_, desired_positions, desired_forces_, desired_orientations, control_parameters, data);
 	//	set_control_loop_running(true);
 	//	{
 	//		// Lock the current_state_lock_ to wait for state_thread_ to finish.
