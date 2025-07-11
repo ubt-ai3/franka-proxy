@@ -1,45 +1,67 @@
 # Setup
-## Using the project
-This project is split into two parts. A client library for inclusion into your own project and a server application, that runs directly on the computer connected to the Franka Emika robot. Normally you install both of these via vcpkg. Use the AI3 vcpkg for this: https://resy-gitlab.inf.uni-bayreuth.de/tools/vcpkg.git
 
-To install the client library use:  
-```./vcpkg.exe install franka-proxy:x64-windows ```
+## Using the Project
 
-And to install the server application use:  
-```./vcpkg.exe install franka-proxy[server]:x64-windows```
+This project consists of two components:
 
-Server and client are only compatible if you use the same port, so make sure to work on an identical version of vcpkg (ai3 internal version).
+- A client/controller library for integration into your own project.
+- A server application that runs on the computer connected to the Franka Emika robot.
 
+Both components are typically installed via `vcpkg`. You can either use the provided overlay ports in `./tools/vcpkg-overlay-ports/` or, if available to you, the internal AI3 `vcpkg` fork:
+https://resy-gitlab.inf.uni-bayreuth.de/tools/vcpkg.git
 
-# Building from Source 
-## Externals via vcpkg 
+### Installation
 
-Use the AI3 vcpkg ( https://resy-gitlab.inf.uni-bayreuth.de/tools/vcpkg.git ):
+- To install the client library:
+  ```vcpkg install franka-proxy --overlay-ports=<insert/path/here>/franka_proxy/tools/vcpkg-overlay-ports```
 
-```sh
+- To install the server and test applications:
+  ```vcpkg install franka-proxy[server,tests] --overlay-ports=<insert/path/here>/franka_proxy/tools/vcpkg-overlay-ports```
+
+Note: Ensure that the client and server use the same port version. Compatibility is not guaranteed otherwise.
+
+---
+
+# Building from Source
+
+## Installing Dependencies via vcpkg
+
+Use `vcpkg`:
+```
 ./bootstrap-vcpkg.sh
-./vcpkg install asio argparse eigen3 franka nlohmann-json poco
+vcpkg install asio argparse eigen3 franka nlohmann-json poco
 ```
 
-If building using the CMakePresets, copy tools/CMakePresets.json in root directory next to CMakeLists.txt.
-Make sure to change the common-config to point your CMAKE_TOOLCHAIN_FILE of vcpkg and to set the compiler of your choice:
+## Using CMakePresets
 
-```sh
-cmake --preset Release
-cmake --build .\build\Release\ --config Release
+If you plan to use CMakePresets, copy `./tools/CMakePresets.json` to the project root directory (next to `CMakeLists.txt`). Modify the `common-config` to specify the correct `CMAKE_TOOLCHAIN_FILE` and compiler. Then build:
+```
+cmake --preset windows-release
+cmake --build ./out/build/windows-release --config windows-release
 ```
 
-Otherwise, build everything from source classicly:
+## Manual Build
 
-```sh
+To build without presets:
+```
 mkdir build
 cd build
-cmake .. "-DCMAKE_TOOLCHAIN_FILE=C:/insert/path/here/tools/vcpkg/scripts/buildsystems/vcpkg.cmake"
+cmake .. "-DCMAKE_TOOLCHAIN_FILE=<insert/path/here>/vcpkg/scripts/buildsystems/vcpkg.cmake"
 cmake --build .
 ```
 
-## Pythin bindings
-To generate python bindings, TODO describe steps: install pybind11 with vcpkg, add python-subdir in root CMakeLists, build Release, try controller_test.py in build_dir/python.
+---
+
+## Python Bindings
+
+To generate Python bindings, the loose steps are:
+
+1. Install `pybind11` via `vcpkg`.
+2. Enable `BUILD_PYTHON_CONTROLLER` option in CMake chache and reconfigure the project.
+3. Build the project in `Release` mode.
+4. Run `controller_test.py` located in `<build_dir>/python`.
+
+---
 
 ## Project structure
 ```mermaid

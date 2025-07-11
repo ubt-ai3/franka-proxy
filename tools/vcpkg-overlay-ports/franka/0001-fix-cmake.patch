@@ -1,0 +1,209 @@
+From dba4836b402f1727d7107eb5819d1cbf5797349e Mon Sep 17 00:00:00 2001
+From: Johannes Hartwig <johannes.hartwig@uni-bayreuth.de>
+Date: Tue, 5 Sep 2023 15:03:11 +0200
+Subject: [PATCH] fix-cmake
+
+---
+ CMakeLists.txt              | 115 +++++-------------------------------
+ cmake/FrankaConfig.cmake.in |   8 ++-
+ common                      |   2 +-
+ 3 files changed, 23 insertions(+), 102 deletions(-)
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index c3b03ef..f35b555 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -1,4 +1,4 @@
+-cmake_minimum_required(VERSION 3.4)
++ cmake_minimum_required(VERSION 3.4)
+ 
+ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
+ 
+@@ -11,10 +11,17 @@ project(libfranka
+ 
+ list(INSERT CMAKE_MODULE_PATH 0 "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
+ 
+-set(CMAKE_CXX_STANDARD 14)
++
++if(MSVC)
++    set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS TRUE)
++endif()
++
++
++set(CMAKE_CXX_STANDARD 17)
+ set(CMAKE_CXX_STANDARD_REQUIRED ON)
+ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+ 
++
+ if(MSVC)
+   add_compile_options(/W0)
+ else()
+@@ -25,6 +32,7 @@ set(THIRDPARTY_SOURCES_DIR "${CMAKE_CURRENT_SOURCE_DIR}/3rdparty" CACHE PATH
+   "Directory for third-party sources")
+ 
+ ## Dependencies
++find_package(utf8proc NAMES unofficial-utf8proc)
+ find_package(Poco REQUIRED COMPONENTS Net Foundation)
+ find_package(Eigen3 REQUIRED)
+ 
+@@ -53,7 +61,7 @@ endif()
+ add_subdirectory(common)
+ 
+ ## Library
+-add_library(franka SHARED
++add_library(franka 
+   src/control_loop.cpp
+   src/control_tools.cpp
+   src/control_types.cpp
+@@ -108,9 +116,10 @@ target_include_directories(franka PUBLIC
+ )
+ 
+ target_link_libraries(franka PRIVATE
++  utf8proc
+   Poco::Foundation
+   Poco::Net
+-  Eigen3::Eigen3
++  Eigen3::Eigen
+   Threads::Threads
+   libfranka-common
+ )
+@@ -119,9 +128,10 @@ target_link_libraries(franka PRIVATE
+ include(GNUInstallDirs)
+ set(INSTALL_CMAKE_CONFIG_DIR ${CMAKE_INSTALL_LIBDIR}/cmake/Franka)
+ 
+-install(TARGETS franka
++install(TARGETS franka libfranka-common
+   EXPORT FrankaTargets
+   LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
++  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+   RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+   ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+ )
+@@ -152,98 +162,3 @@ install(EXPORT FrankaTargets
+   NAMESPACE Franka::
+   DESTINATION ${INSTALL_CMAKE_CONFIG_DIR}
+ )
+-
+-## Subprojects
+-
+-# Ignore find_package(Franka) in subprojects.
+-set(FRANKA_IS_FOUND TRUE)
+-
+-option(BUILD_TESTS "Build tests" ON)
+-if(BUILD_TESTS)
+-  enable_testing()
+-  add_subdirectory(test)
+-endif()
+-
+-option(BUILD_EXAMPLES "Build example code" ON)
+-if(BUILD_EXAMPLES)
+-  add_subdirectory(examples)
+-endif()
+-
+-option(BUILD_DOCUMENTATION "Build documentation" OFF)
+-if(BUILD_DOCUMENTATION)
+-  add_subdirectory(doc)
+-endif()
+-
+-## Packaging
+-set(CPACK_PACKAGE_VENDOR "Franka Emika GmbH")
+-set(CPACK_GENERATOR "DEB;TGZ")
+-set(CPACK_PACKAGE_VERSION ${libfranka_VERSION})
+-set(CPACK_SYSTEM_NAME ${CMAKE_HOST_SYSTEM_PROCESSOR})
+-
+-# Debian versions require a dash
+-set(CPACK_DEBIAN_PACKAGE_VERSION ${CPACK_PACKAGE_VERSION}-1)
+-set(CPACK_DEBIAN_PACKAGE_MAINTAINER "Franka Emika GmbH")
+-set(CPACK_DEBIAN_PACKAGE_DEPENDS "libpoco-dev")
+-set(CPACK_DEBIAN_PACKAGE_CONFLICTS "ros-kinetic-libfranka, ros-melodic-libfranka, ros-noetic-libfranka, ros-foxy-libfranka")
+-include(CPack)
+-
+-## Tools
+-file(GLOB_RECURSE SOURCES
+-  src/*.cpp
+-  examples/*.cpp
+-  common/*.cpp
+-)
+-file(GLOB_RECURSE HEADERS
+-  include/*.h
+-  src/*.h
+-  examples/*.h
+-  common/*.h
+-)
+-file(GLOB_RECURSE TEST_FILES
+-  test/*.h
+-  test/*.cpp
+-)
+-file(GLOB_RECURSE TIDY_IGNORED_FILES
+-  src/libfcimodels.h
+-)
+-
+-find_program(CLANG_FORMAT_PROG clang-format-6.0 DOC "'clang-format' executable")
+-if(CLANG_FORMAT_PROG)
+-  add_custom_target(format
+-    COMMAND ${CLANG_FORMAT_PROG} -i ${SOURCES} ${HEADERS} ${TEST_FILES}
+-    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+-    COMMENT "Formatting source code with clang-format"
+-    VERBATIM
+-  )
+-  add_custom_target(check-format
+-    COMMAND scripts/format-check.sh ${CLANG_FORMAT_PROG} -output-replacements-xml ${SOURCES} ${HEADERS} ${TEST_FILES}
+-    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+-    COMMENT "Checking code formatting with clang-format"
+-    VERBATIM
+-  )
+-endif()
+-find_program(CLANG_TIDY_PROG clang-tidy-6.0 DOC "'clang-tidy' executable")
+-if(CLANG_TIDY_PROG)
+-  # Build JSON string for clang-tidy's line filter
+-  set(TIDY_FILES ${SOURCES} ${HEADERS})
+-  foreach(ignored_file ${TIDY_IGNORED_FILES})
+-    list(REMOVE_ITEM TIDY_FILES ${ignored_file})
+-  endforeach()
+-  string(REPLACE ";" "\"},{\"name\":\"" TIDY_LINE_FILTER "${TIDY_FILES}")
+-  set(TIDY_LINE_FILTER "[{\"name\":\"${TIDY_LINE_FILTER}\"}]")
+-
+-  add_custom_target(tidy
+-    COMMAND ${CLANG_TIDY_PROG} -p=${CMAKE_BINARY_DIR}
+-                               -line-filter=${TIDY_LINE_FILTER} ${SOURCES}
+-    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+-    COMMENT "Running clang-tidy"
+-    VERBATIM
+-  )
+-  add_custom_target(check-tidy
+-    COMMAND scripts/fail-on-output.sh ${CLANG_TIDY_PROG} -p=${CMAKE_BINARY_DIR}
+-                                      -line-filter=${TIDY_LINE_FILTER} ${SOURCES}
+-    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+-    COMMENT "Running clang-tidy"
+-    VERBATIM
+-  )
+-endif()
+diff --git a/cmake/FrankaConfig.cmake.in b/cmake/FrankaConfig.cmake.in
+index c3b9bf2..54154a6 100644
+--- a/cmake/FrankaConfig.cmake.in
++++ b/cmake/FrankaConfig.cmake.in
+@@ -1,7 +1,13 @@
++include(CMakeFindDependencyMacro)
++
+ get_filename_component(Franka_CMAKE_DIR "${CMAKE_CURRENT_LIST_FILE}" PATH)
+ 
+ set(THREADS_PREFER_PTHREAD_FLAG ON)
+-find_package(Threads REQUIRED)
++
++find_dependency(Threads)
++
++find_dependency(Poco COMPONENTS Net Foundation)
++find_dependency(Eigen3)
+ 
+ if(NOT TARGET Franka::Franka)
+   include("${Franka_CMAKE_DIR}/FrankaTargets.cmake")
+diff --git a/common b/common
+index e6aa0fc..717bafa 160000
+--- a/common
++++ b/common
+@@ -1 +1 @@
+-Subproject commit e6aa0fc210d93fe618bfd8956829a264d5476ba8
++Subproject commit 717bafa239949d458b70bf64d5202f438b36854e
+-- 
+2.47.1.windows.2
+

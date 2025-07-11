@@ -1,0 +1,23 @@
+From 399f16f8a4780839ba38f88d40bd47dbb7b71319 Mon Sep 17 00:00:00 2001
+From: Johannes Hartwig <johannes.hartwig@uni-bayreuth.de>
+Date: Fri, 12 Aug 2022 15:31:47 +0200
+Subject: [PATCH] cmake libfranka common fix
+
+---
+ CMakeLists.txt | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 8903fb1..c9699ca 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -2,5 +2,5 @@ cmake_minimum_required(VERSION 2.8.3)
+ 
+ add_library(libfranka-common INTERFACE)
+ set_target_properties(libfranka-common PROPERTIES
+-  INTERFACE_INCLUDE_DIRECTORIES ${CMAKE_CURRENT_LIST_DIR}/include
++  INTERFACE_INCLUDE_DIRECTORIES $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/include>
+ )
+-- 
+2.36.1.windows.1
+
