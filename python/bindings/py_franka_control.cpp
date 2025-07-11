@@ -138,7 +138,7 @@ PYBIND11_MODULE(py_franka_control, m)
 	//////////////////////////////////////////////////////////////////////////
 	pybind11::class_<
 			franka_control::franka_controller,
-			std::shared_ptr<franka_control::franka_controller>>(m, "FrankaController")
+			std::shared_ptr<franka_control::franka_controller>>(m, "_FrankaController")
 		.def("move", pybind11::overload_cast<const Eigen::Affine3d&>(&franka_control::franka_controller::move))
 		.def("move_until_contact",
 		     pybind11::overload_cast<const Eigen::Affine3d&>(&franka_control::franka_controller::move_until_contact))
@@ -158,9 +158,9 @@ PYBIND11_MODULE(py_franka_control, m)
 		.def(pybind11::init<franka_control::franka_controller&>());
 
 	pybind11::class_<
-			py_franka_controller_remote,
-			franka_control::franka_controller_remote, franka_control::franka_controller,
-			std::shared_ptr<py_franka_controller_remote>>(m, "FrankaControllerRemote")
+			franka_control::franka_controller_remote,
+			franka_control::franka_controller,
+			std::shared_ptr<franka_control::franka_controller_remote>>(m, "_FrankaControllerRemoteBase")
 		.def(pybind11::init<const std::string&>())
 		.def("move", &franka_control::franka_controller_remote::move)
 		.def("move_until_contact", &franka_control::franka_controller_remote::move_until_contact)
@@ -181,20 +181,27 @@ PYBIND11_MODULE(py_franka_control, m)
 		.def("start_recording", &franka_control::franka_controller_remote::start_recording,
 		     pybind11::arg("log_file_path") = std::nullopt)
 		.def("stop_recording", &franka_control::franka_controller_remote::stop_recording)
-		.def("move_sequence", &py_franka_controller_remote::move_sequence_wrapper,
-		     pybind11::arg("q_sequence"),
-		     pybind11::arg("f_sequence"),
-		     pybind11::arg("selection_sequence"),
-		     pybind11::arg("offset_cartesian") = pybind11::none(),
-		     pybind11::arg("offset_force") = pybind11::none())
 		.def("set_fts_bias", &franka_control::franka_controller_remote::set_fts_bias)
 		.def("set_fts_load_mass", &franka_control::franka_controller_remote::set_fts_load_mass)
 		.def("set_guiding_mode", &franka_control::franka_controller_remote::set_guiding_mode);
 
 	pybind11::class_<
-			py_franka_controller_emulated,
-			franka_control::franka_controller_emulated, franka_control::franka_controller,
-			std::shared_ptr<py_franka_controller_emulated>>(m, "FrankaControllerEmulated")
+			py_franka_controller_remote,
+			franka_control::franka_controller_remote,
+			std::shared_ptr<py_franka_controller_remote>>(m, "FrankaControllerRemote")
+		.def(pybind11::init<const std::string&>())
+		.def("move_sequence", &py_franka_controller_remote::move_sequence_wrapper,
+		     pybind11::arg("q_sequence"),
+		     pybind11::arg("f_sequence"),
+		     pybind11::arg("selection_sequence"),
+		     pybind11::arg("offset_cartesian") = pybind11::none(),
+		     pybind11::arg("offset_force") = pybind11::none());
+
+
+	pybind11::class_<
+			franka_control::franka_controller_emulated,
+			franka_control::franka_controller,
+			std::shared_ptr<franka_control::franka_controller_emulated>>(m, "_FrankaControllerEmulatedBase")
 		.def(pybind11::init<>())
 		.def("update", &franka_control::franka_controller_emulated::update)
 		.def("automatic_error_recovery", &franka_control::franka_controller_emulated::automatic_error_recovery)
@@ -214,7 +221,13 @@ PYBIND11_MODULE(py_franka_control, m)
 		.def("current_gripper_pos", &franka_control::franka_controller_emulated::current_gripper_pos)
 		.def("max_gripper_pos", &franka_control::franka_controller_emulated::max_gripper_pos)
 		.def("start_recording", &franka_control::franka_controller_emulated::start_recording)
-		.def("stop_recording", &franka_control::franka_controller_emulated::stop_recording)
+		.def("stop_recording", &franka_control::franka_controller_emulated::stop_recording);
+
+	pybind11::class_<
+			py_franka_controller_emulated,
+			franka_control::franka_controller_emulated,
+			std::shared_ptr<py_franka_controller_emulated>>(m, "FrankaControllerEmulated")
+		.def(pybind11::init<>())
 		.def("move_sequence", &py_franka_controller_emulated::move_sequence_wrapper,
 		     pybind11::arg("q_sequence"),
 		     pybind11::arg("f_sequence"),
