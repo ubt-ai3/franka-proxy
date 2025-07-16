@@ -1,18 +1,19 @@
-Academic Non-Commercial Use
+Academic Research and Education License (Non-Commercial)
 
 Copyright (c) 2025 Applied Computer Science III - University of Bayreuth
 
-Permission is hereby granted, free of charge, to any person or institution
+Permission is hereby granted, free of charge, to any individual or institution
 obtaining a copy of this software and associated documentation files (the
-"Software"), to use the Software solely for **non-commercial academic research
-and education purposes**, subject to the following conditions:
+"Software"), to use the Software solely for non-commercial academic research
+and education purposes, including modification, reproduction, and redistribution,
+ subject to the following conditions:
 
 1. The above copyright notice and this license shall be included
-   in all copies or substantial portions of the Software.
+   in all versions, copies, or derived works of the Software.
 
-2. The Software may not be used, modified, or distributed for any
-   commercial purpose without explicit written permission from the
-   copyright holder.
+2. The Software may not be used, modified, reproduced, or distributed, 
+   in whole or in part, for any commercial purpose without explicit written
+   permission from the copyright holder.
 
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
 EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
@@ -22,6 +23,7 @@ ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
 TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-Third-Party Licenses: This Software incorporates components and libraries 
-from third parties. Their respective licenses and copyright notices are 
-located in the `./third_party/` subfolder within this distribution.
+Third-Party Licenses:
+This Software incorporates components and libraries from third parties.
+Use of third-party components is governed by their respective licenses,
+which are provided in the `./third_party/` directory.
