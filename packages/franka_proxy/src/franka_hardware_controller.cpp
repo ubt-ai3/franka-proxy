@@ -44,26 +44,16 @@ franka_hardware_controller::franka_hardware_controller(
 	: robot_(
 		  controller_ip,
 		  enforce_realtime ? franka::RealtimeConfig::kEnforce : franka::RealtimeConfig::kIgnore),
-
 	  ft_sensor_(nullptr),
 	  motion_recorder_(nullptr),
-
 	  control_loop_running_(false),
-
 	  robot_state_(robot_.readOnce()),
-	  terminate_state_threads_(false),
-
-	  robot_state_thread_([this]() { robot_state_update_loop(); }),
-	  gripper_state_thread_([this]() { gripper_state_update_loop(); })
-
+	  terminate_state_threads_(false)
 {
 	try
 	{
 		ft_sensor_ = std::make_unique<schunk_ft_sensor>(
 			Eigen::Affine3f::Identity(), Eigen::Affine3f::Identity());
-		motion_recorder_ =
-			std::make_unique<detail::motion_recorder>(
-				robot_, robot_state_, ft_sensor_.get());
 	}
 	catch (const std::exception& e)
 	{
@@ -71,6 +61,10 @@ franka_hardware_controller::franka_hardware_controller(
 			<< "Connection to force/torque sensor could not be established:" << '\n'
 			<< e.what() << '\n';
 	}
+
+	motion_recorder_ =
+		std::make_unique<detail::motion_recorder>(
+			robot_, robot_state_, ft_sensor_.get());
 
 	try
 	{
@@ -100,6 +94,9 @@ franka_hardware_controller::franka_hardware_controller(
 	}
 
 	set_guiding_mode({{true, true, true, true, true, true}}, false);
+
+	robot_state_thread_ = std::thread([this]() { robot_state_update_loop(); });
+	gripper_state_thread_ = std::thread([this]() { gripper_state_update_loop(); });
 }
 
 
@@ -653,7 +650,7 @@ bool franka_hardware_controller::vacuum_gripper_drop(std::chrono::milliseconds t
 
 
 bool franka_hardware_controller::vacuum_gripper_vacuum(
-	std::uint8_t vacuum_strength, 
+	std::uint8_t vacuum_strength,
 	std::chrono::milliseconds timeout)
 {
 	if (!vacuum_gripper_)
@@ -1071,5 +1068,4 @@ void franka_hardware_controller::set_control_loop_running(bool running)
 
 	control_loop_running_cv_.notify_all();
 }
-
 } /* namespace franka_proxy */

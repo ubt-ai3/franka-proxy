@@ -54,11 +54,12 @@ seq_cart_vel_tau_generator::seq_cart_vel_tau_generator(
 	stiffness_.bottomRightCorner(3, 3) =
 		rotational_stiffness_ * Eigen::MatrixXd::Identity(3, 3);
 
+	// Underdamping with 1/4 for smoother motions on real robot
 	damping_.setZero();
 	damping_.topLeftCorner(3, 3) =
-		.5 * sqrt(translational_stiffness_) * Eigen::MatrixXd::Identity(3, 3);
+		0.25 * 2. * sqrt(translational_stiffness_) * Eigen::MatrixXd::Identity(3, 3);
 	damping_.bottomRightCorner(3, 3) =
-		.5 * sqrt(rotational_stiffness_) * Eigen::MatrixXd::Identity(3, 3);
+		0.25 * 2. * sqrt(rotational_stiffness_) * Eigen::MatrixXd::Identity(3, 3);
 }
 
 

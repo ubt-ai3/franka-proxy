@@ -25,9 +25,10 @@ namespace detail
 // franka_motion_recorder
 //
 //////////////////////////////////////////////////////////////////////////
-motion_recorder::motion_recorder(franka::Robot& robot,
-                                 franka::RobotState& robot_state,
-                                 ft_sensor* fts)
+motion_recorder::motion_recorder(
+	franka::Robot& robot,
+	franka::RobotState& robot_state,
+	ft_sensor* fts)
 	: robot_(robot),
 	  robot_state_(robot_state),
 	  fts_(fts)
@@ -41,7 +42,8 @@ void motion_recorder::start(std::optional<std::string> log_file_path)
 	joints_record_.clear();
 	fts_record_.clear();
 
-	if (log_file_path.has_value()) {
+	if (log_file_path.has_value())
+	{
 		log_ = true;
 		file_ = log_file_path.value();
 	}
@@ -70,12 +72,15 @@ std::pair<std::vector<std::array<double, 7>>, std::vector<std::array<double, 6>>
 	stop_ = true;
 	t_.join();
 
-	if (log_) {
-		if (fts_) {
+	if (log_)
+	{
+		if (fts_)
+		{
 			logger logger_(file_, 1, 0, 1, 0, 0);
 			logger_.start_logging(&joints_, nullptr, &ft_, nullptr, nullptr);
 
-			for (int i = 0; i < joints_record_.size(); i++) {
+			for (int i = 0; i < joints_record_.size(); i++)
+			{
 				logger_.add_joint_data(joints_record_.at(i));
 				logger_.add_ft_data(fts_record_.at(i));
 				logger_.log();
@@ -83,7 +88,8 @@ std::pair<std::vector<std::array<double, 7>>, std::vector<std::array<double, 6>>
 
 			logger_.stop_logging();
 		}
-		else {
+		else
+		{
 			logger logger_(file_, 1, 0, 0, 0, 0);
 			logger_.start_logging(&joints_, nullptr, nullptr, nullptr, nullptr);
 
@@ -102,7 +108,7 @@ std::pair<std::vector<std::array<double, 7>>, std::vector<std::array<double, 6>>
 
 
 std::pair<std::vector<std::array<double, 7>>, std::vector<std::array<double, 6>>> motion_recorder::start(
-	float seconds, 
+	float seconds,
 	std::optional<std::string> log_file_path)
 {
 	start(std::move(log_file_path));
