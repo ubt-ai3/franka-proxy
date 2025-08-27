@@ -24,10 +24,11 @@ public:
 
 	ft_sensor_response read() const
 	{
-		std::lock_guard lock(current_ft_sensor_response_mutex_);
-		auto result = current_ft_sensor_response_;
+		ft_sensor_response result = read_raw();
+
 		for (int i = 0; i < 6; i++)
 			result.data[i] -= bias_(i);
+
 		return result;
 	}
 
