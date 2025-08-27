@@ -88,6 +88,9 @@ public:
 	static Eigen::Vector3d tool_center_of_mass();
 	static Eigen::Matrix3d tool_inertia();
 
+	static double tool_mass_from_fts();
+	static Eigen::Vector3d tool_center_of_mass_from_fts();
+	static Eigen::Matrix3d tool_inertia_from_fts();
 
 	static const joint_limit joint_limits_[];
 

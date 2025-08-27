@@ -271,59 +271,59 @@ franka_proxy_util::robot_config_7dof franka_proxy_util::ik_fast_closest(
 double franka_proxy_util::tool_mass()
 {
 	constexpr double
-		m_print1 = 0.01,
-		m_fts = 0.372,
-		m_print2 = 0.029,
-		m_gripper = 0.73,
-		m_camera = 0.09;
+		m_print1 = 0.059,
+		m_fts_top = 0.129,
+		m_fts_plate = 0.151,
+		m_print2 = 0.069,
+		m_gripper = 0.73;
 
-	return m_print1 + m_fts + m_print2 + m_gripper + m_camera;
+	return m_print1 + m_fts_top + m_fts_plate + m_print2 + m_gripper;
 }
 
 
 Eigen::Vector3d franka_proxy_util::tool_center_of_mass()
 {
 	constexpr double
-		m_print1 = 0.01,
-		m_fts = 0.372,
-		m_print2 = 0.029,
-		m_gripper = 0.73,
-		m_camera = 0.09;
+		m_print1 = 0.059,
+		m_fts_top = 0.129,
+		m_fts_plate = 0.151,
+		m_print2 = 0.069,
+		m_gripper = 0.73;
 
 	const Eigen::Vector3d
-		c_print1(0, 0, 0.001),
-		c_fts(0, 0, 0.0175),
-		c_print2(0, 0, 0.043),
-		c_gripper(-0.007, -0.007, 0.083),
-		c_camera(-0.028, 0.028, 0.103);
+		c_print1(0, 0, 0.018),	// a bit shifted down because of the screws
+		c_fts_top(0, 0, 0.0412),
+		c_fts_plate(0, 0, 0.0537),
+		c_print2(0, 0, 0.068),  // a bit shifted up because of the screws
+		c_gripper(-0.007, -0.007, 0.137);
 
-	return m_print1 * c_print1 + m_fts * c_fts + m_print2 * c_print2 + m_gripper * c_gripper + m_camera * c_camera;
+	return (m_print1 * c_print1 + m_fts_top * c_fts_top + m_fts_plate * c_fts_plate + m_print2 * c_print2 + m_gripper * c_gripper) / tool_mass();
 }
 
 
 Eigen::Matrix3d franka_proxy_util::tool_inertia()
 {
 	constexpr double
-		m_print1 = 0.01,
-		m_fts = 0.372,
-		m_print2 = 0.029,
-		m_gripper = 0.73,
-		m_camera = 0.09;
+		m_print1 = 0.059,
+		m_fts_top = 0.129,
+		m_fts_plate = 0.151,
+		m_print2 = 0.069,
+		m_gripper = 0.73;
 
 	const Eigen::Vector3d
-		c_print1(0, 0, 0.001),
-		c_fts(0, 0, 0.0175),
-		c_print2(0, 0, 0.043),
-		c_gripper(-0.00707107, -0.00707107, 0.083),
-		c_camera(-0.028, 0.028, 0.103);
+		c_print1(0, 0, 0.018),	// a bit shifted down because of the screws
+		c_fts_top(0, 0, 0.0412),
+		c_fts_plate(0, 0, 0.0537),
+		c_print2(0, 0, 0.068),  // a bit shifted up because of the screws
+		c_gripper(-0.007, -0.007, 0.137);
 
 	const Eigen::Vector3d c(tool_center_of_mass());
 
 
 	// print1 as cylinder
 	Eigen::Matrix3d inertia_print1(Eigen::Matrix3d::Zero());
-	inertia_print1(0, 0) = inertia_print1(1, 1) = 1 / 12. * m_print1 * (3 * 0.0315 * 0.0315 + 0.002 * 0.002);
-	inertia_print1(2, 2) = 0.5 * m_print1 * (0.0315 * 0.0315);
+	inertia_print1(0, 0) = inertia_print1(1, 1) = 1 / 12. * m_print1 * (3 * 0.041 * 0.041 + 0.032 * 0.032);
+	inertia_print1(2, 2) = 0.5 * m_print1 * (0.032 * 0.032);
 
 	auto a_tilde_print1 = a_tilde(c_print1 - c);
 	const Eigen::Matrix3d inertia_print1_center_of_mass =
@@ -331,19 +331,29 @@ Eigen::Matrix3d franka_proxy_util::tool_inertia()
 
 
 	// fts as thick-walled cylindrical tube
-	Eigen::Matrix3d inertia_fts(Eigen::Matrix3d::Zero());
-	inertia_fts(0, 0) = inertia_fts(1, 1) = 1 / 12. * m_fts * (3 * (0.04445 * 0.04445 + 0.015 * 0.015) + 0.031 * 0.031);
-	inertia_fts(2, 2) = 0.5 * m_fts * (0.04445 * 0.04445 + 0.015 * 0.015);
+	Eigen::Matrix3d inertia_fts_top(Eigen::Matrix3d::Zero());
+	inertia_fts_top(0, 0) = inertia_fts_top(1, 1) = 1 / 12. * m_fts_top * (3 * (0.041 * 0.041 + 0.015 * 0.015) + 0.0184 * 0.0184);
+	inertia_fts_top(2, 2) = 0.5 * m_fts_top * (0.041 * 0.041 + 0.015 * 0.015);
 
-	auto a_tilde_fts = a_tilde(c_fts - c);
-	const Eigen::Matrix3d inertia_fts_center_of_mass =
-		inertia_fts + m_fts * a_tilde_fts.transpose() * a_tilde_fts;
+	auto a_tilde_fts_top = a_tilde(c_fts_top - c);
+	const Eigen::Matrix3d inertia_fts_top_center_of_mass =
+		inertia_fts_top + m_fts_top * a_tilde_fts_top.transpose() * a_tilde_fts_top;
+
+
+	// fts plate as cylinder
+	Eigen::Matrix3d inertia_fts_plate(Eigen::Matrix3d::Zero());
+	inertia_fts_plate(0, 0) = inertia_fts_plate(1, 1) = 1. / 12. * m_fts_plate * (3 * 0.041 * 0.041 + 0.0066 * 0.0066);
+	inertia_fts_plate(2, 2) = 0.5 * m_fts_plate * 0.041 * 0.041;
+
+	auto a_tilde_fts_plate = a_tilde(c_fts_plate - c);
+	const Eigen::Matrix3d inertia_fts_plate_center_of_mass =
+		inertia_fts_plate + m_fts_plate * a_tilde_fts_plate.transpose() * a_tilde_fts_plate;
 
 
 	// print2 as cylinder
 	Eigen::Matrix3d inertia_print2(Eigen::Matrix3d::Zero());
-	inertia_print2(0, 0) = inertia_print2(1, 1) = 1 / 12. * m_print2 * (3 * 0.0315 * 0.0315 + 0.02 * 0.02);
-	inertia_print2(2, 2) = 0.5 * m_print2 * (0.0315 * 0.0315);
+	inertia_print2(0, 0) = inertia_print2(1, 1) = 1. / 12. * m_print2 * (3 * 0.041 * 0.041 + 0.025 * 0.025);
+	inertia_print2(2, 2) = 0.5 * m_print2 * (0.041 * 0.041);
 
 	auto a_tilde_print2 = a_tilde(c_print2 - c);
 	const Eigen::Matrix3d inertia_print2_center_of_mass =
@@ -358,53 +368,121 @@ Eigen::Matrix3d franka_proxy_util::tool_inertia()
 
 	inertia_gripper =
 		Eigen::Matrix3d(Eigen::AngleAxisd(
-			135. / 180. * std::numbers::pi, Eigen::Vector3d(0, 0, 1))).transpose()
+			std::numbers::pi, Eigen::Vector3d(0, 0, -1))).transpose()
 		* inertia_gripper
 		* Eigen::Matrix3d(Eigen::AngleAxisd(
-			135. / 180. * std::numbers::pi, Eigen::Vector3d(0, 0, 1)));
+			std::numbers::pi, Eigen::Vector3d(0, 0, -1)));
 
 	auto a_tilde_gripper = a_tilde(c_gripper - c);
 	const Eigen::Matrix3d inertia_gripper_center_of_mass =
 		inertia_gripper + m_gripper * a_tilde_gripper.transpose() * a_tilde_gripper;
 
 
-	// camera as solid cuboid (10 x 3 x 3)
-	Eigen::Matrix3d inertia_camera(Eigen::Matrix3d::Zero());
-	inertia_camera(0, 0) = 1 / 12. * m_camera * (0.1 * 0.1 + 0.03 * 0.03);
-	inertia_camera(1, 1) = 1 / 12. * m_camera * (0.03 * 0.03 + 0.03 * 0.03);
-	inertia_camera(2, 2) = 1 / 12. * m_camera * (0.03 * 0.03 + 0.1 * 0.1);
-
-	inertia_camera =
-		Eigen::Matrix3d(Eigen::AngleAxisd(
-			135. / 180. * std::numbers::pi, Eigen::Vector3d(0, 0, 1))).transpose()
-		* inertia_camera
-		* Eigen::Matrix3d(Eigen::AngleAxisd(
-			135. / 180. * std::numbers::pi, Eigen::Vector3d(0, 0, 1)));
-
-	auto a_tilde_camera = a_tilde(c_camera - c);
-	const Eigen::Matrix3d inertia_camera_center_of_mass =
-		inertia_camera + m_camera * a_tilde_camera.transpose() * a_tilde_camera;
-
-
 	return inertia_print1_center_of_mass
-		+ inertia_fts_center_of_mass
+		+ inertia_fts_top_center_of_mass
+		+ inertia_fts_plate_center_of_mass
 		+ inertia_print2_center_of_mass
-		+ inertia_gripper_center_of_mass
-		+ inertia_camera_center_of_mass;
+		+ inertia_gripper_center_of_mass;
+}
+
+
+double franka_proxy_util::tool_mass_from_fts()
+{
+	constexpr double
+		m_fts = 0.151,		// what fts measures of "itself"
+		m_print2 = 0.069,	// print + all screws
+		m_gripper = 0.73;	// from franka docs
+
+	return m_fts + m_print2 + m_gripper;
+}
+
+
+Eigen::Vector3d franka_proxy_util::tool_center_of_mass_from_fts()
+{
+	constexpr double
+		m_fts = 0.151,		// what fts measures of "itself"
+		m_print2 = 0.069,	// print + all screws
+		m_gripper = 0.73;	// from franka docs
+
+	const Eigen::Vector3d
+		c_fts(0, 0, -0.0033),
+		c_print2(0, 0, 0.011),	// a bit shifted up because of the screws
+		c_gripper(0.007, 0.007, 0.055);
+
+	return (m_fts * c_fts + m_print2 * c_print2 + m_gripper * c_gripper) / tool_mass_from_fts();
+}
+
+
+Eigen::Matrix3d franka_proxy_util::tool_inertia_from_fts()
+{
+	constexpr double
+		m_fts = 0.151,		// what fts measures of "itself"
+		m_print2 = 0.069,	// print + all screws
+		m_gripper = 0.73;	// from franka docs
+
+	const Eigen::Vector3d
+		c_fts(0, 0, -0.0033),
+		c_print2(0, 0, 0.011),	// a bit shifted up because of the screws
+		c_gripper(0.007, 0.007, 0.055);
+
+	const double m = tool_mass_from_fts();
+	const Eigen::Vector3d c(tool_center_of_mass_from_fts());
+
+
+	// fts plate as cylinder
+	Eigen::Matrix3d inertia_fts(Eigen::Matrix3d::Zero());
+	inertia_fts(0, 0) = inertia_fts(1, 1) = 1. / 12. * m_fts * (3 * 0.041 * 0.041 + 0.0066 * 0.0066);
+	inertia_fts(2, 2) = 0.5 * m_fts * 0.041 * 0.041;
+
+	auto a_tilde_fts = a_tilde(c_fts - c);
+	const Eigen::Matrix3d inertia_fts_center_of_mass =
+		inertia_fts + m_fts * a_tilde_fts.transpose() * a_tilde_fts;
+
+
+	// print2 as cylinder
+	Eigen::Matrix3d inertia_print2(Eigen::Matrix3d::Zero());
+	inertia_print2(0, 0) = inertia_print2(1, 1) = 1. / 12. * m_print2 * (3 * 0.041 * 0.041 + 0.025 * 0.025);
+	inertia_print2(2, 2) = 0.5 * m_print2 * (0.041 * 0.041);
+
+	auto a_tilde_print2 = a_tilde(c_print2 - c);
+	const Eigen::Matrix3d inertia_print2_center_of_mass =
+		inertia_print2 + m_print2 * a_tilde_print2.transpose() * a_tilde_print2;
+
+
+	// gripper with rotation correction
+	Eigen::Matrix3d inertia_gripper(Eigen::Matrix3d::Zero());
+	inertia_gripper(0, 0) = 0.0025;
+	inertia_gripper(1, 1) = 0.001;
+	inertia_gripper(2, 2) = 0.0017;
+
+	inertia_gripper =
+		Eigen::Matrix3d(Eigen::AngleAxisd(
+			135. / 180. * std::numbers::pi, Eigen::Vector3d(0, 0, -1))).transpose()
+		* inertia_gripper
+		* Eigen::Matrix3d(Eigen::AngleAxisd(
+			135. / 180. * std::numbers::pi, Eigen::Vector3d(0, 0, -1)));
+
+	auto a_tilde_gripper = a_tilde(c_gripper - c);
+	const Eigen::Matrix3d inertia_gripper_center_of_mass =
+		inertia_gripper + m_gripper * a_tilde_gripper.transpose() * a_tilde_gripper;
+
+
+	return inertia_fts_center_of_mass
+		+ inertia_print2_center_of_mass
+		+ inertia_gripper_center_of_mass;
 }
 
 
 Eigen::Matrix3d franka_proxy_util::a_tilde(const Eigen::Vector3d& a)
 {
-	Eigen::Matrix3d a_tilde(Eigen::Matrix3d::Zero());
-
-	a_tilde(1, 0) = a(2);
-	a_tilde(2, 0) = -a(1);
-	a_tilde(0, 1) = -a(2);
-	a_tilde(2, 1) = a(0);
-	a_tilde(0, 2) = a(1);
-	a_tilde(1, 2) = -a(0);
-
+	Eigen::Matrix3d a_tilde;
+	a_tilde << 0, -a.z(), a.y(),
+		a.z(), 0, -a.x(),
+		-a.y(), a.x(), 0;
 	return a_tilde;
 }
+
+
+
+
 } /* namespace franka_proxy */
