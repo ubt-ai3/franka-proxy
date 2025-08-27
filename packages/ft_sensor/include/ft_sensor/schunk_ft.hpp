@@ -22,7 +22,7 @@ public:
 		const Eigen::Affine3f& kms_T_flange,
 		const Eigen::Affine3f& EE_T_kms,
 		const Eigen::Vector<double, 6>& bias,
-		const Eigen::Vector3d& load_mass);
+		double load_mass);
 
 	schunk_ft_sensor(
 		const Eigen::Affine3f& kms_T_flange,
@@ -89,7 +89,7 @@ private:
 	}();
 
 	Eigen::Vector<double, 6> bias_from_config(const std::string& config_file) const;
-	Eigen::Vector3d load_mass_from_config(const std::string& config_file) const;
+	double load_mass_from_config(const std::string& config_file) const;
 };
 } /* namespace franka_proxy */
 

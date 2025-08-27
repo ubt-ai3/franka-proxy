@@ -19,7 +19,7 @@ schunk_ft_sensor::schunk_ft_sensor(
 	const Eigen::Affine3f& kms_T_flange,
 	const Eigen::Affine3f& EE_T_kms,
 	const Eigen::Vector<double, 6>& bias,
-	const Eigen::Vector3d& load_mass)
+	double load_mass)
 	: ft_sensor(kms_T_flange, EE_T_kms, bias, load_mass),
 	  socket_(io_service_),
 	  receiver_endpoint_(asio::ip::make_address(ip_), port_)
@@ -176,15 +176,10 @@ Eigen::Vector<double, 6> schunk_ft_sensor::bias_from_config(const std::string& c
 	return bias;
 }
 
-Eigen::Vector3d schunk_ft_sensor::load_mass_from_config(const std::string& config_file) const
+double schunk_ft_sensor::load_mass_from_config(const std::string& config_file) const
 {
 	std::ifstream in_stream(config_file);
 	nlohmann::json config = nlohmann::json::parse(in_stream);
-	Eigen::Vector3d load_mass;
-
-	for (int i = 0; i < load_mass.size(); i++)
-		load_mass[i] = config["load_mass"].at(i);
-
-	return load_mass;
+	return config["load_mass"].get<double>();
 }
 } /* namespace franka_proxy */

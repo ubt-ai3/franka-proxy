@@ -41,7 +41,7 @@ namespace franka_proxy
 			sensor_(placeholder_, placeholder_),
 			logger_(log_file_path.value_or("none"), 0, 1, 1, 1, 3)
 		{
-			sensor_.set_load_mass(no_mass_);
+			sensor_.set_load_mass(0.);
 			init_ple_motion_generator(robot, state_lock, robot_state);
 
 			if (logging_) {

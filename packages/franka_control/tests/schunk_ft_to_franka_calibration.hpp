@@ -22,10 +22,9 @@ public:
 
 	// calculates and sets the load_mass of the kms used by franka
 	// use only after bias of the kms was set
-	// @return the current weight force of the load of the robot at the end effector in world coordinates
-	// e.g. (0.246864, -0.209424, -8.24472)
+	// @return the current weight of the load of the robot at the end effector in kg
 	// reads and writes from/to config_file if exists @TODO this is not really the intended behaviour
-	static Eigen::Vector3d calibrate_load(
+	static double calibrate_load(
 		franka_control::franka_controller_remote& franka,
 		double record_time_per_pose_seconds = 2.0,
 		double wait_time_seconds = 2.0,

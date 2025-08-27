@@ -28,28 +28,22 @@ franka_control::wrench schunk_ft_sensor_to_franka_calibration::calibrate_bias(
 		std::cerr << "Could not read fts config file: " << config_file
 			<< " with " << e.what() << "\n";
 	}
+
 	franka.set_fts_bias({0, 0, 0, 0, 0, 0});
 	std::array<Eigen::Affine3d, 24> poses = calibration_poses_bias();
 
 	//calculate the avg forces/torques at rest for each pose to allow for even weighting
-	std::array<std::array<double, 6>, 24> ft_avgs;
-	for (auto& ft_avg : ft_avgs)
-		ft_avg = {0, 0, 0, 0, 0, 0};
-
-	franka.start_recording();
-	std::this_thread::sleep_for(std::chrono::duration<double>(wait_time_seconds));
-	auto prev_joint_config = franka.stop_recording().first.back();
+	std::array<std::array<double, 6>, 24> ft_avgs{ {0.,0.,0.,0.,0.,0.} };
+	franka_control::robot_config_7dof prev_joint_config = franka.current_config();
 
 	for (int pose_idx = 0; pose_idx < ft_avgs.size(); pose_idx++)
 	{
-		std::cout << "calibrate_bias progress: " << pose_idx << " / " << ft_avgs.size() << '\n';
+		std::cout << "Progress calibrate_bias: " << pose_idx + 1 << " / " << ft_avgs.size() << '\n';
 
-		franka_control::robot_config_7dof q{};
-		// get the closest config matching the pose
-		auto ik_solution =
+		franka_control::robot_config_7dof q =
 			franka_proxy::franka_proxy_util::ik_fast_closest(poses[pose_idx], prev_joint_config);
-		Eigen::VectorXd::Map(q.data(), 7) = ik_solution;
 
+		// Try moving to q until reached.
 		bool move_finished = false;
 		while (!move_finished)
 		{
@@ -67,10 +61,8 @@ franka_control::wrench schunk_ft_sensor_to_franka_calibration::calibrate_bias(
 
 		std::this_thread::sleep_for(std::chrono::duration<double>(wait_time_seconds));
 		franka.start_recording();
-
 		std::this_thread::sleep_for(std::chrono::duration<double>(record_time_per_pose_seconds));
 		auto [joint_record, force_record] = franka.stop_recording();
-
 
 		for (auto& record_idx : force_record)
 			for (int ft_idx = 0; ft_idx < record_idx.size(); ft_idx++)
@@ -80,29 +72,30 @@ franka_control::wrench schunk_ft_sensor_to_franka_calibration::calibrate_bias(
 			ft_avgs[pose_idx][ft_idx] /= static_cast<double>(force_record.size());
 
 
-		prev_joint_config = Eigen::Matrix<double, 7, 1>(joint_record.back().data());
+		prev_joint_config = franka.current_config();
 	}
 
-	franka_control::wrench biases = {0, 0, 0, 0, 0, 0};
+	franka_control::wrench bias = {0, 0, 0, 0, 0, 0};
 	for (auto& ft_avg : ft_avgs)
 		for (int ft_idx = 0; ft_idx < ft_avg.size(); ft_idx++)
-			biases[ft_idx] += ft_avg[ft_idx];
+			bias[ft_idx] += ft_avg[ft_idx];
+	for (int ft_idx = 0; ft_idx < bias.size(); ft_idx++)
+		bias[ft_idx] = bias[ft_idx] / ft_avgs.size();
 
-	for (int ft_idx = 0; ft_idx < biases.size(); ft_idx++)
-	{
-		biases[ft_idx] = biases[ft_idx] / ft_avgs.size();
-		config_json["bias"].at(ft_idx) = biases[ft_idx];
-	}
+	std::cout << "Calibrated bias: " << bias.transpose() << '\n';
+
+	std::array<double, 6> biases_array;
+	Eigen::Vector<double, 6>::Map(biases_array.data()) = bias;
+	config_json["bias"] = biases_array;
 	std::ofstream out_stream("./current_fts_config.json");
 	out_stream << std::setw(4) << config_json << '\n';
-	franka.set_fts_bias(biases);
 
-	std::cout << "calibrated bias: " << biases.transpose() << '\n';
-	return biases;
+	franka.set_fts_bias(bias);
+	return bias;
 }
 
 
-Eigen::Vector3d schunk_ft_sensor_to_franka_calibration::calibrate_load(
+double schunk_ft_sensor_to_franka_calibration::calibrate_load(
 	franka_control::franka_controller_remote& franka,
 	double record_time_per_pose_seconds,
 	double wait_time_seconds,
@@ -123,29 +116,18 @@ Eigen::Vector3d schunk_ft_sensor_to_franka_calibration::calibrate_load(
 	}
 
 	std::array<Eigen::Affine3d, 5> poses = calibration_poses_load();
+	std::array<Eigen::Vector3d, 5> force_world_avgs{ Eigen::Vector3d{0., 0., 0.} };
+	franka_control::robot_config_7dof prev_joint_config = franka.current_config();
 
-	std::array<Eigen::Vector3d, 5> force_world_avgs;
-	for (auto& force_world_avg : force_world_avgs)
+	for (int pose_idx = 0; pose_idx < poses.size(); pose_idx++)
 	{
-		force_world_avg = {0, 0, 0};
-	}
-
-	franka.start_recording();
-	std::this_thread::sleep_for(std::chrono::duration<double>(wait_time_seconds));
-	auto prev_joint_config = franka.stop_recording().first.back();
-
-	for (int pose_idx = 0; pose_idx < force_world_avgs.size(); pose_idx++)
-	{
-		std::cout << "calibrate_load progress: " << pose_idx << " / "
+		std::cout << "Progress calibrate_load: " << pose_idx + 1 << " / "
 			<< force_world_avgs.size() << '\n';
 
-		franka_control::robot_config_7dof q{};
-		// get the closest config matching the pose
-		auto ik_solution =
+		franka_control::robot_config_7dof q = 
 			franka_proxy::franka_proxy_util::ik_fast_closest(poses[pose_idx], prev_joint_config);
-		Eigen::VectorXd::Map(q.data(), 7) = ik_solution;
 
-
+		// Try moving to q until reached.
 		bool move_finished = false;
 		while (!move_finished)
 		{
@@ -156,7 +138,7 @@ Eigen::Vector3d schunk_ft_sensor_to_franka_calibration::calibrate_load(
 			}
 			catch (const std::exception&)
 			{
-				std::this_thread::sleep_for(std::chrono::milliseconds(100));
+				std::this_thread::sleep_for(std::chrono::milliseconds(10));
 				franka.automatic_error_recovery();
 			}
 		}
@@ -164,13 +146,12 @@ Eigen::Vector3d schunk_ft_sensor_to_franka_calibration::calibrate_load(
 
 		std::this_thread::sleep_for(std::chrono::duration<double>(wait_time_seconds));
 		franka.start_recording();
-
 		std::this_thread::sleep_for(std::chrono::duration<double>(record_time_per_pose_seconds));
 		auto [joint_record, force_record] = franka.stop_recording();
 
-		Eigen::Affine3d world_rot_kms(Eigen::Affine3d::Identity());
-		world_rot_kms *= (poses[pose_idx].rotation());
-		world_rot_kms.rotate(Eigen::AngleAxisd(-std::numbers::pi, Eigen::Vector3d::UnitZ()));
+		//Eigen::Affine3d world_rot_kms(Eigen::Affine3d::Identity());
+		//world_rot_kms *= (poses[pose_idx].rotation());
+		//world_rot_kms.rotate(Eigen::AngleAxisd(-std::numbers::pi, Eigen::Vector3d::UnitZ()));
 
 		for (auto& record_idx : force_record)
 		{
@@ -178,34 +159,29 @@ Eigen::Vector3d schunk_ft_sensor_to_franka_calibration::calibrate_load(
 			force_kms << record_idx[0],
 				record_idx[1],
 				record_idx[2];
-			force_world_avgs[pose_idx] += world_rot_kms * force_kms;
+			force_world_avgs[pose_idx] += /*world_rot_kms * */force_kms;
 		}
-
 
 		for (int force_idx = 0; force_idx < force_world_avgs[0].size(); force_idx++)
 			force_world_avgs[pose_idx][force_idx] /= static_cast<double>(force_record.size());
 
-		prev_joint_config = Eigen::Matrix<double, 7, 1>(joint_record.back().data());
+
+		prev_joint_config = franka.current_config();
 	}
 
-	Eigen::Vector3d load;
-	load << 0, 0, 0;
+	double load_mass = 0.;
 	for (const auto& force_world_avg : force_world_avgs)
-		load += force_world_avg;
+		load_mass += force_world_avg.norm() / 9.81;
+	load_mass /= poses.size();
 
-	load = load / force_world_avgs.size();
-
-	config_json["load_mass"].clear();
-	for (double& value : load)
-		config_json["load_mass"].push_back(value);
-
+	config_json["load_mass"] = load_mass;
 	std::ofstream out_stream("./current_fts_config.json");
 	out_stream << std::setw(4) << config_json << '\n';
 
-	franka.set_fts_load_mass(load);
-	std::cout << "calibrated load: " << load.transpose() << '\n';
+	franka.set_fts_load_mass(load_mass);
+	std::cout << "Calibrated load: " << load_mass << '\n';
 
-	return load;
+	return load_mass;
 }
 
 

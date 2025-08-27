@@ -559,10 +559,10 @@ void franka_hardware_controller::set_bias(const std::array<double, 6>& bias)
 }
 
 
-void franka_hardware_controller::set_load_mass(const std::array<double, 3>& load_mass)
+void franka_hardware_controller::set_load_mass(double load_mass)
 {
 	if (ft_sensor_)
-		ft_sensor_->set_load_mass(Eigen::Vector3d(load_mass.data()));
+		ft_sensor_->set_load_mass(load_mass);
 	else
 		throw ft_sensor_connection_exception();
 }

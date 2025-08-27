@@ -524,7 +524,7 @@ struct command_set_fts_load_mass
 	using response_type = command_generic_response;
 	static constexpr char type[] = "set.fts_load_mass";
 
-	std::array<double, 3> load_mass;
+	double load_mass;
 };
 
 void to_json(nlohmann::json& json, const command_set_fts_load_mass& object);

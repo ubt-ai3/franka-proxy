@@ -235,7 +235,7 @@ public:
 	*
 	* load_mass: force in world coordinates produced by load mass
 	*/
-	void set_fts_load_mass(const std::array<double, 3>& load_mass);
+	void set_fts_load_mass(double load_mass);
 
 
 	/**

@@ -79,7 +79,7 @@ public:
 
 
 	void set_fts_bias(const wrench& bias);
-	void set_fts_load_mass(const Eigen::Vector3d& load_mass);
+	void set_fts_load_mass(double load_mass);
 
 	void set_guiding_mode(
 		bool x, bool y, bool z,

@@ -79,7 +79,7 @@ public:
 	void set_bias(const std::array<double, 6>& bias);
 
 	// @throws ft_sensor_connection_exception
-	void set_load_mass(const std::array<double, 3>& load_mass);
+	void set_load_mass(double load_mass);
 
 	void set_guiding_mode(const std::array<bool, 6>& guiding_mode, bool elbow);
 

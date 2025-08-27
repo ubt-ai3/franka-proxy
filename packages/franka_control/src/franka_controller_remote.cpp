@@ -245,9 +245,9 @@ void franka_controller_remote::set_fts_bias(
 
 
 void franka_controller_remote::set_fts_load_mass(
-	const Eigen::Vector3d& load_mass)
+	double load_mass)
 {
-	controller_->set_fts_load_mass({load_mass[0], load_mass[1], load_mass[2]});
+	controller_->set_fts_load_mass(load_mass);
 }
 
 

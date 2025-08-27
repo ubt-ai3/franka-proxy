@@ -53,7 +53,7 @@ public:
 		return bias_;
 	}
 
-	Eigen::Vector3d load_mass() const
+	double load_mass() const
 	{
 		return load_mass_;
 	}
@@ -63,7 +63,7 @@ public:
 		bias_ = bias;
 	}
 
-	void set_load_mass(const Eigen::Vector3d& load_mass)
+	void set_load_mass(double load_mass)
 	{
 		load_mass_ = load_mass;
 	}
@@ -73,12 +73,12 @@ protected:
 		Eigen::Affine3f transform,
 		Eigen::Affine3f affine3_f,
 		Eigen::Vector<double, 6> bias,
-		Eigen::Vector3d load_mass)
+		double load_mass)
 		: current_ft_sensor_response_(),
 		  fts_T_flange_(std::move(transform)),
 		  ee_t_fts_(std::move(affine3_f)),
 		  bias_(std::move(bias)),
-		  load_mass_(std::move(load_mass))
+		  load_mass_(load_mass)
 	{
 	}
 
@@ -88,8 +88,7 @@ protected:
 	Eigen::Affine3f fts_T_flange_;
 	Eigen::Affine3f ee_t_fts_;
 	Eigen::Vector<double, 6> bias_; //[fx, fy, fz, tx, ty, tz]
-	Eigen::Vector3d load_mass_;
-	Eigen::Matrix3d load_inertia_;
+	double load_mass_;
 };
 
 

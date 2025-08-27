@@ -542,18 +542,13 @@ void from_json(const nlohmann::json& json, command_set_fts_bias& object)
 void to_json(nlohmann::json& json, const command_set_fts_load_mass& object)
 {
 	json["type"] = command_set_fts_load_mass::type;
-	json["load_mass"] = nlohmann::json::array();
-
-	for (double load_mass : object.load_mass)
-		json["load_mass"].push_back(load_mass);
+	json["load_mass"] = object.load_mass;
 }
 
 
 void from_json(const nlohmann::json& json, command_set_fts_load_mass& object)
 {
-	object.load_mass = std::array<double, 3>();
-	for (size_t i = 0; i < object.load_mass.size(); i++)
-		object.load_mass[i] = json.at("load_mass").at(i);
+	json.at("load_mass").get_to(object.load_mass);
 }
 
 

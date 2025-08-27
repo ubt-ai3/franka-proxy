@@ -238,8 +238,14 @@ void franka_controller_emulated_test()
 void franka_fts_calibration(const std::string& ip)
 {
 	franka_control::franka_controller_remote controller(ip);
+
+	auto speed_before = controller.speed_factor();
+	controller.set_speed_factor(0.3);
+	
 	schunk_ft_sensor_to_franka_calibration::calibrate_bias(controller);
 	schunk_ft_sensor_to_franka_calibration::calibrate_load(controller);
+	
+	controller.set_speed_factor(speed_before);
 }
 
 

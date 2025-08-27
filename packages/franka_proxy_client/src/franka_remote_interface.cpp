@@ -202,7 +202,7 @@ void franka_remote_interface::set_fts_bias(const std::array<double, 6>& bias)
 }
 
 
-void franka_remote_interface::set_fts_load_mass(const std::array<double, 3>& load_mass)
+void franka_remote_interface::set_fts_load_mass(double load_mass)
 {
 	send_command<command_set_fts_load_mass>(load_mass);
 }
