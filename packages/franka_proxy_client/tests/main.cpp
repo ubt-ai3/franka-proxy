@@ -97,7 +97,7 @@ double relative_config_error(
 
 int main(int argc, char* argv[])
 {
-	argparse::ArgumentParser program("franka_client_test");
+	argparse::ArgumentParser program("franka_client_test", FRANKA_PROXY_VERSION);
 	program.add_argument("-ip")
 	       .help("specify IP for franka-proxy remote connection")
 	       .default_value(std::string{"127.0.0.1"});

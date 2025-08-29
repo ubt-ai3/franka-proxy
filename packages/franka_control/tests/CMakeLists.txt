@@ -22,6 +22,10 @@ target_link_libraries(${EXE_NAME}
 
 target_compile_features(${EXE_NAME} PUBLIC cxx_std_20)
 
+target_compile_definitions(${EXE_NAME} 
+    PRIVATE
+        FRANKA_PROXY_VERSION="${PROJECT_VERSION}")
+
 install(
   TARGETS 
     ${EXE_NAME}

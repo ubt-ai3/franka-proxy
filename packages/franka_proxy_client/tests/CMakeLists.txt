@@ -3,8 +3,8 @@ set(EXE_NAME franka_proxy_client_test)
 add_executable(${EXE_NAME})
 
 target_sources(${EXE_NAME}
-  PRIVATE    
-    main.cpp
+    PRIVATE    
+        main.cpp
 )
 
 target_link_libraries(${EXE_NAME}
@@ -18,6 +18,10 @@ target_link_libraries(${EXE_NAME}
 )
 
 target_compile_features(${EXE_NAME} PUBLIC cxx_std_20)
+
+target_compile_definitions(${EXE_NAME} 
+    PRIVATE
+        FRANKA_PROXY_VERSION="${PROJECT_VERSION}")
 
 install(
   TARGETS 

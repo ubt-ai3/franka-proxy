@@ -1,6 +1,5 @@
 cmake_minimum_required(VERSION 3.20)
-project(franka-proxy
-        LANGUAGES CXX)
+project(franka-proxy VERSION 0.8.0 LANGUAGES CXX)
 
 include(GNUInstallDirs)
 

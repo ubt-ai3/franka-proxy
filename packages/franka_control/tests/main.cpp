@@ -51,7 +51,7 @@ void print_status(const franka_control::franka_controller& controller)
 
 int main(int argc, char* argv[])
 {
-	argparse::ArgumentParser program("franka_control_test");
+	argparse::ArgumentParser program("franka_control_test", FRANKA_PROXY_VERSION);
 
 	program.add_argument("-e", "--emulate")
 	       .help("execute the emulate controller test")
