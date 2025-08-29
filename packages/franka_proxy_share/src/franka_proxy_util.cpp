@@ -69,6 +69,20 @@ franka_proxy_util::robot_config_7dof franka_proxy_util::max_jerk_per_joint()
 }
 
 
+franka_proxy_util::robot_config_7dof franka_proxy_util::max_tau_per_joint()
+{
+	return { 87., 87., 87., 87., 12., 12., 12. }; // from datasheet
+}
+
+
+bool franka_proxy_util::is_tau_within_percentage_of_max_limit(
+	const robot_config_7dof& tau, 
+	double percentage)
+{
+	return (tau.array() < percentage * max_tau_per_joint().array()).all();
+}
+
+
 bool franka_proxy_util::is_reachable(
 	const robot_config_7dof& target)
 {

@@ -20,13 +20,15 @@
 #include <franka/robot.h>
 #include <franka/model.h>
 
+#include "franka_proxy_util.hpp"
+
 
 namespace franka_proxy
 {
 namespace detail
 {
-using Vector7d = Eigen::Matrix<double, 7, 1, Eigen::ColMajor>;
-using Vector7i = Eigen::Matrix<int, 7, 1, Eigen::ColMajor>;
+using Vector7d = Eigen::Matrix<double, 7, 1>;
+using Vector7i = Eigen::Matrix<int, 7, 1>;
 
 struct JointMovement
 {
@@ -64,8 +66,8 @@ public:
 	 * @param[in] speed_factor General speed factor in range [0, 1].
 	 * @param[in] q_goal Target joint positions.
 	 */
-	franka_joint_motion_generator
-		(double speed_factor,
+	franka_joint_motion_generator(
+		double speed_factor,
 		 const std::array<double, 7>& q_goal,
 		 std::mutex& current_state_lock,
 		 franka::RobotState& current_state,
@@ -81,19 +83,20 @@ public:
 	 *
 	 * @return Joint positions for use inside a control loop.
 	 */
-	franka::JointPositions operator()
-		(const franka::RobotState& robot_state,
+	franka::JointPositions operator()(
+		const franka::RobotState& robot_state,
 		 franka::Duration period);
 
 	/**
 	 * Returns each joints position and finish state
 	 */
-	[[nodiscard]] JointMovement calculateDesiredValues(double t) const;
+	[[nodiscard]] JointMovement calculate_desired_values(double t) const;
 
 private:
 
-	void calculateSynchronizedValues();
-	Vector7d calculateOffsetGoal(const std::array<double, 7>& q_goal,
+	void calculate_synchronized_values();
+	Vector7d calculateOffsetGoal(
+		const std::array<double, 7>& q_goal,
 								 const std::array<double, 16>& offset_position);
 
 	static double calculateQuadraticSolution(double a, double b, double c);
@@ -115,9 +118,9 @@ private:
 
 	double time_ = 0.0;
 
-	Vector7d dq_max_ = (Vector7d() << 2.0, 2.0, 2.0, 2.0, 2.5, 2.5, 2.5).finished();
-	Vector7d ddq_max_start_ = (Vector7d() << 5, 5, 5, 5, 5, 5, 5).finished();
-	Vector7d ddq_max_goal_ = (Vector7d() << 5, 5, 5, 5, 5, 5, 5).finished();
+	Vector7d dq_max_ = 0.5 * franka_proxy_util::max_speed_per_joint();
+	Vector7d ddq_max_start_ = 0.25 * franka_proxy_util::max_acc_per_joint();
+	Vector7d ddq_max_goal_ = 0.25 * franka_proxy_util::max_acc_per_joint();
 
 	std::mutex& current_state_lock_;
 	franka::RobotState& current_state_;

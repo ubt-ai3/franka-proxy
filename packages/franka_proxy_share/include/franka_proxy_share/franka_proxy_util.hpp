@@ -34,6 +34,10 @@ public:
 	static robot_config_7dof max_acc_per_joint();
 	static robot_config_7dof max_jerk_per_joint();
 
+	static robot_config_7dof max_tau_per_joint();
+	static bool is_tau_within_percentage_of_max_limit(
+		const robot_config_7dof& tau, 
+		double percentage = 0.05);
 
 	static bool is_reachable(const robot_config_7dof& target);
 

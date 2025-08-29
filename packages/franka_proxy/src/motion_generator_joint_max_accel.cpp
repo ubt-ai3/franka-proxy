@@ -55,6 +55,8 @@ franka_joint_motion_generator::franka_joint_motion_generator(
 	stop_motion_(stop_motion_flag),
 	stop_on_contact_(stop_on_contact)
 {
+	if (speed_factor > 1.0)
+
 	dq_max_ *= speed_factor;
 	ddq_max_start_ *= speed_factor;
 	ddq_max_goal_ *= speed_factor;
@@ -69,7 +71,7 @@ franka_joint_motion_generator::franka_joint_motion_generator(
 
 
 
-JointMovement franka_joint_motion_generator::calculateDesiredValues(double t) const
+JointMovement franka_joint_motion_generator::calculate_desired_values(double t) const
 {
 	JointMovement out;
 
@@ -122,7 +124,7 @@ JointMovement franka_joint_motion_generator::calculateDesiredValues(double t) co
 	return out;
 }
 
-void franka_joint_motion_generator::calculateSynchronizedValues()
+void franka_joint_motion_generator::calculate_synchronized_values()
 {
 	Vector7i sign_delta_q;
 	for (int i = 0; i < 7; i++)
@@ -182,7 +184,7 @@ void franka_joint_motion_generator::calculateSynchronizedValues()
 
 	/*
 	 
-void franka_joint_motion_generator::calculateSynchronizedValues()
+void franka_joint_motion_generator::calculate_synchronized_values()
 {
 	Vector7i sign_delta_q;
 	for (int i = 0; i < 7; i++)
@@ -303,10 +305,10 @@ franka::JointPositions franka_joint_motion_generator::operator()
 
 		q_start_ = Vector7d(robot_state.q_d.data());
 		delta_q_ = q_goal_ - q_start_;
-		calculateSynchronizedValues();
+		calculate_synchronized_values();
 	}
 	
-	const auto desiredValues = calculateDesiredValues(time_);
+	const auto desiredValues = calculate_desired_values(time_);
 
 	std::array<double, 7> joint_positions{};
 	Eigen::VectorXd::Map(joint_positions.data(), 7) = (q_start_ + desiredValues.delta_q_d);

@@ -546,7 +546,7 @@ void franka_hardware_controller::stop_movement()
 void franka_hardware_controller::set_speed_factor(double speed_factor)
 {
 	std::lock_guard state_guard(speed_factor_lock_);
-	speed_factor_ = speed_factor;
+	speed_factor_ = std::max(0.001, std::min(1.0, speed_factor));
 }
 
 
