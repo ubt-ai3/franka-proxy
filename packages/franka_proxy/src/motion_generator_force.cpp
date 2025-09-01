@@ -11,6 +11,8 @@
 
 #include <franka/model.h>
 
+#include <franka_proxy_share/franka_proxy_util.hpp>
+
 
 namespace franka_proxy::detail
 {
@@ -81,10 +83,13 @@ franka::Torques force_motion_generator::callback(
 	for (int i = 0; i < 7; i++)
 		tau_J_d[i] = K_P_[i] * (robot_state.q_d[i] - robot_state.q[i]) + K_D_[i] * (dq_d_[i] - compute_dq_filtered(i));
 
+	tau_command = (tau_command + tau_J_d) * 0.5;
+	if (!franka_proxy_util::is_tau_within_percentage_of_max_limit(tau_command, 0.2))
+		throw std::runtime_error("Motion generator callback: Unreasonable tau at time " + std::to_string(time_));
 
 	//The final output vector
 	std::array<double, 7> tau_d_array{};
-	Eigen::VectorXd::Map(tau_d_array.data(), 7) = (tau_command + tau_J_d) * 0.5;
+	Eigen::VectorXd::Map(tau_d_array.data(), 7) = tau_command;
 
 	resulting_forces_z_.push_back(robot_state.O_F_ext_hat_K[2]);
 	desired_forces_.push_back(desired_mass * -9.81);

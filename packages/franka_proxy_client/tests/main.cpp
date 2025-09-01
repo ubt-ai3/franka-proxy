@@ -626,10 +626,11 @@ void force_test(
 	robot.set_speed_factor(0.2);
 	execute_retry([&] { robot.move_to(starting_pos); }, robot);
 	robot.close_gripper();
-	robot.set_speed_factor(0.05);
+	robot.set_speed_factor(0.01);
 	try
 	{
-		if (!robot.move_to_until_contact(target_contact_pos))
+		bool contact = !robot.move_to_until_contact(target_contact_pos);
+		if (!contact)
 		{
 			std::cout << "Aborting Force Test: Robot not able to make contact.\n";
 			return;
@@ -647,7 +648,7 @@ void force_test(
 	// Twitching sometimes still occurs, but robot doesn't move as much (most of the time).
 	const auto contact_config = robot.current_config();
 	franka_proxy::robot_config_7dof relax_config{
-		contact_config[0], (contact_config[1] - 0.01), contact_config[2], contact_config[3],
+		contact_config[0], contact_config[1], contact_config[2], contact_config[3],
 		contact_config[4], (contact_config[5] - 0.01), contact_config[6]
 	};
 	execute_retry([&] { robot.move_to(relax_config); }, robot);

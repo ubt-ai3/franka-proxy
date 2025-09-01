@@ -307,14 +307,11 @@ franka::Torques seq_cart_vel_tau_generator::step(
 		//ft_existing_log_.emplace_back(ft_existing);
 	}
 
-
 	if (contact_change_motion)
 		time_ -= 0.001; // period.toSec(); // stay at the same step  todo better doc/ hack atm
 
-
 	if (!franka_proxy_util::is_tau_within_percentage_of_max_limit(tau_d, 0.2))
 		throw std::runtime_error("Motion generator callback: Unreasonable tau at time " + std::to_string(time_));
-
 
 	std::array<double, 7> tau_d_array{};
 	Eigen::VectorXd::Map(tau_d_array.data(), 7) = tau_d;

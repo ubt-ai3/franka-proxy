@@ -504,11 +504,13 @@ bool franka_hardware_controller::move_to_until_contact(
 	}
 	catch (const detail::franka_joint_motion_generator::contact_stop_trigger&)
 	{
-		set_control_loop_running(false);
-		set_default_impedance_and_collision_parameters();
+		std::cout << "contact occured\n";
 
 		std::this_thread::sleep_for(std::chrono::milliseconds(100));
 		automatic_error_recovery();
+
+		set_control_loop_running(false);
+		set_default_impedance_and_collision_parameters();
 
 		return false;
 	}
@@ -547,6 +549,7 @@ void franka_hardware_controller::set_speed_factor(double speed_factor)
 {
 	std::lock_guard state_guard(speed_factor_lock_);
 	speed_factor_ = std::max(0.001, std::min(1.0, speed_factor));
+	std::cout << "franka_hardware_controller::set_speed_factor(double speed_factor): " << speed_factor_ << "\n";
 }
 
 
