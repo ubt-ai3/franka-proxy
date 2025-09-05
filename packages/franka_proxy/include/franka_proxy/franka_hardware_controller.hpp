@@ -51,10 +51,11 @@ public:
 		const std::string& controller_ip,
 		bool enforce_realtime = false);
 
-
 	~franka_hardware_controller() noexcept;
 
-
+	/**
+	 * Calls error recovery of FCI.
+	 */
 	void automatic_error_recovery();
 
 	/**
@@ -63,7 +64,6 @@ public:
 	 * after automatic error recovery
 	 */
 	void move_to(const robot_config_7dof& target);
-
 
 	/**
 	 * Moves the Panda robot to given target; In case
