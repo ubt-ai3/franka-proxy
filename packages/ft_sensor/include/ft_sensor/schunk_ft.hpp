@@ -27,11 +27,11 @@ public:
 	schunk_ft_sensor(
 		const Eigen::Affine3f& kms_T_flange,
 		const Eigen::Affine3f& EE_T_kms,
-		const std::string& = "../franka_proxy_share/assets/fts-config.json");
+		const std::string& = "./assets/fts-config.json");
 
 	~schunk_ft_sensor() override;
 
-	void update_calibration(const std::string& config_file = "../franka_proxy_share/assets/fts-config.json");
+	void update_calibration(const std::string& config_file = "./assets/fts-config.json");
 
 private:
 	void set_response_handler(const std::function<void(const ft_sensor_response&)>& functor);
@@ -41,7 +41,7 @@ private:
 
 	void setup_connection();
 
-	std::string ip_ = "192.168.2.1";
+	std::string ip_ = "192.168.2.1"; // hardcoded ip
 	unsigned short port_ = 49152; // port the net ft sensor always uses
 
 
