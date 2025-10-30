@@ -54,10 +54,6 @@ public:
 		double dt,
 		const Eigen::Matrix<double, 6, 1>& prev_twist);
 
-	// TODO not optimal this needs current velocity_ and acceleration_ to be correct
-	std::array<double, 6> compensate_wrench(
-		const ft_sensor_response& current_ft,
-		const Eigen::Matrix3d& inv_rot);
 private:
 	std::vector<std::array<double, 7>> joints_record_;
 	std::vector<std::array<double, 6>> fts_record_;
@@ -75,18 +71,9 @@ private:
 	Eigen::Matrix<double, 6, 1> velocity_;
 	Eigen::Matrix<double, 6, 1> acceleration_;
 
-	// TODO hard coded load parameters atm
-	double load_mass_;
-	Eigen::Vector3d tool_com_;
-	Eigen::Matrix3d tool_inertia_matrix_;
-	const Eigen::Vector3d grav_ = Eigen::Vector3d(0.0, 0.0, -9.81);
-
-	// Filtering state (initialize in constructor or where you init members)
 	Eigen::Matrix<double, 6, 1> twist_filt_ = Eigen::Matrix<double, 6, 1>::Zero();
 	Eigen::Matrix<double, 6, 1> twist_filt_prev_ = Eigen::Matrix<double, 6, 1>::Zero();
 	bool filt_initialized_ = false;
-
-	// Tunables (seconds). Typical starting values:
 	double tau_v_lin_ = 0.02; // ~8 Hz cutoff for linear velocity
 	double tau_v_ang_ = 0.05; // ~3 Hz cutoff for angular velocity (more smoothing)
 

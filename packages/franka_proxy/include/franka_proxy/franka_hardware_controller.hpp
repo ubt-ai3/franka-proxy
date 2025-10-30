@@ -19,6 +19,7 @@
 
 #include <franka/robot.h>
 #include <franka/gripper.h>
+#include <franka/model.h>
 #include <franka/vacuum_gripper.h>
 
 #include <ft_sensor/ft_sensor.hpp>
@@ -201,6 +202,8 @@ public:
 
 	ft_sensor_response fts_state() const;
 
+	const ft_sensor* get_fts_ptr() noexcept;
+
 private:
 	/**
 	 * Used to update the current robot state while no control loop is
@@ -267,6 +270,9 @@ private:
 	std::atomic_bool terminate_state_threads_;
 	std::thread robot_state_thread_;
 	std::thread gripper_state_thread_;
+
+public:
+	franka::Model model_;
 };
 }
 

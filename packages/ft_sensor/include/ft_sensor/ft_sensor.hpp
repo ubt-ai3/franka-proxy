@@ -22,6 +22,7 @@ class ft_sensor
 public:
 	virtual ~ft_sensor() = default;
 
+
 	ft_sensor_response read() const
 	{
 		ft_sensor_response result = read_raw();
@@ -32,41 +33,59 @@ public:
 		return result;
 	}
 
+
 	ft_sensor_response read_raw() const
 	{
 		std::lock_guard lock(current_ft_sensor_response_mutex_);
 		return current_ft_sensor_response_;
 	}
 
+
 	Eigen::Affine3f fts_t_flange() const
 	{
 		return fts_T_flange_;
 	}
+
 
 	Eigen::Affine3f ee_t_kms() const
 	{
 		return ee_t_fts_;
 	}
 
+
 	Eigen::Vector<double, 6> bias() const
 	{
 		return bias_;
 	}
+
 
 	double load_mass() const
 	{
 		return load_mass_;
 	}
 
+
 	void set_bias(const Eigen::Vector<double, 6>& bias)
 	{
 		bias_ = bias;
 	}
 
+
 	void set_load_mass(double load_mass)
 	{
 		load_mass_ = load_mass;
 	}
+
+
+	virtual std::array<double, 6> compensate_tool_wrench(
+		const ft_sensor_response& current_ft,
+		const Eigen::Matrix3d& inv_rot,
+		const Eigen::Matrix<double, 6, 1>& velocity,
+		const Eigen::Matrix<double, 6, 1>& acceleration) const = 0;
+
+	virtual std::array<double, 6> compensate_only_tool_mass(
+		const ft_sensor_response& current_ft,
+		const Eigen::Matrix3d& inv_rot) const = 0;
 
 protected:
 	ft_sensor(
@@ -81,6 +100,7 @@ protected:
 		  load_mass_(load_mass)
 	{
 	}
+
 
 	mutable std::mutex current_ft_sensor_response_mutex_;
 	ft_sensor_response current_ft_sensor_response_;

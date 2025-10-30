@@ -48,7 +48,8 @@ franka_hardware_controller::franka_hardware_controller(
 	  motion_recorder_(nullptr),
 	  control_loop_running_(false),
 	  robot_state_(robot_.readOnce()),
-	  terminate_state_threads_(false)
+	  terminate_state_threads_(false),
+      model_(robot_.loadModel())
 {
 	try
 	{
@@ -419,8 +420,14 @@ ft_sensor_response franka_hardware_controller::fts_state() const
 {
 	if (ft_sensor_)
 		return ft_sensor_->read();
-	else
-		return ft_sensor_response{};
+
+	return ft_sensor_response{};
+}
+
+
+const ft_sensor* franka_hardware_controller::get_fts_ptr() noexcept
+{
+	return ft_sensor_.get();
 }
 
 

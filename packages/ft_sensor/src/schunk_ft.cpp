@@ -12,6 +12,8 @@
 #include <asio/ip/tcp.hpp>
 #include <nlohmann/json.hpp>
 
+#include "franka_proxy_util.hpp"
+
 
 namespace franka_proxy
 {
@@ -24,14 +26,19 @@ schunk_ft_sensor::schunk_ft_sensor(
 	  socket_(io_service_),
 	  receiver_endpoint_(asio::ip::make_address(ip_), port_)
 {
+	load_mass_ = franka_proxy_util::tool_mass_from_fts();
+	tool_com_ = franka_proxy_util::tool_center_of_mass_from_fts();
+	tool_inertia_matrix_ = franka_proxy_util::tool_inertia_from_fts();
+
 	setup_connection();
 }
+
 
 schunk_ft_sensor::schunk_ft_sensor(
 	const Eigen::Affine3f& kms_T_flange,
 	const Eigen::Affine3f& EE_T_kms,
 	const std::string& config_file)
-	: ft_sensor(kms_T_flange, EE_T_kms, bias_from_config(config_file), load_mass_from_config(config_file)),
+	: ft_sensor(kms_T_flange, EE_T_kms, read_bias_from_config(config_file), read_load_mass_from_config(config_file)),
 	  socket_(io_service_),
 	  receiver_endpoint_(asio::ip::make_address(ip_), port_)
 {
@@ -61,17 +68,20 @@ schunk_ft_sensor::~schunk_ft_sensor()
 	}
 }
 
+
 void schunk_ft_sensor::update_calibration(const std::string& config_file)
 {
-	bias_ = bias_from_config(config_file);
-	load_mass_ = load_mass_from_config(config_file);
+	bias_ = read_bias_from_config(config_file);
+	load_mass_ = read_load_mass_from_config(config_file);
 }
+
 
 void schunk_ft_sensor::set_response_handler(const std::function<void(const ft_sensor_response&)>& functor)
 {
 	std::unique_lock<std::mutex> lock(functor_lock_);
 	handle_data_ = functor;
 }
+
 
 void schunk_ft_sensor::remove_response_handler()
 {
@@ -80,6 +90,7 @@ void schunk_ft_sensor::remove_response_handler()
 	{
 	}; //no-op
 }
+
 
 void schunk_ft_sensor::run()
 {
@@ -90,7 +101,7 @@ void schunk_ft_sensor::run()
 
 		while (!stopped_)
 		{
-			size_t len = socket_.receive_from(
+			socket_.receive_from(
 				asio::buffer(recv_buf), sender_endpoint);
 
 			ft_sensor_response resp{};
@@ -114,9 +125,10 @@ void schunk_ft_sensor::run()
 	catch (const std::exception& e)
 	{
 		std::cerr << "schunk_ft_sensor::run"
-		<< e.what() << '\n';
+			<< e.what() << '\n';
 	}
 }
+
 
 void schunk_ft_sensor::setup_connection()
 {
@@ -164,7 +176,8 @@ void schunk_ft_sensor::setup_connection()
 	worker_ = std::thread(&schunk_ft_sensor::run, this);
 }
 
-Eigen::Vector<double, 6> schunk_ft_sensor::bias_from_config(const std::string& config_file) const
+
+Eigen::Vector<double, 6> schunk_ft_sensor::read_bias_from_config(const std::string& config_file) const
 {
 	std::ifstream in_stream(config_file);
 	nlohmann::json config = nlohmann::json::parse(in_stream);
@@ -176,10 +189,82 @@ Eigen::Vector<double, 6> schunk_ft_sensor::bias_from_config(const std::string& c
 	return bias;
 }
 
-double schunk_ft_sensor::load_mass_from_config(const std::string& config_file) const
+
+double schunk_ft_sensor::read_load_mass_from_config(const std::string& config_file) const
 {
 	std::ifstream in_stream(config_file);
 	nlohmann::json config = nlohmann::json::parse(in_stream);
 	return config["load_mass"].get<double>();
+}
+
+
+std::array<double, 6> schunk_ft_sensor::compensate_tool_wrench(
+	const ft_sensor_response& current_ft,
+	const Eigen::Matrix3d& inv_rot,
+	const Eigen::Matrix<double, 6, 1>& velocity, 
+	const Eigen::Matrix<double, 6, 1>& acceleration) const
+{
+	std::array<double, 6> ft_measured = current_ft.data;
+	const Eigen::Matrix<double, 6, 1> ft_vec = Eigen::Map<const Eigen::Matrix<double, 6, 1>>(ft_measured.data());
+
+	const Eigen::Matrix3d R = inv_rot.transpose();
+	const Eigen::Vector3d d = R * tool_com_;
+
+	Eigen::Matrix3d I_world = R * tool_inertia_matrix_ * R.transpose();
+
+	const double m = tool_mass_;
+	const double d2 = d.squaredNorm();
+	const Eigen::Matrix3d parallel = m * (d2 * Eigen::Matrix3d::Identity() - d * d.transpose());
+	const Eigen::Matrix3d I_about_sensor = I_world + parallel;
+
+	const Eigen::Vector3d f_meas_world = R * ft_vec.head<3>();
+	const Eigen::Vector3d t_meas_world = R * ft_vec.tail<3>();
+
+	const Eigen::Vector3d a_world = acceleration.block<3, 1>(0, 0);
+	const Eigen::Vector3d omega_world = velocity.block<3, 1>(3, 0);
+	const Eigen::Vector3d alpha_world = acceleration.block<3, 1>(3, 0);
+
+	const Eigen::Vector3d a_c = a_world + alpha_world.cross(d) + omega_world.cross(omega_world.cross(d));
+
+	const Eigen::Vector3d f_inertial = m * a_c;
+	const Eigen::Vector3d tau_inertial = I_about_sensor * alpha_world
+		+ omega_world.cross(I_about_sensor * omega_world)
+		+ d.cross(m * a_c);
+
+	const Eigen::Vector3d f_sensor = inv_rot * (f_meas_world - f_inertial);
+	const Eigen::Vector3d t_sensor = inv_rot * (t_meas_world - tau_inertial);
+
+	return {
+		f_sensor.x(), f_sensor.y(), f_sensor.z(),
+		t_sensor.x(), t_sensor.y(), t_sensor.z()
+	};
+}
+
+
+std::array<double, 6> schunk_ft_sensor::compensate_only_tool_mass(
+	const ft_sensor_response& current_ft,
+	const Eigen::Matrix3d& inv_rot) const
+{
+	std::array<double, 6> ft_measured = current_ft.data;
+	const Eigen::Matrix<double, 6, 1> ft_vec =
+		Eigen::Map<const Eigen::Matrix<double, 6, 1>>(ft_measured.data());
+
+	const Eigen::Matrix3d R = inv_rot.transpose();
+	const Eigen::Vector3d d = R * tool_com_;
+
+	const Eigen::Vector3d f_meas_world = R * ft_vec.head<3>();
+	const Eigen::Vector3d t_meas_world = R * ft_vec.tail<3>();
+
+	const double m = tool_mass_;
+	const Eigen::Vector3d f_grav = m * grav_;
+	const Eigen::Vector3d tau_grav = d.cross(f_grav);
+
+	const Eigen::Vector3d f_sensor = inv_rot * (f_meas_world - f_grav);
+	const Eigen::Vector3d t_sensor = inv_rot * (t_meas_world - tau_grav);
+
+	return {
+		f_sensor.x(), f_sensor.y(), f_sensor.z(),
+		t_sensor.x(), t_sensor.y(), t_sensor.z()
+	};
 }
 } /* namespace franka_proxy */

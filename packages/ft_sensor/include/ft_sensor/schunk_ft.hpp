@@ -33,6 +33,16 @@ public:
 
 	void update_calibration(const std::string& config_file = "./assets/fts-config.json");
 
+	std::array<double, 6> compensate_tool_wrench(
+		const ft_sensor_response& current_ft,
+		const Eigen::Matrix3d& inv_rot,
+		const Eigen::Matrix<double, 6, 1>& velocity,
+		const Eigen::Matrix<double, 6, 1>& acceleration) const override;
+
+	std::array<double, 6> compensate_only_tool_mass(
+		const ft_sensor_response& current_ft,
+		const Eigen::Matrix3d& inv_rot) const override;
+
 private:
 	void set_response_handler(const std::function<void(const ft_sensor_response&)>& functor);
 	void remove_response_handler();
@@ -88,8 +98,14 @@ private:
 		return msg;
 	}();
 
-	Eigen::Vector<double, 6> bias_from_config(const std::string& config_file) const;
-	double load_mass_from_config(const std::string& config_file) const;
+	Eigen::Vector<double, 6> read_bias_from_config(const std::string& config_file) const;
+	double read_load_mass_from_config(const std::string& config_file) const;
+
+	// TODO hard coded load parameters atm
+	double tool_mass_;
+	Eigen::Vector3d tool_com_;
+	Eigen::Matrix3d tool_inertia_matrix_;
+	const Eigen::Vector3d grav_ = Eigen::Vector3d(0.0, 0.0, -9.81);
 };
 } /* namespace franka_proxy */
 
