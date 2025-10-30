@@ -310,7 +310,7 @@ franka::Torques seq_cart_vel_tau_generator::step(
 	if (contact_change_motion)
 		time_ -= 0.001; // period.toSec(); // stay at the same step  todo better doc/ hack atm
 
-	if (!franka_proxy_util::is_tau_within_percentage_of_max_limit(tau_d, 0.2))
+	if (!franka_proxy_util::is_tau_within_percentage_of_max_limit(tau_d, 0.3))
 		throw std::runtime_error("Motion generator callback: Unreasonable tau at time " + std::to_string(time_));
 
 	std::array<double, 7> tau_d_array{};
@@ -365,7 +365,6 @@ std::array<double, 16> seq_cart_vel_tau_generator::apply_pos_increment(
 {
 	std::array<double, 16> result{};
 
-	// increment * desired_pose in column-major format in world frame
 	for (int col = 0; col < 4; ++col)
 	{
 		for (int row = 0; row < 4; ++row)

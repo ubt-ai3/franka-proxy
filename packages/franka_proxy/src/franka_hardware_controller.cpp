@@ -719,7 +719,7 @@ void franka_hardware_controller::start_recording(std::optional<std::string> log_
 		std::lock_guard state_guard(robot_state_lock_);
 	}
 
-	motion_recorder_->start(std::move(log_file_path));
+	motion_recorder_->start(std::move("log_file_path.csv"));
 }
 
 
@@ -793,17 +793,9 @@ void franka_hardware_controller::move_sequence(
 void franka_hardware_controller::move_sequence(
 	const std::vector<std::array<double, 7>>& q_sequence, double f_z)
 {
-	// wrong implementation
-	//detail::force_motion_generator force_motion_generator(robot_, 0.5, 10.0);
-	//detail::sequence_joint_velocity_motion_generator joint_velocity_motion_generator(1., q_sequence, state_lock_, robot_state_, stop_motion_);
 
 	std::vector<std::array<double, 6>> f_sequence(q_sequence.size(), {0, 0, f_z, 0, 0, 0});
 	std::vector<std::array<double, 6>> selection_vector_sequence(q_sequence.size(), {1, 1, 0, 1, 1, 1});
-
-	//double f_x = -5.0;
-
-	//std::vector<std::array<double, 6>> f_sequence(q_sequence.size(), { f_x,0,f_z,0,0,0 });
-	//std::vector<std::array<double, 6>> selection_vector_sequence(q_sequence.size(), { 0,1,0,1,1,1 });
 
 	stop_motion_ = false;
 	detail::seq_cart_vel_tau_generator motion_generator(
@@ -817,18 +809,6 @@ void franka_hardware_controller::move_sequence(
 			// Lock the current_state_lock_ to wait for state_thread_ to finish.
 			std::lock_guard state_guard(robot_state_lock_);
 		}
-
-
-		// wrong implementation
-		//robot_.control(
-		//	[&](const franka::RobotState& robot_state,
-		//		franka::Duration period) -> franka::Torques
-		//	{
-		//		return force_motion_generator.callback(robot_state, period);
-		//	},
-		//	joint_velocity_motion_generator,
-		//	true,
-		//	100.);
 
 		robot_.control(
 			[&](const franka::RobotState& robot_state,
@@ -849,42 +829,6 @@ void franka_hardware_controller::move_sequence(
 	}
 
 	set_control_loop_running(false);
-
-	// todo work of Laurin Hecken
-	//void franka_hardware_controller::hybrid_control
-	//(csv_data & data, std::vector<Eigen::Vector3d> desired_positions,
-	//	std::vector<Eigen::Matrix<double, 6, 1>> desired_forces_, std::vector<Eigen::Quaterniond> desired_orientations,
-	//	std::array<std::array<double, 6>, 6> control_parameters)
-	//{
-	//initialize_parameters();
-
-	//try
-	//{
-	//	detail::hybrid_control_motion_generator fmg(robot_, desired_positions, desired_forces_, desired_orientations, control_parameters, data);
-	//	set_control_loop_running(true);
-	//	{
-	//		// Lock the current_state_lock_ to wait for state_thread_ to finish.
-	//		std::lock_guard<std::mutex> state_guard(robot_state_lock_);
-	//	}
-
-	//	// start real-time control loop
-	//	robot_.control(
-	//		[&](const franka::RobotState& robot_state,
-	//			franka::Duration period) -> franka::Torques
-	//		{
-	//			return fmg.callback(robot_state, period);
-	//		}, true, 1000.0);
-
-
-	//}
-	//catch (const franka::Exception&)
-	//{
-	//	set_control_loop_running(false);
-	//	throw;
-	//}
-
-	//set_control_loop_running(false);
-	//}
 }
 
 
