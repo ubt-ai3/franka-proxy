@@ -81,6 +81,15 @@ private:
 	Eigen::Matrix3d tool_inertia_matrix_;
 	const Eigen::Vector3d grav_ = Eigen::Vector3d(0.0, 0.0, -9.81);
 
+	// Filtering state (initialize in constructor or where you init members)
+	Eigen::Matrix<double, 6, 1> twist_filt_ = Eigen::Matrix<double, 6, 1>::Zero();
+	Eigen::Matrix<double, 6, 1> twist_filt_prev_ = Eigen::Matrix<double, 6, 1>::Zero();
+	bool filt_initialized_ = false;
+
+	// Tunables (seconds). Typical starting values:
+	double tau_v_lin_ = 0.02; // ~8 Hz cutoff for linear velocity
+	double tau_v_ang_ = 0.05; // ~3 Hz cutoff for angular velocity (more smoothing)
+
 	std::thread t_{};
 	std::atomic_bool stop_{false};
 
