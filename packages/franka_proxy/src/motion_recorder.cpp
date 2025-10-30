@@ -81,9 +81,11 @@ void motion_recorder::start(std::optional<std::string> log_file_path)
 			}
 
 			prev_velocity_ = velocity_;
-			auto p = compute_twist_and_acc(transform, transform, 0.001, prev_velocity_);
+			const double dt = 0.001; 
+			auto p = compute_twist_and_acc_in_world(prev_transform_, transform, dt, prev_velocity_);
 			velocity_ = p.first;
 			acceleration_ = p.second;
+			prev_transform_ = transform;
 
 			if (fts_)
 			{
@@ -149,7 +151,7 @@ std::pair<std::vector<std::array<double, 7>>, std::vector<std::array<double, 6>>
 }
 
 
-std::pair<Eigen::Matrix<double, 6, 1>, Eigen::Matrix<double, 6, 1>> motion_recorder::compute_twist_and_acc(
+std::pair<Eigen::Matrix<double, 6, 1>, Eigen::Matrix<double, 6, 1>> motion_recorder::compute_twist_and_acc_in_world(
 	const Eigen::Affine3d& prev_transform,
 	const Eigen::Affine3d& transform,
 	double dt,
@@ -195,16 +197,16 @@ std::pair<Eigen::Matrix<double, 6, 1>, Eigen::Matrix<double, 6, 1>> motion_recor
 		angular_vel_prev_body = aa.axis() * angle / dt;
 	}
 
-	Eigen::Vector3d angular_vel = angular_vel_prev_body;
+	Eigen::Vector3d angular_vel_world = R_prev * angular_vel_prev_body;
 
 	twist.block<3, 1>(0, 0) = linear_vel;
-	twist.block<3, 1>(3, 0) = angular_vel;
+	twist.block<3, 1>(3, 0) = angular_vel_world;
 
 	Eigen::Vector3d prev_linear = prev_twist.block<3, 1>(0, 0);
 	Eigen::Vector3d prev_angular = prev_twist.block<3, 1>(3, 0);
 
 	Eigen::Vector3d linear_acc = (linear_vel - prev_linear) / dt;
-	Eigen::Vector3d angular_acc = (angular_vel - prev_angular) / dt;
+	Eigen::Vector3d angular_acc = (angular_vel_world - prev_angular) / dt;
 
 	accel.block<3, 1>(0, 0) = linear_acc;
 	accel.block<3, 1>(3, 0) = angular_acc;
