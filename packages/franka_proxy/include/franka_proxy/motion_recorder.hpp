@@ -9,8 +9,6 @@
  *
  ************************************************************************/
 
-
-
 #include <array>
 #include <atomic>
 #include <thread>
@@ -56,6 +54,14 @@ private:
 	franka::Robot& robot_;
 	franka::RobotState& robot_state_;
 	ft_sensor* fts_;
+
+	franka::Model model;
+
+	// TODO hard coded load parameters atm
+	double load_mass_;
+	Eigen::Vector3d tool_com_;
+	Eigen::Matrix3d tool_iner_;
+	Eigen::Vector3d grav_ = Eigen::Vector3d(0.0, 0.0, -9.81);
 
 	std::thread t_{};
 	std::atomic_bool stop_{false};

@@ -56,9 +56,42 @@ void motion_recorder::start(std::optional<std::string> log_file_path)
 			franka::RobotState current_state(robot_.readOnce()); // sync call with approx. 1kHz
 			joints_record_.emplace_back(current_state.q);
 
+			auto current_pose = model.pose(franka::Frame::kFlange, robot_state.q, robot_state.F_T_EE, robot_state.EE_T_K);
+			Eigen::Affine3d transform(Eigen::Matrix4d::Map(current_pose.data()));
+			// robot flange to DMP-used fts flange
+			transform *= Eigen::Translation3d(0.0, 0.0, 0.068);
+			transform *= Eigen::AngleAxisd(45.0 * franka_proxy_util::deg_to_rad, Eigen::Vector3d(0.0, 0.0, -1.0));
+			Eigen::Vector3d position(transform.translation());
+			Eigen::Matrix3d curr_rot = transform.linear();
+			Eigen::Matrix3d inv_rot = transform.inverse().linear();
+			Eigen::Quaterniond orientation(curr_rot);
+			Eigen::Vector3d rotation = franka_proxy_util::get_euler_angles(curr_rot);
+			Eigen::Matrix<double, 6, 1> cartesian;
+			cartesian << position, rotation;
+
 			if (fts_)
 			{
 				ft_sensor_response current_ft(fts_->read());
+
+				std::array<double, 6> ft_measured = current_ft.data;
+				Eigen::Vector<double, 6> ft_vec = Eigen::Vector<double, 6>::Map(ft_measured.data());
+				Eigen::Vector3d c = (inv_rot * tool_com_) * load_mass_;
+				Eigen::Matrix3d in = inv_rot * tool_iner_;
+				Eigen::Vector3d f_world = inv_rot * ft_vec.head(3);
+				Eigen::Vector3d f_inertia;
+				f_inertia << (((acceleration_(0) + grav_(0)) * load_mass_) + ((-pow(velocity_(4), 2) - pow(velocity_(5), 2)) * c(0)) + (((velocity_(3) * velocity_(4)) - acceleration_(5)) * c(1)) + (((velocity_(3) * velocity_(5)) + acceleration_(4)) * c(2))),
+					(((acceleration_(1) + grav_(1)) * load_mass_) + (((velocity_(3) * velocity_(4)) + acceleration_(5)) * c(0)) + ((-pow(velocity_(3), 2) - pow(velocity_(5), 2)) * c(1)) + (((velocity_(4) * velocity_(5)) - acceleration_(3)) * c(2))),
+					(((acceleration_(2) + grav_(2)) * load_mass_) + (((velocity_(3) * velocity_(5)) - acceleration_(4)) * c(0)) + (((velocity_(4) * velocity_(5)) + acceleration_(3)) * c(1)) + ((-pow(velocity_(4), 2) - pow(velocity_(3), 2)) * c(2)));
+				f_world -= f_inertia;
+				Eigen::Vector3d f_meas = curr_dmp_.get_world_to_task() * f_world;
+				Eigen::Vector3d t_world = inv_rot * ft_vec.tail(3);
+				Eigen::Vector3d t_inertia;
+				t_inertia << (((acceleration_(2) + grav_(2)) * c(1)) + ((-acceleration_(1) - grav_(1)) * c(2)) + (acceleration_(3) * in(0, 0)) + ((acceleration_(4) - (velocity_(3) * velocity_(5))) * in(0, 1)) + ((acceleration_(5) + (velocity_(3) * velocity_(4))) * in(0, 2)) + ((-(velocity_(4) * velocity_(5))) * in(1, 1)) + ((pow(velocity_(4), 2) - pow(velocity_(5), 2)) * in(1, 2)) + ((velocity_(4) * velocity_(5)) * in(2, 2))),
+					(((-acceleration_(2) - grav_(2)) * c(0)) + ((acceleration_(0) + grav_(0)) * c(2)) + ((velocity_(3) * velocity_(5)) * in(0, 0)) + ((acceleration_(3) + (velocity_(4) * velocity_(5))) * in(0, 1)) + ((pow(velocity_(5), 2) - pow(velocity_(3), 2)) * in(0, 2)) + (acceleration_(4) * in(1, 1)) + ((acceleration_(5) - (velocity_(3) * velocity_(5))) * in(1, 2)) + ((-velocity_(3) * velocity_(5)) * in(2, 2))),
+					(((acceleration_(1) + grav_(1)) * c(0)) + ((-acceleration_(0) - grav_(0)) * c(1)) + ((-velocity_(3) * velocity_(4)) * in(0, 0)) + ((pow(velocity_(3), 2) - pow(velocity_(4), 2)) * in(0, 1)) + ((acceleration_(3) - (velocity_(4) * velocity_(5))) * in(0, 2)) + ((velocity_(3) * velocity_(4)) * in(1, 1)) + ((acceleration_(4) + (velocity_(3) * velocity_(5))) * in(1, 2)) + (acceleration_(5) * in(2, 2)));
+				t_world -= t_inertia;
+				Eigen::Vector3d t_meas = curr_dmp_.get_world_to_task() * t_world;
+
 				fts_record_.emplace_back(current_ft.data);
 			}
 			robot_state_ = current_state;
