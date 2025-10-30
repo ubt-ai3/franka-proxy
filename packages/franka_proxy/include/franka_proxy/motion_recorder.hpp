@@ -15,6 +15,7 @@
 #include <vector>
 #include <optional>
 
+#include <franka/model.h>
 #include <franka/robot.h>
 
 
@@ -47,6 +48,16 @@ public:
 	std::pair<std::vector<std::array<double, 7>>, std::vector<std::array<double, 6>>> start(
 		float seconds, std::optional<std::string> log_file_path = std::nullopt);
 
+	static std::pair<Eigen::Matrix<double, 6, 1>, Eigen::Matrix<double, 6, 1>> compute_twist_and_acc(
+		const Eigen::Affine3d& prev_transform,
+		const Eigen::Affine3d& transform,
+		double dt,
+		const Eigen::Matrix<double, 6, 1>& prev_twist);
+
+	// TODO not optimal this needs current velocity_ and acceleration_ to be correct
+	std::array<double, 6> compensate_wrench(
+		const ft_sensor_response& current_ft,
+		const Eigen::Matrix3d& inv_rot);
 private:
 	std::vector<std::array<double, 7>> joints_record_;
 	std::vector<std::array<double, 6>> fts_record_;
@@ -55,13 +66,20 @@ private:
 	franka::RobotState& robot_state_;
 	ft_sensor* fts_;
 
-	franka::Model model;
+	franka::Model model_;
+
+	bool prev_existing_ = false;
+	Eigen::Matrix<double, 6, 1> prev_velocity_;
+	Eigen::Affine3d prev_transform_;
+
+	Eigen::Matrix<double, 6, 1> velocity_;
+	Eigen::Matrix<double, 6, 1> acceleration_;
 
 	// TODO hard coded load parameters atm
 	double load_mass_;
 	Eigen::Vector3d tool_com_;
-	Eigen::Matrix3d tool_iner_;
-	Eigen::Vector3d grav_ = Eigen::Vector3d(0.0, 0.0, -9.81);
+	Eigen::Matrix3d tool_inertia_matrix_;
+	const Eigen::Vector3d grav_ = Eigen::Vector3d(0.0, 0.0, -9.81);
 
 	std::thread t_{};
 	std::atomic_bool stop_{false};
