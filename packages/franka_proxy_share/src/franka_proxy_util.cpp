@@ -407,7 +407,7 @@ double franka_proxy_util::tool_mass_from_fts()
 		m_print2 = 0.069,	// print + all screws
 		m_gripper = 0.73;	// from franka docs
 
-	return m_fts + m_print2 + m_gripper;
+	return m_fts + m_print2 + m_gripper - 0.2;
 }
 
 

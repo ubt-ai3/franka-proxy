@@ -26,7 +26,7 @@ schunk_ft_sensor::schunk_ft_sensor(
 	  socket_(io_service_),
 	  receiver_endpoint_(asio::ip::make_address(ip_), port_)
 {
-	load_mass_ = franka_proxy_util::tool_mass_from_fts();
+	tool_mass_ = franka_proxy_util::tool_mass_from_fts();
 	tool_com_ = franka_proxy_util::tool_center_of_mass_from_fts();
 	tool_inertia_matrix_ = franka_proxy_util::tool_inertia_from_fts();
 
@@ -42,6 +42,10 @@ schunk_ft_sensor::schunk_ft_sensor(
 	  socket_(io_service_),
 	  receiver_endpoint_(asio::ip::make_address(ip_), port_)
 {
+	tool_mass_ = franka_proxy_util::tool_mass_from_fts();
+	tool_com_ = franka_proxy_util::tool_center_of_mass_from_fts();
+	tool_inertia_matrix_ = franka_proxy_util::tool_inertia_from_fts();
+
 	setup_connection();
 }
 
@@ -200,39 +204,47 @@ double schunk_ft_sensor::read_load_mass_from_config(const std::string& config_fi
 
 std::array<double, 6> schunk_ft_sensor::compensate_tool_wrench(
 	const ft_sensor_response& current_ft,
-	const Eigen::Matrix3d& inv_rot,
+	const Eigen::Matrix3d& sensor_T_world,
 	const Eigen::Matrix<double, 6, 1>& velocity, 
 	const Eigen::Matrix<double, 6, 1>& acceleration) const
 {
 	std::array<double, 6> ft_measured = current_ft.data;
-	const Eigen::Matrix<double, 6, 1> ft_vec = Eigen::Map<const Eigen::Matrix<double, 6, 1>>(ft_measured.data());
+	const Eigen::Matrix<double, 6, 1> ft_vec =
+		Eigen::Map<const Eigen::Matrix<double, 6, 1>>(ft_measured.data());
+	Eigen::Vector3d f_sensor = ft_vec.head<3>();
+	Eigen::Vector3d t_sensor = ft_vec.tail<3>();
 
-	const Eigen::Matrix3d R = inv_rot.transpose();
+	const Eigen::Matrix3d R = sensor_T_world;
+	
 	const Eigen::Vector3d d = R * tool_com_;
-
 	Eigen::Matrix3d I_world = R * tool_inertia_matrix_ * R.transpose();
-
 	const double m = tool_mass_;
 	const double d2 = d.squaredNorm();
-	const Eigen::Matrix3d parallel = m * (d2 * Eigen::Matrix3d::Identity() - d * d.transpose());
+	const Eigen::Matrix3d parallel =
+		m * (d2 * Eigen::Matrix3d::Identity() - d * d.transpose());
 	const Eigen::Matrix3d I_about_sensor = I_world + parallel;
-
-	const Eigen::Vector3d f_meas_world = R * ft_vec.head<3>();
-	const Eigen::Vector3d t_meas_world = R * ft_vec.tail<3>();
 
 	const Eigen::Vector3d a_world = acceleration.block<3, 1>(0, 0);
 	const Eigen::Vector3d omega_world = velocity.block<3, 1>(3, 0);
 	const Eigen::Vector3d alpha_world = acceleration.block<3, 1>(3, 0);
 
-	const Eigen::Vector3d a_c = a_world + alpha_world.cross(d) + omega_world.cross(omega_world.cross(d));
+	const Eigen::Vector3d a_sensor_lin = a_world + grav_;
 
+	// acceleration of CoM (world)
+	const Eigen::Vector3d a_c =
+		a_sensor_lin
+		+ alpha_world.cross(d)
+		+ omega_world.cross(omega_world.cross(d));
+
+	// inertial wrench (world)
 	const Eigen::Vector3d f_inertial = m * a_c;
-	const Eigen::Vector3d tau_inertial = I_about_sensor * alpha_world
+	const Eigen::Vector3d tau_inertial =
+		I_about_sensor * alpha_world
 		+ omega_world.cross(I_about_sensor * omega_world)
 		+ d.cross(m * a_c);
 
-	const Eigen::Vector3d f_sensor = inv_rot * (f_meas_world - f_inertial);
-	const Eigen::Vector3d t_sensor = inv_rot * (t_meas_world - tau_inertial);
+	f_sensor -= R * f_inertial;
+	t_sensor -= R * tau_inertial;
 
 	return {
 		f_sensor.x(), f_sensor.y(), f_sensor.z(),
@@ -243,24 +255,26 @@ std::array<double, 6> schunk_ft_sensor::compensate_tool_wrench(
 
 std::array<double, 6> schunk_ft_sensor::compensate_only_tool_mass(
 	const ft_sensor_response& current_ft,
-	const Eigen::Matrix3d& inv_rot) const
+	const Eigen::Matrix3d& sensor_T_world) const
 {
 	std::array<double, 6> ft_measured = current_ft.data;
 	const Eigen::Matrix<double, 6, 1> ft_vec =
 		Eigen::Map<const Eigen::Matrix<double, 6, 1>>(ft_measured.data());
+	Eigen::Vector3d f_sensor = ft_vec.head<3>();
+	Eigen::Vector3d t_sensor = ft_vec.tail<3>();
 
-	const Eigen::Matrix3d R = inv_rot.transpose();
+	const Eigen::Matrix3d R = sensor_T_world;
 	const Eigen::Vector3d d = R * tool_com_;
-
-	const Eigen::Vector3d f_meas_world = R * ft_vec.head<3>();
-	const Eigen::Vector3d t_meas_world = R * ft_vec.tail<3>();
 
 	const double m = tool_mass_;
 	const Eigen::Vector3d f_grav = m * grav_;
 	const Eigen::Vector3d tau_grav = d.cross(f_grav);
 
-	const Eigen::Vector3d f_sensor = inv_rot * (f_meas_world - f_grav);
-	const Eigen::Vector3d t_sensor = inv_rot * (t_meas_world - tau_grav);
+	Eigen::Vector3d f_diff = R * f_grav;
+	Eigen::Vector3d t_diff = R * tau_grav;
+
+	f_sensor -= f_diff;
+	t_sensor -= t_diff;
 
 	return {
 		f_sensor.x(), f_sensor.y(), f_sensor.z(),

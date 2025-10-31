@@ -35,13 +35,13 @@ public:
 
 	std::array<double, 6> compensate_tool_wrench(
 		const ft_sensor_response& current_ft,
-		const Eigen::Matrix3d& inv_rot,
+		const Eigen::Matrix3d& sensor_T_world,
 		const Eigen::Matrix<double, 6, 1>& velocity,
 		const Eigen::Matrix<double, 6, 1>& acceleration) const override;
 
 	std::array<double, 6> compensate_only_tool_mass(
 		const ft_sensor_response& current_ft,
-		const Eigen::Matrix3d& inv_rot) const override;
+		const Eigen::Matrix3d& sensor_T_world) const override;
 
 private:
 	void set_response_handler(const std::function<void(const ft_sensor_response&)>& functor);
