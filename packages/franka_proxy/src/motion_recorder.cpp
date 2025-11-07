@@ -9,6 +9,7 @@
 
 #include "ft_sensor/ft_sensor.hpp"
 
+#include <algorithm>
 #include <utility>
 
 #include <franka_proxy_share/franka_proxy_logger.hpp>
@@ -83,8 +84,8 @@ void motion_recorder::start(std::optional<std::string> log_file_path)
 				if (tau <= 0.0) return 1.0;
 				if (dt_local <= 0.0) return 0.0;
 				double a = dt_local / (tau + dt_local);
-				if (a < 0.0) a = 0.0;
-				if (a > 1.0) a = 1.0;
+				a = std::max(a, 0.0);
+				a = std::min(a, 1.0);
 				return a;
 			};
 
@@ -93,28 +94,26 @@ void motion_recorder::start(std::optional<std::string> log_file_path)
 
 			Eigen::Matrix<double, 6, 1> twist_raw = p.first;
 
-			if (!filt_initialized_)
+			if (!filter_initialized_)
 			{
-				twist_filt_ = twist_raw;
-				twist_filt_prev_ = twist_filt_;
-				filt_initialized_ = true;
-				velocity_ = twist_filt_;
+				twist_filtered_ = twist_raw;
+				twist_filtered_prev_ = twist_filtered_;
+				filter_initialized_ = true;
+				velocity_ = twist_filtered_;
 				acceleration_.setZero();
 			}
 			else
 			{
-				twist_filt_prev_ = twist_filt_;
-				// Low-pass linear components
-				twist_filt_.segment<3>(0) = (1.0 - a_lin) * twist_filt_.segment<3>(0) + a_lin * twist_raw.segment<3>(0);
-				// Low-pass angular components
-				twist_filt_.segment<3>(3) = (1.0 - a_ang) * twist_filt_.segment<3>(3) + a_ang * twist_raw.segment<3>(3);
+				twist_filtered_prev_ = twist_filtered_;
+				twist_filtered_.segment<3>(0) = (1.0 - a_lin) * twist_filtered_.segment<3>(0) + a_lin * twist_raw.segment<3>(0);
+				twist_filtered_.segment<3>(3) = (1.0 - a_ang) * twist_filtered_.segment<3>(3) + a_ang * twist_raw.segment<3>(3);
 
-				constexpr double safe_dt = (dt > 1e-9) ? dt : 1e-9;
+				constexpr double safe_dt = dt > 1e-9 ? dt : 1e-9;
 				Eigen::Matrix<double, 6, 1> acc_from_filt = Eigen::Matrix<double, 6, 1>::Zero();
-				acc_from_filt.segment<3>(0) = (twist_filt_.segment<3>(0) - twist_filt_prev_.segment<3>(0)) / safe_dt;
-				acc_from_filt.segment<3>(3) = (twist_filt_.segment<3>(3) - twist_filt_prev_.segment<3>(3)) / safe_dt;
+				acc_from_filt.segment<3>(0) = (twist_filtered_.segment<3>(0) - twist_filtered_prev_.segment<3>(0)) / safe_dt;
+				acc_from_filt.segment<3>(3) = (twist_filtered_.segment<3>(3) - twist_filtered_prev_.segment<3>(3)) / safe_dt;
 
-				velocity_ = twist_filt_;
+				velocity_ = twist_filtered_;
 				acceleration_ = acc_from_filt;
 			}
 

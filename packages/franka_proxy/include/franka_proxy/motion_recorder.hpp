@@ -4,8 +4,6 @@
  *************************************************************************
  *
  * @file motion_recorder.hpp
- * 
- * todo
  *
  ************************************************************************/
 
@@ -30,7 +28,7 @@ namespace detail
  *
  * @class motion_recorder
  *
- * todo
+ * Records hybrid force/motion data for generation of demonstration data.
  *
  ************************************************************************/
 class motion_recorder
@@ -71,16 +69,17 @@ private:
 	Eigen::Matrix<double, 6, 1> velocity_;
 	Eigen::Matrix<double, 6, 1> acceleration_;
 
-	Eigen::Matrix<double, 6, 1> twist_filt_ = Eigen::Matrix<double, 6, 1>::Zero();
-	Eigen::Matrix<double, 6, 1> twist_filt_prev_ = Eigen::Matrix<double, 6, 1>::Zero();
-	bool filt_initialized_ = false;
+	// Exponentially weighted moving average filtering
+	Eigen::Matrix<double, 6, 1> twist_filtered_ = Eigen::Matrix<double, 6, 1>::Zero();
+	Eigen::Matrix<double, 6, 1> twist_filtered_prev_ = Eigen::Matrix<double, 6, 1>::Zero();
+	bool filter_initialized_ = false;
 	double tau_v_lin_ = 0.02; // ~8 Hz cutoff for linear velocity
 	double tau_v_ang_ = 0.05; // ~3 Hz cutoff for angular velocity (more smoothing)
 
 	std::thread t_{};
 	std::atomic_bool stop_{false};
 
-	// for logging
+	// logging
 	bool log_ = false;
 	std::string file_;
 	std::vector<std::string> joints_ =
