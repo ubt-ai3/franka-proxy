@@ -102,7 +102,7 @@ private:
 
 
 	const double translational_stiffness_{3000.0};
-	const double rotational_stiffness_{300.0};
+	const double rotational_stiffness_{150.0};
 	Eigen::MatrixXd stiffness_;
 	Eigen::MatrixXd damping_;
 
