@@ -140,6 +140,11 @@ std::pair<std::vector<std::array<double, 7>>, std::vector<std::array<double, 6>>
 	stop_ = true;
 	t_.join();
 
+	// remove first 100 elements because of noise and filter init
+	if (joints_record_.size() < 101) return {};
+	joints_record_.erase(joints_record_.begin(), joints_record_.begin() + 100);
+	if (fts_) fts_record_.erase(fts_record_.begin(), fts_record_.begin() + 100);
+
 	if (log_)
 	{
 		if (fts_)
