@@ -13,8 +13,6 @@
  *
  ************************************************************************/
 
-
-
 #include <list>
 #include <vector>
 #include <optional>
@@ -38,9 +36,7 @@ namespace franka_proxy
 		 *************************************************************************
 		 *
 		 * @class ple_motion_generator
-		 *
-		 * in use
-		 *
+		 * 
 		 * Joint space based impedance controller, adapted for payload
 		 * estimation. The position error calculation is replaced with a
 		 * function representing the pre-defined motion.
@@ -48,16 +44,16 @@ namespace franka_proxy
 		class ple_motion_generator
 		{
 		public:
-			ple_motion_generator
-			(franka::Robot& robot,
+			ple_motion_generator(
+				franka::Robot& robot,
 				std::mutex& state_lock,
 				franka::RobotState& robot_state,
 				double speed,
 				double duration,
 				const std::optional<std::string>& log_file_path = std::nullopt);
 
-			franka::Torques callback
-			(const franka::RobotState& robot_state,
+			franka::Torques callback	(
+				const franka::RobotState& robot_state,
 				franka::Duration period,
 				const std::function<Eigen::Matrix<double, 7, 1>(const double)>& get_joint_position_error);
 

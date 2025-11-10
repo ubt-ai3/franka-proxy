@@ -34,14 +34,13 @@ namespace franka_proxy
 		//////////////////////////////////////////////////////////////////////////
 
 
-		joint_impedance_motion_generator::joint_impedance_motion_generator
-		(franka::Robot& robot,
+		joint_impedance_motion_generator::joint_impedance_motion_generator(
+			franka::Robot& robot,
 			std::mutex& state_lock,
 			franka::RobotState& robot_state,
 			double duration,
 			const std::optional<std::string>& log_file_path)
-			:
-			model_(robot.loadModel()),
+			: model_(robot.loadModel()),
 			state_lock_(state_lock),
 			state_(robot_state),
 			duration_(duration),
@@ -58,8 +57,8 @@ namespace franka_proxy
 			}
 		};
 
-		joint_impedance_motion_generator::joint_impedance_motion_generator
-		(franka::Robot& robot,
+		joint_impedance_motion_generator::joint_impedance_motion_generator(
+			franka::Robot& robot,
 			std::mutex& state_lock,
 			franka::RobotState& robot_state,
 			const std::list<std::array<double, 7>>& joint_positions,
@@ -89,7 +88,9 @@ namespace franka_proxy
 			}
 		}
 
-		void joint_impedance_motion_generator::init_impedance_motion_generator(franka::Robot& robot, std::mutex& state_lock, franka::RobotState& robot_state) {
+		void joint_impedance_motion_generator::init_impedance_motion_generator(
+			franka::Robot& robot, std::mutex& state_lock, franka::RobotState& robot_state) 
+		{
 			{
 				std::lock_guard state_guard(state_lock_);
 				state_ = robot_state;

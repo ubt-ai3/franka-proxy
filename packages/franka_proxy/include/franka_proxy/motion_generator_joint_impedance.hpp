@@ -5,11 +5,7 @@
  *
  * @file motion_generator_joint_impedance.hpp
  *
- * todo
- *
  ************************************************************************/
-
-
 
 #include <list>
 #include <vector>
@@ -48,27 +44,28 @@ namespace franka_proxy
 		class joint_impedance_motion_generator
 		{
 		public:
-			joint_impedance_motion_generator
-			(franka::Robot& robot,
+			joint_impedance_motion_generator	(
+				franka::Robot& robot,
 				std::mutex& state_lock,
 				franka::RobotState& robot_state,
 				double duration,
 				const std::optional<std::string>& log_file_path = std::nullopt);
-
-			joint_impedance_motion_generator
-			(franka::Robot& robot,
+			
+			joint_impedance_motion_generator		(
+				franka::Robot& robot,
 				std::mutex& state_lock,
 				franka::RobotState& robot_state,
 				const std::list<std::array<double, 7>>& joint_positions,
 				double duration,
 				const std::optional<std::string>& log_file_path = std::nullopt);
 
-			franka::Torques callback
-			(const franka::RobotState& robot_state,
+			franka::Torques callback	(
+				const franka::RobotState& robot_state,
 				franka::Duration period,
 				const std::function<Eigen::Matrix<double, 7, 1>(const double)>& get_joint_position_error);
 
-			Eigen::Matrix<double, 7, 1> calculate_joint_position_error(const franka::RobotState& robot_state, double time);
+			Eigen::Matrix<double, 7, 1> calculate_joint_position_error(
+				const franka::RobotState& robot_state, double time);
 
 			// getter and setter for 'default' stiffness and damping
 			void set_stiffness(const std::array<double, 49>& stiffness);

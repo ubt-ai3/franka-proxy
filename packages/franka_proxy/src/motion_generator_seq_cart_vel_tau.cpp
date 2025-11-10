@@ -208,83 +208,14 @@ franka::Torques seq_cart_vel_tau_generator::step(
 	// --- force motion ---
 
 	Eigen::Matrix<double, 6, 1> ft_desired(f_d.data());
-
-
-	//fts_.update();
-	//std::array<double, 6> current_fts_values = fts_.current_values();
-	//Eigen::Map<const Eigen::Matrix<double, 6, 1>> ft_existing(current_fts_values.data());
-
-
-	//tau_existing = tau_measured - gravity;
-	////auto ft_existing = jacobian * tau_existing;
-	//auto ft_existing_array = robot_state.O_F_ext_hat_K;
-	//Eigen::Matrix<double, 6, 1> ft_existing_from_tau = 
-	//	(jacobian * jacobian.transpose()).inverse() * jacobian * tau_existing;
-
-	// ff
+	
+	// feedforward force
 	Eigen::Matrix<double, 6, 1> ft_force = ft_desired;
 	if (offset_force)
 		ft_desired = apply_force_increment(ft_desired, offset_force.value());
 
-	/*
-		// pi controller using fts for neg z-direction
-		if (selection_vector[2] == 0)
-		{
-			int contact_dim = 2;
-	
-			if (ft_existing(2) > -1 && ft_desired(contact_dim) < -1) // move to no contact
-			{
-				contact_change_motion = true;
-				ft_force(contact_dim) = -3.0;
-			}
-			else if (ft_existing(2) > -2.5) // ft sensor value not really useful
-			{ }
-			else
-			{
-				double error_fz = (ft_desired(contact_dim) - ft_existing(2));
-				double f_z_error_derivate = (error_fz - pre_error_fz_) / period.toSec();
-				f_z_error_integral_ += error_fz * period.toSec();
-				ft_force(contact_dim) += 0.3 * error_fz + 30.0 * f_z_error_integral_; // +0.0001 * f_z_error_derivate;
-	
-				pre_error_fz_ = error_fz;
-			}
-		}
-	
-		// pi controller for neg z-direction	
-		if (selection_vector[0] == 0)
-		{
-			int contact_dim = 0;
-	
-			if (ft_existing(2) > -1 && ft_desired(contact_dim) > 1) // move to no contact
-			{
-				//contact_change_motion = true;
-				ft_force(contact_dim) = 5.0;
-			}
-			else if (ft_existing(2) > -3) // ft sensor value not really useful
-			{ }
-			else
-			{
-				f_x_error_integral_ += (ft_desired(contact_dim) - (-ft_existing(2))) * period.toSec();
-				ft_force(contact_dim) += 0.2 * (ft_desired(contact_dim) - (-ft_existing(2))) + 5.0 * f_x_error_integral_;
-			}
-		}
-	*/
-
 	update_ft_filter(ft_force);
 	ft_force = compute_ft_filtered();
-
-	//if (ft_existing_from_tau[2] < 0.0)
-	//{
-	//	force_error_integral_ += period.toSec() * (desired_force_torque_z_force - ft_existing_from_tau);
-	//	ft_command += 1.0 * (desired_force_torque_z_force - ft_existing_from_tau) + 1.0 * force_error_integral_;
-	//}
-	//tau_desired = jacobian.transpose() * desired_force_torque_z_force;
-	//tau_error_integral += period.toSec() * (tau_desired - tau_existing);
-	//// FF + PI control
-	//tau_command = tau_desired + k_p * (tau_desired - tau_existing) + k_i * tau_error_integral;
-
-	// Smoothly update the mass to reach the desired target value.
-	//desired_mass_ = filter_gain * target_mass + (1 - filter_gain) * desired_mass_;
 
 	Eigen::Matrix<double, 6, 1> ft_task;
 	for (int i = 0; i < 6; ++i)

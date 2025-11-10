@@ -24,15 +24,14 @@ namespace franka_proxy
 		//////////////////////////////////////////////////////////////////////////
 
 
-		ple_motion_generator::ple_motion_generator
-		(franka::Robot& robot,
+		ple_motion_generator::ple_motion_generator(
+			franka::Robot& robot,
 			std::mutex& state_lock,
 			franka::RobotState& robot_state,
 			double speed,
 			double duration,
 			const std::optional<std::string>& log_file_path)
-			:
-			model_(robot.loadModel()),
+			: model_(robot.loadModel()),
 			state_lock_(state_lock),
 			state_(robot_state),
 			duration_(duration),

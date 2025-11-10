@@ -46,8 +46,7 @@ franka_joint_motion_generator::franka_joint_motion_generator(
 	franka::RobotState& current_state,
 	const std::atomic_bool& stop_motion_flag, 
 	bool stop_on_contact)
-	:
-	q_goal_(q_goal.data()),
+	: q_goal_(q_goal.data()),
 
 	current_state_lock_(current_state_lock),
 	current_state_(current_state),
@@ -182,81 +181,6 @@ void franka_joint_motion_generator::calculate_synchronized_values()
 	}
 }
 
-	/*
-	 
-void franka_joint_motion_generator::calculate_synchronized_values()
-{
-	Vector7i sign_delta_q;
-	for (int i = 0; i < 7; i++)
-		sign_delta_q[i] = static_cast<int>(std::copysign(1.0, delta_q_[i]));
-
-	//max reachable speed
-	Vector7d dq_max_reach(dq_max_);
-
-	Vector7d t_f = Vector7d::Zero();
-	for (Eigen::Index i = 0; i < 7; i++)
-	{
-		if (isMotionFinished(delta_q_[i]))
-			continue;
-
-		const double dq_max_p2 = dq_max_[i] * dq_max_[i];
-		const double max_a_dist = 
-			(dq_max_p2 / ddq_max_start_[i] +
-			dq_max_p2 / ddq_max_goal_[i]) / 2.0;
-
-		double t_intermediate = 0.0;
-
-		if (std::abs(delta_q_[i]) < //if overshooting target distance
-			max_a_dist)
-		{
-			//reduce max speed V^2 = 2 * a * dx
-			dq_max_reach[i] = std::sqrt(2.0 * std::abs(delta_q_[i]) *
-				(ddq_max_start_[i] * ddq_max_goal_[i]) /
-				(ddq_max_start_[i] + ddq_max_goal_[i]));
-		}
-		else
-			t_intermediate = (max_a_dist - std::abs(delta_q_[i])) / dq_max_reach[i];
-
-		//acceleration time
-		const double t_1 = dq_max_reach[i] / ddq_max_start_[i];
-		//deceleration time
-		const double delta_t_2 = dq_max_reach[i] / ddq_max_goal_[i];
-
-		//final time = acceleration + deceleration + constant speed time?
-		t_f[i] = t_1 + delta_t_2 + t_intermediate;
-	}
-	const double max_t_f = t_f.maxCoeff();
-
-	Vector7d delta_t_2_sync = Vector7d::Zero();
-	for (Eigen::Index i = 0; i < 7; i++)
-	{
-		if (isMotionFinished(delta_q_[i]))
-			continue;
-
-		if (max_t_f == t_f[i])
-		{
-			dq_max_sync_[i] = dq_max_reach[i];
-		}
-		else //smaller time -> decrease velocity
-		{
-			
-		}
-
-		const double a = (ddq_max_goal_[i] + ddq_max_start_[i]) / 2.0;
-		const double b = -1.0 * max_t_f * ddq_max_goal_[i] * ddq_max_start_[i];
-		const double c = std::abs(delta_q_[i]) * ddq_max_goal_[i] * ddq_max_start_[i];
-
-		dq_max_sync_[i] = calculateQuadraticSolution(a, b, c);
-		t_1_sync_[i] = dq_max_sync_[i] / ddq_max_start_[i] / 2.0;
-		delta_t_2_sync[i] = dq_max_sync_[i] / ddq_max_goal_[i] / 2.0;
-
-		t_f_sync_[i] = t_1_sync_[i] + delta_t_2_sync[i] + std::abs(delta_q_[i] / dq_max_sync_[i]);
-		t_2_sync_[i] = t_f_sync_[i] - delta_t_2_sync[i] * 2.0;
-		q_1_[i] = dq_max_sync_[i] * sign_delta_q[i] * t_1_sync_[i];
-	}
-}
-*/
-
 double franka_joint_motion_generator::calculateQuadraticSolution(double a, double b, double c)
 {
 	double delta = b * b - 4.0 * a * c;
@@ -280,8 +204,8 @@ bool franka_joint_motion_generator::colliding(const franka::RobotState& state)
 //When a robot state is received, the callback function is used to calculate the response: the desired values for that time step. After sending back the response,
 //the callback function will be called again with the most recently received robot state. Since the robot is controlled with a 1 kHz frequency,
 //the callback functions have to compute their result in a short time frame in order to be accepted
-franka::JointPositions franka_joint_motion_generator::operator()
-	(const franka::RobotState& robot_state, franka::Duration period)
+franka::JointPositions franka_joint_motion_generator::operator()(
+	const franka::RobotState& robot_state, franka::Duration period)
 {
 	time_ += period.toSec();
 

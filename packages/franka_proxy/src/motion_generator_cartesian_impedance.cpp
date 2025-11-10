@@ -30,8 +30,8 @@ namespace franka_proxy::detail
 //////////////////////////////////////////////////////////////////////////
 
 
-cartesian_impedance_motion_generator::cartesian_impedance_motion_generator
-(franka::Robot& robot,
+cartesian_impedance_motion_generator::cartesian_impedance_motion_generator(
+	franka::Robot& robot,
  std::mutex& state_lock,
  franka::RobotState& robot_state,
  double duration,
@@ -57,8 +57,8 @@ cartesian_impedance_motion_generator::cartesian_impedance_motion_generator
 };
 
 
-cartesian_impedance_motion_generator::cartesian_impedance_motion_generator
-(franka::Robot& robot,
+cartesian_impedance_motion_generator::cartesian_impedance_motion_generator(
+	franka::Robot& robot,
  std::mutex& state_lock,
  franka::RobotState& robot_state,
  const std::list<std::array<double, 16>>& poses,
@@ -117,8 +117,8 @@ void cartesian_impedance_motion_generator::init_impedance_motion_generator(
 }
 
 
-franka::Torques cartesian_impedance_motion_generator::callback
-(const franka::RobotState& robot_state,
+franka::Torques cartesian_impedance_motion_generator::callback(
+	const franka::RobotState& robot_state,
  franka::Duration period,
  const std::function<Eigen::Matrix<double, 6, 1>(double)>& get_position_error)
 {

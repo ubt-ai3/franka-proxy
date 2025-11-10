@@ -36,12 +36,6 @@ public:
 	class stop_motion_trigger{};
 	class contact_stop_trigger{};
 
-
-	/**
-	 * Creates a new joint_motion_generator instance for a target q.
-	 *
-	 * todo doc
-	 */
 	seq_cart_vel_tau_generator(
 		std::mutex& current_state_lock,
 		franka::RobotState& current_state,
@@ -54,9 +48,6 @@ public:
 
 	~seq_cart_vel_tau_generator();
 
-	/**
-	 * todo doc
-	 */
 	franka::Torques step(
 		const franka::RobotState& robot_state,
 		franka::Duration period,
