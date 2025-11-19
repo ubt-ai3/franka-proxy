@@ -96,7 +96,7 @@ void franka_state_server::task_main()
 			command_get_config_response response{};
 			response.joint_configuration = robot_state.q;
 
-			// todo cleanup static load mass compensation in wrench
+			// this should be done somewhere else
 			auto current_pose =
 				controller_.model_.pose(franka::Frame::kFlange, robot_state.q, robot_state.F_T_EE, robot_state.EE_T_K);
 			Eigen::Affine3d transform(Eigen::Matrix4d::Map(current_pose.data()));

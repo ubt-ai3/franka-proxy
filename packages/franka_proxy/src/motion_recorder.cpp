@@ -3,8 +3,6 @@
  *
  * @file motion_recorder.cpp
  *
- * todo..., implementation.
- *
  ************************************************************************/
 
 #include "ft_sensor/ft_sensor.hpp"
@@ -57,7 +55,7 @@ void motion_recorder::start(std::optional<std::string> log_file_path)
 		{
 			franka::RobotState current_state(robot_.readOnce()); // sync call with approx. 1kHz
 
-			auto current_pose = 
+			auto current_pose =
 				model_.pose(franka::Frame::kFlange, current_state.q, current_state.F_T_EE, current_state.EE_T_K);
 			Eigen::Affine3d transform(Eigen::Matrix4d::Map(current_pose.data()));
 			transform *= Eigen::Translation3d(0.0, 0.0, 0.068); // robot flange to fts flange
@@ -105,13 +103,17 @@ void motion_recorder::start(std::optional<std::string> log_file_path)
 			else
 			{
 				twist_filtered_prev_ = twist_filtered_;
-				twist_filtered_.segment<3>(0) = (1.0 - a_lin) * twist_filtered_.segment<3>(0) + a_lin * twist_raw.segment<3>(0);
-				twist_filtered_.segment<3>(3) = (1.0 - a_ang) * twist_filtered_.segment<3>(3) + a_ang * twist_raw.segment<3>(3);
+				twist_filtered_.segment<3>(0) = (1.0 - a_lin) * twist_filtered_.segment<3>(0) + a_lin * twist_raw.
+					segment<3>(0);
+				twist_filtered_.segment<3>(3) = (1.0 - a_ang) * twist_filtered_.segment<3>(3) + a_ang * twist_raw.
+					segment<3>(3);
 
 				constexpr double safe_dt = dt > 1e-9 ? dt : 1e-9;
 				Eigen::Matrix<double, 6, 1> acc_from_filt = Eigen::Matrix<double, 6, 1>::Zero();
-				acc_from_filt.segment<3>(0) = (twist_filtered_.segment<3>(0) - twist_filtered_prev_.segment<3>(0)) / safe_dt;
-				acc_from_filt.segment<3>(3) = (twist_filtered_.segment<3>(3) - twist_filtered_prev_.segment<3>(3)) / safe_dt;
+				acc_from_filt.segment<3>(0) = (twist_filtered_.segment<3>(0) - twist_filtered_prev_.segment<3>(0)) /
+					safe_dt;
+				acc_from_filt.segment<3>(3) = (twist_filtered_.segment<3>(3) - twist_filtered_prev_.segment<3>(3)) /
+					safe_dt;
 
 				velocity_ = twist_filtered_;
 				acceleration_ = acc_from_filt;
@@ -179,7 +181,7 @@ std::pair<std::vector<std::array<double, 7>>, std::vector<std::array<double, 6>>
 }
 
 
-std::pair<std::vector<std::array<double, 7>>, std::vector<std::array<double, 6>>> motion_recorder::start(
+std::pair<std::vector<std::array<double, 7>>, std::vector<std::array<double, 6>>> motion_recorder::record_for(
 	float seconds,
 	std::optional<std::string> log_file_path)
 {

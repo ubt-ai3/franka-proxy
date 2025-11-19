@@ -43,7 +43,7 @@ public:
 	std::pair<std::vector<std::array<double, 7>>, std::vector<std::array<double, 6>>> stop();
 
 	// this is blocking
-	std::pair<std::vector<std::array<double, 7>>, std::vector<std::array<double, 6>>> start(
+	std::pair<std::vector<std::array<double, 7>>, std::vector<std::array<double, 6>>> record_for(
 		float seconds, std::optional<std::string> log_file_path = std::nullopt);
 
 	static std::pair<Eigen::Matrix<double, 6, 1>, Eigen::Matrix<double, 6, 1>> compute_twist_and_acc_in_world(

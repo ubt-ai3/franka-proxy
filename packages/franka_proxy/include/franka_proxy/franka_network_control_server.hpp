@@ -42,6 +42,7 @@ public:
 private:
 	using command_handler = nlohmann::json(*)(franka_control_server* self, const nlohmann::json&);
 
+
 	template <class TCommandType> void register_command_handler()
 	{
 		std::string_view type{TCommandType::type};
@@ -59,6 +60,7 @@ private:
 
 		command_handlers_[TCommandType::type] = handler;
 	}
+
 
 	void task_main();
 
@@ -104,8 +106,8 @@ private:
 
 	std::map<std::string_view, command_handler> command_handlers_;
 
-	static constexpr float sleep_seconds_disconnected_ = 0.033f; // todo 30hz?
-	static constexpr float sleep_seconds_connected_ = 0.002f; // todo <16ms?
+	static constexpr float sleep_seconds_disconnected_ = 0.033f; 
+	static constexpr float sleep_seconds_connected_ = 0.002f;
 	static constexpr std::size_t receive_buffer_size_ = 1000;
 };
 } /* namespace franka_proxy */

@@ -101,7 +101,7 @@ private:
 	Eigen::Vector<double, 6> read_bias_from_config(const std::string& config_file) const;
 	double read_load_mass_from_config(const std::string& config_file) const;
 
-	// TODO hard coded load parameters atm
+	// hard coded load parameters atm
 	double tool_mass_;
 	Eigen::Vector3d tool_com_;
 	Eigen::Matrix3d tool_inertia_matrix_;

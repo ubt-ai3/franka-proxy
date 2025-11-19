@@ -208,7 +208,7 @@ franka::Torques seq_cart_vel_tau_generator::step(
 	// --- force motion ---
 
 	Eigen::Matrix<double, 6, 1> ft_desired(f_d.data());
-	
+
 	// feedforward force
 	Eigen::Matrix<double, 6, 1> ft_force = ft_desired;
 	if (offset_force)
@@ -239,7 +239,7 @@ franka::Torques seq_cart_vel_tau_generator::step(
 	}
 
 	if (contact_change_motion)
-		time_ -= 0.001; // period.toSec(); // stay at the same step  todo better doc/ hack atm
+		time_ -= 0.001; // period.toSec(); // stay at the same step 
 
 	if (!franka_proxy_util::is_tau_within_percentage_of_max_limit(tau_d, 0.3))
 		throw std::runtime_error("Motion generator callback: Unreasonable tau at time " + std::to_string(time_));
@@ -320,4 +320,4 @@ Eigen::Matrix<double, 6, 1> seq_cart_vel_tau_generator::apply_force_increment(
 		result(i) += increment[0];
 	return result;
 }
-} /* namespace franka_proxy::detail */
+}

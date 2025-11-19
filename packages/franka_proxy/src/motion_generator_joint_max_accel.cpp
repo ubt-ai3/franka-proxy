@@ -22,15 +22,13 @@
 #include "franka_proxy_share/franka_proxy_util.hpp"
 
 
-namespace franka_proxy
+namespace franka_proxy::detail
 {
-namespace detail
-{
-
 bool JointMovement::isMotionFinished() const
 {
 	return std::ranges::all_of(joint_motion_finished, [](bool x) { return x; });
 }
+
 
 //////////////////////////////////////////////////////////////////////////
 //
@@ -41,22 +39,22 @@ bool JointMovement::isMotionFinished() const
 
 franka_joint_motion_generator::franka_joint_motion_generator(
 	double speed_factor,
-	const std::array<double, 7>& q_goal, 
-	std::mutex& current_state_lock, 
+	const std::array<double, 7>& q_goal,
+	std::mutex& current_state_lock,
 	franka::RobotState& current_state,
-	const std::atomic_bool& stop_motion_flag, 
+	const std::atomic_bool& stop_motion_flag,
 	bool stop_on_contact)
 	: q_goal_(q_goal.data()),
 
-	current_state_lock_(current_state_lock),
-	current_state_(current_state),
+	  current_state_lock_(current_state_lock),
+	  current_state_(current_state),
 
-	stop_motion_(stop_motion_flag),
-	stop_on_contact_(stop_on_contact)
+	  stop_motion_(stop_motion_flag),
+	  stop_on_contact_(stop_on_contact)
 {
 	if (speed_factor > 1.0)
 
-	dq_max_ *= speed_factor;
+		dq_max_ *= speed_factor;
 	ddq_max_start_ *= speed_factor;
 	ddq_max_goal_ *= speed_factor;
 	dq_max_sync_.setZero();
@@ -67,7 +65,6 @@ franka_joint_motion_generator::franka_joint_motion_generator(
 	t_f_sync_.setZero();
 	q_1_.setZero();
 }
-
 
 
 JointMovement franka_joint_motion_generator::calculate_desired_values(double t) const
@@ -122,6 +119,7 @@ JointMovement franka_joint_motion_generator::calculate_desired_values(double t) 
 	}
 	return out;
 }
+
 
 void franka_joint_motion_generator::calculate_synchronized_values()
 {
@@ -181,6 +179,7 @@ void franka_joint_motion_generator::calculate_synchronized_values()
 	}
 }
 
+
 double franka_joint_motion_generator::calculateQuadraticSolution(double a, double b, double c)
 {
 	double delta = b * b - 4.0 * a * c;
@@ -190,16 +189,19 @@ double franka_joint_motion_generator::calculateQuadraticSolution(double a, doubl
 	return (-b - std::sqrt(delta)) / (2.0 * a);
 }
 
+
 bool franka_joint_motion_generator::isMotionFinished(double delta)
 {
 	return std::abs(delta) <= kDeltaQMotionFinished;
 }
+
 
 bool franka_joint_motion_generator::colliding(const franka::RobotState& state)
 {
 	return std::ranges::any_of(state.joint_contact, [](const double& v) { return v > 0; }) ||
 		std::ranges::any_of(state.cartesian_contact, [](const double& v) { return v > 0; });
 }
+
 
 //When a robot state is received, the callback function is used to calculate the response: the desired values for that time step. After sending back the response,
 //the callback function will be called again with the most recently received robot state. Since the robot is controlled with a 1 kHz frequency,
@@ -223,7 +225,8 @@ franka::JointPositions franka_joint_motion_generator::operator()(
 
 	if (time_ == 0.0) //the first invocation of the callback function
 	{
-		if (!franka_proxy_util::is_reachable(q_goal_)) {
+		if (!franka_proxy_util::is_reachable(q_goal_))
+		{
 			throw franka::InvalidOperationException("Target is not reachable");
 		}
 
@@ -231,7 +234,7 @@ franka::JointPositions franka_joint_motion_generator::operator()(
 		delta_q_ = q_goal_ - q_start_;
 		calculate_synchronized_values();
 	}
-	
+
 	const auto desiredValues = calculate_desired_values(time_);
 
 	std::array<double, 7> joint_positions{};
@@ -240,6 +243,4 @@ franka::JointPositions franka_joint_motion_generator::operator()(
 	output.motion_finished = desiredValues.isMotionFinished();
 	return output;
 }
-
-} /* namespace detail */
-} /* namespace franka_proxy */
+}

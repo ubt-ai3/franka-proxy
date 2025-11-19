@@ -32,11 +32,11 @@ namespace franka_proxy::detail
 
 cartesian_impedance_motion_generator::cartesian_impedance_motion_generator(
 	franka::Robot& robot,
- std::mutex& state_lock,
- franka::RobotState& robot_state,
- double duration,
- bool use_online_parameter_calc,
- const std::optional<std::string>& log_file_path)
+	std::mutex& state_lock,
+	franka::RobotState& robot_state,
+	double duration,
+	bool use_online_parameter_calc,
+	const std::optional<std::string>& log_file_path)
 	: model_(robot.loadModel()),
 	  state_lock_(state_lock),
 	  state_(robot_state),
@@ -59,12 +59,12 @@ cartesian_impedance_motion_generator::cartesian_impedance_motion_generator(
 
 cartesian_impedance_motion_generator::cartesian_impedance_motion_generator(
 	franka::Robot& robot,
- std::mutex& state_lock,
- franka::RobotState& robot_state,
- const std::list<std::array<double, 16>>& poses,
- double duration,
- bool use_online_parameter_calc,
- const std::optional<std::string>& log_file_path)
+	std::mutex& state_lock,
+	franka::RobotState& robot_state,
+	const std::list<std::array<double, 16>>& poses,
+	double duration,
+	bool use_online_parameter_calc,
+	const std::optional<std::string>& log_file_path)
 	: model_(robot.loadModel()),
 	  state_lock_(state_lock),
 	  state_(robot_state),
@@ -119,8 +119,8 @@ void cartesian_impedance_motion_generator::init_impedance_motion_generator(
 
 franka::Torques cartesian_impedance_motion_generator::callback(
 	const franka::RobotState& robot_state,
- franka::Duration period,
- const std::function<Eigen::Matrix<double, 6, 1>(double)>& get_position_error)
+	franka::Duration period,
+	const std::function<Eigen::Matrix<double, 6, 1>(double)>& get_position_error)
 {
 	{
 		std::lock_guard state_guard(state_lock_);
@@ -438,7 +438,8 @@ double cartesian_impedance_motion_generator::get_rotational_stiffness()
 }
 
 
-void cartesian_impedance_motion_generator::set_translational_stiffness(double translational_stiffness)
+void cartesian_impedance_motion_generator::set_translational_stiffness(
+	double translational_stiffness)
 {
 	if (!initialized_)
 	{
@@ -451,7 +452,7 @@ void cartesian_impedance_motion_generator::set_translational_stiffness(double tr
 	else
 	{
 		throw std::runtime_error(
-			"(Cartesian impedance controller) Setting impedance translational stiffness after initialization is not allowed!");
+			"Setting impedance translational stiffness after initialization is not allowed!");
 	}
 }
 

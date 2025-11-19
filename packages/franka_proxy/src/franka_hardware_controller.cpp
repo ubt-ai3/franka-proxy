@@ -49,7 +49,7 @@ franka_hardware_controller::franka_hardware_controller(
 	  control_loop_running_(false),
 	  robot_state_(robot_.readOnce()),
 	  terminate_state_threads_(false),
-      model_(robot_.loadModel())
+	  model_(robot_.loadModel())
 {
 	try
 	{
@@ -749,7 +749,7 @@ franka_hardware_controller::recording_for(float seconds, std::optional<std::stri
 		std::lock_guard state_guard(robot_state_lock_);
 	}
 
-	auto record = motion_recorder_->start(seconds, std::move(log_file_path));
+	auto record = motion_recorder_->record_for(seconds, std::move(log_file_path));
 	set_control_loop_running(false);
 
 	return record;
@@ -800,7 +800,6 @@ void franka_hardware_controller::move_sequence(
 void franka_hardware_controller::move_sequence(
 	const std::vector<std::array<double, 7>>& q_sequence, double f_z)
 {
-
 	std::vector<std::array<double, 6>> f_sequence(q_sequence.size(), {0, 0, f_z, 0, 0, 0});
 	std::vector<std::array<double, 6>> selection_vector_sequence(q_sequence.size(), {1, 1, 0, 1, 1, 1});
 

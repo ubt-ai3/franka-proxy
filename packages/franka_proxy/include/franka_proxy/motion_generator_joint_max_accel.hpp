@@ -21,9 +21,7 @@
 #include "franka_proxy_util.hpp"
 
 
-namespace franka_proxy
-{
-namespace detail
+namespace franka_proxy::detail
 {
 using Vector7d = Eigen::Matrix<double, 7, 1>;
 using Vector7i = Eigen::Matrix<int, 7, 1>;
@@ -50,12 +48,16 @@ struct JointMovement
 class franka_joint_motion_generator
 {
 public:
-
 	/**
 	 * Thrown from motion_generators to terminate it.
 	 */
-	class stop_motion_trigger {};
-	class contact_stop_trigger {};
+	class stop_motion_trigger
+	{
+	};
+
+	class contact_stop_trigger
+	{
+	};
 
 
 	/**
@@ -66,13 +68,13 @@ public:
 	 */
 	franka_joint_motion_generator(
 		double speed_factor,
-		 const std::array<double, 7>& q_goal,
-		 std::mutex& current_state_lock,
-		 franka::RobotState& current_state,
-		 const std::atomic_bool& stop_motion_flag,
-		 bool stop_on_contact);
-	
-	
+		const std::array<double, 7>& q_goal,
+		std::mutex& current_state_lock,
+		franka::RobotState& current_state,
+		const std::atomic_bool& stop_motion_flag,
+		bool stop_on_contact);
+
+
 	/**
 	 * Sends joint position calculations
 	 *
@@ -83,7 +85,7 @@ public:
 	 */
 	franka::JointPositions operator()(
 		const franka::RobotState& robot_state,
-		 franka::Duration period);
+		franka::Duration period);
 
 	/**
 	 * Returns each joints position and finish state
@@ -91,11 +93,10 @@ public:
 	[[nodiscard]] JointMovement calculate_desired_values(double t) const;
 
 private:
-
 	void calculate_synchronized_values();
 	Vector7d calculateOffsetGoal(
 		const std::array<double, 7>& q_goal,
-								 const std::array<double, 16>& offset_position);
+		const std::array<double, 16>& offset_position);
 
 	static double calculateQuadraticSolution(double a, double b, double c);
 	static bool isMotionFinished(double delta);
@@ -126,12 +127,7 @@ private:
 	const std::atomic_bool& stop_motion_;
 	const bool stop_on_contact_;
 };
-
-
-
-
-} /* namespace detail */
-} /* namespace franka_proxy */
+}
 
 
 #endif // INCLUDED__FRANKA_PROXY__MOTION_GENERATOR_JOINT_MAX_ACCEL_HPP

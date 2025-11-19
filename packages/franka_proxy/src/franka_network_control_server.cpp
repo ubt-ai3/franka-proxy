@@ -287,11 +287,12 @@ command_generic_response franka_control_server::process_command(
 	return command_result::success;
 }
 
+
 command_generic_response franka_control_server::process_command(
 	const command_move_hybrid_sequence& cmd)
 {
 	controller_.move_sequence(
-		cmd.joint_config_sequence, cmd.force_sequence, 
+		cmd.joint_config_sequence, cmd.force_sequence,
 		cmd.selection_sequence);
 	return command_result::success;
 }
@@ -344,6 +345,7 @@ command_generic_response franka_control_server::process_command
 	return command_result::success;
 }
 
+
 command_generic_response franka_control_server::process_command(
 	const command_joint_impedance_positions_desired_stiffness& cmd)
 {
@@ -351,6 +353,7 @@ command_generic_response franka_control_server::process_command(
 		cmd.joint_positions, cmd.duration, cmd.stiffness, cmd.log_file_path);
 	return command_result::success;
 }
+
 
 command_generic_response franka_control_server::process_command(
 	const command_ple_motion& cmd)
@@ -395,6 +398,7 @@ command_generic_response franka_control_server::process_command(
 		       : command_result::success_command_failed;
 }
 
+
 command_generic_response franka_control_server::process_command(
 	const command_vacuum_gripper_drop& cmd)
 {
@@ -402,6 +406,7 @@ command_generic_response franka_control_server::process_command(
 		       ? command_result::success
 		       : command_result::success_command_failed;
 }
+
 
 command_generic_response franka_control_server::process_command(
 	const command_vacuum_gripper_vacuum& cmd)
@@ -411,6 +416,7 @@ command_generic_response franka_control_server::process_command(
 		       : command_result::success_command_failed;
 }
 
+
 command_generic_response franka_control_server::process_command(
 	const command_vacuum_gripper_stop&)
 {
@@ -418,6 +424,7 @@ command_generic_response franka_control_server::process_command(
 		       ? command_result::success
 		       : command_result::success_command_failed;
 }
+
 
 command_generic_response franka_control_server::process_command(
 	const command_start_recording& cmd)
@@ -451,6 +458,7 @@ command_generic_response franka_control_server::process_command
 	return command_result::success;
 }
 
+
 command_generic_response franka_control_server::process_command(
 	const command_set_fts_bias& cmd)
 {
@@ -464,6 +472,7 @@ command_generic_response franka_control_server::process_command(
 		return command_result::force_torque_sensor_exception;
 	}
 }
+
 
 command_generic_response franka_control_server::process_command(
 	const command_set_fts_load_mass& cmd)
@@ -486,6 +495,7 @@ command_generic_response franka_control_server::process_command(
 	controller_.automatic_error_recovery();
 	return command_result::success;
 }
+
 
 command_generic_response franka_control_server::process_command(
 	const command_set_guiding_params& cmd)

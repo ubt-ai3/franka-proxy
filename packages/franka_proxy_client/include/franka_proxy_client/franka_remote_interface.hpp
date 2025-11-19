@@ -137,8 +137,7 @@ public:
 	void ple_motion(double speed, double duration, std::optional<std::string> log_file_path = std::nullopt);
 
 	/**
-	 * todo docu
-	 * todo change to newton
+	 * Presses down with a mass (in kg)
 	 */
 	void apply_z_force(double mass, double duration);
 
@@ -208,9 +207,6 @@ public:
 	bool vacuum_gripper_stop();
 
 
-	/**
-	 * todo docu
-	 */
 	void start_recording(std::optional<std::string> log_file_path = std::nullopt);
 	std::pair<std::vector<std::array<double, 7>>, std::vector<std::array<double, 6>>> stop_recording();
 

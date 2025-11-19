@@ -40,30 +40,30 @@ namespace franka_proxy::detail
 class cartesian_impedance_motion_generator
 {
 public:
-	cartesian_impedance_motion_generator	(
+	cartesian_impedance_motion_generator(
 		franka::Robot& robot,
-	 std::mutex& state_lock,
-	 franka::RobotState& robot_state,
-	 double duration,
-	 bool use_online_parameter_calc,
+		std::mutex& state_lock,
+		franka::RobotState& robot_state,
+		double duration,
+		bool use_online_parameter_calc,
 		const std::optional<std::string>& log_file_path = std::nullopt);
 
-	cartesian_impedance_motion_generator	(
+	cartesian_impedance_motion_generator(
 		franka::Robot& robot,
-	 std::mutex& state_lock,
-	 franka::RobotState& robot_state,
-	 const std::list<std::array<double, 16>>& poses,
-	 double duration,
-	 bool use_online_parameter_calc,
+		std::mutex& state_lock,
+		franka::RobotState& robot_state,
+		const std::list<std::array<double, 16>>& poses,
+		double duration,
+		bool use_online_parameter_calc,
 		const std::optional<std::string>& log_file_path = std::nullopt);
 
-	franka::Torques callback	(
+	franka::Torques callback(
 		const franka::RobotState& robot_state,
-	 franka::Duration period,
+		franka::Duration period,
 		const std::function<Eigen::Matrix<double, 6, 1>(double)>& get_position_error);
 
 	Eigen::Matrix<double, 6, 1> calculate_position_error(
-		const franka::RobotState& robot_state, 
+		const franka::RobotState& robot_state,
 		double time);
 
 	// getter and setter for 'default' stiffness and damping
@@ -76,8 +76,8 @@ public:
 private:
 	void calculate_default_stiffness_and_damping();
 	void init_impedance_motion_generator(
-		franka::Robot& robot, 
-		std::mutex& state_lock, 
+		franka::Robot& robot,
+		std::mutex& state_lock,
 		franka::RobotState& robot_state);
 	double optimizeDamping(double l_di, double u_di, double mi, double bi, double x0i_max, double derived_x0i_max);
 	double calculate_stiffness_from_damping(double di, double mi);

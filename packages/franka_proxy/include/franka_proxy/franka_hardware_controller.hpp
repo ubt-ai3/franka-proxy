@@ -100,7 +100,7 @@ public:
 	//vacuum gripper methods
 	bool vacuum_gripper_drop(std::chrono::milliseconds timeout);
 	bool vacuum_gripper_vacuum(
-		std::uint8_t vacuum_strength, 
+		std::uint8_t vacuum_strength,
 		std::chrono::milliseconds timeout);
 	bool vacuum_gripper_stop();
 
@@ -151,9 +151,9 @@ public:
 	 * rotational and translational stiffness parameters.
 	 */
 	void apply_admittance(
-		double duration, 
+		double duration,
 		double adm_rotational_stiffness,
-		double adm_translational_stiffness, 
+		double adm_translational_stiffness,
 		double imp_rotational_stiffness,
 		double imp_translational_stiffness,
 		const std::optional<std::string>& log_file_path = std::nullopt);
@@ -179,8 +179,8 @@ public:
 	 * using desired stiffness matrix parameter.
 	 */
 	void joint_impedance_hold_position(
-		double duration, 
-		std::array<double, 49> stiffness, 
+		double duration,
+		std::array<double, 49> stiffness,
 		std::optional<std::string> log_file_path = std::nullopt);
 	/**
 	 * Joint space impedance controller to hold multiple joint positions resp.

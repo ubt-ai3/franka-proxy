@@ -43,7 +43,6 @@ franka::Torques force_motion_generator::callback(
 
 	if (time_ > duration)
 	{
-		// todo this may not be clean
 		franka::Torques current_torques(robot_state.tau_J);
 		current_torques.motion_finished = true;
 		return current_torques;

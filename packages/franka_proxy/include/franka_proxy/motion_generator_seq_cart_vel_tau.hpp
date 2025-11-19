@@ -33,8 +33,8 @@ public:
 	/**
 	 * Thrown from motion_generators to terminate it.
 	 */
-	class stop_motion_trigger{};
-	class contact_stop_trigger{};
+	class stop_motion_trigger {};
+	class contact_stop_trigger {};
 
 	seq_cart_vel_tau_generator(
 		std::mutex& current_state_lock,
