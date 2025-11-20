@@ -35,7 +35,7 @@
 vcpkg_from_git(
 	OUT_SOURCE_PATH SOURCE_PATH
 	URL https://resy-gitlab.inf.uni-bayreuth.de/libfranka/franka_proxy.git
-	REF 3040ce2302d4c2ccb302f2d8832255e770da85d4
+	REF 476dca7689ae914a3034f8cef0494b85c45f9441
 	HEAD_REF development
 )
 
@@ -65,7 +65,9 @@ if("tests" IN_LIST FEATURES)
 endif()
 
 # copy assets, cmake-config, license and remove all unwanted files
-file(INSTALL ${CURRENT_PACKAGES_DIR}/bin/assets DESTINATION ${CURRENT_PACKAGES_DIR}/tools/${PORT})
+if("server" IN_LIST FEATURES)
+	file(INSTALL ${CURRENT_PACKAGES_DIR}/bin/assets DESTINATION ${CURRENT_PACKAGES_DIR}/tools/${PORT})
+endif()
 file(REMOVE_RECURSE "${CURRENT_PACKAGES_DIR}/bin")
 
 file(INSTALL ${CURRENT_PACKAGES_DIR}/share/franka-proxy/franka-proxyConfig.cmake DESTINATION ${CURRENT_PACKAGES_DIR}/share/${PORT})
