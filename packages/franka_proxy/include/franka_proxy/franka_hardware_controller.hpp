@@ -201,6 +201,7 @@ public:
 		std::optional<std::string> log_file_path = std::nullopt);
 
 	ft_sensor_response fts_state() const;
+	ft_sensor_response fts_state(const franka::RobotState& rs) const;
 
 	const ft_sensor* get_fts_ptr() noexcept;
 

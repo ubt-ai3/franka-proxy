@@ -96,14 +96,7 @@ void franka_state_server::task_main()
 			command_get_config_response response{};
 			response.joint_configuration = robot_state.q;
 
-			// this should be done somewhere else
-			auto current_pose =
-				controller_.model_.pose(franka::Frame::kFlange, robot_state.q, robot_state.F_T_EE, robot_state.EE_T_K);
-			Eigen::Affine3d transform(Eigen::Matrix4d::Map(current_pose.data()));
-			transform *= Eigen::Translation3d(0.0, 0.0, 0.068); // robot flange to fts flange
-			transform *= Eigen::AngleAxisd(45.0 * franka_proxy_util::deg_to_rad, Eigen::Vector3d(0.0, 0.0, -1.0));
-			Eigen::Matrix3d inv_rot = transform.inverse().linear();
-			response.end_effector_wrench = controller_.get_fts_ptr()->compensate_only_tool_mass(fts_state, inv_rot);
+			response.end_effector_wrench = fts_state.data;
 
 			response.width = gripper_state.width;
 			response.max_width = gripper_state.max_width;

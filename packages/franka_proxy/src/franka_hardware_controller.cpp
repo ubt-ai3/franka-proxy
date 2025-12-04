@@ -418,10 +418,27 @@ void franka_hardware_controller::run_payload_estimation(
 
 ft_sensor_response franka_hardware_controller::fts_state() const
 {
-	if (ft_sensor_)
-		return ft_sensor_->read();
+	if (!ft_sensor_)
+		return ft_sensor_response{};
+	
+	return ft_sensor_->read();
+}
 
-	return ft_sensor_response{};
+
+ft_sensor_response franka_hardware_controller::fts_state(const franka::RobotState& rs) const
+{
+	if (!ft_sensor_)
+		return ft_sensor_response{};
+
+	auto state = ft_sensor_->read();
+	auto current_pose =	model_.pose(franka::Frame::kFlange, rs.q, rs.F_T_EE, rs.EE_T_K);
+	Eigen::Affine3d transform(Eigen::Matrix4d::Map(current_pose.data()));
+	transform *= Eigen::Translation3d(0.0, 0.0, 0.068); // robot flange to fts flange
+	transform *= Eigen::AngleAxisd(45.0 * franka_proxy_util::deg_to_rad, Eigen::Vector3d(0.0, 0.0, -1.0));
+	Eigen::Matrix3d inv_rot = transform.inverse().linear();
+	state.data = ft_sensor_->compensate_only_tool_mass(state, inv_rot);
+
+	return state;
 }
 
 
