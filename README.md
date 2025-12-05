@@ -1,3 +1,5 @@
+[![DOI](https://zenodo.org/badge/1110635846.svg)](https://doi.org/10.5281/zenodo.17831997)
+
 # Setup
 
 ## Using the Project
