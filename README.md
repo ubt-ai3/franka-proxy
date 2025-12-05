@@ -7,16 +7,16 @@ This project consists of two components:
 - A client/controller library for integration into your own project.
 - A server application that runs on the computer connected to the Franka Emika robot.
 
-Both components are typically installed via `vcpkg`. You can either use the provided overlay ports in `./tools/vcpkg-overlay-ports/` or, if available to you, the internal AI3 `vcpkg` fork:
+Both components are typically installed via [`vcpkg` (tested version: 2025.10.17)](https://github.com/microsoft/vcpkg). You can either use the provided overlay ports in `./tools/vcpkg-overlay-ports/` or, if available to you, the internal AI3 `vcpkg` fork:
 https://resy-gitlab.inf.uni-bayreuth.de/tools/vcpkg.git
 
 ### Installation
 
 - To install the client library:
-  ```vcpkg install franka-proxy --overlay-ports=<insert/path/here>/franka_proxy/tools/vcpkg-overlay-ports```
+  ```vcpkg install franka-proxy --overlay-ports=<insert/path/here>/franka-proxy/tools/vcpkg-overlay-ports```
 
 - To install the server and test applications:
-  ```vcpkg install franka-proxy[server,tests] --overlay-ports=<insert/path/here>/franka_proxy/tools/vcpkg-overlay-ports```
+  ```vcpkg install franka-proxy[server,tests] --overlay-ports=<insert/path/here>/franka-proxy/tools/vcpkg-overlay-ports```
 
 Note: Ensure that the client and server use the same port version. Compatibility is not guaranteed otherwise.
 

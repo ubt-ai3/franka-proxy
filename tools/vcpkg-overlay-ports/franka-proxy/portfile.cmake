@@ -34,9 +34,9 @@
 
 vcpkg_from_git(
 	OUT_SOURCE_PATH SOURCE_PATH
-	URL https://resy-gitlab.inf.uni-bayreuth.de/libfranka/franka_proxy.git
-	REF 476dca7689ae914a3034f8cef0494b85c45f9441
-	HEAD_REF development
+	URL https://github.com/ubt-ai3/franka-proxy.git
+	REF 81761ab8380eb6f22b31b8eeafc7ff4f2531922c
+	HEAD_REF main
 )
 
 vcpkg_check_features(OUT_FEATURE_OPTIONS FEATURE_OPTIONS
