@@ -14,8 +14,17 @@ authors:
     email: johannes.hartwig@uni-bayreuth.de
     affiliation: University of Bayreuth
     orcid: 'https://orcid.org/0009-0002-8066-2751'
+  - given-names: David
+    family-names: Singer
+    email: david.singer@uni-bayreuth.de
+    affiliation: University of Bayreuth
+  - given-names: Oliver
+    family-names: Zahn
+    email: oliver.zahn@uni-bayreuth.de
+    affiliation: University of Bayreuth
+    orcid: 'https://orcid.org/0009-0004-2864-3750'
 license: MIT
-version: 1.0
+version: 1.1
 identifiers:
   - type: doi
     value: 10.5281/zenodo.17831997
